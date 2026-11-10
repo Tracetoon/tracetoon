@@ -281,3 +281,54 @@ describe('result lines belong to the check that printed them', () => {
     ).toMatchObject({ outcome: 'failed', basis: 'output' });
   });
 });
+
+describe('a refused shell call is not a run', () => {
+  const line = (o: unknown) => JSON.stringify(o);
+  const use = (n: number, id: string, command: string) =>
+    line({
+      type: 'assistant',
+      timestamp: T(n),
+      cwd: '/repo',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_use', id, name: 'Bash', input: { command } }],
+      },
+    });
+  const result = (n: number, id: string, text: string, isError: boolean) =>
+    line({
+      type: 'user',
+      timestamp: T(n),
+      cwd: '/repo',
+      message: {
+        role: 'user',
+        content: [
+          { type: 'tool_result', tool_use_id: id, content: text, is_error: isError },
+        ],
+      },
+      toolUseResult: isError
+        ? `Error: ${text}`
+        : { stdout: text, stderr: '', interrupted: false },
+    });
+
+  test('only calls that ran, failing ones included, are commands', () => {
+    const s = session('claude-code');
+    parseClaudeLines(
+      [
+        use(1, 'a', 'shellcheck a.sh'),
+        result(2, 'a', 'A hook refused this command. Refusing to run it.', true),
+        use(3, 'b', 'shellcheck b.sh'),
+        result(4, 'b', "The user doesn't want to proceed with this tool use.", true),
+        use(5, 'c', 'shellcheck c.sh'),
+        result(6, 'c', 'Exit code 1\nIn c.sh line 2: SC2086', true),
+        use(7, 'd', 'shellcheck d.sh'),
+        result(8, 'd', '', false),
+      ].join('\n'),
+      s,
+    );
+    const cmds = s.records.filter((r) => r.kind === 'command');
+    expect(cmds.map((r) => (r as { cmd: string }).cmd)).toEqual([
+      'shellcheck c.sh',
+      'shellcheck d.sh',
+    ]);
+  });
+});

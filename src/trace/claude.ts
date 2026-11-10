@@ -165,6 +165,17 @@ interface Pending {
 }
 
 /** Parse one Claude JSONL file's content into records. Exported for tests. */
+/**
+ * Whether a shell call that came back as an error ran at all. Claude Code
+ * reports a command that exited non-zero as `Exit code N` and one that ran
+ * out of time as timed out; a refusal by a hook or the permission system
+ * ("The user doesn't want to proceed", "Refusing to run it") has neither.
+ */
+function ran(text: string | undefined, result: unknown): boolean {
+  const said = `${text ?? ''}\n${typeof result === 'string' ? result : ''}`;
+  return /(^|\n)\s*(Error:\s*)?Exit code \d+/.test(said) || /\btimed out\b/i.test(said);
+}
+
 export function parseClaudeLines(
   content: string,
   into: TraceSession,
@@ -298,6 +309,9 @@ export function parseClaudeLines(
               ? `${str(r.stdout) ?? ''}\n${str(r.stderr) ?? ''}`
               : textOfToolResult(c.content),
           );
+          // A shell call that failed with no exit code never ran: a hook or the
+          // permission system refused it. It is no run, passing or failing.
+          if (isError && !ran(textOfToolResult(c.content), o.toolUseResult)) continue;
           if (cmd) into.records.push({ kind: 'command', cmd, isError, output, ...where });
           // Files the command changed (sed, a script, a heredoc): Claude Code
           // records them as diffs on the result. Kept even if the command failed

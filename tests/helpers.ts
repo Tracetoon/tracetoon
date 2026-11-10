@@ -172,7 +172,12 @@ export class ClaudeLog {
     return this.tool(
       tool,
       { command },
-      { content: stdout, isError, toolUseResult: { stdout, stderr: '' } },
+      // Claude Code starts a failed command's result with its exit code.
+      {
+        content: isError ? `Exit code 1\n${stdout}` : stdout,
+        isError,
+        toolUseResult: { stdout, stderr: '' },
+      },
     );
   }
   /** A PowerShell tool call (handled like Bash). */
