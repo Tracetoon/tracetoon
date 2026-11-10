@@ -865,6 +865,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           summary: r.summary.slice(0, 3),
           when: RUN_WHEN[r.revision] ?? r.revision,
           session: s.ref,
+          basis: r.basis,
+          statable: r.statable === true,
+          masked: r.masked ?? null,
         });
     for (const label of ['Prompt', 'Decision', 'Plan', 'Run'] as const) {
       const facts =

@@ -1205,6 +1205,7 @@ export function briefParts(
        OPTIONAL MATCH (r)-[:LATER_EDIT]->(f:File)
        RETURN r.id AS id, r.kind AS kind, r.outcome AS outcome, r.summary AS summary,
               r.when AS when, r.cmd AS cmd, r.t AS t, r.revision AS revision,
+              r.basis AS basis, r.statable AS statable, r.masked AS masked,
               collect(DISTINCT f.id) AS later`,
       { kinds: CHECK_KINDS },
     )
@@ -1280,6 +1281,8 @@ export function briefParts(
     editedAfter: r.editedAfter,
     cmd: r.cmd,
     earlier: /^V\d/.test(String(r.id ?? '')) ? null : earlierOf(r),
+    // Whether render may state a session-log run (runHistory `statableRun`).
+    ...(typeof r.statable === 'boolean' ? { statable: r.statable } : {}),
   }));
 
   for (const m of g
@@ -1312,6 +1315,15 @@ export function briefParts(
   const freshPass = receipts
     .filter((v) => v.outcome === 'passed')
     .map((v) => String(v.id));
+  // A chosen validation run that passed and saw every captured edit.
+  const passOnFinal = chosen.some((r) => r.outcome === 'passed' && current(r));
+  // A command a passing receipt ran (receipts store argv; compare as typed).
+  const flat = (c: unknown) =>
+    shownCommand(c).replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+  const receiptRan = (cmd: unknown) =>
+    receipts.some(
+      (v) => v.outcome === 'passed' && !!flat(cmd) && flat(v.cmd).includes(flat(cmd)),
+    );
   const limits: Record<string, unknown>[] = [];
   const uncheckedAll: string[] = [];
   const branchy: string[] = [];
@@ -1355,17 +1367,18 @@ export function briefParts(
     for (const cmd of others)
       if (!otherRuns.some((r) => r.cmd === cmd))
         otherRuns.push({ cmd, after: `last captured edit of ${unchecked.join(', ')}` });
-    if (unchecked.length)
+    // A passing receipt (run on the submitted content) or a passing row that
+    // saw every captured edit covers the files: saying no pass came after
+    // their last edit sat next to that pass and read as a contradiction.
+    if (unchecked.length && !freshPass.length && !passOnFinal)
       limits.push({
         change: c.id,
         kind: 'open',
-        limit: freshPass.length
-          ? `Tracetoon recognized no logged passing check after the last captured edit of ${unchecked.join(', ')}; fresh ${freshPass.join(', ')} passed on the submitted code, which shows the suite passes, not that it exercises this change.`
-          : `Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}${
-              others.length
-                ? `; after that edit the session ran commands Tracetoon does not classify: ${others.map((x) => `\`${x}\``).join(', ')}`
-                : ''
-            }.`,
+        limit: `Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}${
+          others.length
+            ? `; after that edit the session ran commands Tracetoon does not classify: ${others.map((x) => `\`${x}\``).join(', ')}`
+            : ''
+        }.`,
       });
     // Symbols with conditional paths, for render's check of "always", "only"…
     if (Number(c.branches) > 0)
@@ -1410,15 +1423,39 @@ export function briefParts(
       v.outcome === 'unknown' &&
       ['test', 'typecheck', 'lint'].includes(String(v.kind))
     ) {
+      // Covered: a passing receipt ran the command, or a later run of the
+      // kind passed with no edits after it.
+      if (receiptRan(v.cmd)) continue;
+      if (
+        chosen.some(
+          (r) =>
+            r !== v &&
+            String(r.kind) === String(v.kind) &&
+            r.outcome === 'passed' &&
+            current(r) &&
+            String(r.t ?? '') > String(v.t ?? ''),
+        )
+      )
+        continue;
       const earlier = scopedRuns.some(
         (r) => r !== v && shownCommand(r.cmd) === shownCommand(v.cmd),
       );
+      const cmd = shownCommand(v.cmd);
+      // A status a pipe or `;` hid is not a missing result: the output is there.
+      const hidden =
+        v.masked === 'pipe'
+          ? 'its exit status was hidden by a pipe'
+          : v.masked === 'sequence'
+            ? 'its exit status was hidden by the command after it'
+            : undefined;
       limits.push({
         change: null,
         kind: 'open',
-        limit: earlier
-          ? `The last run of \`${shownCommand(v.cmd)}\` (${String(v.id)}) has no result in the logs Tracetoon read; an earlier run's result doesn't cover the code it ran on.`
-          : `\`${shownCommand(v.cmd)}\` ran, but no result for it was captured in the logs Tracetoon read.`,
+        limit: hidden
+          ? `${earlier ? `The last run of \`${cmd}\` (${String(v.id)})` : `\`${cmd}\` (${String(v.id)})`} ran, but ${hidden}, so Tracetoon can't tell whether it passed${earlier ? "; an earlier run's result doesn't cover the code it ran on" : ''}.`
+          : earlier
+            ? `The last run of \`${cmd}\` (${String(v.id)}) has no result in the logs Tracetoon read; an earlier run's result doesn't cover the code it ran on.`
+            : `\`${cmd}\` ran, but no result for it was captured in the logs Tracetoon read.`,
       });
     }
   // (No "earlier failures weren't recorded" point: Tracetoon keeps only result

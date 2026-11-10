@@ -343,6 +343,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
             cmd: open.cmd,
             isError: exit !== '0',
             output: headTail(open.out),
+            partial: true,
             ...where(open.ts, open.workdir),
           });
           continue;

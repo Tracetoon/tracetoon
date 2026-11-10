@@ -77,6 +77,10 @@ const list = (xs: unknown) => {
 export function logRunStatable(r: Record<string, unknown>): boolean {
   if (r.outcome !== 'passed' && r.outcome !== 'failed') return false;
   if (!plain(r.result)) return false;
+  // The digest's word on whether the log shows it (see digest/build.ts `statable`).
+  if (r.statable === false) return false;
+  // An exit status is not a result line a reader can find.
+  if (/^exit \d+(, no output)?$/.test(plain(r.result))) return false;
   return !shownCommand(r.cmd).includes(' ; ');
 }
 

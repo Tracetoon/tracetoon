@@ -17,7 +17,7 @@ import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
 import { shellSegments, splitCommands } from '../util/shell.ts';
-import { runsInRepo } from '../trace/pathMatch.ts';
+import { provablyInRepo, runsInRepo } from '../trace/pathMatch.ts';
 
 export interface DigestSession {
   ref: string;
@@ -102,6 +102,16 @@ export interface Run {
   revision: 'before later edits' | 'no later edits seen' | 'after later work' | 'unknown';
   /** PR files the session edited after this run (from the evidence graph): what it did not see. */
   laterEdits?: string[];
+  /** Its exit status belongs to a later command: after a pipe, or after `;`. */
+  masked?: 'pipe' | 'sequence';
+  /** The only program its command runs (setup like `cd` aside). */
+  sole?: true;
+  /**
+   * A reader can check its result against the log: its own runner result
+   * lines, the only check in its command, an exit status not hidden by a pipe
+   * or `;`, output neither truncated nor polled, and a folder in this repository.
+   */
+  statable?: true;
 }
 
 export interface TraceDigest {
@@ -490,7 +500,14 @@ export function commandRuns(
           summary: [],
         };
       }
-      return { cmd: seg, kind, ...result };
+      const masked = statusMask(cmd, seg);
+      return {
+        cmd: seg,
+        kind,
+        ...result,
+        ...(masked ? { masked } : {}),
+        ...(shared ? {} : { sole: true as const }),
+      };
     },
   );
   // A check that failed stops its `&&` chain: the checks after it never ran.
@@ -507,6 +524,16 @@ export function commandRuns(
             .slice(at[j]! + 1, at[i]! + 1)
             .every((p) => p.before === '&&' || p.before === '|'),
       ),
+  );
+}
+
+/** A summary that is only an exit status, not a line the check printed. */
+const PLACEHOLDER_RESULT = /^exit \d+(, no output)?$/;
+
+/** Output the agent cut short: its own truncation markers. */
+export function partialOutput(output: string | undefined): boolean {
+  return /\bomitted \d+ of \d+ lines\b|\btokens? truncated\b|\[\.\.\.\s*\d+\s+(?:more\s+)?(?:lines?|chars?|characters|bytes)[^\]]*\]|\btruncated \d+ (?:lines?|chars?|characters|bytes)\b|\bOutput too large\b|<persisted-output>/i.test(
+    output ?? '',
   );
 }
 
@@ -529,6 +556,20 @@ function silent(output: string | undefined): boolean {
   return (output ?? '')
     .split(/\r?\n/)
     .every((l) => !l.trim() || OUTPUT_HEADER.test(l.trim()));
+}
+
+/**
+ * What hides a check's exit status in its command: a pipe after it (the
+ * status is the last program's) or a `;` (the next command's). Undefined when
+ * its status is its own or stops an `&&` chain.
+ */
+export function statusMask(cmd: string, seg: string): Run['masked'] {
+  const after = cmd
+    .slice(cmd.indexOf(seg) + seg.length)
+    .replace(/\d*>&\d+/g, '') // redirections like 2>&1 aren't separators
+    .trimStart();
+  const m = /^(;|\|(?!\|))/.exec(after) ?? /^[^&|;]*(;|\|(?!\|))/.exec(after);
+  return m ? (m[1] === ';' ? 'sequence' : 'pipe') : undefined;
 }
 
 /** What a captured run shows, and how we know. */
@@ -558,11 +599,7 @@ export function runOutcome(
     return { outcome: 'failed', basis: 'output', summary };
   // A failing check stops an && chain, so the tool reports an error. After
   // `;` or a pipe, the exit status belongs to a later command.
-  const after = cmd
-    .slice(cmd.indexOf(seg) + seg.length)
-    .replace(/\d*>&\d+/g, '') // redirections like 2>&1 aren't separators
-    .trimStart();
-  const masked = /^(;|\|(?!\|))/.test(after) || /^[^&|;]*(;|\|(?!\|))/.test(after);
+  const masked = !!statusMask(cmd, seg);
   // With the status masked, an error belongs to a later command (e.g. a grep
   // that found nothing), so judge by the output instead.
   if (isError === true && !masked)
@@ -840,6 +877,8 @@ function sessionDigest(
           // The session's last commands matter too: what ran after the last edit.
           else if (latest.push(inv) > 20) latest.shift();
         }
+        // Proof the run is this repository's, not just no proof it isn't.
+        const provable = here && provablyInRepo(r.cmd, r.cwd, m.roots);
         for (const run of here ? commandRuns(r.cmd, r.isError, r.output) : []) {
           const fact: Run = {
             t: r.ts,
@@ -848,6 +887,17 @@ function sessionDigest(
             summary: run.summary.map((line) => scrub.text(line)),
             revision: 'unknown',
           };
+          if (
+            provable &&
+            run.sole &&
+            !run.masked &&
+            r.isError !== undefined &&
+            !r.partial &&
+            !partialOutput(r.output) &&
+            (run.outcome === 'passed' || run.outcome === 'failed') &&
+            run.summary.some((l) => !PLACEHOLDER_RESULT.test(l))
+          )
+            fact.statable = true;
           runs.push(fact);
           trail.push({ kind: 'run', fact });
         }

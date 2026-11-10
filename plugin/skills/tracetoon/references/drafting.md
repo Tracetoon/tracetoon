@@ -125,7 +125,8 @@ strips tags and lists untagged sentences and unknown refs.
 - Write no test, build, lint or typecheck results yourself; the marker covers
   them. Don't repeat in prose what Validation says about runs, and never list
   the runs or checks.
-- Quote run results exactly as rows give them; never add a count, suite or file.
+- Quote run results exactly as rows give them; never add a count, suite or file
+  that no row has (not from a process fact, not a total of rows).
 - Results only in a commit message (rows marked "asserted") are not runs:
   attribute them to that commit or leave them out.
 - A check listed with files edited after it did not see those edits. A check
@@ -139,13 +140,17 @@ strips tags and lists untagged sentences and unknown refs.
   "untested", "unverified locally", "not tried on <hardware or platform>", nor
   to a check kind it doesn't name (a linter, a smoke test). When `otherRuns`
   or the limit names commands that ran after the edit, say they ran, without
-  a result.
+  a result. Never turn a limit into "no result" or "no captured result" for
+  a command the Validation section shows: a limit about an earlier run of it
+  is not an open point then. A limit that says a run's exit status was hidden
+  by a pipe says just that, not that the run had no result.
 - No blanket negatives ("no X was run", "nothing tests Y"), not even when a
   limit is about the same thing. Give mechanism claims their conditions
   (flags, fallbacks), not "any", "always" or "every".
 - A check that failed because the environment lacked something (a tool not
   installed, `command not found`, no network, a missing toolchain) could not
-  run here: say so in those words, never that the code or its tests failed.
+  run here: say so in those words ("`cargo test` could not run here: …"),
+  never that the code or its tests failed.
 - Line matching (matched %, unmatched lines, commits made in sessions) is not
   authorship: no who-wrote-what percentages or counts. Counts of runs or
   failures from `process` are fine as provenance.

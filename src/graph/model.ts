@@ -93,7 +93,7 @@ export const SCHEMA_DOC = {
     Decision:
       'id (D#), t, text, answers (each question = "answer"), truncated (the record itself is cut off), session',
     Plan: 'id (P#), t, approved, text (first line), excerpt, session',
-    Run: 'id (R#), t, cmd, kind (test|build|lint|typecheck|eval|other), outcome (passed|failed|unknown), revision, summary (result lines), when (relative to the edits), session',
+    Run: 'id (R#), t, cmd, kind (test|build|lint|typecheck|eval|other), outcome (passed|failed|unknown), revision, summary (result lines), when (relative to the edits), session, basis (output|exit status|none), statable (its result can be checked in the log: own result lines, sole unmasked check, in this repo), masked (pipe|sequence: what hid its exit status)',
     Receipt:
       'id (V#), cmd, kind, outcome, summary, when: a check run on the submitted content',
     Edit: 'id (E#), t, file, added, removed, surviving (lines still in the PR), inPr, via (shell when made by a command), session',

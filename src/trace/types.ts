@@ -67,6 +67,8 @@ export type TraceRecord =
       output?: string;
       /** Still running when the log was read: no result (or output) yet. */
       pending?: boolean;
+      /** Its output was put together from polls of a running command (Codex `write_stdin`). */
+      partial?: boolean;
       /** A result whose call the log lacks: `cmd` is `ORPHAN_COMMAND`, the output a test runner's. */
       orphan?: boolean;
     })

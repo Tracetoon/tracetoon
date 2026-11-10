@@ -110,6 +110,21 @@ export function runsInRepo(
   return mentionsAnyRoot(cmd, roots);
 }
 
+/**
+ * Whether a command provably ran in this repository: the folder it ran in
+ * (after any leading `cd` or `git -C`) is known, absolute and inside one of
+ * the roots. Stricter than `runsInRepo`, where unsure means yes.
+ */
+export function provablyInRepo(
+  cmd: string,
+  cwd: string | undefined,
+  roots: string[],
+): boolean {
+  const { moved, dir: to } = movedTo(cmd, cwd);
+  const dir = moved ? to : cwd;
+  return !!dir && isAbsolute(dir) && underAnyRoot(dir, roots);
+}
+
 /** Whether `p` is one of the roots or inside one. */
 export function underAnyRoot(p: string | undefined, roots: string[]): boolean {
   if (!p) return false;

@@ -11,7 +11,11 @@
  *   a pass inferred from an exit status alone, often of a whole `&&` chain,
  *   shows a reader nothing to check;
  * - it is one command, not several test commands sharing one output;
- * - no later run of the same kind ended differently.
+ * - no later run of the same kind ended differently;
+ * - the digest found it checkable (`statable`): its own runner result lines,
+ *   the only check in its command, a status no pipe or `;` hides, output
+ *   neither truncated nor polled, run in this repository. Rows from graphs
+ *   built before that flag existed (no property) keep the rules above.
  */
 import { shownCommand } from './briefRender.ts';
 
@@ -31,6 +35,8 @@ export const compositeCommand = (cmd: unknown) => shownCommand(cmd).includes(' ;
 export function statableRun(r: RunRow): boolean {
   return (
     KNOWN(r) &&
+    r.statable !== false &&
+    !summaryOf(r).every((l) => /^exit \d+(, no output)?$/.test(l)) &&
     summaryOf(r).length > 0 &&
     !compositeCommand(r.cmd) &&
     !!shownCommand(r.cmd)
@@ -159,7 +165,13 @@ export function earlierFailure(runs: RunRow[], chosen: RunRow): RunRow | undefin
       String(r.kind) === String(chosen.kind) &&
       (at >= 0 ? i < at : String(r.t ?? '') < String(chosen.t ?? '')),
   );
-  return before.filter((r) => r.outcome === 'failed' && !compositeCommand(r.cmd)).at(-1);
+  // Only a failure its own output shows: an exit status alone may be a later
+  // program's, or a refusal's.
+  const shown = (r: RunRow) =>
+    r.basis === undefined || r.basis === null || r.basis === 'output';
+  return before
+    .filter((r) => r.outcome === 'failed' && !compositeCommand(r.cmd) && shown(r))
+    .at(-1);
 }
 
 const times = (n: number) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
