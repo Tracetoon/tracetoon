@@ -3,6 +3,7 @@
  * to fit an LLM's context. The host agent writes the PR description from this.
  */
 import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
 import {
   attribute,
   evidenceLine,
@@ -500,7 +501,9 @@ export function commandRuns(
           summary: [],
         };
       }
-      const masked = statusMask(cmd, seg);
+      // An echoed status (`; echo "exit=$?"`) is the check's own: not masked.
+      const masked =
+        echoedStatus(cmd, seg, output) === undefined ? statusMask(cmd, seg) : undefined;
       return {
         cmd: seg,
         kind,
@@ -572,6 +575,49 @@ export function statusMask(cmd: string, seg: string): Run['masked'] {
   return m ? (m[1] === ';' ? 'sequence' : 'pipe') : undefined;
 }
 
+const escapeRe = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The exit status a command echoed for one of its checks, right after it:
+ * `bun test; echo "exit=$?"`, or past a pipe `bun test | tail; echo
+ * "exit=${PIPESTATUS[0]}"`. The echo needs a label (`exit=`, `exit code `),
+ * and the output must hold that labelled line; a bare `echo $?` or a status
+ * of a pipe's last program is not the check's. Undefined when not shown.
+ */
+export function echoedStatus(
+  cmd: string,
+  seg: string,
+  output: string | undefined,
+): number | undefined {
+  const at = cmd.indexOf(seg);
+  if (at < 0 || !output) return undefined;
+  // After `a && check`, `$?` may be `a`'s failure.
+  if (/&&\s*$/.test(cmd.slice(0, at))) return undefined;
+  const after = cmd.slice(at + seg.length);
+  const m =
+    /^((?:\s*\d*>&\d+|\s*\d*>\s*\/dev\/null)*)(\s*\|[^;&|][^;&]*?)?\s*;\s*echo\s+("[^"\n]*"|'[^'\n]*'|[^;&|\n]+)/.exec(
+      after,
+    );
+  if (!m) return undefined;
+  // Single quotes print `$?` as is.
+  if (m[3]!.startsWith("'")) return undefined;
+  const arg = m[3]!.trim().replace(/^"(.*)"$/, '$1');
+  const status = m[2] ? /\$\{PIPESTATUS\[0\]\}/ : /\$\?|\$\{\?\}/;
+  const parts = arg.split(status);
+  if (parts.length !== 2) return undefined;
+  // A label of words around the status (`exit=`, `EXIT CODE:`), never a bare number.
+  if (!/[a-z]{2,}/i.test(parts.join(''))) return undefined;
+  const line = new RegExp(
+    `^\\s*${escapeRe(parts[0]!.trim())}\\s*(\\d{1,3})\\s*${escapeRe(parts[1]!.trim())}\\s*$`,
+  );
+  const hit = output
+    .split(/\r?\n/)
+    .map((l) => line.exec(l)?.[1])
+    .filter((x) => x !== undefined)
+    .at(-1);
+  return hit === undefined ? undefined : Number(hit);
+}
+
 /** What a captured run shows, and how we know. */
 export function runOutcome(
   cmd: string,
@@ -599,6 +645,14 @@ export function runOutcome(
     return { outcome: 'failed', basis: 'output', summary };
   // A failing check stops an && chain, so the tool reports an error. After
   // `;` or a pipe, the exit status belongs to a later command.
+  // A status the command echoed for this check is its own exit status.
+  const echoed = echoedStatus(cmd, seg, full ?? output);
+  if (echoed !== undefined)
+    return {
+      outcome: echoed === 0 ? 'passed' : 'failed',
+      basis: 'exit status',
+      summary: summary.length ? summary : [`exit ${echoed}`],
+    };
   const masked = !!statusMask(cmd, seg);
   // With the status masked, an error belongs to a later command (e.g. a grep
   // that found nothing), so judge by the output instead.
@@ -621,6 +675,56 @@ export function runOutcome(
   )
     return { outcome: 'passed', basis: 'output', summary };
   return { outcome: 'unknown', basis: 'none', summary };
+}
+
+/** A path-like token: has a folder or an extension, no shell expansion. */
+const PATHLIKE = /^(?![-$])[\w@~./+-]*(?:\/[\w@.+-]+|\.\w{1,8})$/;
+const unquote = (t: string) => t.replace(/^(["'])(.*)\1$/, '$2');
+
+/**
+ * Files a shell command writes, as written in it: redirections (`cat > f`,
+ * `> f`, `>> f`), `tee f`, `sed -i … f` / `perl -pi … f`, and quoted paths in
+ * an inline script that opens files for writing (`python3 - <<EOF … open(p,
+ * 'w').write(…)`, `write_text`, `writeFileSync`). Conservative: only
+ * path-like tokens; the caller keeps the PR's own files.
+ */
+export function shellWriteTargets(cmd: string): string[] {
+  const out = new Set<string>();
+  // Heredoc bodies hold script text, not commands: the first line only for redirections.
+  const lines = cmd.split('\n');
+  const head = lines[0] ?? '';
+  for (const m of head.matchAll(
+    /(?:^|[^0-9&>])>{1,2}\s*(?!&)("[^"]+"|'[^']+'|[^\s;&|<>()]+)/g,
+  )) {
+    const t = unquote(m[1]!);
+    if (t !== '/dev/null' && PATHLIKE.test(t)) out.add(t);
+  }
+  for (const seg of splitCommands(head)) {
+    const toks = seg.trim().replace(ENV_PREFIX, '').split(/\s+/);
+    const prog = toks[0] ?? '';
+    const args = toks.slice(1).filter((t) => !/^\d?[<>]/.test(t));
+    if (prog === 'tee')
+      for (const t of args.filter((x) => !x.startsWith('-')).map(unquote))
+        if (PATHLIKE.test(t)) out.add(t);
+    const inPlace =
+      (prog === 'sed' &&
+        args.some((a) => /^-[a-zA-Z]*i/.test(a) || a === '--in-place')) ||
+      (prog === 'perl' && args.some((a) => /^-[a-zA-Z]*i/.test(a)));
+    if (inPlace) {
+      const last = unquote(args.at(-1) ?? '');
+      if (PATHLIKE.test(last)) out.add(last);
+    }
+  }
+  // An inline script that writes files: its quoted path literals.
+  if (
+    /\bopen\([^)]*,\s*['"][wa]\+?['"]|\.write_text\(|\bwriteFileSync\(|\bBun\.write\(/.test(
+      cmd,
+    ) &&
+    /^\s*(?:\S+=\S+\s+)*(?:python3?|node|bun|deno|ruby|perl)\b/.test(head)
+  )
+    for (const m of cmd.matchAll(/(["'])([^"'\s]+)\1/g))
+      if (PATHLIKE.test(m[2]!) && m[2]!.includes('.')) out.add(m[2]!);
+  return [...out];
 }
 
 /** A short grouping key for a shell command: the program and its first argument. */
@@ -667,6 +771,8 @@ export type TrailEvent =
       added: number;
       removed: number;
       via?: 'shell';
+      /** Read from the command's text (`sed -i f`, `> f`): no lines recorded. */
+      inferred?: true;
     };
 
 export interface SessionTrail {
@@ -764,6 +870,14 @@ function sessionDigest(
   const files = new Set<string>();
   let testFailedEarlier = false;
   let current: { ledToEdits: boolean } | undefined;
+  // Files a shell command's own diff (Claude Code's `bashEditDiff`) already records.
+  const shellDiffed = new Set(
+    recs.flatMap((r) =>
+      r.kind === 'edit' && r.via === 'shell' ? [`${r.ts ?? ''}|${r.file}`] : [],
+    ),
+  );
+  /** Times of PR-file writes read from a command's text (no diff recorded). */
+  const inferredWrites: string[] = [];
 
   for (const r of recs) {
     if (r.model && !r.model.startsWith('<')) models.add(r.model);
@@ -901,6 +1015,28 @@ function sessionDigest(
           runs.push(fact);
           trail.push({ kind: 'run', fact });
         }
+        // A PR file the command wrote (`sed -i`, `> f`, a heredoc script)
+        // with no diff in the log: an edit with no lines, so a run before it
+        // isn't taken to have seen the committed content.
+        if (here && r.isError !== true)
+          for (const target of shellWriteTargets(r.cmd)) {
+            const file = resolve(r.cwd ?? '.', target);
+            const rel = repoRel({ roots: m.roots }, file);
+            if (!rel || !prSets.has(rel) || shellDiffed.has(`${r.ts ?? ''}|${file}`))
+              continue;
+            if (r.ts) inferredWrites.push(r.ts);
+            trail.push({
+              kind: 'edit',
+              t: r.ts,
+              file: scrub.text(rel),
+              inPr: true,
+              lines: [],
+              added: 0,
+              removed: 0,
+              via: 'shell',
+              inferred: true,
+            });
+          }
         const seg = testSegment(r.cmd);
         const test = seg !== undefined;
         const key = clip(scrub.text(commandKey(seg ?? r.cmd)), 60);
@@ -936,7 +1072,8 @@ function sessionDigest(
       const rel = repoRel({ roots: m.roots }, (r as { file: string }).file);
       return !!rel && prSets.has(rel);
     })
-    .map((r) => Date.parse(r.ts!));
+    .map((r) => Date.parse(r.ts!))
+    .concat(inferredWrites.map((t) => Date.parse(t)));
   // The PR's last commit, when it is a committed range (not the working tree).
   const headTime = truth.usedWorkingTree
     ? undefined

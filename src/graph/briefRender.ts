@@ -97,6 +97,8 @@ function editedList(xs: unknown): string {
 /** Most a reader needs: the test runs first, then the other checks. */
 const KIND_ORDER = ['test', 'typecheck', 'lint', 'build', 'eval'];
 const MAX_LINES = 3;
+/** Kinds of a recognized check run (a process row's `kind`, a validation row's). */
+const CHECK_KINDS = new Set(['test', 'typecheck', 'lint', 'build']);
 
 /**
  * The Validation section, from the brief's validation rows only: at most five
@@ -223,10 +225,16 @@ export function validationSection(b: BriefParts): string {
     .filter((c) => c && !/‹withheld›|<withheld>/.test(c))
     .slice(0, 3);
   const stale = shown.every((x) => !x.current && x.when.startsWith('before later edits'));
-  if (!lines.length)
-    lines.push(
-      '- Tracetoon found no test, typecheck or lint result it could read in the session logs.',
+  // An empty-state line only when no check ran at all: with recognized runs
+  // whose results a reader can't check here, "found no result" was read as
+  // "no checks ran" (the process rows list them).
+  const ranChecks =
+    rowsOf(b, 'validation').some((r) => CHECK_KINDS.has(String(r.kind))) ||
+    rowsOf(b, 'process').some(
+      (r) => CHECK_KINDS.has(String(r.kind)) || String(r.kind) === 'checks',
     );
+  if (!lines.length && !ranChecks)
+    lines.push('- No test, typecheck or lint run appears in the session logs.');
   if (others.length && stale)
     lines.push(
       `- After the last captured edit the session also ran ${others.map((c) => `\`${c}\``).join(', ')}, which Tracetoon does not classify as checks.`,

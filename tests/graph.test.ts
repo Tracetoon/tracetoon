@@ -1604,9 +1604,7 @@ describe('the brief states recorded process and behavior', () => {
     g.nodes = g.nodes.filter((n) => n.id !== 'R1');
     const none = withGraph(g, (e) => briefParts(e));
     const v = validationSection(none);
-    expect(v).toContain(
-      '- Tracetoon found no test, typecheck or lint result it could read in the session logs.',
-    );
+    expect(v).toContain('- No test, typecheck or lint run appears in the session logs.');
     expect(v).toContain(also);
     expect(v).not.toMatch(/was recorded in the captured sessions/);
     // Without later commands: the scoped line only, and no otherRuns section.
@@ -1633,6 +1631,12 @@ describe('the brief states recorded process and behavior', () => {
     expect(facts).not.toMatch(/no pass(ing run recorded)? after the last commit/);
     const limits = p.sections.find((x) => x.title === 'limits')!.rows;
     expect(limits.some((l) => /No passing check run/.test(String(l.limit)))).toBe(false);
+    // The fact stays, and an open point says the session run is history.
+    expect(limits.map((l) => String(l.limit))).toContainEqual(
+      expect.stringMatching(
+        /^The last passing run, R2 \(test\), is a session run from before the last commit .*historical and not proven to cover the committed content\.$/,
+      ),
+    );
   });
 
   test("requests are this PR's turns only; a cut-off record is marked", () => {

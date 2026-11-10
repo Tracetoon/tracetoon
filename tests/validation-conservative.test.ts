@@ -2,7 +2,12 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { commandRuns, statusMask } from '../src/digest/build.ts';
+import {
+  commandRuns,
+  echoedStatus,
+  shellWriteTargets,
+  statusMask,
+} from '../src/digest/build.ts';
 import { logRunStatable, validationSection } from '../src/graph/briefRender.ts';
 import { earlierFailure, selectValidationRuns } from '../src/graph/runHistory.ts';
 import { git } from '../src/util/exec.ts';
@@ -147,9 +152,8 @@ describe('the brief, end to end', () => {
         .bash('bun test && bun x tsc --noEmit', '3 pass\n0 fail')
         .bash('bun run typecheck 2>&1 | tail -3', '$ tsc --noEmit'),
     );
-    expect(validation).toEqual([
-      '- Tracetoon found no test, typecheck or lint result it could read in the session logs.',
-    ]);
+    // Checks ran, none statable: no "found nothing" line, which read as "no checks ran".
+    expect(validation).toEqual([]);
     expect(limits.some((l) => l.includes('its exit status was hidden by a pipe'))).toBe(
       true,
     );
@@ -173,5 +177,87 @@ describe('the brief, end to end', () => {
     expect(limits.some((l) => l.includes('tests/a.test.ts'))).toBe(false);
     // And covers the file: no "recognized no passing" point beside it.
     expect(limits.some((l) => l.includes('recognized no passing'))).toBe(false);
+  });
+
+  test('a pass just before the commit is history; a shell write after it reopens the point', () => {
+    const quiet = brief((log) => log.bash('bun test', '4 pass\n0 fail'));
+    expect(quiet.limits).toContainEqual(
+      expect.stringMatching(
+        /^The last passing run, R\d+ \(test\), is a session run from before the last commit .*not proven to cover the committed content\.$/,
+      ),
+    );
+    // A heredoc script rewrote the file after the pass: no captured diff, but
+    // the command text shows the write.
+    const script = [
+      "python3 - <<'EOF'",
+      "p = 'src/greet.ts'",
+      's = open(p).read()',
+      "open(p, 'w').write(s)",
+      'EOF',
+    ].join('\n');
+    const rewritten = brief((log) => log.bash('bun test', '4 pass\n0 fail').bash(script));
+    expect(rewritten.limits).toContainEqual(
+      expect.stringMatching(
+        /^No passing check run was recorded after the last commit .*src\/greet\.ts changed between them\.$/,
+      ),
+    );
+  });
+});
+
+describe('shell writes and echoed statuses read from a command', () => {
+  test('the files a command writes, conservatively', () => {
+    expect(shellWriteTargets('cat > src/a.ts <<EOF\nx > y.txt\nEOF')).toEqual([
+      'src/a.ts',
+    ]);
+    expect(shellWriteTargets("sed -i 's/a/b/' src/a.ts")).toEqual(['src/a.ts']);
+    expect(shellWriteTargets("sed -i.bak -e 's/a/b/' lib/b.py")).toEqual(['lib/b.py']);
+    expect(shellWriteTargets('echo x | tee -a notes.md')).toEqual(['notes.md']);
+    expect(shellWriteTargets('printf x >> out/log.txt 2>/dev/null')).toEqual([
+      'out/log.txt',
+    ]);
+    expect(
+      shellWriteTargets("python3 - <<'EOF'\nopen('src/c.ts', 'w').write('x')\nEOF"),
+    ).toEqual(['src/c.ts']);
+    // Reads, stderr redirections and `sed` without -i write nothing here.
+    expect(shellWriteTargets("sed 's/a/b/' src/a.ts")).toEqual([]);
+    expect(shellWriteTargets('bun test 2>&1 > /dev/null')).toEqual([]);
+    expect(
+      shellWriteTargets("python3 - <<'EOF'\nprint(open('src/c.ts').read())\nEOF"),
+    ).toEqual([]);
+  });
+
+  test("an echoed, labelled exit status is the check's own", () => {
+    expect(echoedStatus('bun test; echo "exit=$?"', 'bun test', '3 pass\nexit=0')).toBe(
+      0,
+    );
+    expect(
+      echoedStatus(
+        'bun test 2>&1 | tail -3; echo "exit code ${PIPESTATUS[0]}"',
+        'bun test 2>&1',
+        '1 fail\nexit code 1',
+      ),
+    ).toBe(1);
+    // A pipe's `$?` is the last program's; a bare number or single quotes aren't a status.
+    expect(
+      echoedStatus('bun test | tail -3; echo "exit=$?"', 'bun test', 'exit=0'),
+    ).toBeUndefined();
+    expect(echoedStatus('bun test; echo $?', 'bun test', '0')).toBeUndefined();
+    expect(
+      echoedStatus("bun test; echo 'exit=$?'", 'bun test', 'exit=$?'),
+    ).toBeUndefined();
+    expect(
+      echoedStatus('a && bun test; echo "exit=$?"', 'bun test', 'exit=1'),
+    ).toBeUndefined();
+    // The run takes the echoed status and is no longer masked.
+    const [run] = commandRuns('bun x tsc --noEmit; echo "exit=$?"', false, 'exit=0');
+    expect(run).toMatchObject({
+      kind: 'typecheck',
+      outcome: 'passed',
+      basis: 'exit status',
+    });
+    expect(run?.masked).toBeUndefined();
+    expect(
+      commandRuns('bun x tsc --noEmit; echo "exit=$?"', false, 'exit=2')[0]?.outcome,
+    ).toBe('failed');
   });
 });

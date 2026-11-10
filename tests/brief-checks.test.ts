@@ -293,7 +293,7 @@ describe('run history', () => {
         run('R3', 2, 'typecheck', 'bun x tsc --noEmit', 'unknown'),
       ])?.text,
     ).toBe(
-      "`bun x tsc --noEmit`: 2 runs in this PR's turns, in order: passed (R1), then the last run (R3) has no captured result",
+      "`bun x tsc --noEmit`: 2 runs in this PR's turns, in order: passed (R1), then the last run (R3) shows no exit status",
     );
     // Many alternations: the failures, then how it ended; unknown runs counted.
     const many = [
@@ -308,7 +308,7 @@ describe('run history', () => {
       run(`R${i + 1}`, i, 'test', 'bun test', o, o === 'unknown' ? [] : ['x']),
     );
     expect(runHistory(many)?.text).toBe(
-      "`bun test`: 7 runs in this PR's turns, 2 failed (R2, R4); after the last failure: passed twice (R6, R7); 1 other run(s) with no captured result",
+      "`bun test`: 7 runs in this PR's turns, 2 failed (R2, R4); after the last failure: passed twice (R6, R7); 1 other run(s) with exit status not shown",
     );
     // Passing, then failing: the opposite trend, said the same way.
     expect(

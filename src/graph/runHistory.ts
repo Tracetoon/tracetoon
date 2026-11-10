@@ -178,7 +178,7 @@ const times = (n: number) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times
 const OUTCOME_WORD: Record<string, string> = {
   passed: 'passed',
   failed: 'failed',
-  unknown: 'no result captured',
+  unknown: 'exit status not shown',
 };
 
 const SUBJECT: Record<string, string> = {
@@ -267,7 +267,7 @@ export function runHistory(
     order = `${failed.length} failed (${ids(failed)}); after the last failure: ${part(groups.at(-1)!)}`;
   }
   if (lastUnknown)
-    order += `, then the last run (${String(last.id)}) has no captured result`;
+    order += `, then the last run (${String(last.id)}) shows no exit status`;
   const unknown = sorted.length - known.length - (lastUnknown ? 1 : 0);
   const lead = trendSentence(groups, sorted, one ? [...commands][0]! : undefined);
   const head = one
@@ -288,7 +288,7 @@ export function runHistory(
     ]),
   ];
   return {
-    text: `${lead ? `${lead} ` : ''}${head}, ${order}${unknown > 0 ? `; ${unknown} other run(s) with no captured result` : ''}`,
+    text: `${lead ? `${lead} ` : ''}${head}, ${order}${unknown > 0 ? `; ${unknown} other run(s) with exit status not shown` : ''}`,
     cites,
   };
 }

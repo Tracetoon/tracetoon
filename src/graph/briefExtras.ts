@@ -43,8 +43,10 @@ export function editsBetween(g: GraphEngine): (from: string, to: string) => stri
  * runs (this PR's turns) all came before the last commit, or none passed after,
  * and every pass was followed by a captured edit of a PR file before that
  * commit. A pass with no captured edit between it and the commit (the suite
- * run just before `git commit`) saw what was committed, as far as the logs
- * show. The process rows say the same per kind; as a limit a writer states it.
+ * run just before `git commit`) gets a softer open point (`historical`): the
+ * logs show nothing changing, yet a session run is not proven to cover the
+ * committed content. The process rows say the same per kind; as a limit a
+ * writer states it.
  */
 export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | undefined {
   if (!scopedRuns.length) return undefined;
@@ -60,7 +62,21 @@ export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | u
   if (passed.some((r) => String(r.t ?? '') > String(last.t))) return undefined;
   const between = editsBetween(g);
   const editedBetween = (r: Row) => between(String(r.t ?? ''), String(last.t));
-  if (passed.some((r) => r.t && !editedBetween(r).length)) return undefined;
+  // A pass with no captured edit before the commit is still a session run:
+  // edits Tracetoon can't see (a script, another tool, by hand) may have come
+  // in between, so it is history, not proof about the committed content.
+  const quiet = passed
+    .filter((r) => r.t && !editedBetween(r).length)
+    .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')));
+  if (quiet.length) {
+    const r = quiet.filter((x) => x.kind === 'test').at(-1) ?? quiet.at(-1)!;
+    return {
+      change: null,
+      kind: 'open',
+      historical: true,
+      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between, but it is historical and not proven to cover the committed content.`,
+    };
+  }
   const lastPass =
     [...passed]
       .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))

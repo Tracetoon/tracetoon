@@ -83,16 +83,23 @@ describe('open points promoted into limits', () => {
       limit:
         'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
-    // A pass with no captured edit between it and the commit saw what was
-    // committed: the suite run just before `git commit` covers it.
-    expect(
-      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs)),
-    ).toBeUndefined();
+    // A pass with no captured edit between it and the commit is still a
+    // session run: a softer open point, never proof about the committed content.
+    const historical = {
+      change: null,
+      kind: 'open',
+      historical: true,
+      limit:
+        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between, but it is historical and not proven to cover the committed content.',
+    };
+    expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toEqual(
+      historical,
+    );
     expect(
       withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
         noPassAfterCommitRow(e, runs),
       ),
-    ).toBeUndefined();
+    ).toEqual(historical);
     // A pass after the commit closes it; no runs or no commit say nothing.
     expect(
       withGraph(g, (e) =>
@@ -458,7 +465,10 @@ test('drafting guidance: word target, one motive sentence, the entry row', () =>
   expect(drafting).toContain('250–400 words for a typical PR');
   expect(drafting).toContain('up to about 600');
   // Limits keep their scope; prompt and skill text is behavior; no meta text.
-  expect(drafting).toMatch(/never widen it: not to "no tests were run"/);
+  expect(drafting).toMatch(/never widen it: not to "no\s+tests were run"/);
+  // Environment scope is allowed only with a citation; session runs are history.
+  expect(drafting).toMatch(/environment-scope statement[\s\S]{0,200}with that tag/);
+  expect(drafting).toMatch(/historical session runs, not re-run on the final content/);
   expect(drafting).toMatch(/could not\s+run here/);
   expect(drafting).toMatch(
     /agent-instruction text that changes what users or agents are told/,

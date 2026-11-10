@@ -890,7 +890,7 @@ function processRows(
     // A kind that never failed: one clause in a shared row.
     if (!failed.length) {
       quiet.push({
-        text: `${kind} (${rs.length} run(s), last ${String(last.id)} ${last.outcome === 'passed' ? 'passed' : last.outcome === 'failed' ? 'failed' : 'no result captured'}${
+        text: `${kind} (${rs.length} run(s), last ${String(last.id)} ${last.outcome === 'passed' ? 'passed' : last.outcome === 'failed' ? 'failed' : 'exit status not shown'}${
           lastCommit && !noPassLimit && (after.length > 0 || !receiptPass)
             ? after.length
               ? `, passed after the last commit (${ids(after).join(', ')})`
@@ -910,8 +910,8 @@ function processRows(
         failed.length
           ? `${failed.length} failed (${ids(failed).join(', ')})`
           : 'none failed',
-        ...(unknown.length ? [`${unknown.length} with no captured result`] : []),
-        `last ${String(last.id)} ${String(last.outcome === 'unknown' ? 'result not captured' : last.outcome)}`,
+        ...(unknown.length ? [`${unknown.length} with exit status not shown`] : []),
+        `last ${String(last.id)} ${String(last.outcome === 'unknown' ? 'exit status not shown' : last.outcome)}`,
         ...(lastCommit && !noPassLimit && (after.length > 0 || !receiptPass)
           ? [
               after.length
@@ -1454,8 +1454,8 @@ export function briefParts(
         limit: hidden
           ? `${earlier ? `The last run of \`${cmd}\` (${String(v.id)})` : `\`${cmd}\` (${String(v.id)})`} ran, but ${hidden}, so Tracetoon can't tell whether it passed${earlier ? "; an earlier run's result doesn't cover the code it ran on" : ''}.`
           : earlier
-            ? `The last run of \`${cmd}\` (${String(v.id)}) has no result in the logs Tracetoon read; an earlier run's result doesn't cover the code it ran on.`
-            : `\`${cmd}\` ran, but no result for it was captured in the logs Tracetoon read.`,
+            ? `The last run of \`${cmd}\` (${String(v.id)}) shows no exit status or result in the logs Tracetoon read; an earlier run's result doesn't cover the code it ran on.`
+            : `\`${cmd}\` ran, but its exit status isn't shown in the logs Tracetoon read.`,
       });
     }
   // (No "earlier failures weren't recorded" point: Tracetoon keeps only result
@@ -1535,7 +1535,9 @@ export function briefParts(
     turns,
     scopedRuns,
     new Set(background.map((r) => String(r.ref))),
-    !!noPass,
+    // A historical-run point keeps the process row's fact: which pass came
+    // just before the commit.
+    !!noPass && !noPass.historical,
     receiptPass,
   );
   // Where to start reading: the changed function that owns the behavior.
@@ -2009,7 +2011,8 @@ export const QUERIES: NamedQuery[] = [
       const edits = g.run(
         `MATCH (e:Edit)-[:IN_TURN]->(:Prompt {id: $id})
          OPTIONAL MATCH (e)-[:SURVIVES_IN]->(h:Hunk)
-         RETURN e.file AS file, e.id AS edit, e.surviving AS surviving, collect(h.diff) AS diffs`,
+         RETURN e.file AS file, e.id AS edit, e.surviving AS surviving, e.inferred AS inferred,
+                collect(h.diff) AS diffs`,
         { id },
       ).rows;
       const files = new Map<
@@ -2032,7 +2035,7 @@ export const QUERIES: NamedQuery[] = [
         };
         f.edits++;
         f.surviving += Number(e.surviving ?? 0);
-        if (!Number(e.surviving)) f.deadEnds++;
+        if (!Number(e.surviving) && e.inferred !== true) f.deadEnds++;
         f.diff.push(...((e.diffs as string[]) ?? []));
         files.set(f.file, f);
       }

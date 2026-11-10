@@ -996,7 +996,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           surviving += n;
         }
       }
-      if (!surviving) deadEnds++;
+      // A write read from a command's text has no lines to survive.
+      if (!surviving && !e.inferred) deadEnds++;
       node('Edit', id, {
         t: e.t ?? null,
         file: e.file,
@@ -1005,6 +1006,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
         surviving,
         inPr: e.inPr,
         via: e.via ?? null,
+        inferred: e.inferred === true,
         session: trail.ref,
       });
       if (!nodes.has(`File|${e.file}`))
