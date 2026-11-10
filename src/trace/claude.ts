@@ -11,6 +11,7 @@ import { resolvePlanResult } from '@showtail/agent-traces/transcript/plans';
 import { headTail } from './diffLines.ts';
 import { mentionsAnyRoot } from './pathMatch.ts';
 import { discoveryIndex } from './discovery.ts';
+import { ORPHAN_COMMAND } from './types.ts';
 import type {
   DecisionQuestion,
   SessionRef,
@@ -21,6 +22,15 @@ import type {
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const COMMAND_TOOLS = new Set(['Bash', 'PowerShell']);
+/** Test runners' own summaries: enough to keep a result whose command the log lacks. */
+const RUNNER_SUMMARY = [
+  /^\s*\d+ pass\s*$[\s\S]*^\s*\d+ fail\s*$/m, // bun
+  /^Ran \d+ tests? in [\d.]+s/m, // unittest
+  /^=+ .*\b\d+ (passed|failed)\b.* in [\d.]+s/m, // pytest
+  /^test result: (ok|FAILED)\. \d+ passed; \d+ failed/m, // cargo
+  /^\s*Tests:\s+.*\b\d+ (passed|failed)\b.*\b\d+ total/m, // jest
+  /^\s*Tests\s+\d+ (passed|failed)\b/m, // vitest
+];
 const NON_USER_PROMPT_SOURCES = new Set(['system', 'sdk']);
 /** Record types we read or deliberately skip; anything else is counted as unknown. */
 const KNOWN_TYPES = new Set([
@@ -240,7 +250,23 @@ export function parseClaudeLines(
         }
         const id = str(c.tool_use_id);
         const call = id ? pending.get(id) : undefined;
-        if (!call) continue;
+        if (!call) {
+          // A shell result whose call is not in the log (Claude Code can store a
+          // tool's input elsewhere): kept only when its output is a test runner's
+          // own summary, with no command.
+          const r = isObj(o.toolUseResult) ? o.toolUseResult : undefined;
+          const out = r && 'interrupted' in r ? str(r.stdout) : undefined;
+          if (out !== undefined && RUNNER_SUMMARY.some((re) => re.test(out)))
+            into.records.push({
+              kind: 'command',
+              cmd: ORPHAN_COMMAND,
+              orphan: true,
+              isError: c.is_error === true,
+              output: headTail(`${out}\n${str(r!.stderr) ?? ''}`),
+              ...base,
+            });
+          continue;
+        }
         pending.delete(id!);
         const isError = c.is_error === true;
         const where = {

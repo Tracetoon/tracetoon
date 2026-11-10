@@ -23,6 +23,7 @@ import {
   ownerRows,
   failedPublishRows,
   noPassAfterCommitRow,
+  editsBetween,
   remotePathRows,
   liveEvidence,
   functionProfiles,
@@ -835,6 +836,18 @@ function processRows(
     .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
     .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
   const quiet: { text: string; cites: string[] }[] = [];
+  const between = editsBetween(g);
+  // A pass before the last commit with no captured edit in between saw what was committed.
+  const covering = (xs: Record<string, unknown>[]) =>
+    lastCommit
+      ? xs.filter(
+          (r) =>
+            r.outcome === 'passed' &&
+            !!r.t &&
+            String(r.t) <= String(lastCommit.t) &&
+            !between(String(r.t), String(lastCommit.t)).length,
+        )
+      : [];
   for (const kind of CHECK_KINDS) {
     const rs = scoped.filter((r) => r.kind === kind);
     if (!rs.length) continue;
@@ -851,6 +864,7 @@ function processRows(
           (r) => r.outcome === 'passed' && String(r.t ?? '') > String(lastCommit.t),
         )
       : [];
+    const covers = after.length ? [] : covering(rs).slice(-1);
     // Runs that ended differently, in order: "failed twice, then passed".
     const history = HISTORY_KINDS.includes(kind) ? runHistory(rs) : undefined;
     if (history) {
@@ -862,7 +876,9 @@ function processRows(
             ? [
                 after.length
                   ? `a passing run came after the last commit (${ids(after).join(', ')})`
-                  : 'no passing run recorded after the last commit',
+                  : covers.length
+                    ? `${String(covers[0]!.id)} passed before the last commit with no captured edit in between`
+                    : 'no passing run recorded after the last commit',
               ]
             : []),
         ].join('; ') + '.',
@@ -877,7 +893,9 @@ function processRows(
           lastCommit && !noPassLimit && (after.length > 0 || !receiptPass)
             ? after.length
               ? `, passed after the last commit (${ids(after).join(', ')})`
-              : ', no pass after the last commit'
+              : covers.length
+                ? `, ${String(covers[0]!.id)} passed before the last commit with no captured edit in between`
+                : ', no pass after the last commit'
             : ''
         })`,
         cites: uniq([last, ...after.slice(0, 1)].map((r) => String(r.id))),
@@ -897,7 +915,9 @@ function processRows(
           ? [
               after.length
                 ? `a passing run came after the last commit (${ids(after).join(', ')})`
-                : 'no passing run recorded after the last commit',
+                : covers.length
+                  ? `${String(covers[0]!.id)} passed before the last commit with no captured edit in between`
+                  : 'no passing run recorded after the last commit',
             ]
           : []),
       ].join('; ') + '.',
@@ -1287,6 +1307,23 @@ export function briefParts(
   const limits: Record<string, unknown>[] = [];
   const uncheckedAll: string[] = [];
   const branchy: string[] = [];
+  // Commands other than checks the sessions ran last, with when: what ran after
+  // an edit that Tracetoon did not read as a check. Said neutrally, never as
+  // "nothing ran".
+  const late = g
+    .run(`MATCH (s:Session {band: 'included'}) RETURN s.lateCmds AS cmds, s.lateT AS ts`)
+    .rows.flatMap((r) =>
+      ((r.cmds as string[]) ?? []).map((c, i) => ({
+        cmd: String(c),
+        t: String(((r.ts as string[]) ?? [])[i] ?? ''),
+      })),
+    )
+    .filter((x) => x.t)
+    .sort((a, b) => a.t.localeCompare(b.t));
+  const lateAfter = (t: string) => [
+    ...new Set(late.filter((x) => x.t > t).map((x) => x.cmd)),
+  ];
+  const otherRuns: Record<string, unknown>[] = [];
   for (const c of changes) {
     const hs = hunkRows.filter((h) => h.change === c.id);
     const behavior = ((c.files as string[]) ?? []).filter((f) =>
@@ -1299,13 +1336,28 @@ export function briefParts(
       return !t || !passedAfter(t).length;
     });
     uncheckedAll.push(...unchecked);
+    // Commands Tracetoon did not classify as checks that ran after the files'
+    // last captured edits: they may have checked them, so they are named.
+    const lastEdit = unchecked
+      .map((f) => checks.get(f)?.lastEdit)
+      .filter((t): t is string => !!t)
+      .sort()
+      .at(-1);
+    const others = lastEdit && !freshPass.length ? lateAfter(lastEdit).slice(-3) : [];
+    for (const cmd of others)
+      if (!otherRuns.some((r) => r.cmd === cmd))
+        otherRuns.push({ cmd, after: `last captured edit of ${unchecked.join(', ')}` });
     if (unchecked.length)
       limits.push({
         change: c.id,
         kind: 'open',
         limit: freshPass.length
-          ? `No logged passing check after the last captured edit of ${unchecked.join(', ')}; fresh ${freshPass.join(', ')} passed on the submitted code, which shows the suite passes, not that it exercises this change.`
-          : `No recorded passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}.`,
+          ? `Tracetoon recognized no logged passing check after the last captured edit of ${unchecked.join(', ')}; fresh ${freshPass.join(', ')} passed on the submitted code, which shows the suite passes, not that it exercises this change.`
+          : `Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}${
+              others.length
+                ? `; after that edit the session ran commands Tracetoon does not classify: ${others.map((x) => `\`${x}\``).join(', ')}`
+                : ''
+            }.`,
       });
     // Symbols with conditional paths, for render's check of "always", "only"…
     if (Number(c.branches) > 0)
@@ -1509,6 +1561,8 @@ export function briefParts(
       ['check', 'kind', 'outcome', 'result', 'when', 'editedAfter', 'cmd', 'earlier'],
       validation,
     ),
+    // Only when it has rows: commands after a file's last edit that are not checks Tracetoon knows.
+    ...(otherRuns.length ? [section('otherRuns', ['cmd', 'after'], otherRuns)] : []),
   ];
   // The head tree: stale mentions of removed names, and callers of changed ones.
   const hunkChange = new Map(hunkRows.map((h) => [String(h.hunk), String(h.change)]));

@@ -87,7 +87,7 @@ export interface EvidenceGraph {
 export const SCHEMA_DOC = {
   nodes: {
     Session:
-      'id (hashed ref), agent, band (included|ambiguous), score, title, failedCommands (failed non-check commands), failedCommand (the most frequent of them), failedCmds (each failed non-check command as `<cmd> (failed N of M)`, most frequent first), invoked (commands other than checks and file utilities that ran something, as plain words without flags, e.g. `bun src/cli.ts comic art codex`), invokedOut (per invoked command, same position: the words of its output that the PR changed lines also contain, space-separated)',
+      "id (hashed ref), agent, band (included|ambiguous), score, title, failedCommands (failed non-check commands), failedCommand (the most frequent of them), failedCmds (each failed non-check command as `<cmd> (failed N of M)`, most frequent first), invoked (commands other than checks and file utilities that ran something, as plain words without flags, e.g. `bun src/cli.ts comic art codex`), invokedOut (per invoked command, same position: the words of its output that the PR changed lines also contain, space-separated), lateCmds (the session's last commands in this repo other than checks, as invoked, oldest first), lateT (per late command, same position: when it last ran)",
     Prompt:
       'id (S#), t, text (up to 1500 chars; expand for full), pushback, ledToEdits, session',
     Decision:

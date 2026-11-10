@@ -13,6 +13,7 @@
 import type { Section } from './queries.ts';
 import { existingSymbols, housekeepingOverclaim } from './doNotSay.ts';
 import { wordsOf } from './codeEvidence.ts';
+import { ORPHAN_COMMAND } from '../trace/types.ts';
 
 export const VALIDATION_MARKER = '<!-- tracetoon:validation -->';
 
@@ -174,7 +175,7 @@ export function validationSection(b: BriefParts): string {
       kind,
       // A run with later edits says so even when they aren't PR files, as
       // the claim check (digest/claims.ts) requires of a stale run.
-      line: `- \`${cmd}\`: ${String(r.outcome)} (${plain(r.result).replace(/;\s*/g, ', ')}) in the session logs${edited ? `, before later edits to ${edited}` : String(r.when ?? '').startsWith('before later edits') ? ', before later edits' : ''}.${earlier ? ` An earlier run of ${earlier}.` : ''}`,
+      line: `- ${cmd === ORPHAN_COMMAND ? "A test run whose command the log doesn't show" : `\`${cmd}\``}: ${String(r.outcome)} (${plain(r.result).replace(/;\s*/g, ', ')}) in the session logs${edited ? `, before later edits to ${edited}` : String(r.when ?? '').startsWith('before later edits') ? ', before later edits' : ''}.${earlier ? ` An earlier run of ${earlier}.` : ''}`,
       when: String(r.when ?? ''),
       current: false,
     });
@@ -185,9 +186,21 @@ export function validationSection(b: BriefParts): string {
     ...shown.filter((x) => x.current),
     ...shown.filter((x) => !x.current).sort((x, y) => order(x.kind) - order(y.kind)),
   ].map((x) => x.line);
+  // Nothing Tracetoon recognized is not nothing run: say what it could read,
+  // and name the commands after the last edit that it does not classify
+  // (when no shown run is that recent).
+  const others = rowsOf(b, 'otherRuns')
+    .map((r) => shownCommand(r.cmd))
+    .filter((c) => c && !/‹withheld›|<withheld>/.test(c))
+    .slice(0, 3);
+  const stale = shown.every((x) => !x.current && x.when.startsWith('before later edits'));
   if (!lines.length)
     lines.push(
-      '- No passing or failing test, typecheck or lint run was recorded in the captured sessions.',
+      '- Tracetoon found no test, typecheck or lint result it could read in the session logs.',
+    );
+  if (others.length && stale)
+    lines.push(
+      `- After the last captured edit the session also ran ${others.map((c) => `\`${c}\``).join(', ')}, which Tracetoon does not classify as checks.`,
     );
   // Said once, and only when a shown run is dated by the logs' last edit rather
   // than checked against the submitted content.

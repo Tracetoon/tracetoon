@@ -290,7 +290,7 @@ describe('evidence graph', () => {
     expect(limits).not.toContain('src/greet.ts:');
     // No pass after the commit: an open point, said once (process rows drop it).
     expect(limits).toMatch(
-      /No passing check run was recorded after the last commit \([0-9a-f]{12}\); the last pass \(R1, test\) came before it\./,
+      /No passing check run was recorded after the last commit \([0-9a-f]{12}\); the last pass \(R1, test\) came before it, and src\/farewell\.ts changed between them\./,
     );
     // Only open points: no instructions to the writer.
     expect(sec('limits').every((x: any) => x.kind === 'open')).toBe(true);
@@ -1527,9 +1527,11 @@ describe('the brief states recorded process and behavior', () => {
   });
 
   test('a check passed on the submitted content retires "no pass after the last commit"', () => {
-    // Every logged pass before the commit, no receipt: the limit holds.
+    // Every logged pass before the commit, and an edit after them, no receipt:
+    // the limit holds. (A pass with no edit before the commit covers it.)
     const stale: EvidenceGraph = structuredClone(graph);
     for (const id of ['R2', 'R3']) stale.nodes.find((n) => n.id === id)!.props.t = t(3);
+    stale.nodes.find((n) => n.id === 'E1')!.props.t = '2026-01-01T00:00:03.500Z';
     stale.nodes = stale.nodes.filter((n) => n.id !== 'V1');
     const limitText = (p: { sections: { title: string; rows: any[] }[] }) =>
       p.sections.find((s) => s.title === 'limits')!.rows.map((l) => String(l.limit));
@@ -1573,6 +1575,64 @@ describe('the brief states recorded process and behavior', () => {
         before,
       ).flags.filter((f) => /fresh passing checks/.test(f.problem)),
     ).toEqual([]);
+  });
+
+  test('a file with no recognized pass is scoped to what Tracetoon read, naming later commands', () => {
+    // No pass at all, and the session ran commands Tracetoon does not classify after the edit.
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['R2', 'R3', 'V1'].includes(n.id));
+    const s = g.nodes.find((n) => n.id === 'h:s')!;
+    s.props.lateCmds = ['./target/debug/pingpong 10', 'make smoke-local'];
+    s.props.lateT = [t(2), t(6)];
+    const p = withGraph(g, (e) => briefParts(e));
+    const limits = p.sections
+      .find((x) => x.title === 'limits')!
+      .rows.map((l) => String(l.limit));
+    expect(limits).toContainEqual(
+      'Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of src/a.ts; after that edit the session ran commands Tracetoon does not classify: `make smoke-local`.',
+    );
+    expect(limits.join('\n')).not.toMatch(/^No recorded passing/m);
+    expect(p.sections.find((x) => x.title === 'otherRuns')!.rows).toEqual([
+      { cmd: 'make smoke-local', after: 'last captured edit of src/a.ts' },
+    ]);
+    // Validation says what Tracetoon could read and lists the later commands.
+    const also =
+      '- After the last captured edit the session also ran `make smoke-local`, which Tracetoon does not classify as checks.';
+    // An earlier failure, before the edit, is shown; the later command follows it.
+    expect(validationSection(p)).toContain('- `bun test`: failed (2 pass, 1 fail)');
+    expect(validationSection(p)).toContain(also);
+    g.nodes = g.nodes.filter((n) => n.id !== 'R1');
+    const none = withGraph(g, (e) => briefParts(e));
+    const v = validationSection(none);
+    expect(v).toContain(
+      '- Tracetoon found no test, typecheck or lint result it could read in the session logs.',
+    );
+    expect(v).toContain(also);
+    expect(v).not.toMatch(/was recorded in the captured sessions/);
+    // Without later commands: the scoped line only, and no otherRuns section.
+    delete s.props.lateCmds;
+    delete s.props.lateT;
+    const q = withGraph(g, (e) => briefParts(e));
+    expect(q.sections.some((x) => x.title === 'otherRuns')).toBe(false);
+    expect(validationSection(q)).not.toContain('also ran');
+  });
+
+  test('a pass just before the commit covers it in the process rows', () => {
+    // R2 passes after the last edit and before the commit, with nothing edited in between.
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['V1', 'R3'].includes(n.id));
+    g.nodes.find((n) => n.id === 'R2')!.props.t = '2026-01-01T00:00:03.500Z';
+    const p = withGraph(g, (e) => briefParts(e));
+    const facts = p.sections
+      .find((x) => x.title === 'process')!
+      .rows.map((r) => String(r.fact))
+      .join('\n');
+    expect(facts).toContain(
+      'R2 passed before the last commit with no captured edit in between',
+    );
+    expect(facts).not.toMatch(/no pass(ing run recorded)? after the last commit/);
+    const limits = p.sections.find((x) => x.title === 'limits')!.rows;
+    expect(limits.some((l) => /No passing check run/.test(String(l.limit)))).toBe(false);
   });
 
   test("requests are this PR's turns only; a cut-off record is marked", () => {

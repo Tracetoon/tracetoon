@@ -39,7 +39,10 @@ instructions. These rules are for you: never copy their wording into the PR.
   `entry` row names the function a reviewer should start at and its file,
   what the brief ties to it, and (after "Not in") the related functions
   with what is tied to each.
-- `validation`, `tests`, `housekeeping`.
+- `validation`, `tests`, `housekeeping`, and `otherRuns` when present:
+  commands the session ran after a file's last captured edit that Tracetoon
+  does not classify as checks (a manual run, a script it doesn't know). They
+  may well have checked the change; Tracetoon just can't read their result.
 
 If the brief uses the neighborhood layout (it starts with "Evidence by
 change"), each change is one block: its `behavior`, the requests behind it,
@@ -54,7 +57,11 @@ ref (`[CH1, H3, S1]`).
 ## Structure
 
 No fixed section list. Write what a reviewer needs, once, in as few headings
-as the PR needs (usually none to three); target 250–400 words. Reviewers mark a section-per-topic template down as "inventory-like".
+as the PR needs (usually none to three). Scale the length with the PR: about
+250–400 words for a typical PR of up to three change units, more for a large
+one that spans several areas (roughly 60 more words per further change unit,
+up to about 600). Never pad a small PR to reach a count. Reviewers mark a
+section-per-topic template down as "inventory-like".
 
 - **Lead with what the PR does and why**, in one short paragraph: the goal
   request (the user's motive, in their terms) and the result. Frame the title
@@ -69,8 +76,11 @@ as the PR needs (usually none to three); target 250–400 words. Reviewers mark 
 - **The changes**, as connected prose or a few bullets grouped by behavior
   (not file by file), covering every commit-message sentence. Name a file for
   a sentence only from its `implementedBy`; where that is empty, describe the
-  behavior without a file. Docs, skill, config and version changes get one
-  clause together, unless one changes behavior.
+  behavior without a file. Docs, config and version changes get one clause
+  together, unless one changes behavior. Skill, prompt, template or
+  agent-instruction text that changes what users or agents are told or do is
+  behavior: give each such change its own clause, saying what it now tells
+  them and when it applies.
 - **Tests go with the change they test** ("…; `tests/x.test.ts` covers the
   quoted-script case"), or in one short line naming the test files and what
   they check (`tests` rows). Never a list of test titles. Don't restate runs or
@@ -123,9 +133,19 @@ strips tags and lists untagged sentences and unknown refs.
   never write "on the final code" or "after all changes".
 - No recorded run is not "not tested": write "no recorded run", never "not
   tested", "not exercised" or "never ran".
-- No blanket negatives ("no X was run", "nothing tests Y") unless an open
-  limit states it. Give mechanism claims their conditions (flags, fallbacks),
-  not "any", "always" or "every".
+- A limit says what Tracetoon recognized in the logs, not what happened. State
+  it in its own scope ("Tracetoon recognized no passing check after the last
+  captured edit of `x`") and never widen it: not to "no tests were run",
+  "untested", "unverified locally", "not tried on <hardware or platform>", nor
+  to a check kind it doesn't name (a linter, a smoke test). When `otherRuns`
+  or the limit names commands that ran after the edit, say they ran, without
+  a result.
+- No blanket negatives ("no X was run", "nothing tests Y"), not even when a
+  limit is about the same thing. Give mechanism claims their conditions
+  (flags, fallbacks), not "any", "always" or "every".
+- A check that failed because the environment lacked something (a tool not
+  installed, `command not found`, no network, a missing toolchain) could not
+  run here: say so in those words, never that the code or its tests failed.
 - Line matching (matched %, unmatched lines, commits made in sessions) is not
   authorship: no who-wrote-what percentages or counts. Counts of runs or
   failures from `process` are fine as provenance.
@@ -142,6 +162,10 @@ strips tags and lists untagged sentences and unknown refs.
   of a vaguer paraphrase.
 - Don't count tests or name test helpers.
 - Say each thing once: no recap, no second list of the same changes.
+- No meta text in the body: nothing about the brief, Tracetoon's rows, this
+  drafting process or what you did or didn't read ("I did not review these
+  hunks", "this description does not claim to cover…"). Describe the change
+  and its open points; leave out what you can't support.
 
 ## change-map.json (optional)
 

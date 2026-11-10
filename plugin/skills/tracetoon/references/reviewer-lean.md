@@ -25,7 +25,12 @@ symbol's callers). Do not read other run files, the brief query, or guides.
    passing run recorded after the last commit" or "no request recorded for
    CHn": if the body omits it, kind `omission`; if it says the opposite
    ("tests pass", "as requested"), a claim `overstated`. Also omitted
-   branch-hunk behavior.
+   branch-hunk behavior. A limit says what Tracetoon recognized in the logs,
+   not what ran: flag a body that widens one ("no tests were run",
+   "untested", "not tried on <platform>", a check kind the limit doesn't
+   name) as `overstated`, and never ask the drafter to widen one. A check that
+   failed because the environment lacked a tool or network could not run
+   there; flag a body that calls it a failure of the code.
 
 Skip the generated Validation section (elided in the packet). Report only
 problems; a correct sentence needs no entry. At most 8 findings, most

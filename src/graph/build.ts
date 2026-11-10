@@ -780,6 +780,19 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       return [t.ref, m];
     }),
   );
+  // Per session: its last distinct commands in this repository other than
+  // checks (at most 12), each with when it last ran.
+  const lateBy = new Map(
+    trails.map((t) => {
+      const m = new Map<string, string>();
+      for (const x of t.invocations ?? [])
+        if (x.t && !x.elsewhere) {
+          m.delete(x.cmd);
+          m.set(x.cmd, x.t);
+        }
+      return [t.ref, [...m].slice(-12)];
+    }),
+  );
   for (const s of full.sessions) {
     // Failed commands other than checks (checks are Run nodes with outcomes).
     const checkKeys = new Set(
@@ -806,6 +819,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       invokedOut: [...(invocationsBy.get(s.ref) ?? new Map()).values()].map((w) =>
         [...w].join(' '),
       ),
+      // The last commands other than checks, and (same position) when each last ran.
+      lateCmds: (lateBy.get(s.ref) ?? []).map(([c]) => c),
+      lateT: (lateBy.get(s.ref) ?? []).map(([, t]) => t),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)

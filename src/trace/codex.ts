@@ -67,6 +67,20 @@ function parseJson(s: unknown): unknown {
   }
 }
 
+/** A unified-exec result's exit code (`Process exited with code 0`), if it finished. */
+function unifiedExit(out: string): string | undefined {
+  return (
+    /Process exited with code\s+(-?\d+)/i.exec(out)?.[1] ??
+    /Exit code:\s*(\d+)/i.exec(out)?.[1]
+  );
+}
+
+/** A unified-exec result's command output, without the header Codex puts before it. */
+function unifiedBody(out: string): string {
+  const at = /^Output:\r?\n/m.exec(out);
+  return at ? out.slice(at.index + at[0].length) : out;
+}
+
 /** Plan text from an `update_plan` call: `{ explanation?, plan: [{ step, status }] }`. */
 function planFromArgs(args: unknown): string | undefined {
   const a = parseJson(args);
@@ -91,6 +105,12 @@ export function parseCodexLines(content: string, into: TraceSession): void {
   const pendingCalls = new Map<
     string,
     { name: string; args: unknown; ts?: string; cwd?: string }
+  >();
+
+  /** Unified-exec commands still running, by session id, until a `write_stdin` poll ends them. */
+  const running = new Map<
+    string,
+    { cmd: string; ts?: string; workdir?: string; out: string }
   >();
 
   const where = (ts: string | undefined, at?: string) => ({
@@ -289,15 +309,51 @@ export function parseCodexLines(content: string, into: TraceSession): void {
       if ((rt === 'function_call_output' || rt === 'custom_tool_call_output') && callId) {
         const call = pendingCalls.get(callId);
         pendingCalls.delete(callId);
-        if (
-          !call ||
-          !/^(shell|shell_command|local_shell|container\.exec)$/.test(call.name)
-        )
-          continue;
+        if (!call) continue;
         const args = parseJson(call.args);
+        const out = typeof p.output === 'string' ? p.output : textOf(p.output);
+        // Unified exec: `write_stdin` polls a command still running from an
+        // earlier `exec_command`; its output finishes that command's.
+        if (call.name === 'write_stdin') {
+          const sid = isObj(args) ? String(args.session_id ?? '') : '';
+          const open = running.get(sid);
+          if (!open) continue;
+          open.out += `\n${unifiedBody(out)}`;
+          const exit = unifiedExit(out);
+          if (exit === undefined) continue;
+          running.delete(sid);
+          into.records.push({
+            kind: 'command',
+            cmd: open.cmd,
+            isError: exit !== '0',
+            output: headTail(open.out),
+            ...where(open.ts, open.workdir),
+          });
+          continue;
+        }
+        if (call.name === 'exec_command') {
+          const cmd = isObj(args) ? commandText(args.cmd ?? args.command) : undefined;
+          if (!cmd) continue;
+          const workdir = isObj(args) ? str(args.workdir) : undefined;
+          const exit = unifiedExit(out);
+          const sid = /Process running with session ID\s+(\d+)/i.exec(out)?.[1];
+          if (exit === undefined && sid) {
+            running.set(sid, { cmd, ts: call.ts, workdir, out: unifiedBody(out) });
+            continue;
+          }
+          into.records.push({
+            kind: 'command',
+            cmd,
+            isError: exit !== undefined ? exit !== '0' : undefined,
+            output: headTail(unifiedBody(out)),
+            ...where(call.ts, workdir),
+          });
+          continue;
+        }
+        if (!/^(shell|shell_command|local_shell|container\.exec)$/.test(call.name))
+          continue;
         const cmd = isObj(args) ? commandText(args.command) : undefined;
         if (!cmd) continue;
-        const out = typeof p.output === 'string' ? p.output : textOf(p.output);
         const exit =
           /Exit code:\s*(\d+)/i.exec(out)?.[1] ?? /"exit_code":\s*(\d+)/.exec(out)?.[1];
         into.records.push({

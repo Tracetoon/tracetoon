@@ -67,6 +67,8 @@ export type TraceRecord =
       output?: string;
       /** Still running when the log was read: no result (or output) yet. */
       pending?: boolean;
+      /** A result whose call the log lacks: `cmd` is `ORPHAN_COMMAND`, the output a test runner's. */
+      orphan?: boolean;
     })
   | (Base & {
       kind: 'link';
@@ -140,3 +142,6 @@ export interface TraceAdapter {
   discover(q: DiscoverQuery): SessionRef[];
   read(ref: SessionRef): TraceSession;
 }
+
+/** The command of a test-runner result whose call is not in the log. */
+export const ORPHAN_COMMAND = '‹command not in the log›';

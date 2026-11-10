@@ -12,11 +12,12 @@ import {
   type SessionMatch,
 } from '../correlate/correlate.ts';
 import type { PrTruth } from '../git/pr.ts';
-import type { Usage } from '../trace/types.ts';
+import { ORPHAN_COMMAND, type Usage } from '../trace/types.ts';
 import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
 import { shellSegments, splitCommands } from '../util/shell.ts';
+import { runsInRepo } from '../trace/pathMatch.ts';
 
 export interface DigestSession {
   ref: string;
@@ -198,10 +199,73 @@ const TEST_RUNNERS = [
   /^(go|cargo|dotnet|swift|mix|zig)\s+test\b/,
   /^(mvn|gradle|\.\/gradlew|gradlew)\b.*\btest\b/,
   /^make\s+(test|check)\b/,
+  // A package script that runs the project's checks (`bun run check`, `npm run verify`);
+  // `npm ci` and `bun ci` install, so `ci` needs `run`.
+  /^(bun|npm|yarn|pnpm)\s+(run\s+(check|verify|validate|ci)|(check|verify|validate))(:\S+)?(?=\s|$)/,
+  /^(node|deno)\s+(.*\s)?--test\b/,
 ];
 
 /** Leading `NAME=value` assignments, quoted values included (`X="$(pwd)/a b"`). */
 const ENV_PREFIX = /^([A-Z_][A-Z0-9_]*=("[^"]*"|'[^']*'|\S*)\s+)+/;
+
+/** Wrappers and launchers before the program a check runs, as written by agents. */
+const LAUNCHERS = [
+  /^(?:\(\s*)?(?:(?:time|env|exec|nohup|command)\s+)+/,
+  /^(?:npx|bunx|pnpx)\s+(?:(?:-y|--yes|-q|--quiet|--no-install|--prefer-offline)\s+|(?:-p|--package)(?:=|\s+)\S+\s+)*/,
+  /^(?:pnpm|yarn|npm)\s+(?:exec|dlx)\s+(?:--\s+)?/,
+  /^(?:uv|poetry|pipenv|hatch|pdm)\s+run\s+/,
+  // `yarn tsc`, `pnpm eslint`: a package manager running a check tool's binary.
+  /^(?:yarn|pnpm)\s+(?=(?:tsc|eslint|prettier|biome|jest|vitest|mocha|playwright|pyright|shellcheck)\b)/,
+];
+
+/**
+ * A command segment reduced to the check it runs, for matching only (the run
+ * keeps the segment as written): leading assignments, wrappers and launchers
+ * (`npx --yes bun@1.4.0 test`, `uv run pytest`, `pnpm exec tsc`) are dropped,
+ * a version pinned on the program (`bun@1.4.0`) too, and a program run from a
+ * `bin` folder (`./node_modules/.bin/tsc`, `/home/u/.cargo/bin/cargo`) is
+ * named by its file name.
+ */
+export function checkForm(seg: string): string {
+  let s = seg.trim();
+  for (let i = 0; i < 6; i++) {
+    const before = s;
+    s = s.replace(ENV_PREFIX, '');
+    for (const re of LAUNCHERS) s = s.replace(re, '');
+    // A version pinned on a launched package: `bun@1.4.0 test` → `bun test`.
+    s = s.replace(/^((?:@[\w.-]+\/)?[\w.-]+)@[\w.^~<>=*-]+(?=\s|$)/, '$1');
+    // A program from a `bin` folder, named by path.
+    s = s.replace(/^(?:~|[\w.@+-]+)?(?:\/[\w.@+-]+)*\/\.?bin\/(?=[\w.-]+(\s|$))/, '');
+    if (s === before) break;
+  }
+  return s;
+}
+
+/** The script a shell or interpreter runs (`sh -e dev/x.sh`), or a program run by its path. */
+const SCRIPT =
+  /^(?:(?:(?:sh|bash|zsh|dash)\s+(?:-[A-Za-mo-z]+\s+)*|(?:python3?|node|bun|deno)\s+(?:run\s+)?)(?=[^-\s])|(?=\.{0,2}\/|[\w.-]+\/))([^\s;&|<>]+)/;
+const SCRIPT_FILE = /\/|\.(?:sh|bash|py|[cm]?[jt]s)$/;
+const TEST_DIR = /^(?:tests?|smoke|e2e|__tests__)$/;
+const TEST_STEM = /(?:^|[-_.])(?:tests?|smoke|e2e|spec)(?:[-_.]|$)/;
+
+/**
+ * A test or smoke script, run by a shell or an interpreter or directly by
+ * its path: a `test`, `tests`, `smoke` or `e2e` folder on its path, or one of
+ * those words as a part of its name (`dev/test-install.sh`, `run_tests.sh`).
+ * A shell's `-n` (parse only) is a syntax check, not this.
+ */
+export function isTestScript(seg: string): boolean {
+  const path = SCRIPT.exec(seg)?.[1];
+  if (!path || !SCRIPT_FILE.test(path)) return false;
+  const parts = path.split('/').filter((p) => p && p !== '.' && p !== '..');
+  const stem = (parts.pop() ?? '').replace(/\.[A-Za-z]+$/, '');
+  return parts.some((p) => TEST_DIR.test(p)) || TEST_STEM.test(stem);
+}
+
+const isTestRunner = (seg: string) => {
+  const s = checkForm(seg);
+  return TEST_RUNNERS.some((re) => re.test(s)) || isTestScript(s);
+};
 
 /** Words of the PR's changed lines, once per line index. */
 const prWordCache = new WeakMap<object, Set<string>>();
@@ -220,7 +284,7 @@ function prWordsOf(prSets: Map<string, Set<string>>): Set<string> {
 export function testSegment(cmd: string): string | undefined {
   return splitCommands(cmd)
     .map((s) => s.replace(ENV_PREFIX, ''))
-    .find((s) => TEST_RUNNERS.some((re) => re.test(s)));
+    .find(isTestRunner);
 }
 
 export function isTestCommand(cmd: string): boolean {
@@ -267,10 +331,24 @@ export function fileRole(path: string): FileRole {
 }
 
 const VERIFY: [Run['kind'], RegExp][] = [
-  ['typecheck', /^((bun|npx|pnpm|yarn)\s+(x\s+)?)?(tsc|mypy|pyright)\b/],
+  ['typecheck', /^((bun|npx|pnpm|yarn)\s+(x\s+)?)?(tsc|mypy|pyright|vue-tsc)\b/],
+  [
+    'typecheck',
+    /^(bun|npm|pnpm|yarn)\s+(run\s+)?(typecheck|type-check|tsc)(:\S+)?(?=\s|$)/,
+  ],
   [
     'lint',
-    /^((bun|npx|pnpm|yarn)\s+(x\s+)?)?(eslint|prettier\s+--check|ruff\s+(check|format\s+--check)|biome\s+(check|lint)|clippy|golangci-lint)\b|^cargo\s+clippy\b|^go\s+vet\b/,
+    /^((bun|npx|pnpm|yarn)\s+(x\s+)?)?(eslint|prettier\s+(.*\s)?--check|ruff\s+(check|format\s+--check)|(@biomejs\/)?biome\s+(check|lint|ci)|clippy|golangci-lint|shellcheck|markdownlint|yamllint|actionlint|hadolint|flake8|pylint|stylelint)\b|^cargo\s+(clippy|fmt\s+(.*\s)?--check)\b|^go\s+vet\b|^gofmt\s+(?!.*\s-w\b)(-\S+\s+)*-l\b/,
+  ],
+  // Package scripts that lint or check formatting (`bun run lint`, `npm run format:check`).
+  [
+    'lint',
+    /^(bun|npm|pnpm|yarn)\s+(run\s+)?(lint|format:check|fmt:check|check:format|prettier:check)(:\S+)?(?=\s|$)/,
+  ],
+  // Syntax and whitespace checks: `bash -n x.sh`, `shfmt -d`, `git diff --check`.
+  [
+    'lint',
+    /^(sh|bash|zsh|dash|ksh)\s+(-\w+\s+)*-\w*n\w*\s|^shfmt\s+(?!.*\s-w\b)(.*\s)?(-[dl]|--?tojson)\b|^git\s+(-C\s+\S+\s+)?diff\b.*\s--check\b|^node\s+(--check|-c)\s|^python3?\s+-m\s+(py_compile|compileall)\b|^php\s+-l\b|^ruby\s+-c\b/,
   ],
   [
     'build',
@@ -279,6 +357,12 @@ const VERIFY: [Run['kind'], RegExp][] = [
   ['eval', /^(bun|node|python3?|deno)\s+(run\s+)?\S*(eval|bench)\S*/],
 ];
 
+/** The kind of check a non-test segment runs, if it is one. */
+function verifyKind(seg: string): Run['kind'] | undefined {
+  const s = checkForm(seg);
+  return VERIFY.find(([, re]) => re.test(s))?.[0];
+}
+
 /** The part of a command that verifies something, and what kind of check it is. */
 export function verificationSegment(
   cmd: string,
@@ -286,7 +370,8 @@ export function verificationSegment(
   const test = testSegment(cmd);
   if (test) return { seg: test, kind: 'test' };
   for (const s of splitCommands(cmd).map((x) => x.replace(ENV_PREFIX, ''))) {
-    for (const [kind, re] of VERIFY) if (re.test(s)) return { seg: s, kind };
+    const kind = verifyKind(s);
+    if (kind) return { seg: s, kind };
   }
   return undefined;
 }
@@ -337,13 +422,13 @@ export function commandRuns(
     const later = segments.slice(segments.indexOf(s) + 1);
     return !later.some((x) => x.includes(target));
   };
-  const testSegments = segments.filter((s) => TEST_RUNNERS.some((re) => re.test(s)));
+  const testSegments = segments.filter(isTestRunner);
   const logged = testSegments.filter((s) => !toFile(s));
   const tests = logged.length ? logged : testSegments;
   const found: { seg: string; kind: Run['kind']; unlogged?: boolean }[] = [];
   let testAdded = false;
   for (const seg of segments) {
-    if (TEST_RUNNERS.some((re) => re.test(seg))) {
+    if (isTestRunner(seg)) {
       if (!tests.includes(seg)) {
         // Its results went to a file; record that it ran, not what it showed.
         found.push({ seg, kind: 'test', unlogged: true });
@@ -353,8 +438,8 @@ export function commandRuns(
       testAdded = true;
       continue;
     }
-    const hit = VERIFY.find(([, re]) => re.test(seg));
-    if (hit) found.push({ seg, kind: hit[0] });
+    const kind = verifyKind(seg);
+    if (kind) found.push({ seg, kind });
   }
   const several = found.length > 1;
   const results = found.map(
@@ -367,7 +452,7 @@ export function commandRuns(
             .filter((l) => KIND_LINE[kind]?.test(l) ?? false)
             .join('\n')
         : output;
-      const result = runOutcome(cmd, seg, isError, own, kind);
+      const result = runOutcome(cmd, seg, isError, own, kind, output);
       if (several && result.basis === 'exit status' && result.outcome === 'failed')
         Object.assign(result, { outcome: 'unknown', basis: 'none' });
       // Several test commands' results are mixed in one output, so no count can
@@ -415,6 +500,17 @@ export function commandRuns(
 const RESULT_LINE =
   /(\b\d+\s+(pass|passed|passing|fail|failed|failing|errors?|warnings?)\b|\b\d+\/\d+\s+checks?\b|^Tests?:\s|\btest result:|All matched files use|Found \d+ errors?)/i;
 
+/** Headers agents wrap a command's output in (Codex): not output of the command itself. */
+const OUTPUT_HEADER =
+  /^(Exit code:|Wall time:|Chunk ID:|Process exited with code|Original token count:|Output:|Total output lines:|\(no output\)$)/i;
+
+/** Whether a command printed nothing (headers an agent adds aside). */
+function silent(output: string | undefined): boolean {
+  return (output ?? '')
+    .split(/\r?\n/)
+    .every((l) => !l.trim() || OUTPUT_HEADER.test(l.trim()));
+}
+
 /** What a captured run shows, and how we know. */
 export function runOutcome(
   cmd: string,
@@ -422,6 +518,8 @@ export function runOutcome(
   isError: boolean | undefined,
   output: string | undefined,
   kind: Run['kind'],
+  /** The whole command's output, when `output` is only this check's share of it. */
+  full?: string,
 ): Pick<Run, 'outcome' | 'basis' | 'summary'> {
   const summary = (output ?? '')
     .split(/\r?\n/)
@@ -449,8 +547,17 @@ export function runOutcome(
   // that found nothing), so judge by the output instead.
   if (isError === true && !masked)
     return { outcome: 'failed', basis: 'exit status', summary };
-  if (!masked && isError === false)
+  if (!masked && isError === false) {
+    // Linters, typecheckers and syntax checks pass silently: an empty output
+    // with a clean exit is their result, said as such.
+    if (!summary.length && (kind === 'lint' || kind === 'typecheck'))
+      return {
+        outcome: 'passed',
+        basis: 'exit status',
+        summary: [silent(full ?? output) ? 'exit 0, no output' : 'exit 0'],
+      };
     return { outcome: 'passed', basis: 'exit status', summary };
+  }
   if (
     summary.length &&
     !summary.some((l) => /\b[1-9]\d*\s+(fail|failed|failing|errors?)\b/i.test(l))
@@ -522,6 +629,8 @@ export interface Invocation {
   t?: string;
   cmd: string;
   out: string[];
+  /** It ran in another folder than this repository's (see `runsInRepo`). */
+  elsewhere?: true;
 }
 
 /** Programs that read, move or inspect files: running one runs none of the project's code. */
@@ -545,8 +654,7 @@ export function invocationsOf(
   for (const raw of splitCommands(cmd)) {
     const seg = raw.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim();
     if (!seg || UTILITY.test(seg)) continue;
-    if (TEST_RUNNERS.some((re) => re.test(seg)) || VERIFY.some(([, re]) => re.test(seg)))
-      continue;
+    if (isTestRunner(seg) || verifyKind(seg)) continue;
     const words: string[] = [];
     for (const tok of seg.split(/\s+/)) {
       if (/^\d?[<>|&;]/.test(tok)) break; // redirections and what follows
@@ -594,6 +702,8 @@ function sessionDigest(
   >();
   const milestones: string[] = [];
   const runs: Run[] = [];
+  /** Invocations past the first 60: the last 20 are kept. */
+  const latest: Invocation[] = [];
   const files = new Set<string>();
   let testFailedEarlier = false;
   let current: { ledToEdits: boolean } | undefined;
@@ -687,9 +797,30 @@ function sessionDigest(
         break;
       }
       case 'command': {
-        for (const x of invocationsOf(r.cmd, r.output, prWordsOf(prSets), scrub))
-          if (invocations.length < 60) invocations.push({ t: r.ts, ...x });
-        for (const run of commandRuns(r.cmd, r.isError, r.output)) {
+        if (r.orphan) {
+          // A test runner's result whose command the log lacks: a run with no command.
+          if (!runsInRepo('', r.cwd, m.roots)) break;
+          const fact: Run = {
+            t: r.ts,
+            cmd: ORPHAN_COMMAND,
+            kind: 'test',
+            ...runOutcome(ORPHAN_COMMAND, ORPHAN_COMMAND, r.isError, r.output, 'test'),
+            revision: 'unknown',
+          };
+          fact.summary = fact.summary.map((line) => scrub.text(line));
+          runs.push(fact);
+          trail.push({ kind: 'run', fact });
+          break;
+        }
+        // Another repository's checks (`cd ../other && bun test`) say nothing of this PR.
+        const here = runsInRepo(r.cmd, r.cwd, m.roots);
+        for (const x of invocationsOf(r.cmd, r.output, prWordsOf(prSets), scrub)) {
+          const inv = { t: r.ts, ...x, ...(here ? {} : { elsewhere: true as const }) };
+          if (invocations.length < 60) invocations.push(inv);
+          // The session's last commands matter too: what ran after the last edit.
+          else if (latest.push(inv) > 20) latest.shift();
+        }
+        for (const run of here ? commandRuns(r.cmd, r.isError, r.output) : []) {
           const fact: Run = {
             t: r.ts,
             ...run,
@@ -727,6 +858,7 @@ function sessionDigest(
         break;
     }
   }
+  invocations.push(...latest);
   // Relate each run to later edits of files in the PR (never certifies a revision).
   const prEditTimes = recs
     .filter((r) => r.kind === 'edit' && r.ts)

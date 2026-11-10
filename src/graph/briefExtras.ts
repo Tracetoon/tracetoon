@@ -22,9 +22,29 @@ export const MAX_LIMITS = 6;
 const shortSha = (s: unknown) => String(s ?? '').slice(0, 12);
 
 /**
+ * The PR files a captured edit (in an included session) changed after `from`
+ * and no later than `to`, by name. Empty means the logs show nothing changing
+ * in between: a pass at `from` saw what was committed at `to`.
+ */
+export function editsBetween(g: GraphEngine): (from: string, to: string) => string[] {
+  const edits = g
+    .run(
+      `MATCH (e:Edit)-[:EDITS]->(f:File {inPr: true})
+       MATCH (e)-[:IN_SESSION]->(:Session {band: 'included'})
+       WHERE e.t IS NOT NULL RETURN e.t AS t, f.id AS file`,
+    )
+    .rows.map((e) => ({ t: String(e.t), file: String(e.file) }));
+  return (from, to) =>
+    [...new Set(edits.filter((e) => e.t > from && e.t <= to).map((e) => e.file))].sort();
+}
+
+/**
  * "No passing run after the last commit", when it holds: the session's check
- * runs (this PR's turns) all came before the last commit, or none passed after.
- * The process rows say the same per kind; as a limit a writer states it.
+ * runs (this PR's turns) all came before the last commit, or none passed after,
+ * and every pass was followed by a captured edit of a PR file before that
+ * commit. A pass with no captured edit between it and the commit (the suite
+ * run just before `git commit`) saw what was committed, as far as the logs
+ * show. The process rows say the same per kind; as a limit a writer states it.
  */
 export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | undefined {
   if (!scopedRuns.length) return undefined;
@@ -38,17 +58,25 @@ export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | u
   if (!last) return undefined;
   const passed = scopedRuns.filter((r) => r.outcome === 'passed');
   if (passed.some((r) => String(r.t ?? '') > String(last.t))) return undefined;
+  const between = editsBetween(g);
+  const editedBetween = (r: Row) => between(String(r.t ?? ''), String(last.t));
+  if (passed.some((r) => r.t && !editedBetween(r).length)) return undefined;
   const lastPass =
     [...passed]
       .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))
       .filter((r) => r.kind === 'test')
       .at(-1) ?? passed.at(-1);
+  const changed = lastPass ? editedBetween(lastPass) : [];
   return {
     change: null,
     kind: 'open',
     limit: `No passing check run was recorded after the last commit (${shortSha(last.id)})${
       lastPass
         ? `; the last pass (${String(lastPass.id)}, ${String(lastPass.kind)}) came before it`
+        : ''
+    }${
+      changed.length
+        ? `, and ${changed.slice(0, 3).join(', ')}${changed.length > 3 ? ` and ${changed.length - 3} more` : ''} changed between them`
         : ''
     }.`,
   };
@@ -489,8 +517,10 @@ const ENTRY_CHARS = 300;
  * (not a test or script) whose new lines call the most changed symbols of
  * other files (it owns the behavior they implement), named with its file. A hunk belongs to the function git names after its @@
  * (the one it starts in), else the first it touches. Needs MIN_CALLS distinct
- * calls; otherwise the most-referenced changed symbol from the head scan, if
- * a source file defines it. Undefined when neither holds.
+ * calls; otherwise the most-referenced changed symbol from the head scan,
+ * if a source file defines it and it owns at least MIN_ENTRY_SHARE of the
+ * added source lines (a small helper many files call is not where the
+ * behavior lives). Undefined when neither holds.
  *
  * The row also says what each function owns (`functionProfiles`): what the
  * graph ties to the entry, then its changed callees, the next function in its
@@ -503,7 +533,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
       `MATCH (c:Change)-[:HAS]->(h:Hunk)-[:OF]->(f:File)
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.scope AS scope,
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
-              h.diff AS diff, h.branches AS branches`,
+              h.diff AS diff, h.branches AS branches, h.added AS added`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
@@ -660,26 +690,51 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
       ]),
     };
   }
+  // Otherwise the most-referenced changed symbol, only when it owns a real
+  // share of the added source lines: a small helper many files call is not
+  // where the behavior lives, and then there is no entry row.
   const top = [...refsOf.values()].find((r) => r.kind === 'most referenced');
   const file = top ? ((top.definedIn as string[]) ?? []).map(String)[0] : undefined;
   if (!top || !file || unitRole(file, pathRole(file)) !== 'src') return undefined;
-  const h = hunks.find((x) => x.file === file);
   const term = String(top.term);
+  if (ownedShare(hunks, term, file) < MIN_ENTRY_SHARE) return undefined;
+  const h = hunks.find((x) => x.file === file);
   const related = callersOf(term).map((o) => ({
     name: o.name,
     how: `calls \`${term}\``,
   }));
-  const { text, cites } = compose(
-    term,
-    file,
-    `: the changed symbol most named elsewhere (${Number(top.files)} other file(s))`,
-    related,
-  );
+  const { text, cites } = compose(term, file, '', related);
   return {
     kind: 'entry',
     fact: text,
     cites: uniqStr([...(h ? [String(h.change), String(h.diff)] : []), ...cites]),
   };
+}
+
+/** The least share of the added source lines a fallback entry symbol must own. */
+const MIN_ENTRY_SHARE = 0.2;
+
+/**
+ * The share of the added source lines that `name` owns: each hunk in its
+ * file that defines it or changes its body, split evenly among the symbols
+ * that hunk defines or changes.
+ */
+function ownedShare(hunks: Row[], name: string, file: string): number {
+  let total = 0;
+  let own = 0;
+  for (const h of hunks) {
+    const added = Number(h.added ?? 0);
+    total += added;
+    if (String(h.file) !== file) continue;
+    const names = new Set(
+      [...((h.symbols as string[]) ?? []), ...((h.touched as string[]) ?? [])].map(
+        String,
+      ),
+    );
+    if (h.scope != null && !names.size) names.add(String(h.scope));
+    if (names.has(name)) own += added / names.size;
+  }
+  return total ? own / total : 0;
 }
 
 // --- Where each behavior lives ---------------------------------------------
@@ -764,7 +819,9 @@ export function ownerRows(
     // Sentences, not subjects: a subject sums up what its sentences detail.
     if (!s.ref.includes('#')) continue;
     const linked = new Set(ctx.links[s.ref] ?? []);
-    const linkedFiles = new Set(segs.filter((x) => linked.has(x.hunk)).map((x) => x.file));
+    const linkedFiles = new Set(
+      segs.filter((x) => linked.has(x.hunk)).map((x) => x.file),
+    );
     // Linked: the functions of the linked hunks' files, those hunks first.
     const pool = linked.size ? segs.filter((x) => linkedFiles.has(x.file)) : segs;
     const byFn = new Map<string, Seg[]>();
@@ -844,11 +901,14 @@ export function ownerRows(
     new Set(hits.filter((h) => h.change === ch).flatMap(fnsOf)).size;
   const ordered = hits
     .filter((h) => confused.has(h.change))
-    .sort((a, b) => owners(b.change) - owners(a.change) || a.change.localeCompare(b.change));
+    .sort(
+      (a, b) => owners(b.change) - owners(a.change) || a.change.localeCompare(b.change),
+    );
   const taken = new Set<string>();
   const take = (h: Hit) => {
     const n = perChange.get(h.change) ?? 0;
-    if (taken.has(`${h.ref} ${h.text}`) || n >= OWNERS_PER_CHANGE || out.length >= max) return;
+    if (taken.has(`${h.ref} ${h.text}`) || n >= OWNERS_PER_CHANGE || out.length >= max)
+      return;
     taken.add(`${h.ref} ${h.text}`);
     perChange.set(h.change, n + 1);
     for (const f of fnsOf(h)) seenFn.add(f);

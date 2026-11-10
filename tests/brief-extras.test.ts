@@ -61,19 +61,38 @@ const fileNode = (id: string, role = 'behavior') =>
 
 describe('open points promoted into limits', () => {
   test('no pass after the last commit: a limit when every pass came before it', () => {
-    const g = graphOf([
-      N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) }),
-    ]);
+    // An edit of a PR file after the last pass and before the commit.
+    const edited = (at: number) => [
+      N('Session', 'h:a', { band: 'included' }),
+      fileNode('src/a.ts'),
+      N('Edit', 'E1', { t: t(at), file: 'src/a.ts', inPr: true }),
+    ];
+    const editRels = [
+      R('EDITS', ['Edit', 'E1'], ['File', 'src/a.ts']),
+      R('IN_SESSION', ['Edit', 'E1'], ['Session', 'h:a']),
+    ];
+    const commit = N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) });
+    const g = graphOf([commit, ...edited(4)], editRels);
     const runs = [
       { id: 'R1', kind: 'test', outcome: 'passed', t: t(3) },
-      { id: 'R2', kind: 'lint', outcome: 'passed', t: t(4) },
+      { id: 'R2', kind: 'lint', outcome: 'passed', t: t(3) },
     ];
     expect(withGraph(g, (e) => noPassAfterCommitRow(e, runs))).toEqual({
       change: null,
       kind: 'open',
       limit:
-        'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it.',
+        'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
+    // A pass with no captured edit between it and the commit saw what was
+    // committed: the suite run just before `git commit` covers it.
+    expect(
+      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs)),
+    ).toBeUndefined();
+    expect(
+      withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
+        noPassAfterCommitRow(e, runs),
+      ),
+    ).toBeUndefined();
     // A pass after the commit closes it; no runs or no commit say nothing.
     expect(
       withGraph(g, (e) =>
@@ -262,7 +281,7 @@ describe('the entry point', () => {
     });
   });
 
-  test('with no function calling across files, the most-referenced source symbol', () => {
+  test('with no function calling across files, the most-referenced source symbol that owns added lines', () => {
     const lone = hunks.filter((h) => h.id !== 'H2');
     const row = withGraph(
       graphOf(
@@ -271,9 +290,29 @@ describe('the entry point', () => {
       ),
       (g) => entryRow(g),
     );
-    expect(row?.fact).toBe(
-      'Start at `providerInfo` in src/comic/providers.ts: the changed symbol most named elsewhere (2 other file(s)).',
+    expect(row?.fact).toBe('Start at `providerInfo` in src/comic/providers.ts.');
+  });
+
+  test('a most-referenced helper that owns little of the added code is no entry', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    // The helper's hunk is small beside another source hunk it doesn't own.
+    const big = hunkNode('H4', 'src/comic/render.ts', {
+      scope: 'renderStrip',
+      touched: ['renderStrip'],
+      added: 90,
+    });
+    const row = withGraph(
+      graphOf(
+        [...files, fileNode('src/comic/render.ts'), ...lone, big, ...changes, headRef],
+        [
+          ...rels.filter((r) => !JSON.stringify(r).includes('"H2"')),
+          R('OF', ['Hunk', 'H4'], ['File', 'src/comic/render.ts']),
+          R('HAS', ['Change', 'CH1'], ['Hunk', 'H4']),
+        ],
+      ),
+      (g) => entryRow(g),
     );
+    expect(row).toBeUndefined();
   });
 
   test('the brief carries it as a process row and the head scan stops calling itself the place to start', () => {
@@ -416,7 +455,15 @@ test('drafting guidance: word target, one motive sentence, the entry row', () =>
     resolve(import.meta.dir, '../plugin/skills/tracetoon/references/drafting.md'),
     'utf8',
   );
-  expect(drafting).toContain('target 250–400 words');
+  expect(drafting).toContain('250–400 words for a typical PR');
+  expect(drafting).toContain('up to about 600');
+  // Limits keep their scope; prompt and skill text is behavior; no meta text.
+  expect(drafting).toMatch(/never widen it: not to "no tests were run"/);
+  expect(drafting).toMatch(/could not\s+run here/);
+  expect(drafting).toMatch(
+    /agent-instruction text that changes what users or agents are told/,
+  );
+  expect(drafting).toMatch(/No meta text in the body/);
   expect(drafting).toMatch(/one motive sentence at most: never a list/);
   expect(drafting).toMatch(/`entry` process row names/);
 });
@@ -594,7 +641,7 @@ describe('the entry row says what each function owns', () => {
   test("the entry's own sentence, and its caller with the branch tied to it", () => {
     const row = withGraph(graph(), (g) => entryRow(g, ctx));
     expect(row?.fact).toBe(
-      'Start at `leadingCd` in src/trace/pathMatch.ts: the changed symbol most named elsewhere (2 other file(s)); tied to it: Commands that start with cd are judged by the directory they… (abc1234#1). Not in `leadingCd`: `belongs` (src/correlate/correlate.ts): `if (dir) return underAnyRoot(dir, roots)…`.',
+      'Start at `leadingCd` in src/trace/pathMatch.ts; tied to it: Commands that start with cd are judged by the directory they… (abc1234#1). Not in `leadingCd`: `belongs` (src/correlate/correlate.ts): `if (dir) return underAnyRoot(dir, roots)…`.',
     );
     expect(row?.cites).toContain('abc1234#1');
     expect(String(row?.fact).length).toBeLessThanOrEqual(320);

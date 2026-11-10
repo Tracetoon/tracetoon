@@ -59,6 +59,24 @@ export function leadingCd(cmd: string, cwd: string | undefined): string | undefi
   return cwd ? resolve(cwd, dir) : undefined;
 }
 
+/**
+ * Whether a command may have run in this repository: in one of its roots
+ * (the checkout, its worktrees), in a folder holding one, or naming one.
+ * False only when it clearly ran in another folder (`cd ../other && bun
+ * test`, or an agent's own working directory elsewhere), so another
+ * repository's checks are not read as this one's. Unsure means true.
+ */
+export function runsInRepo(
+  cmd: string,
+  cwd: string | undefined,
+  roots: string[],
+): boolean {
+  const dir = leadingCd(cmd, cwd) ?? cwd;
+  if (!dir || !roots.length) return true;
+  if (underAnyRoot(dir, roots) || roots.some((r) => isPathUnder(r, dir))) return true;
+  return mentionsAnyRoot(cmd, roots);
+}
+
 /** Whether `p` is one of the roots or inside one. */
 export function underAnyRoot(p: string | undefined, roots: string[]): boolean {
   if (!p) return false;
