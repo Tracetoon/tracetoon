@@ -9,7 +9,7 @@ import {
 } from '../src/digest/build.ts';
 import { parseCodexLines } from '../src/trace/codex.ts';
 import { parseClaudeLines } from '../src/trace/claude.ts';
-import { runsInRepo } from '../src/trace/pathMatch.ts';
+import { leadingCd, runsInRepo } from '../src/trace/pathMatch.ts';
 import { ORPHAN_COMMAND, type TraceSession } from '../src/trace/types.ts';
 
 const kindOf = (cmd: string) => verificationSegment(cmd)?.kind;
@@ -144,6 +144,18 @@ describe("runs are this repository's", () => {
     expect(runsInRepo('bun test', undefined, roots)).toBe(true);
     expect(runsInRepo('bun test /w/app/tests', '/tmp', roots)).toBe(true);
   });
+
+  test('git -C and chained cd move the run; a relative folder is unknown', () => {
+    expect(runsInRepo('git -C ../site diff --check', '/w/app', roots)).toBe(false);
+    expect(runsInRepo('git -C /w/app-wt diff --check', '/tmp', roots)).toBe(true);
+    expect(runsInRepo('cd /w && cd other && bun test', '/w/app', roots)).toBe(false);
+    expect(runsInRepo('cd /w; cd app && bun test', '/tmp', roots)).toBe(true);
+    expect(leadingCd('git -C sub status', '/w/app')).toBe('/w/app/sub');
+    // A folder relative to nothing known can't be placed: kept.
+    expect(runsInRepo('bun test', 'some/dir', roots)).toBe(true);
+    expect(runsInRepo('cd ../x && bun test', 'rel', roots)).toBe(true);
+    expect(runsInRepo('cd ../x && bun test', undefined, roots)).toBe(true);
+  });
 });
 
 const session = (agent: TraceSession['agent'] = 'codex'): TraceSession => ({
@@ -172,6 +184,31 @@ describe('Codex unified exec', () => {
     timestamp: T(n),
     type: 'response_item',
     payload: { type: 'function_call_output', call_id: id, output: out },
+  });
+
+  test('a file:// working directory is the path it names', () => {
+    const s = session();
+    parseCodexLines(
+      jsonl([
+        {
+          timestamp: T(0),
+          type: 'session_meta',
+          payload: { id: 's', cwd: 'file:///w/app' },
+        },
+        call(1, 'c1', 'exec_command', {
+          cmd: 'bun test',
+          workdir: 'file:///w/other%20repo',
+        }),
+        output(2, 'c1', 'Process exited with code 0\nOutput:\n1 pass\n'),
+        call(3, 'c2', 'exec_command', { cmd: 'bun test' }),
+        output(4, 'c2', 'Process exited with code 0\nOutput:\n1 pass\n'),
+      ]),
+      s,
+    );
+    expect(s.records.filter((r) => r.kind === 'command').map((r) => r.cwd)).toEqual([
+      '/w/other repo',
+      '/w/app',
+    ]);
   });
 
   test('exec_command calls are commands, with their workdir, exit code and output', () => {

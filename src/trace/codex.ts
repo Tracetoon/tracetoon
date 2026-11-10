@@ -10,6 +10,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { codex } from '@showtail/agent-traces';
 import { isSyntheticPrompt } from '@showtail/agent-traces/prompts/synthetic';
 import {
@@ -94,6 +95,21 @@ function planFromArgs(args: unknown): string | undefined {
   return [head, ...steps].filter(Boolean).join('\n') || undefined;
 }
 
+/**
+ * A working directory as Codex logs it: a path, or a `file://` URI (app-server
+ * items), which is turned into the path it names. A URI read as a path would
+ * resolve under the process's own folder and look like this repository.
+ */
+function dirOf(v: unknown): string | undefined {
+  const s = str(v);
+  if (!s || !/^file:\/\//i.test(s)) return s;
+  try {
+    return fileURLToPath(s);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Parse one rollout file's content. Exported for tests. */
 export function parseCodexLines(content: string, into: TraceSession): void {
   let cwd: string | undefined;
@@ -172,7 +188,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
     }
 
     if (type === 'session_meta') {
-      cwd = str(p.cwd) ?? cwd;
+      cwd = dirOf(p.cwd) ?? cwd;
       if (isObj(p.git)) branch = str(p.git.branch) ?? branch;
       if (isObj(p.source) && 'subagent' in p.source) {
         delegated = true;
@@ -187,7 +203,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
       continue;
     }
     if (type === 'turn_context') {
-      cwd = str(p.cwd) ?? cwd;
+      cwd = dirOf(p.cwd) ?? cwd;
       model = str(p.model) ?? model;
       continue;
     }
@@ -248,7 +264,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
               cmd,
               isError: exit !== undefined ? exit !== 0 : it.status === 'failed',
               output,
-              ...where(ts, str(it.cwd)),
+              ...where(ts, dirOf(it.cwd)),
             });
             break;
           }
@@ -334,7 +350,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
         if (call.name === 'exec_command') {
           const cmd = isObj(args) ? commandText(args.cmd ?? args.command) : undefined;
           if (!cmd) continue;
-          const workdir = isObj(args) ? str(args.workdir) : undefined;
+          const workdir = isObj(args) ? dirOf(args.workdir) : undefined;
           const exit = unifiedExit(out);
           const sid = /Process running with session ID\s+(\d+)/i.exec(out)?.[1];
           if (exit === undefined && sid) {
@@ -361,7 +377,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
           cmd,
           isError: exit !== undefined ? exit !== '0' : undefined,
           output: headTail(out),
-          ...where(call.ts, isObj(args) ? str(args.workdir) : undefined),
+          ...where(call.ts, isObj(args) ? dirOf(args.workdir) : undefined),
         });
       }
     }
