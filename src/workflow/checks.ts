@@ -12,6 +12,7 @@ import { publicationLock } from './publication.ts';
 import { readSubmittedFile, repoPath } from '../util/repoFiles.ts';
 import { dependencyFingerprint } from './validationInputs.ts';
 import { count } from '../util/profile.ts';
+import { COULD_NOT_RUN } from '../trace/types.ts';
 
 export interface CheckReceipt {
   v: 1;
@@ -25,6 +26,8 @@ export interface CheckReceipt {
   exitCode: number | null;
   reason?: string;
   summary: string[];
+  /** It failed before running for want of a tool, a dependency or the network: why. */
+  couldNotRun?: string;
   startedAt: string;
   durationMs: number;
   commandSha256?: string;
@@ -64,27 +67,93 @@ function inputFingerprint(
 const HOST_SESSION_VARS =
   /^(CODEX_TOOL_CALL_ID|CODEX_THREAD_ID|CLAUDE_EFFORT|CLAUDE_PID|CLAUDE_CODE_SESSION_ID|CLAUDE_CODE_SESSION_ATTENDED|CLAUDE_CODE_CHILD_SESSION|CLAUDE_CODE_MESSAGING_\w+|AI_AGENT)$/;
 
+/** A result line's shape: its numbers, timings and paths blanked, so suites' lines compare equal. */
+const lineShape = (l: string) =>
+  l
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\S*[/\\]\S*/g, 'P')
+    .replace(/\d+(?:\.\d+)?/g, 'N')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 /**
  * Result lines of a check's output: the last three that report counts.
  * stderr is read before stdout, so a wrapper's own total on stdout ("46 passed,
  * 0 failed") wins over the last child's per-file lines on stderr; a runner that
- * writes only one stream is unaffected.
+ * writes only one stream is unaffected. When the output holds several suites'
+ * results (the same kind of line more than once), only the aggregate after
+ * them is kept, or no count at all: the last suite's numbers are not the run's.
  */
 export function checkSummary(
   stdout: string,
   stderr: string,
   scrub: (text: string) => string = (t) => t,
 ): string[] {
-  return scrub(`${stderr}\n${stdout}`)
+  const lines = scrub(`${stderr}\n${stdout}`)
     .replace(/\x1b\[[0-9;]*m/g, '')
     .split(/\r?\n/)
     .filter((s) =>
       /\b\d+\s+(?:pass(?:ed|es)?|fail(?:ed|ures?|s)?|tests?|checks?)\b|\b(?:Tests|Test Files):/i.test(
         s,
       ),
-    )
-    .slice(-3)
-    .map((s) => s.slice(0, 200));
+    );
+  const seen = new Map<string, number>();
+  for (const l of lines) seen.set(lineShape(l), (seen.get(lineShape(l)) ?? 0) + 1);
+  const lastRepeat = lines.findLastIndex((l) => seen.get(lineShape(l))! > 1);
+  const kept =
+    lastRepeat < 0
+      ? lines
+      : lines.slice(lastRepeat + 1).filter((l) => seen.get(lineShape(l)) === 1);
+  return kept.slice(-3).map((s) => s.slice(0, 200));
+}
+
+/**
+ * Output that says the check could not start here: its tool is missing, a
+ * dependency could not be fetched, or the network was refused. Matched only
+ * when the check printed no result line of a runner (see `setupFailure`).
+ */
+const SETUP_ERROR = [
+  /\bcommand not found\b/i,
+  /^\S+:\s*(?:(?:line\s+)?\d+:\s*)?[\w.+-]+:\s*not found$/i, // sh: 1: cargo: not found
+  /\bis not recognized as an internal or external command\b/i,
+  /\b(?:spawn|spawnSync)\s+\S+\s+ENOENT\b/,
+  /\bno such file or directory\b.*\b(?:exec|spawn|command|program|binary)\b|\b(?:exec|spawn)\b.*\bno such file or directory\b/i,
+  /\b(?:could not|couldn't|unable to|failed to)\s+(?:resolve|connect|download|fetch|reach|access)\b/i,
+  /\b(?:ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENETUNREACH)\b/,
+  /\bgetaddrinfo\b|\bnetwork is unreachable\b|\bname or service not known\b|\btemporary failure in name resolution\b/i,
+  /\btransport '[a-z]+' not allowed\b/i,
+  /\berror sending request\b|\bproxy\b.*\b(?:error|refused|denied)\b/i,
+  /\b(?:toolchain|interpreter|runtime)\b.*\b(?:not installed|not found|missing)\b|\bnot installed\b/i,
+];
+
+/**
+ * Why a failed check could not run in this environment, in a short phrase,
+ * when it exited before any runner result line and its output (or the spawn
+ * error) says the tool, a dependency or the network was unavailable.
+ * Undefined for a check that ran and failed.
+ */
+export function setupFailure(
+  stdout: string,
+  stderr: string,
+  exitCode: number | null,
+  error?: Error,
+  scrub: (text: string) => string = (t) => t,
+): string | undefined {
+  if (checkSummary(stdout, stderr).length) return undefined;
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  if (code === 'ENOENT') return 'the command was not found';
+  const text = scrub(`${stderr}\n${stdout}`).replace(/\x1b\[[0-9;]*m/g, '');
+  const line = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => SETUP_ERROR.some((re) => re.test(l)));
+  if (line)
+    return line
+      .replace(/^(?:error|fatal|warning)(?:\[[^\]]*\])?:\s*/i, '')
+      .replace(/[.:;]+$/, '')
+      .slice(0, 120);
+  if (exitCode === 127) return 'the command was not found';
+  return undefined;
 }
 /**
  * Terminal, display and temp-directory variables: they differ between shells
@@ -334,6 +403,16 @@ function prepareCheck(
         summary: checkSummary(result?.stdout ?? '', result?.stderr ?? '', (t) =>
           makeScrubber([root]).text(t),
         ),
+        couldNotRun:
+          !opts.skip && after === fingerprint && (result?.status !== 0 || result.error)
+            ? setupFailure(
+                result?.stdout ?? '',
+                result?.stderr ?? '',
+                result?.status ?? null,
+                result?.error,
+                (t) => makeScrubber([root]).text(t),
+              )
+            : undefined,
         startedAt,
         durationMs: Math.round(performance.now() - start),
         reuse: {
@@ -428,7 +507,11 @@ export function receiptEvidence(
       kind: c.kind,
       outcome: c.outcome as 'passed' | 'failed',
       basis: 'exit status',
-      summary: c.summary,
+      // A check that could not start here says why, in place of result lines.
+      summary:
+        c.outcome === 'failed' && c.couldNotRun
+          ? [`${COULD_NOT_RUN}${c.couldNotRun}`]
+          : c.summary,
       t: c.startedAt,
       revision: 'no later edits seen',
       verificationBasis: 'exact-content-receipt',

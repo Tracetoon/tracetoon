@@ -5,6 +5,7 @@
  */
 import { GraphError, type GraphEngine } from './engine.ts';
 import { shownCommand } from './briefRender.ts';
+import { COULD_NOT_RUN } from '../trace/types.ts';
 import { SCHEMA_DOC } from './model.ts';
 import { DO_NOT_SAY_COLUMNS, doNotSayRows } from './doNotSay.ts';
 import {
@@ -1227,7 +1228,14 @@ export function briefParts(
   // One run per kind, only one whose result can be checked exactly (see
   // runHistory.ts). A kind Tracetoon checked itself on the submitted content
   // (a V receipt) needs no log run.
-  const receiptKinds = new Set(receipts.map((v) => String(v.kind)));
+  const receiptKinds = new Set(
+    receipts
+      .filter(
+        (v) =>
+          !String(((v.summary as string[]) ?? [])[0] ?? '').startsWith(COULD_NOT_RUN),
+      )
+      .map((v) => String(v.kind)),
+  );
   // Edits after a run that only touched files no check reads as code (a
   // version bump, docs, config) leave it on the final code for choosing; the
   // row still names those files.

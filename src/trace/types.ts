@@ -145,3 +145,5 @@ export interface TraceAdapter {
 
 /** The command of a test-runner result whose call is not in the log. */
 export const ORPHAN_COMMAND = '‹command not in the log›';
+/** Starts a receipt's result when its check could not start in this environment. */
+export const COULD_NOT_RUN = 'could not run here: ';

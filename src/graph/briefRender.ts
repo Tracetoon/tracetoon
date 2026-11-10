@@ -13,7 +13,7 @@
 import type { Section } from './queries.ts';
 import { existingSymbols, housekeepingOverclaim } from './doNotSay.ts';
 import { wordsOf } from './codeEvidence.ts';
-import { ORPHAN_COMMAND } from '../trace/types.ts';
+import { COULD_NOT_RUN, ORPHAN_COMMAND } from '../trace/types.ts';
 
 export const VALIDATION_MARKER = '<!-- tracetoon:validation -->';
 
@@ -127,6 +127,18 @@ export function validationSection(b: BriefParts): string {
     latest.set(cmd, r);
   }
   for (const [cmd, r] of latest) {
+    // A check that could not start here (no tool, dependency or network) did
+    // not fail on the submitted content: it says why, and nothing more.
+    const unrun = plain(r.result).startsWith(COULD_NOT_RUN);
+    if (unrun) {
+      shown.push({
+        kind: String(r.kind),
+        line: `- \`${cmd}\`: ${plain(r.result)} (\`tracetoon check\`).`,
+        when: 'fresh',
+        current: true,
+      });
+      continue;
+    }
     shown.push({
       kind: String(r.kind),
       line: `- \`${cmd}\`: ${String(r.outcome)}${
@@ -142,7 +154,12 @@ export function validationSection(b: BriefParts): string {
       current: true,
     });
   }
-  const receiptKinds = new Set(receipts.map((r) => String(r.kind)));
+  // A receipt that could not run here leaves its kind to the session logs.
+  const receiptKinds = new Set(
+    receipts
+      .filter((r) => !plain(r.result).startsWith(COULD_NOT_RUN))
+      .map((r) => String(r.kind)),
+  );
   for (const r of logRuns) {
     if (shown.length >= MAX_LINES) break;
     const kind = String(r.kind);
@@ -155,7 +172,15 @@ export function validationSection(b: BriefParts): string {
     // an exit status, or a merged output, is dropped rather than hedged.
     if (!logRunStatable(r)) continue;
     // A receipt for the same command already says more.
-    if (shown.some((x) => x.current && x.line.startsWith(`- \`${cmd}\`:`))) continue;
+    if (
+      shown.some(
+        (x) =>
+          x.current &&
+          x.line.startsWith(`- \`${cmd}\`:`) &&
+          !x.line.startsWith(`- \`${cmd}\`: ${COULD_NOT_RUN}`),
+      )
+    )
+      continue;
     const n = perKind.get(kind) ?? 0;
     if (n >= 1) continue;
     perKind.set(kind, n + 1);

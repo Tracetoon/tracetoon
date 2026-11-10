@@ -3,7 +3,8 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { prHead } from '../src/commands/publish.ts';
-import { checkEnvironment, checkSummary } from '../src/workflow/checks.ts';
+import { checkEnvironment, checkSummary, setupFailure } from '../src/workflow/checks.ts';
+import { validationSection } from '../src/graph/briefRender.ts';
 import { makeRepo, tempDir } from './helpers.ts';
 
 const CLI = process.env.TRACETOON_TEST_CLI ?? resolve(import.meta.dir, '../src/cli.ts');
@@ -35,6 +36,90 @@ describe('check summaries', () => {
       ),
     ).toEqual([' 697 pass', ' 0 fail', 'Ran 697 tests across 46 files.']);
     expect(checkSummary('12 passed, 1 failed\n', '')).toEqual(['12 passed, 1 failed']);
+  });
+});
+
+describe('several suites and setup failures', () => {
+  const suite = (n: number) =>
+    ` ${n} pass\n 0 fail\nRan ${n} tests across 1 file. [1.2s]\n`;
+
+  test('several suites in one output: only the aggregate after them, or no count', () => {
+    expect(
+      checkSummary(`${suite(5)}${suite(7)}All suites: 12 passed, 0 failed\n`, ''),
+    ).toEqual(['All suites: 12 passed, 0 failed']);
+    // No aggregate: the last suite's numbers are not the run's.
+    expect(checkSummary(`${suite(5)}${suite(7)}`, '')).toEqual([]);
+    expect(
+      checkSummary(
+        'test result: ok. 3 passed; 0 failed\ntest result: ok. 9 passed; 0 failed\n',
+        '',
+      ),
+    ).toEqual([]);
+    // One suite keeps its lines.
+    expect(checkSummary(suite(5), '')).toHaveLength(3);
+  });
+
+  test('a check that stops before any result for want of a tool or network', () => {
+    expect(setupFailure('', 'sh: 1: cargo: not found\n', 127)).toBe(
+      'sh: 1: cargo: not found',
+    );
+    expect(setupFailure('', 'bash: line 1: mytool: command not found\n', 127)).toBe(
+      'bash: line 1: mytool: command not found',
+    );
+    expect(
+      setupFailure(
+        '',
+        'error: failed to download from registry: Could not resolve host\n',
+        1,
+      ),
+    ).toBe('failed to download from registry: Could not resolve host');
+    const enoent = Object.assign(new Error('spawn x ENOENT'), { code: 'ENOENT' });
+    expect(setupFailure('', '', null, enoent)).toBe('the command was not found');
+    // A check that ran and failed is a failure, whatever else it printed.
+    expect(
+      setupFailure(' 3 pass\n 1 fail\n', 'ECONNREFUSED in a test\n', 1),
+    ).toBeUndefined();
+    expect(setupFailure('', 'src/a.ts(3,1): error TS2304\n', 2)).toBeUndefined();
+  });
+
+  test('render says it could not run here, and leaves its kind to the session logs', () => {
+    const section = validationSection({
+      unchecked: [],
+      sections: [
+        {
+          title: 'validation',
+          columns: [],
+          rows: [
+            {
+              check: 'V1',
+              kind: 'test',
+              outcome: 'failed',
+              result: 'could not run here: sh: 1: cargo: not found',
+              when: 'fresh: run on the submitted content',
+              editedAfter: [],
+              cmd: 'cargo test',
+            },
+            {
+              check: 'R4',
+              kind: 'test',
+              outcome: 'passed',
+              result: '3 passed; 0 failed',
+              when: 'after the last edit the logs captured',
+              editedAfter: [],
+              cmd: 'cargo test',
+            },
+          ],
+        },
+      ],
+    });
+    const lines = section.split('\n').filter((l) => l.startsWith('- '));
+    expect(lines[0]).toBe(
+      '- `cargo test`: could not run here: sh: 1: cargo: not found (`tracetoon check`).',
+    );
+    expect(section).not.toContain('on the submitted content.');
+    expect(lines[1]).toBe(
+      '- `cargo test`: passed (3 passed, 0 failed) in the session logs.',
+    );
   });
 });
 
