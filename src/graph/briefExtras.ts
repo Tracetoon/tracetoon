@@ -44,7 +44,7 @@ export function editsBetween(g: GraphEngine): (from: string, to: string) => stri
  * and every pass was followed by a captured edit of a PR file before that
  * commit. A pass with no captured edit between it and the commit (the suite
  * run just before `git commit`) gets a softer open point (`historical`): the
- * logs show nothing changing, yet a session run is not proven to cover the
+ * logs show nothing changing, yet a session run is history, not a re-run on the
  * committed content. The process rows say the same per kind; as a limit a
  * writer states it.
  */
@@ -74,7 +74,7 @@ export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | u
       change: null,
       kind: 'open',
       historical: true,
-      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between, but it is historical and not proven to cover the committed content.`,
+      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between; it is a historical session run, not re-run on the final content.`,
     };
   }
   const lastPass =

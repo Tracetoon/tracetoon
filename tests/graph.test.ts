@@ -1634,7 +1634,7 @@ describe('the brief states recorded process and behavior', () => {
     // The fact stays, and an open point says the session run is history.
     expect(limits.map((l) => String(l.limit))).toContainEqual(
       expect.stringMatching(
-        /^The last passing run, R2 \(test\), is a session run from before the last commit .*historical and not proven to cover the committed content\.$/,
+        /^The last passing run, R2 \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
       ),
     );
   });

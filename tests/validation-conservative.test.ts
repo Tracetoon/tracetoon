@@ -183,7 +183,7 @@ describe('the brief, end to end', () => {
     const quiet = brief((log) => log.bash('bun test', '4 pass\n0 fail'));
     expect(quiet.limits).toContainEqual(
       expect.stringMatching(
-        /^The last passing run, R\d+ \(test\), is a session run from before the last commit .*not proven to cover the committed content\.$/,
+        /^The last passing run, R\d+ \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
       ),
     );
     // A heredoc script rewrote the file after the pass: no captured diff, but

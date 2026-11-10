@@ -90,7 +90,7 @@ describe('open points promoted into limits', () => {
       kind: 'open',
       historical: true,
       limit:
-        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between, but it is historical and not proven to cover the committed content.',
+        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between; it is a historical session run, not re-run on the final content.',
     };
     expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toEqual(
       historical,
