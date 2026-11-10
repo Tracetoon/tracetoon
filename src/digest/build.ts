@@ -218,6 +218,13 @@ const LAUNCHERS = [
   /^(?:yarn|pnpm)\s+(?=(?:tsc|eslint|prettier|biome|jest|vitest|mocha|playwright|pyright|shellcheck)\b)/,
 ];
 
+/** Programs whose path-run binaries are named by the program they are. */
+const RUNNER_PROGRAMS =
+  'bun|node|deno|npm|npx|pnpm|yarn|cargo|go|python3?|pytest|tsc|eslint|jest|vitest|mocha|shellcheck|mypy|pyright|ruff|dotnet|swift|mix|zig|make';
+const PATH_RUNNER = new RegExp(
+  `^(?:~|[\\w.@+-]+)?(?:\\/[\\w.@+-]+)*\\/(?:[\\w.+]+[-_])?(${RUNNER_PROGRAMS})(?=\\s|$)`,
+);
+
 /**
  * A command segment reduced to the check it runs, for matching only (the run
  * keeps the segment as written): leading assignments, wrappers and launchers
@@ -236,6 +243,9 @@ export function checkForm(seg: string): string {
     s = s.replace(/^((?:@[\w.-]+\/)?[\w.-]+)@[\w.^~<>=*-]+(?=\s|$)/, '$1');
     // A program from a `bin` folder, named by path.
     s = s.replace(/^(?:~|[\w.@+-]+)?(?:\/[\w.@+-]+)*\/\.?bin\/(?=[\w.-]+(\s|$))/, '');
+    // A known runner's binary run by any other path, or a copy named for it
+    // (`/tmp/x/bun test`, `/opt/tools/my-node --test`): named by that runner.
+    s = s.replace(PATH_RUNNER, '$1');
     if (s === before) break;
   }
   return s;
@@ -391,7 +401,7 @@ export function commandRun(
 
 /** Output lines that belong to each kind of check, when one command runs several. */
 const KIND_LINE: Partial<Record<Run['kind'], RegExp>> = {
-  test: /(\b\d+\s+(pass|passed|passing|fail|failed|failing)\b|^Tests?:\s|\btest result:)/i,
+  test: /(\b\d+\s+(pass|passed|passing|fail|failed|failing)\b|^Tests?:\s|\btest result:|^(FAIL|not ok)\b|^--- FAIL:|^\(fail\) )/i,
   typecheck: /(\bFound \d+ errors?\b|\berror TS\d+)/i,
   lint: /(All matched files use|\b\d+\s+(errors?|warnings?)\b|\bFound \d+ errors?)/i,
   build: /(\b\d+\s+(errors?|warnings?)\b|\bBundled\b|\bbuild (failed|succeeded)\b)/i,
@@ -442,11 +452,14 @@ export function commandRuns(
     if (kind) found.push({ seg, kind });
   }
   const several = found.length > 1;
+  // Any other program in the command may have printed result-like lines (an
+  // unrecognized test binary, a script), so each check keeps only its kind's.
+  const shared = several || segments.filter((s) => !SETUP_SEGMENT.test(s)).length > 1;
   const results = found.map(
     ({ seg, kind, unlogged }): Omit<Run, 'id' | 't' | 'revision'> => {
       if (unlogged)
         return { cmd: seg, kind, outcome: 'unknown', basis: 'none', summary: [] };
-      const own = several
+      const own = shared
         ? (output ?? '')
             .split(/\r?\n/)
             .filter((l) => KIND_LINE[kind]?.test(l) ?? false)
@@ -497,6 +510,13 @@ export function commandRuns(
   );
 }
 
+/** Segments that set up a command and print no result: `cd x`, `export A=b`. */
+const SETUP_SEGMENT = /^(?:cd|pushd|popd|export|unset|set|source|\.|true|:)(?:\s|$)/;
+
+/** A test runner's count or summary line, never a typecheck's, lint's or build's result. */
+const TEST_COUNT_LINE =
+  /\b\d+\s+(pass|passed|passing|fail|failed|failing|tests?|skip|skipped|todo)\b|^Tests?:\s|\btest result:/i;
+
 const RESULT_LINE =
   /(\b\d+\s+(pass|passed|passing|fail|failed|failing|errors?|warnings?)\b|\b\d+\/\d+\s+checks?\b|^Tests?:\s|\btest result:|All matched files use|Found \d+ errors?)/i;
 
@@ -524,7 +544,7 @@ export function runOutcome(
   const summary = (output ?? '')
     .split(/\r?\n/)
     .map((l) => l.trim())
-    .filter((l) => RESULT_LINE.test(l))
+    .filter((l) => RESULT_LINE.test(l) && (kind === 'test' || !TEST_COUNT_LINE.test(l)))
     .slice(-3)
     .map((l) => l.slice(0, 120));
   const isTest = kind === 'test';

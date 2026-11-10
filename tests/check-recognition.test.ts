@@ -242,3 +242,42 @@ describe('Claude Code results whose call is not in the log', () => {
     expect(cmds[0]).toMatchObject({ cmd: ORPHAN_COMMAND, orphan: true, cwd: '/repo' });
   });
 });
+
+describe('result lines belong to the check that printed them', () => {
+  const counts = '12 pass\n0 fail\nRan 12 tests across 2 files.';
+
+  test('a runner binary run by an arbitrary path is named by the runner', () => {
+    expect(checkForm('/tmp/tools/proj-bun test a.ts')).toBe('bun test a.ts');
+    expect(checkForm('/opt/x/node --test')).toBe('node --test');
+    expect(kindOf('env PATH=/x:$PATH /tmp/tools/proj-bun test a.ts')).toBe('test');
+    // A script by its path is still the script.
+    expect(checkForm('./tests/run.sh')).toBe('./tests/run.sh');
+    expect(checkForm('/a/b/bunny test')).toBe('/a/b/bunny test');
+  });
+
+  test("a typecheck after a test in one command never gets the test's counts", () => {
+    const runs = commandRuns(
+      'env PATH=/x:$PATH /tmp/tools/proj-bun test a.ts && ./node_modules/.bin/tsc -p .',
+      false,
+      counts,
+    );
+    expect(runs.map((r) => [r.kind, r.summary])).toEqual([
+      ['test', ['12 pass', '0 fail']],
+      ['typecheck', ['exit 0']],
+    ]);
+  });
+
+  test("an unrecognized program's lines are not another check's", () => {
+    const [tsc] = commandRuns('/w/unknown-runner spec && tsc -p .', false, counts);
+    expect(tsc).toMatchObject({ kind: 'typecheck', summary: ['exit 0'] });
+    // Even alone, a typecheck, lint or build keeps no test counts.
+    expect(commandRun('tsc -p .', false, counts)?.summary).toEqual(['exit 0']);
+    expect(commandRun('bun run build', false, `${counts}\n2 warnings`)?.summary).toEqual([
+      '2 warnings',
+    ]);
+    // A test piped to `tail` keeps its own lines, failures included.
+    expect(
+      commandRun('go test ./... | tail -5', false, '--- FAIL: TestX\nFAIL'),
+    ).toMatchObject({ outcome: 'failed', basis: 'output' });
+  });
+});
