@@ -217,11 +217,13 @@ describe('the brief, end to end', () => {
     expect(limits.some((l) => l.includes('recognized no passing'))).toBe(false);
   });
 
-  test('a pass just before the commit covers it; a shell write after it reopens the point', () => {
+  test('a pass just before the commit is history; a shell write after it reopens the point', () => {
     const quiet = brief((log) => log.bash('bun test', '4 pass\n0 fail'));
-    expect(
-      quiet.limits.some((l) => /after the last commit|historical session run/.test(l)),
-    ).toBe(false);
+    expect(quiet.limits).toContainEqual(
+      expect.stringMatching(
+        /^The last passing run, R\d+ \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
+      ),
+    );
     // A heredoc script rewrote the file after the pass: no captured diff, but
     // the command text shows the write.
     const script = [

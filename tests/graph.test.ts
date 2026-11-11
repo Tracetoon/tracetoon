@@ -1631,9 +1631,11 @@ describe('the brief states recorded process and behavior', () => {
     expect(facts).not.toMatch(/no pass(ing run recorded)? after the last commit/);
     const limits = p.sections.find((x) => x.title === 'limits')!.rows;
     expect(limits.some((l) => /No passing check run/.test(String(l.limit)))).toBe(false);
-    // The fact stays, and no open point is added for it.
-    expect(limits.some((l) => /historical session run/.test(String(l.limit)))).toBe(
-      false,
+    // The fact stays, and on a Claude Code host an open point says it is history.
+    expect(limits.map((l) => String(l.limit))).toContainEqual(
+      expect.stringMatching(
+        /^The last passing run, R2 \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
+      ),
     );
   });
 

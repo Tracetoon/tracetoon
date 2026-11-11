@@ -94,6 +94,10 @@ section-per-topic template down as "inventory-like".
   undone, a command that kept failing), each a clause, folded in where they
   belong or in one short paragraph. If you ran `tracetoon check` and it
   passed, don't repeat a "no passing run after the last commit" limit.
+  When a limit calls a pass a historical session run, say it that way: a
+  historical session run, not re-run on the final content (never "the last
+  commit passed"). Don't turn it into a claim that coverage is missing ("not
+  proven to cover", "does not establish coverage").
 - **Where to start and the feedback wanted**, in one or two lines at the end:
   the function and file the `entry` process row names ("start at `fn` in
   `file`"; without one, a file from `changes.where`), not the largest file or

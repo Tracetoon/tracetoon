@@ -9,6 +9,7 @@
  * - the cap on `limits` rows.
  * Generic rules over graph facts only; each row is short and cites its refs.
  */
+import { hostAgent, type HostAgent } from '../util/host.ts';
 import type { GraphEngine } from './engine.ts';
 import { fileRole as pathRole } from '../digest/build.ts';
 import { unitRole } from './build.ts';
@@ -48,7 +49,21 @@ export function editsBetween(g: GraphEngine): (from: string, to: string) => stri
  * committed content. The process rows say the same per kind; as a limit a
  * writer states it.
  */
-export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | undefined {
+/**
+ * Whether a quiet pass (no captured edit before the last commit) still gets a
+ * "historical session run" open point. Measured on prbench real-cases@2.0.0:
+ * Claude Code writers state it accurately and gain from it; Codex writers turn
+ * it into coverage claims judges mark wrong. So it is shown on Claude Code hosts
+ * only (`TRACETOON_HOST_AGENT` overrides the detected host).
+ */
+export const historicalRunLimit = (host: HostAgent | undefined = hostAgent()): boolean =>
+  host === 'claude';
+
+export function noPassAfterCommitRow(
+  g: GraphEngine,
+  scopedRuns: Row[],
+  historical: boolean = historicalRunLimit(),
+): Row | undefined {
   if (!scopedRuns.length) return undefined;
   const last = g
     .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
@@ -69,8 +84,18 @@ export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | u
     .filter((r) => r.t && !editedBetween(r).length)
     .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')));
   // A pass with no captured edit between it and the last commit covers the
-  // commit (an inferred shell write would count as an edit).
-  if (quiet.length) return undefined;
+  // commit (an inferred shell write would count as an edit). On Claude Code
+  // hosts it is still said to be a historical session run (see above).
+  if (quiet.length && !historical) return undefined;
+  if (quiet.length) {
+    const r = quiet.filter((x) => x.kind === 'test').at(-1) ?? quiet.at(-1)!;
+    return {
+      change: null,
+      kind: 'open',
+      historical: true,
+      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between; it is a historical session run, not re-run on the final content.`,
+    };
+  }
   const lastPass =
     [...passed]
       .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))

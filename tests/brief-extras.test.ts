@@ -13,6 +13,7 @@ import {
   failedPublishRows,
   functionProfiles,
   noPassAfterCommitRow,
+  historicalRunLimit,
   remotePathRows,
   type LiveEvidence,
 } from '../src/graph/briefExtras.ts';
@@ -83,12 +84,24 @@ describe('open points promoted into limits', () => {
       limit:
         'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
-    // A pass with no captured edit between it and the commit covers it: no
-    // open point (the historical-run limit cost Codex accuracy, ablation B).
-    const historical = undefined;
+    // On a Claude Code host (tests pin it) a pass with no captured edit
+    // between it and the commit is a historical session run: a softer open point.
+    const historical = {
+      change: null,
+      kind: 'open',
+      historical: true,
+      limit:
+        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between; it is a historical session run, not re-run on the final content.',
+    };
     expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toEqual(
       historical,
     );
+    // Other hosts (Codex) get no open point for it.
+    expect(
+      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs, false)),
+    ).toBeUndefined();
+    expect(historicalRunLimit('codex')).toBe(false);
+    expect(historicalRunLimit('claude')).toBe(true);
     expect(
       withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
         noPassAfterCommitRow(e, runs),
