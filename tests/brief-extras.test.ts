@@ -83,15 +83,9 @@ describe('open points promoted into limits', () => {
       limit:
         'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
-    // A pass with no captured edit between it and the commit is still a
-    // session run: a softer open point, never proof about the committed content.
-    const historical = {
-      change: null,
-      kind: 'open',
-      historical: true,
-      limit:
-        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between; it is a historical session run, not re-run on the final content.',
-    };
+    // A pass with no captured edit between it and the commit covers it: no
+    // open point (the historical-run limit cost Codex accuracy, ablation B).
+    const historical = undefined;
     expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toEqual(
       historical,
     );
@@ -468,7 +462,6 @@ test('drafting guidance: word target, one motive sentence, the entry row', () =>
   expect(drafting).toMatch(/never widen it: not to "no\s+tests were run"/);
   // Environment scope is allowed only with a citation; session runs are history.
   expect(drafting).toMatch(/environment-scope statement[\s\S]{0,200}with that tag/);
-  expect(drafting).toMatch(/historical session runs, not re-run on the final content/);
   expect(drafting).toMatch(/could not\s+run here/);
   expect(drafting).toMatch(
     /agent-instruction text that changes what users or agents are told/,

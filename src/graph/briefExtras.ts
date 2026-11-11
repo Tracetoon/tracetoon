@@ -68,17 +68,9 @@ export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | u
   const quiet = passed
     .filter((r) => r.t && !editedBetween(r).length)
     .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')));
-  // Ablation abl-b: no historical-run limit (r2 behavior: a quiet pass covers the commit).
+  // A pass with no captured edit between it and the last commit covers the
+  // commit (an inferred shell write would count as an edit).
   if (quiet.length) return undefined;
-  if (quiet.length) {
-    const r = quiet.filter((x) => x.kind === 'test').at(-1) ?? quiet.at(-1)!;
-    return {
-      change: null,
-      kind: 'open',
-      historical: true,
-      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between; it is a historical session run, not re-run on the final content.`,
-    };
-  }
   const lastPass =
     [...passed]
       .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))
