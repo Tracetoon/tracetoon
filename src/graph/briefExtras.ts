@@ -59,6 +59,41 @@ export function editsBetween(g: GraphEngine): (from: string, to: string) => stri
 export const historicalRunLimit = (host: HostAgent | undefined = hostAgent()): boolean =>
   host === 'claude';
 
+/** A test runner's own count of passing tests, with no failure counted. */
+const OWN_PASS_LINE = /\b[1-9]\d*\s+(?:pass|passed|passing)\b|^test result: ok\b|^ok\s/i;
+const FAIL_COUNT = /\b[1-9]\d*\s+(?:fail|failed|failing|failures?|errors?)\b/i;
+
+/**
+ * Whether a quiet pass (no captured edit before the last commit) ran on the
+ * committed content as far as the logs can tell: a test run whose own result
+ * lines show passing tests and no failure, the commit made by an included
+ * session, and no prompt of an included session between the run and that
+ * commit (one agent turn ran the suite and committed; nobody had the keyboard
+ * in between).
+ */
+export function gateBeforeCommit(g: GraphEngine, run: Row, commit: Row): boolean {
+  if (run.kind !== 'test' || !run.t) return false;
+  const summary = ((run.summary as string[]) ?? []).map(String);
+  if (
+    !summary.some((l) => OWN_PASS_LINE.test(l)) ||
+    summary.some((l) => FAIL_COUNT.test(l))
+  )
+    return false;
+  const made = g.run(
+    `MATCH (:Session {band: 'included'})-[:MADE]->(k:Commit {id: $id}) RETURN k.id AS id`,
+    { id: String(commit.id) },
+  ).rows.length;
+  if (!made) return false;
+  const from = String(run.t);
+  const to = String(commit.t);
+  return !g
+    .run(
+      `MATCH (p:Prompt)-[:IN_SESSION]->(:Session {band: 'included'})
+       WHERE p.t IS NOT NULL RETURN p.t AS t`,
+    )
+    .rows.some((p) => String(p.t) > from && String(p.t) <= to);
+}
+
 export function noPassAfterCommitRow(
   g: GraphEngine,
   scopedRuns: Row[],
@@ -89,6 +124,11 @@ export function noPassAfterCommitRow(
   if (quiet.length && !historical) return undefined;
   if (quiet.length) {
     const r = quiet.filter((x) => x.kind === 'test').at(-1) ?? quiet.at(-1)!;
+    // The suite run right before committing (a release gate, `bun test && git
+    // commit`) is no history: with its own result line, no captured edit and no
+    // user turn between it and a commit the session made, it ran on what was
+    // committed.
+    if (gateBeforeCommit(g, r, last)) return undefined;
     return {
       change: null,
       kind: 'open',
@@ -568,11 +608,13 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
       `MATCH (c:Change)-[:HAS]->(h:Hunk)-[:OF]->(f:File)
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.scope AS scope,
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
-              h.diff AS diff, h.branches AS branches, h.added AS added`,
+              h.diff AS diff, h.branches AS branches, h.added AS added,
+              h.owns AS owns, h.readers AS readers`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
   if (!hunks.length) return undefined;
+  const { owning, ownsIn } = changeOwners(hunks);
   const definedIn = new Map<string, string>();
   for (const h of hunks)
     for (const s of [
@@ -600,9 +642,12 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const owners = new Map<string, Owner>();
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const h of hunks) {
-    const owner = [h.scope, ...((h.touched as string[]) ?? [])]
+    // The function that owns the hunk's changed code: never one git only names
+    // after the @@ while the changes sit below it, one whose lines only moved,
+    // or a getter that only reads a value.
+    const owner = [h.scope, ...((h.touched as string[]) ?? []), ...(ownsIn(h) ?? [])]
       .map((x) => (x == null ? '' : String(x)))
-      .find((x) => NAME.test(x));
+      .find((x) => NAME.test(x) && (!ownsIn(h) || ownsIn(h)!.includes(x)));
     if (!owner) continue;
     const code = addedCode(h.code);
     const key = `${String(h.file)}#${owner}`;
@@ -645,6 +690,8 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
     const head = ` Not in \`${entry}\`: `;
     const parts: string[] = [];
     for (const r of related) {
+      // Only functions that own changed code are named (see `changeOwners`).
+      if (!owning(r.name)) continue;
       const what = ownedBy(profiles.get(r.name), 48);
       // A callee the lead already names adds something only with what is tied to it.
       if (r.how === 'called' && !what) continue;
@@ -732,6 +779,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const file = top ? ((top.definedIn as string[]) ?? []).map(String)[0] : undefined;
   if (!top || !file || unitRole(file, pathRole(file)) !== 'src') return undefined;
   const term = String(top.term);
+  if (!owning(term)) return undefined;
   if (ownedShare(hunks, term, file) < MIN_ENTRY_SHARE) return undefined;
   const h = hunks.find((x) => x.file === file);
   const related = callersOf(term).map((o) => ({
@@ -743,6 +791,29 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
     kind: 'entry',
     fact: text,
     cites: uniqStr([...(h ? [String(h.change), String(h.diff)] : []), ...cites]),
+  };
+}
+
+/**
+ * Which functions own changed code, from the hunks' `owns` and `readers`
+ * (patchHunks): a function owns a change when a changed code line that was not
+ * just moved sits in its body; a getter whose changed code only reads a value
+ * owns none. `ownsIn(h)` is a hunk's owners, undefined for a graph built
+ * before `owns` existed (then every function counts, as before).
+ */
+export function changeOwners(hunks: Row[]): {
+  owning: (name: string) => boolean;
+  ownsIn: (h: Row) => string[] | undefined;
+} {
+  const known = hunks.some((h) => Array.isArray(h.owns));
+  const list = (x: unknown) => ((x as string[]) ?? []).map(String);
+  // A function owns a change when some hunk's changed code in it does more than read.
+  const owners = new Set(
+    hunks.flatMap((h) => list(h.owns).filter((n) => !list(h.readers).includes(n))),
+  );
+  return {
+    owning: (name) => !known || owners.has(name),
+    ownsIn: (h) => (known ? list(h.owns).filter((n) => owners.has(n)) : undefined),
   };
 }
 
@@ -815,7 +886,7 @@ export function ownerRows(
     hunks = g.run(
       `MATCH (c:Change)-[:HAS]->(h:Hunk)-[:OF]->(f:File)
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.diff AS diff,
-              h.fnWords AS fnWords`,
+              h.fnWords AS fnWords, h.owns AS owns`,
     ).rows;
   } catch {
     return [];
@@ -835,6 +906,9 @@ export function ownerRows(
       const i = entry.indexOf(': ');
       const fn = i < 0 ? entry : entry.slice(0, i);
       if (!NAME.test(fn) || !CALLABLE.test(fn) || fn.length < 4) continue;
+      // A function whose changed lines only moved owns no behavior here.
+      if (Array.isArray(h.owns) && !(h.owns as string[]).map(String).includes(fn))
+        continue;
       segs.push({
         fn,
         file: String(h.file),

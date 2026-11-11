@@ -87,8 +87,14 @@ describe('owners rows', () => {
     );
   const ctx = {
     sentences: [
-      { ref: 'abc#1', text: 'Work already in the base branch is left out: the cutoff is the last commit merged.' },
-      { ref: 'abc#2', text: 'Turns that finished before it are dropped from the stale items.' },
+      {
+        ref: 'abc#1',
+        text: 'Work already in the base branch is left out: the cutoff is the last commit merged.',
+      },
+      {
+        ref: 'abc#2',
+        text: 'Turns that finished before it are dropped from the stale items.',
+      },
       { ref: 'abc#3', text: 'Work after the last commit belongs to the next window.' },
       { ref: 'abc', text: 'fix: narrow the window and drop stale work' },
     ],
@@ -114,7 +120,9 @@ describe('owners rows', () => {
 
   test('no rows when one function owns everything in its unit, or nothing clearly leads', () => {
     const one = {
-      sentences: [{ ref: 'abc#3', text: 'Work after the last commit belongs to the next window.' }],
+      sentences: [
+        { ref: 'abc#3', text: 'Work after the last commit belongs to the next window.' },
+      ],
       links: { 'abc#3': ['H1'] },
     };
     expect(withGraph(graph(), (g) => ownerRows(g, one))).toEqual([]);
@@ -128,6 +136,25 @@ describe('owners rows', () => {
     expect(withGraph(graph(), (g) => ownerRows(g, vague))).toEqual([]);
   });
 
+  test('a function whose changed lines only moved owns no sentence', () => {
+    // H2's lines in `staleCutoff` only moved (owns lists `skipStaleItems` alone).
+    const moved = graphOf(
+      graph().nodes.map((n) =>
+        n.id === 'H2'
+          ? { ...n, props: { ...n.props, owns: ['skipStaleItems'] } }
+          : n.id === 'H1'
+            ? { ...n, props: { ...n.props, owns: ['narrowRange'] } }
+            : n,
+      ),
+      graph().rels,
+    );
+    const rows = withGraph(moved, (g) => ownerRows(g, ctx));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.map((r) => String(r.function))).not.toContainEqual(
+      expect.stringContaining('staleCutoff'),
+    );
+  });
+
   test('graphs without fnWords give no rows', () => {
     const old = graphOf([
       N('File', 'src/a.ts', { role: 'behavior', inPr: true }),
@@ -138,7 +165,11 @@ describe('owners rows', () => {
   });
 
   test('clauses split at semicolons and at a colon with words on both sides', () => {
-    expect(clausesOf('A b c d: e f g h; i j k.')).toEqual(['A b c d', 'e f g h', 'i j k']);
+    expect(clausesOf('A b c d: e f g h; i j k.')).toEqual([
+      'A b c d',
+      'e f g h',
+      'i j k',
+    ]);
     expect(clausesOf('Docs: one two three.')).toEqual(['Docs: one two three']);
   });
 
@@ -211,22 +242,31 @@ describe('code evidence direction', () => {
 
   test('a short condition: was → now, with what was dropped and kept', () => {
     expect(
-      operandChanges(["  if (r.kind === 'prompt' && !r.meta) {"], ["  if (r.kind === 'prompt') {"]),
+      operandChanges(
+        ["  if (r.kind === 'prompt' && !r.meta) {"],
+        ["  if (r.kind === 'prompt') {"],
+      ),
     ).toEqual([
       {
         text: "was `r.kind === 'prompt' && !r.meta` → now `r.kind === 'prompt'`; dropped: `!r.meta`; kept: `r.kind === 'prompt'`",
-        lines: ["  if (r.kind === 'prompt' && !r.meta) {", "  if (r.kind === 'prompt') {"],
+        lines: [
+          "  if (r.kind === 'prompt' && !r.meta) {",
+          "  if (r.kind === 'prompt') {",
+        ],
       },
     ]);
     // An added operand.
-    expect(operandChanges(['  if (a > 1) {'], ['  if (a > 1 || b.has(x)) {'])[0]!.text).toContain(
-      'added: `b.has(x)`; kept: `a > 1`',
-    );
+    expect(
+      operandChanges(['  if (a > 1) {'], ['  if (a > 1 || b.has(x)) {'])[0]!.text,
+    ).toContain('added: `b.has(x)`; kept: `a > 1`');
   });
 
   test('a value fallback is a value change, not a condition', () => {
     expect(
-      operandChanges(["  const n = git(['a', 'HEAD']) || ref;"], ["  const n = git(['a', head]) || ref;"]),
+      operandChanges(
+        ["  const n = git(['a', 'HEAD']) || ref;"],
+        ["  const n = git(['a', head]) || ref;"],
+      ),
     ).toEqual([]);
   });
 
@@ -256,7 +296,13 @@ describe('code evidence direction', () => {
       {
         title: 'commitMessages',
         columns: ['ref', 'text', 'implementedBy'],
-        rows: [{ ref: 'abc#1', text: 'Sharing a group no longer relates two items.', implementedBy: [] }],
+        rows: [
+          {
+            ref: 'abc#1',
+            text: 'Sharing a group no longer relates two items.',
+            implementedBy: [],
+          },
+        ],
       },
     ];
     withGraph(g, (eng) => addCodeCells(eng, sections, { 'abc#1': ['H1'] }, 2000));

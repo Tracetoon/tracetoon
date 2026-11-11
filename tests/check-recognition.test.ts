@@ -369,3 +369,55 @@ describe('a refused shell call is not a run', () => {
     ]);
   });
 });
+
+describe('a project script that ran the suite', () => {
+  const bunOut = [
+    'checking content…',
+    'lint: 2 warnings',
+    '(pass) a > b [1.2ms]',
+    '',
+    ' 41 pass',
+    ' 3 skip',
+    ' 0 fail',
+    'Ran 44 tests across 9 files. [3.1s]',
+    'build ok',
+  ].join('\n');
+
+  test('a package script or script file whose output shows a runner summary is a test run', () => {
+    for (const cmd of ['bun run release', './scripts/release.sh', 'npm run gate']) {
+      const runs = commandRuns(cmd, false, bunOut);
+      expect(runs).toHaveLength(1);
+      expect(runs[0]).toMatchObject({ cmd, kind: 'test', outcome: 'passed' });
+      // Only the test lines are its result, not the script's other output.
+      expect(runs[0]!.summary).toEqual(['41 pass', '0 fail']);
+    }
+    const jest = 'Test Suites: 3 passed, 3 total\nTests:       12 passed, 12 total\n';
+    expect(commandRuns('yarn gate', false, jest)[0]).toMatchObject({
+      kind: 'test',
+      outcome: 'passed',
+    });
+    const failing = bunOut.replace(' 0 fail', ' 2 fail');
+    expect(commandRuns('bash ci/gate.sh', false, failing)[0]).toMatchObject({
+      kind: 'test',
+      outcome: 'failed',
+    });
+  });
+
+  test('chained after other steps, the script is a run next to the recognized checks', () => {
+    const runs = commandRuns('bun x tsc --noEmit && bun run release', false, bunOut);
+    expect(runs.map((r) => [r.kind, r.cmd])).toEqual([
+      ['typecheck', 'bun x tsc --noEmit'],
+      ['test', 'bun run release'],
+    ]);
+  });
+
+  test('no runner summary, two scripts, or a test command of its own: no script run', () => {
+    // Count-like lines alone are no runner's summary.
+    expect(
+      commandRuns('bun run release', false, 'published 3 files\n2 warnings'),
+    ).toEqual([]);
+    expect(commandRuns('npm run a && npm run b', false, bunOut)).toEqual([]);
+    const runs = commandRuns('bun test && bun run release', false, bunOut);
+    expect(runs.map((r) => r.cmd)).toEqual(['bun test']);
+  });
+});

@@ -120,6 +120,46 @@ describe('open points promoted into limits', () => {
     expect(withGraph(graphOf([]), (e) => noPassAfterCommitRow(e, runs))).toBeUndefined();
   });
 
+  test('a suite run with its own result line, then the commit in the same turn, is no historical run', () => {
+    // The session ran the suite (a release gate, say) and committed, with no
+    // edit and no user prompt in between.
+    const commit = N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) });
+    const session = N('Session', 'h:a', { band: 'included' });
+    const made = R('MADE', ['Session', 'h:a'], ['Commit', 'abc123def4567']);
+    const prompt = (at: number) => [
+      N('Prompt', 'S2', { t: t(at), text: 'commit it', session: 'h:a' }),
+    ];
+    const promptRel = R('IN_SESSION', ['Prompt', 'S2'], ['Session', 'h:a']);
+    const gate = {
+      id: 'R1',
+      kind: 'test',
+      outcome: 'passed',
+      t: t(3),
+      summary: ['41 pass', '0 fail'],
+    };
+    const row = (nodes: any[], rs: any[], run: Record<string, unknown> = gate) =>
+      withGraph(graphOf([commit, session, ...nodes], rs), (e) =>
+        noPassAfterCommitRow(e, [run], true),
+      );
+    expect(row([], [made])).toBeUndefined();
+    // A prompt before the run doesn't matter.
+    expect(row(prompt(2), [made, promptRel])).toBeUndefined();
+    // A user turn between the run and the commit: history again.
+    expect(row(prompt(4), [made, promptRel])?.historical).toBe(true);
+    // A commit no included session made (by hand, another tool): history.
+    expect(row([], [])?.historical).toBe(true);
+    // No result line of its own (exit status only), or a failure counted: history.
+    expect(row([], [made], { ...gate, summary: ['exit 0'] })?.historical).toBe(true);
+    expect(row([], [made], { ...gate, summary: ['40 pass', '1 fail'] })?.historical).toBe(
+      true,
+    );
+    // A later test run in another recognized form (a script's own result
+    // lines, after the commit) closes it like any run.
+    expect(
+      row(prompt(4), [made, promptRel], { ...gate, t: t(6), cmd: 'bun run release' }),
+    ).toBeUndefined();
+  });
+
   test('a failed publishing command is an open point; other failures are not', () => {
     const g = graphOf([
       N('Session', 'h:a', {
@@ -327,6 +367,63 @@ describe('the entry point', () => {
       (g) => entryRow(g),
     );
     expect(row).toBeUndefined();
+  });
+
+  test('only a function that owns changed code is named: not the one git names after the @@', () => {
+    // `chooseProvider` is only the @@ context; the changed lines sit in `castRefs`.
+    const owned = hunks.map((h) =>
+      h.id === 'H2'
+        ? { ...h, props: { ...h.props, owns: ['castRefs'] } }
+        : h.id === 'H1'
+          ? { ...h, props: { ...h.props, owns: ['providerInfo', 'generateImages'] } }
+          : h,
+    );
+    const row = withGraph(graphOf([...files, ...owned, ...changes, headRef], rels), (g) =>
+      entryRow(g),
+    );
+    expect(row?.fact).toBe('Start at `castRefs` in src/commands/comic.ts.');
+    // The hunk's lines only moved: it owns nothing, and nothing else qualifies.
+    const moved = owned.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, owns: [] } } : h,
+    );
+    expect(
+      withGraph(graphOf([...files, ...moved, ...changes, headRef], rels), (g) =>
+        entryRow(g),
+      ),
+    ).toBeUndefined();
+  });
+
+  test('a most-referenced symbol is no entry when it owns no changed code or only reads a value', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    const lonely = rels.filter((r) => !JSON.stringify(r).includes('"H2"'));
+    const withOwns = (owns: string[], readers: string[] = []) =>
+      lone.map((h) =>
+        h.id === 'H1' ? { ...h, props: { ...h.props, owns, readers } } : h,
+      );
+    const entry = (hs: any[]) =>
+      withGraph(graphOf([...files, ...hs, ...changes, headRef], lonely), (g) =>
+        entryRow(g),
+      );
+    expect(entry(withOwns(['providerInfo']))?.fact).toBe(
+      'Start at `providerInfo` in src/comic/providers.ts.',
+    );
+    expect(entry(withOwns(['generateImages']))).toBeUndefined();
+    expect(entry(withOwns(['providerInfo'], ['providerInfo']))).toBeUndefined();
+  });
+
+  test('moved lines are said as moved in `was`, not as a changed value', () => {
+    const moved = hunks.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, moved: 3 } } : h,
+    );
+    const p = withGraph(graphOf([...files, ...moved, ...changes], rels), (g) =>
+      briefParts(g),
+    );
+    const was = p.sections
+      .find((x) => x.title === 'changes')!
+      .rows.flatMap((r) => (r.was as string[]) ?? []);
+    expect(was).toEqual([
+      'src/commands/comic.ts: 3 line(s) moved or reflowed, text unchanged',
+    ]);
   });
 
   test('the brief carries it as a process row and the head scan stops calling itself the place to start', () => {
@@ -661,6 +758,23 @@ describe('the entry row says what each function owns', () => {
     );
     expect(row?.cites).toContain('abc1234#1');
     expect(String(row?.fact).length).toBeLessThanOrEqual(320);
+  });
+
+  test('a related function that owns no changed code is not named', () => {
+    const owned = graphOf(
+      graph().nodes.map((n) =>
+        n.id === 'H1'
+          ? { ...n, props: { ...n.props, owns: ['leadingCd'] } }
+          : n.id === 'H2'
+            ? { ...n, props: { ...n.props, owns: [] } }
+            : n,
+      ),
+      graph().rels,
+    );
+    const row = withGraph(owned, (g) => entryRow(g, ctx));
+    expect(row?.fact).toBe(
+      'Start at `leadingCd` in src/trace/pathMatch.ts; tied to it: Commands that start with cd are judged by the directory they… (abc1234#1).',
+    );
   });
 
   test('profiles: a sentence goes to the one function its hunk defines, branches to their hunk', () => {

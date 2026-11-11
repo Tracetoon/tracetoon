@@ -12,8 +12,10 @@ instructions. These rules are for you: never copy their wording into the PR.
   pass after the last commit, a failed push or `gh` command, remote paths no
   run shows live).
 - `changes`: change units with `where` (files and symbols), `newSymbols`, `was`
-  (old values), `added`/`removed` lines, and a `behavior` line saying what the
-  unit now does. Read the diff refs a unit cites before describing it.
+  (old values; "moved or reflowed, text unchanged" means only moved: never
+  describe those lines as removed, changed or a new rule), `added`/`removed`
+  lines, and a `behavior` line saying what the unit now does. Read the diff
+  refs a unit cites before describing it.
 - `requests`: the user's asks scoped to this PR's turns; one is marked goal.
 - `background`: why the work started (the session's first request) and
   plans or decisions from earlier turns, when this PR's own turns don't show

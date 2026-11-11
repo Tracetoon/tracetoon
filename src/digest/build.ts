@@ -288,6 +288,33 @@ const isTestRunner = (seg: string) => {
   return TEST_RUNNERS.some((re) => re.test(s)) || isTestScript(s);
 };
 
+/**
+ * A segment that runs a project script whose name says nothing about tests:
+ * a package script (`bun run release`, `npm run gate`, `yarn prepublishOnly`),
+ * a make target, or a script file (`./scripts/release.sh`, `bash ci/gate.sh`).
+ * It can run the suite inside; only its output can show that.
+ */
+const PACKAGE_SCRIPT =
+  /^(?:(?:bun|npm|pnpm)\s+run\s+[\w:.-]+|yarn\s+(?:run\s+)?(?!(?:add|install|remove|upgrade|init|create|dlx|exec|why|info)\b)[\w:.-]+|make\s+[\w.-]+)(?=\s|$)/;
+export function isProjectScript(seg: string): boolean {
+  const s = checkForm(seg);
+  if (PACKAGE_SCRIPT.test(s)) return true;
+  const path = SCRIPT.exec(s)?.[1];
+  // The project's own scripts: a relative path, never a program elsewhere.
+  return !!path && SCRIPT_FILE.test(path) && !/^[-/~$]/.test(path);
+}
+
+/**
+ * A summary line only a test runner prints: bun's `Ran N tests across M files`,
+ * jest's `Tests: …`, vitest's `Tests  N passed`, pytest's `=== N passed in 1.2s ===`,
+ * mocha's `N passing (12ms)`, cargo's `test result: ok.`, go's `ok  pkg 0.1s`,
+ * node's `# pass N`. A script that prints one ran a suite.
+ */
+const RUNNER_SUMMARY =
+  /^\s*Ran \d+ tests? across \d+ files?\b|^\s*Tests?:\s+.*\b\d+ (?:passed|failed|total)\b|^\s*Tests\s+\d+ (?:passed|failed)\b|^=+ .*\b\d+ (?:passed|failed)\b.* in [\d.]+m?s\b|^\s*\d+ passing \(\d|^test result: (?:ok|FAILED)\. \d+ passed|^(?:ok|FAIL)\s+\S+\s+(?:[\d.]+s|\(cached\))\s*$|^# pass \d+\s*$/m;
+export const hasRunnerSummary = (output: string | undefined): boolean =>
+  RUNNER_SUMMARY.test(output ?? '');
+
 /** Words of the PR's changed lines, once per line index. */
 const prWordCache = new WeakMap<object, Set<string>>();
 function prWordsOf(prSets: Map<string, Set<string>>): Set<string> {
@@ -444,12 +471,21 @@ export function commandRuns(
     return !later.some((x) => x.includes(target));
   };
   const testSegments = segments.filter(isTestRunner);
+  // No test command, but a project script (`bun run release`) whose output
+  // shows a test runner's summary: the script ran the suite, so it is a test
+  // run of its own. Only one such script, or the output can't be pinned on it.
+  const scripts = testSegments.length
+    ? []
+    : segments.filter((x) => !verifyKind(x) && isProjectScript(x) && !toFile(x));
+  const viaScript =
+    scripts.length === 1 && hasRunnerSummary(output) ? scripts[0] : undefined;
+  if (viaScript) testSegments.push(viaScript);
   const logged = testSegments.filter((s) => !toFile(s));
   const tests = logged.length ? logged : testSegments;
   const found: { seg: string; kind: Run['kind']; unlogged?: boolean }[] = [];
   let testAdded = false;
   for (const seg of segments) {
-    if (isTestRunner(seg)) {
+    if (isTestRunner(seg) || seg === viaScript) {
       if (!tests.includes(seg)) {
         // Its results went to a file; record that it ran, not what it showed.
         found.push({ seg, kind: 'test', unlogged: true });
@@ -465,7 +501,10 @@ export function commandRuns(
   const several = found.length > 1;
   // Any other program in the command may have printed result-like lines (an
   // unrecognized test binary, a script), so each check keeps only its kind's.
-  const shared = several || segments.filter((s) => !SETUP_SEGMENT.test(s)).length > 1;
+  // A script prints more than its suite (lint warnings, build counts), so its
+  // run keeps only the test lines too.
+  const shared =
+    several || !!viaScript || segments.filter((s) => !SETUP_SEGMENT.test(s)).length > 1;
   const results = found.map(
     ({ seg, kind, unlogged }): Omit<Run, 'id' | 't' | 'revision'> => {
       if (unlogged)

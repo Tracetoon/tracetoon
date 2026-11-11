@@ -995,7 +995,7 @@ export function briefParts(
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
             h.conds AS conds,
-            h.tests AS tests, h.words AS words, count(DISTINCT e) AS edits,
+            h.tests AS tests, h.words AS words, h.moved AS moved, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
   const fileRole = new Map(
@@ -1047,11 +1047,24 @@ export function briefParts(
         .flatMap((h) => (h.fresh as string[]) ?? []),
     ).slice(0, 8);
     // Each pair with its file, to quote as a code change, not to retell.
-    const was = uniq(
-      hs.flatMap((h) =>
-        ((h.pairs as string[]) ?? []).map((p) => `${String(h.file)}: ${p}`),
+    // Lines only moved or reflowed are said as such, never as a changed value.
+    const movedIn = new Map<string, number>();
+    for (const h of hs)
+      if (
+        Number(h.moved) > 0 &&
+        !['tests', 'generated'].includes(fileRole.get(String(h.file)) ?? '')
+      )
+        movedIn.set(String(h.file), (movedIn.get(String(h.file)) ?? 0) + Number(h.moved));
+    const was = uniq([
+      ...hs
+        .flatMap((h) =>
+          ((h.pairs as string[]) ?? []).map((p) => `${String(h.file)}: ${p}`),
+        )
+        .slice(0, 4),
+      ...[...movedIn].map(
+        ([f, n]) => `${f}: ${n} line(s) moved or reflowed, text unchanged`,
       ),
-    ).slice(0, 4);
+    ]).slice(0, 5);
     const behavior = behaviorOf(
       hs.filter(
         (h) =>

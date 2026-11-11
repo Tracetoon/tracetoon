@@ -451,6 +451,99 @@ describe('evidence graph', () => {
     expect(r.json.contributionReview.status).toBe('skipped');
   });
 
+  test('hunks: a moved or reflowed line is counted as moved, not as a changed value or rule', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,6 +1,6 @@',
+      '-  if (count > 10) return;',
+      '-  const limit = 10;',
+      ' function run() {',
+      '+  const limit = 20;',
+      '   work();',
+      '+    if (count > 10) return;',
+      ' }',
+      'diff --git a/docs/guide.md b/docs/guide.md',
+      '--- a/docs/guide.md',
+      '+++ b/docs/guide.md',
+      '@@ -1,3 +1,3 @@',
+      '-Runs stop after 10 retries and the',
+      '-limit can be raised with --max.',
+      '+Runs stop after 10 retries and the limit',
+      '+can be raised with --max.',
+      '',
+    ].join('\n');
+    const [code, doc] = patchHunks(patch);
+    // The moved condition is neither a changed nor an added/removed condition;
+    // the value that really changed still pairs.
+    expect(code!.moved).toBe(1);
+    expect(code!.pairs).toEqual(['const limit = 10; → const limit = 20;']);
+    expect(code!.conds.some((c) => c.includes('count > 10'))).toBe(false);
+    // Key lines never quote the moved line as removed.
+    expect(code!.code.some((l) => l.includes('count > 10'))).toBe(false);
+    // Reflowed prose: no pair, all lines moved.
+    expect(doc!.moved).toBe(2);
+    expect(doc!.pairs).toEqual([]);
+  });
+
+  test('hunks: a line moved between hunks of a file is cancelled once on each side', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,3 +1,2 @@',
+      ' function first() {',
+      '-  retry(limit, 30);',
+      ' }',
+      '@@ -20,2 +19,3 @@ function second() {',
+      '   work();',
+      '+  retry(limit, 30);',
+      ' }',
+      '@@ -40,2 +40,2 @@ function third() {',
+      '-  retry(limit, 30);',
+      '+  retry(limit, 60);',
+      ' }',
+      '',
+    ].join('\n');
+    const [a, b, c] = patchHunks(patch);
+    expect(a!.moved).toBe(1);
+    expect(b!.moved ?? 0).toBe(0);
+    // The third hunk's removal is a real change: the one added copy was spent.
+    expect(c!.moved ?? 0).toBe(0);
+    expect(c!.pairs).toEqual(['retry(limit, 30); → retry(limit, 60);']);
+  });
+
+  test('hunks: owns names functions with changed code, not the @@ context or moved lines', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -10,5 +10,8 @@ export function before(x: number) {',
+      '   return x;',
+      ' }',
+      ' export function after(y: number) {',
+      '+  if (y > 3) return 0;',
+      '   return y;',
+      ' }',
+      '+export const budget = () =>',
+      '+  Number(process.env.BUDGET) || 100;',
+      '@@ -40,4 +43,4 @@',
+      ' export function mover() {',
+      '-  const a = compute(1, 2);',
+      '   step();',
+      '+  const a = compute(1, 2);',
+      ' }',
+      '',
+    ].join('\n');
+    const [h, m] = patchHunks(patch);
+    expect(h!.scope).toBe('before');
+    expect(h!.owns).toEqual(['after', 'budget']);
+    expect(h!.readers).toEqual(['budget']);
+    // Only moved lines: `mover` owns no change.
+    expect(m!.owns).toEqual([]);
+  });
+
   test('hunks: symbols end with their body, imports define nothing, values and tests are read', () => {
     const patch = [
       'diff --git a/src/a.ts b/src/a.ts',
@@ -1631,8 +1724,26 @@ describe('the brief states recorded process and behavior', () => {
     expect(facts).not.toMatch(/no pass(ing run recorded)? after the last commit/);
     const limits = p.sections.find((x) => x.title === 'limits')!.rows;
     expect(limits.some((l) => /No passing check run/.test(String(l.limit)))).toBe(false);
-    // The fact stays, and on a Claude Code host an open point says it is history.
-    expect(limits.map((l) => String(l.limit))).toContainEqual(
+    // The same turn ran the suite (its own result lines) and made the commit:
+    // the run is on the committed content, so no "historical" open point.
+    expect(limits.some((l) => /historical session run/.test(String(l.limit)))).toBe(
+      false,
+    );
+    // A user turn between the pass and the commit: on a Claude Code host an
+    // open point says the pass is history.
+    g.nodes.push(
+      N('Prompt', 'S4', {
+        t: '2026-01-01T00:00:03.700Z',
+        text: 'Now commit it',
+        pushback: false,
+        session: 'h:s',
+      }),
+    );
+    g.rels.push(R('IN_SESSION', ['Prompt', 'S4'], ['Session', 'h:s']));
+    const later = withGraph(g, (e) => briefParts(e));
+    expect(
+      later.sections.find((x) => x.title === 'limits')!.rows.map((l) => String(l.limit)),
+    ).toContainEqual(
       expect.stringMatching(
         /^The last passing run, R2 \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
       ),

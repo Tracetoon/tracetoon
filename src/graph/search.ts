@@ -152,7 +152,12 @@ export function addSearchLinks(input: SearchInput): SearchStats | undefined {
   // Key lines for the brief: added comments, values, conditions (codeEvidence.ts).
   for (const h of hunks) {
     const node = hunkNodes.get(h.id)!;
-    const lines = evidenceLines(h.minus ?? [], h.plus ?? [], h.file);
+    // Moved lines are no removed or changed code (see `PatchHunk.moved`).
+    const lines = evidenceLines(
+      h.keptMinus ?? h.minus ?? [],
+      h.keptPlus ?? h.plus ?? [],
+      h.file,
+    );
     if (lines.length) node.props.keyLines = lines;
     const literals = literalTokens(h.minus ?? [], h.plus ?? []);
     if (literals.length) node.props.literals = literals;
