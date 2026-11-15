@@ -394,26 +394,24 @@ installing it with `TRACETOON_NO_HOOK=1`, or manage it with
 
 ### Turn it off at whichever level you need
 
-Any "off" wins:
+Any "off" wins, with one exception: your own `comic always` beats a repo's comic "off".
 
-| Scope                          | Off                                                                 | On again                             |
-| ------------------------------ | ------------------------------------------------------------------- | ------------------------------------ |
-| One command                    | `TRACETOON=0 gh pr create ...`                                      | (just once)                          |
-| You, everywhere                | `tracetoon off`                                                     | `tracetoon on`                       |
-| This repo, for everyone        | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`                |
-| This repo, just you            | `tracetoon off --local` (git config)                                | `tracetoon on --local`               |
-| CI                             | off automatically when `CI=true`                                    | `TRACETOON=1`                        |
-| Comics, one PR                 | ask your agent to skip the comic                                    | (just once)                          |
-| Comics, you everywhere         | `tracetoon config set comic off`                                    | `tracetoon config set comic allowed` |
-| Comics, this repo for everyone | `"comic": "off"` in `.github/tracetoon.json`                        | remove it                            |
+| Scope                          | Off                                                                 | On again                                           |
+| ------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------- |
+| One command                    | `TRACETOON=0 gh pr create ...`                                      | (just once)                                        |
+| You, everywhere                | `tracetoon off`                                                     | `tracetoon on`                                     |
+| This repo, for everyone        | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`                              |
+| This repo, just you            | `tracetoon off --local` (git config)                                | `tracetoon on --local`                             |
+| CI                             | off automatically when `CI=true`                                    | `TRACETOON=1`                                      |
+| Comics, one PR                 | ask your agent to skip the comic                                    | (just once)                                        |
+| Comics, you everywhere         | `tracetoon config set comic off`                                    | `tracetoon config set comic allowed` (or `always`) |
+| Comics, this repo for everyone | `"comic": "off"` in `.github/tracetoon.json`; commit it             | remove it                                          |
 
 `tracetoon status` shows whether it's on here and which setting decided.
 
-For comics, your own setting decides: `off` means never, and
-`tracetoon config set comic always` means every PR, even where a repo says
-otherwise. `allowed` (the default) follows each repo's rules: no comic where
+For comics, `allowed` (the default) follows each repo's rules: no comic where
 its `"comic"` setting, contributing guide, code of conduct, README or a policy
-doc they link to forbids images in PRs.
+doc they link to forbids images in PRs. `always` means every PR regardless.
 
 ---
 
