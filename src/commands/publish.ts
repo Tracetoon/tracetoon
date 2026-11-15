@@ -4,6 +4,7 @@
  * something changed since or the leak scan found something. The only edits
  * after rendering fill in where the comic image is hosted.
  */
+import { digestCmd } from './digest.ts';
 import {
   loadReviewPlan,
   planEnforced,
@@ -355,16 +356,24 @@ function briefCheckLines(b: BriefApplied): string {
 
 export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   let { run, truth } = loadRun(cwd, opts.run);
-  const digest = readJson<TraceDigest>(run, 'digest.json');
+  let digest = readJson<TraceDigest>(run, 'digest.json');
   if (!digest)
     throw new UserError('This run has no digest.json. Run `tracetoon digest` first.');
-  if (
+  // New check receipts since the digest (a `tracetoon check` ran): refresh the
+  // digest in place instead of failing. Writers stopped at this error and
+  // returned an unrendered draft.
+  const checksStale = () =>
     readTask(run) &&
-    digest.checksSha !== (receipts(run).length ? fileHash(run, 'checks.json') : undefined)
-  )
-    throw new UserError(
-      'Validation evidence changed after the digest. Refresh digest --run before rendering and review.',
-    );
+    digest!.checksSha !== (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
+  if (checksStale()) {
+    digestCmd(cwd, { run: run.id, offline: true }, undefined, false);
+    ({ run, truth } = loadRun(cwd, run.id));
+    digest = readJson<TraceDigest>(run, 'digest.json')!;
+    if (checksStale())
+      throw new UserError(
+        'Validation evidence changed after the digest. Refresh digest --run before rendering and review.',
+      );
+  }
   const ctx = readJson<Context>(run, 'context.json');
   if (!ctx)
     throw new UserError('This run has no context.json. Run `tracetoon context` first.');

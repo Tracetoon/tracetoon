@@ -625,6 +625,66 @@ describe('active transcript discovery', () => {
 });
 
 describe('requested PR to publication rehearsal', () => {
+  test('a check after the digest: render refreshes the digest instead of failing', () => {
+    const repo = makeRepo();
+    const remote = tempDir('tracetoon-remote-');
+    git(remote, ['init', '-q', '--bare']);
+    git(repo.root, ['remote', 'add', 'origin', remote]);
+    git(repo.root, ['push', '-q', 'origin', 'main']);
+    const begun = ok(repo.root, 'task', 'begin', '--session', 'rehearsal');
+    const run = findRun(repository(repo.root).gitDir, begun.run);
+    repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
+    const checked = ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'tests',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("1 pass")',
+    );
+    expect(checked.outcome).toBe('passed');
+    // The user asks for a PR; the direct write is redirected to this task.
+    const p = { cwd: repo.root, session_id: 'rehearsal' };
+    expect(
+      lifecycle(
+        'codex',
+        'PreToolUse',
+        { ...p, tool_input: { command: 'gh pr create --fill' } },
+        env(),
+      ),
+    ).toContain(`tracetoon publish --run ${run.id}`);
+    expect(readTask(run)?.prRequestedAt).toBeTruthy();
+    expect(lifecycle('codex', 'Stop', p, env())).toBeUndefined();
+    ok(repo.root, 'task', 'complete', '--run', run.id, '--checks', 'tests');
+    ok(repo.root, 'digest', '--run', run.id, '--offline');
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    const request = readLocal<{ fingerprint: string }>(
+      join(run.dir, 'guidance-request.json'),
+    )!;
+    writeLocal(join(run.dir, 'guidance.json'), {
+      v: 1,
+      requestFingerprint: request.fingerprint,
+      researcher: { mode: 'inline' },
+      sources: [],
+      requirements: [],
+      gaps: ['Isolated workflow fixture; no production compliance claim.'],
+    });
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'Adds a greeting.\n\nTesting: the smoke test passed.\n',
+    );
+    writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    const digestChecksBefore = readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha;
+    ok(repo.root, 'check', '--run', run.id, '--name', 'lint', '--', process.execPath, '-e', 'console.log("ok")');
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    expect(readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha).not.toBe(digestChecksBefore);
+  });
+
   test('prepares, publishes without rerunning work, and recovers an interrupted create', () => {
     const repo = makeRepo();
     const remote = tempDir('tracetoon-remote-');
