@@ -129,7 +129,14 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
       text: `${what[0]!.toUpperCase()}${what.slice(1)} were recorded (${recorded.slice(0, 6).join(', ')}): don't say none was recorded.`,
       cites: recorded.slice(0, 6),
     });
-  }
+  } else
+    // None linked in the attributed turns: the request may lie earlier in the
+    // session, so its absence is not a fact the writer may state.
+    out.push({
+      kind: 'recorded requests',
+      text: "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan or decision was recorded.",
+      cites: [],
+    });
 
   // Kept short: "new" for existing code is rare in judged errors.
   const existing = existingSymbols(sections).filter((x) => x.length >= 4);

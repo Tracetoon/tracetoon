@@ -384,16 +384,17 @@ describe('do not say', () => {
   test('rows: existing names, conditional code, commit-only results, old behavior, the files', () => {
     const rows = doNotSayRows(sections(), ['load']);
     expect(rows.map((r) => r.kind)).toEqual([
+      'recorded requests',
       'existed before this PR',
       'conditional code',
       'commit message only',
       'old behavior',
       'files in this diff',
     ]);
-    expect(rows[0]!.text).toBe('`load`: changed, not "new" or "added".');
-    expect(String(rows[1]!.text)).toContain('(a.ts: + if (!cfg) return;)');
-    expect(String(rows[2]!.text)).toContain("commit abc1234's claim, not a run");
-    expect(rows[4]!.text).toBe(
+    expect(rows[1]!.text).toBe('`load`: changed, not "new" or "added".');
+    expect(String(rows[2]!.text)).toContain('(a.ts: + if (!cfg) return;)');
+    expect(String(rows[3]!.text)).toContain("commit abc1234's claim, not a run");
+    expect(rows[5]!.text).toBe(
       '5: a.ts, install.sh, version.ts, package.json, app.mjs. 3 are beyond the version bump: never "housekeeping only", "version bump only" or "no logic changes".',
     );
   });
@@ -433,9 +434,9 @@ describe('do not say', () => {
     expect(plansOnly.find((r) => r.kind === 'recorded requests')?.text).toBe(
       "Plans were recorded (P1): don't say none was recorded.",
     );
-    // None recorded: no hint row (the limits rows say it).
-    expect(doNotSayRows(sections()).some((r) => r.kind === 'recorded requests')).toBe(
-      false,
+    // None linked in the attributed turns: the row forbids claiming absence.
+    expect(doNotSayRows(sections()).find((r) => r.kind === 'recorded requests')?.text).toBe(
+      "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan or decision was recorded.",
     );
   });
 

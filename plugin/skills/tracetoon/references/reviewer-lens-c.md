@@ -9,7 +9,7 @@ Look for:
 - **motive or trigger**: a background, request or why row explains why the
   change was made, and the body never says why;
 - **open limits and uncertainties** (open limits rows, "no passing run
-  recorded after the last commit", "no request recorded for CHn"): left out,
+  recorded after the last commit"): left out,
   or turned into certainty ("tests pass", "as requested": a claim
   `overstated`);
 - **fail-then-pass history** in process rows (what broke, what fixed it)

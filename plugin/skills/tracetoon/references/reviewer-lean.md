@@ -11,6 +11,13 @@ symbol's callers). Do not read other run files, the brief query, or guides.
    packet. Look hardest at:
    - "always", "only", "no longer", "every", "all": does a branch hunk, default
      or fallback take another path?
+   - relation and scope words ("other", "the rest", "retains", "keeps",
+     "delegates", "supplies", "provides", "is handled by"): does the cited
+     hunk show that relation, or only part of it? Half-right sentences are
+     claims `overstated`; the fix narrows them to what the hunk shows;
+   - absence ("no tests were run", "no request was recorded", "never",
+     "nothing"): Tracetoon reads only the turns attributed to this PR, so an
+     absence the brief does not state as a limit is `unsupported`;
    - conditions and defaults the body drops or states wrongly;
    - a file or function named for a behavior vs the hunk's owning symbol;
    - "new"/"added" for a symbol missing from `new:` (newSymbols);
@@ -22,9 +29,8 @@ symbol's callers). Do not read other run files, the brief query, or guides.
      included) or diff line backs: verdict `unsupported`, evidence `body:N`,
      fix "drop it" or "attribute it".
 3. **Dropped uncertainties.** Each open limit and process fact such as "no
-   passing run recorded after the last commit" or "no request recorded for
-   CHn": if the body omits it, kind `omission`; if it says the opposite
-   ("tests pass", "as requested"), a claim `overstated`. Also omitted
+   passing run recorded after the last commit": if the body omits it, kind
+   `omission`; if it says the opposite ("tests pass"), a claim `overstated`. Also omitted
    branch-hunk behavior. A check-recognition limit says what Tracetoon
    recognized in the logs, not what ran: flag a body that widens one ("no
    tests were run", "untested", "not tested", a check kind the limit doesn't
