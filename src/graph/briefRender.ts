@@ -236,8 +236,11 @@ export function validationSection(b: BriefParts): string {
     rowsOf(b, 'process').some(
       (r) => CHECK_KINDS.has(String(r.kind)) || String(r.kind) === 'checks',
     );
-  if (!lines.length && !ranChecks)
-    lines.push('- No test, typecheck or lint run appears in the session logs.');
+  // No empty-state line: the brief reads only the turns attributed to this PR,
+  // so "no check appears" was restated as a session-wide fact that the full
+  // logs contradicted (checks run earlier in a shared session). Silence lets
+  // the writer leave validation out rather than claim there was none.
+  void ranChecks;
   // Checks ran but none can be stated: no line. A "can't read a result" line
   // was restated by writers as "no checks ran" (round 2, 24 judged errors).
   if (others.length && stale)

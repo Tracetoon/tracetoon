@@ -1594,7 +1594,7 @@ describe('the brief states recorded process and behavior', () => {
   const b = withGraph(graph, (g) => briefParts(g));
   const sec = (title: string) => b.sections.find((s) => s.title === title)!.rows;
 
-  test('no avoid rules and no instructions: only open limits, one for unrequested changes', () => {
+  test('no avoid rules and no instructions: only open limits, and none claiming a change was unrequested', () => {
     expect(b.sections.map((s) => s.title)).toEqual([
       'limits',
       'doNotSay',
@@ -1608,8 +1608,8 @@ describe('the brief states recorded process and behavior', () => {
       'validation',
       'headScan',
     ]);
+    // No "no request was recorded" row: requests are read from attributed turns only.
     expect(sec('limits').map((l) => [l.kind, l.change, l.limit])).toEqual([
-      ['open', ['CH2'], 'No user request was recorded for CH2.'],
       // A failed push is an open point: what reached the remote isn't recorded.
       [
         'open',
@@ -1697,7 +1697,8 @@ describe('the brief states recorded process and behavior', () => {
     g.nodes = g.nodes.filter((n) => n.id !== 'R1');
     const none = withGraph(g, (e) => briefParts(e));
     const v = validationSection(none);
-    expect(v).toContain('- No test, typecheck or lint run appears in the session logs.');
+    // No empty-state line: "no check appears" read as a session-wide fact.
+    expect(v).not.toContain('No test, typecheck or lint run appears');
     expect(v).toContain(also);
     expect(v).not.toMatch(/was recorded in the captured sessions/);
     // Without later commands: the scoped line only, and no otherRuns section.

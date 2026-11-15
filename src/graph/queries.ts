@@ -1425,16 +1425,10 @@ export function briefParts(
           .map((h) => String(((h.symbols as string[]) ?? [])[0] ?? h.file)),
       );
   }
-  // Changes no captured request covers: one open point for all of them.
-  const unasked = changes
-    .filter((c) => !asked.some((a) => a.change === c.id))
-    .map((c) => String(c.id));
-  if (unasked.length)
-    limits.push({
-      change: unasked,
-      kind: 'open',
-      limit: `No user request was recorded for ${unasked.length === changes.length ? (unasked.length === 1 ? 'this change' : 'any of these changes') : unasked.join(', ')}.`,
-    });
+  // No "no request was recorded" row: requests are read from the turns
+  // attributed to this PR, and in a long or shared session the request often
+  // came earlier. Writers restated the row as "the work was unrequested",
+  // which the full logs contradicted.
 
   // Open points a reviewer should hear about, each worth a sentence in the PR.
   for (const m of g
