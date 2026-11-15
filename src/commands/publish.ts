@@ -980,6 +980,14 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
     );
   const preparationProblem = publishProblem(truth.toplevel, run, approval);
   if (preparationProblem) throw new UserError(preparationProblem);
+  // A review imported or merged after the last render is not in the rendered
+  // result: publishing it would ship a draft its latest review never saw.
+  const review = readJson(run, 'review.json');
+  const result = readJson<{ reportSha256?: string }>(run, 'review-result.json');
+  if (review && result && result.reportSha256 !== objectHash(review))
+    throw new UserError(
+      `The review changed after the last render (a review was imported or merged since). Run tracetoon render --run ${run.id}, then publish.`,
+    );
   // A brief-path draft that was only checked still needs its slim review.
   const unreviewed = briefPathUnreviewed(run);
   if (unreviewed) {

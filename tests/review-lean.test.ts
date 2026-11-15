@@ -508,6 +508,10 @@ describe('lean review import', () => {
       agentId: 'a7c3e19f2b',
       model: 'sonnet',
     });
+    // The review changed after the last render: publish refuses until it is rendered again.
+    const staleReview = cli(repo.root, ['publish', '--run', run.id]);
+    expect(staleReview.code).not.toBe(0);
+    expect(staleReview.json.error).toContain('The review changed after the last render');
     const modelled = ok(repo.root, 'render', '--run', run.id, '--no-comic');
     expect(modelled.contributionReview.status).toBe('current');
     expect(modelled.contributionReview.reviewerModel).toBe('sonnet');
