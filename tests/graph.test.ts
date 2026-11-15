@@ -1844,7 +1844,7 @@ describe('the brief states recorded process and behavior', () => {
       parts
         .find((s) => s.title === 'doNotSay')!
         .rows.find((r) => r.kind === 'recorded requests')?.text,
-    ).toBe("Plans were recorded (P1, P2): don't say none was recorded.");
+    ).toBe("Plans were recorded (P1, P2): don't say none was recorded, or that an approval or review wasn't.");
     // Before a captured prompt, a turnless plan is the tail of earlier work.
     const tail: EvidenceGraph = structuredClone(graph);
     tail.nodes.push(

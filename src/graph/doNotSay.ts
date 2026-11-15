@@ -126,7 +126,7 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     const what = kinds.join('/');
     out.push({
       kind: 'recorded requests',
-      text: `${what[0]!.toUpperCase()}${what.slice(1)} were recorded (${recorded.slice(0, 6).join(', ')}): don't say none was recorded.`,
+      text: `${what[0]!.toUpperCase()}${what.slice(1)} were recorded (${recorded.slice(0, 6).join(', ')}): don't say none was recorded, or that an approval or review wasn't.`,
       cites: recorded.slice(0, 6),
     });
   } else
@@ -134,7 +134,7 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     // session, so its absence is not a fact the writer may state.
     out.push({
       kind: 'recorded requests',
-      text: "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan or decision was recorded.",
+      text: "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
       cites: [],
     });
 

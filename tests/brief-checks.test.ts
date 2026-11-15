@@ -420,7 +420,7 @@ describe('do not say', () => {
     const row = doNotSayRows(withRecords).find((r) => r.kind === 'recorded requests');
     expect(row).toEqual({
       kind: 'recorded requests',
-      text: "Requests/plans/decisions were recorded (S2, D1, P1, P3): don't say none was recorded.",
+      text: "Requests/plans/decisions were recorded (S2, D1, P1, P3): don't say none was recorded, or that an approval or review wasn't.",
       cites: ['S2', 'D1', 'P1', 'P3'],
     });
     const plansOnly = doNotSayRows([
@@ -432,11 +432,11 @@ describe('do not say', () => {
       },
     ]);
     expect(plansOnly.find((r) => r.kind === 'recorded requests')?.text).toBe(
-      "Plans were recorded (P1): don't say none was recorded.",
+      "Plans were recorded (P1): don't say none was recorded, or that an approval or review wasn't.",
     );
     // None linked in the attributed turns: the row forbids claiming absence.
     expect(doNotSayRows(sections()).find((r) => r.kind === 'recorded requests')?.text).toBe(
-      "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan or decision was recorded.",
+      "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
     );
   });
 

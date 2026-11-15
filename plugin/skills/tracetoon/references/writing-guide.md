@@ -240,6 +240,9 @@ result to its source without guessing a command or dropping a material outcome.
   tested code that isn't in this PR. If `outcome` is `unknown`, don't claim a
   result. If `pr.dirty` is true, a run may have covered code that isn't in the
   PR.
+- Order runs and commits by time only ("passed before the final commit").
+  Never say a commit or edits "followed" a run "and changed" something, or
+  use "after which": the edits may sit inside that commit.
 - If a run failed and a later one passed, you can say so when it helps the
   reviewer.
 - A later failure does not erase a real earlier pass. Say which command passed
