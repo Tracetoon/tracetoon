@@ -1,6 +1,7 @@
 /**
- * Drift canary check: every agent that ran in the toy repository must still be found by its
- * reader, with the file it was asked to create showing up as an edit.
+ * Session check for compatibility runs (scripts/compat/verify.ts): every agent that ran in
+ * the toy repository must still be found by its reader, with the file it was asked to
+ * create showing up as an edit.
  *
  *   bun scripts/canary-check.ts <repo> <adapter-id>:<file> ...
  *

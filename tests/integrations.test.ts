@@ -549,19 +549,28 @@ describe('support tiers', () => {
       expect(targets).toContain(i.id);
   });
 
-  test('every IDE workflow names an integration, and is verified only with a passing run', () => {
-    const data = readVerification();
+  test('every IDE workflow names an integration, and its target verifies that integration', () => {
+    const targets = upstream.targets as Record<
+      string,
+      { integration: string; os: string[] }
+    >;
     for (const w of WORKFLOWS) {
       expect(INTEGRATIONS.some((i) => i.id === w.agentIntegrationId)).toBe(true);
-      if (w.state !== 'verified') continue;
-      const target = (upstream.targets as Record<string, { os: string[] }>)[
-        w.verificationTarget
-      ];
-      expect(target).toBeDefined();
-      expect(
-        summarize(data, w.verificationTarget, target!.os).lastVerified,
-      ).toBeDefined();
+      const target = targets[w.verificationTarget];
+      if (target) expect(target.integration).toBe(w.agentIntegrationId);
     }
+  });
+
+  test('the support page calls nothing verified that has no passing run', () => {
+    const data = readVerification();
+    const support = readFileSync(resolve(SRC, '../docs/agents/support.md'), 'utf8');
+    for (const [key, t] of Object.entries(
+      upstream.targets as Record<string, { os: string[] }>,
+    ))
+      if (!summarize(data, key, t.os).lastVerified)
+        for (const line of support.split('\n').filter((l) => l.includes('✅ passed')))
+          expect(line).not.toContain(key);
+    if (!data.runs.length) expect(support).not.toContain('✅ passed');
   });
 });
 
