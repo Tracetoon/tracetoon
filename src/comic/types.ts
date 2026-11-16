@@ -47,16 +47,17 @@ export interface Character {
 
 export type CastKind = 'human' | 'creature' | 'object';
 export const CAST_KINDS: CastKind[] = ['human', 'creature', 'object'];
-export type StyleFamily =
-  | 'ink'
-  | 'flat-color'
-  | 'painted'
-  | 'print'
-  | 'dimensional'
-  | 'pixel'
-  | 'technical'
-  | 'custom';
-export const STYLE_FAMILIES: StyleFamily[] = [
+/** Comic traditions. The older visual families are still read from past PRs. */
+export const STYLE_FAMILIES = [
+  'webcomic',
+  'american',
+  'manga',
+  'euro',
+  'newspaper',
+  'indie',
+  'custom',
+] as const;
+export const LEGACY_STYLE_FAMILIES = [
   'ink',
   'flat-color',
   'painted',
@@ -64,7 +65,12 @@ export const STYLE_FAMILIES: StyleFamily[] = [
   'dimensional',
   'pixel',
   'technical',
-  'custom',
+] as const;
+export type StyleFamily =
+  (typeof STYLE_FAMILIES)[number] | (typeof LEGACY_STYLE_FAMILIES)[number];
+export const KNOWN_STYLE_FAMILIES: readonly StyleFamily[] = [
+  ...STYLE_FAMILIES,
+  ...LEGACY_STYLE_FAMILIES,
 ];
 export const LAYOUT_FAMILIES = [
   'single',
@@ -74,6 +80,7 @@ export const LAYOUT_FAMILIES = [
   'asymmetric',
   'hero-inset',
   'diagonal',
+  'tiered',
   'custom',
 ] as const;
 export type LayoutFamily = (typeof LAYOUT_FAMILIES)[number];
@@ -136,11 +143,12 @@ export interface Dialogue {
   /** Exact words. With model lettering they are drawn into the art verbatim. */
   text: string;
   /**
-   * `sign`: words on something in the scene (a screen, a sign).
-   * `label`: a short callout tag that names what a drawn element stands for.
+   * `sign`: words that are part of the scene: on a screen, a mug, a box, a
+   * door, a T-shirt. Name that surface in `points`.
+   * `label`: deprecated pointer tag; drawn as words on the element it names.
    */
   kind?: DialogueKind;
-  /** For a `label`: the drawn element it points at. */
+  /** For a `sign`: the surface the words are written on (legacy `label`: the element). */
   points?: string;
 }
 
@@ -212,8 +220,14 @@ export interface ComicScript {
   anchor?: ComicAnchor;
   /** Page shape. Default: the format's. */
   aspect?: Aspect;
-  /** Any art style: an idea from styles.ts by id, or the agent's own description. */
+  /** Any art style: a comic preset from styles.ts by id, or the agent's own description. */
   style: string;
+  /**
+   * What the user explicitly asked to see (a style, characters, a theme), in
+   * their words. Sent to the image model as the user's request; it overrides
+   * Tracetoon's own defaults, such as original-character designs.
+   */
+  request?: string;
   /** Color treatment. Default: the style's first palette, or full color. */
   palette?: Palette;
   /** One accent color for `bw-accent` / `duotone`, e.g. "red". */

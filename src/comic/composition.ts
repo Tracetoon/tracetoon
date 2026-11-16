@@ -1,6 +1,7 @@
 /** Shared art direction. Legacy v2 scripts intentionally retain their old defaults. */
 import { createHash } from 'node:crypto';
 import { formatById } from './formats.ts';
+import { STYLES } from './styles.ts';
 import {
   LAYOUT_FAMILIES,
   type Aspect,
@@ -73,6 +74,15 @@ export function resolveComposition(
         frame(0.025 + (i % cols) * (w + gap), Math.floor(i / cols) * (h + gap), w, h),
       );
       frames.push(frame(0.025, 0.49, 0.95, 0.51));
+      break;
+    }
+    case 'tiered': {
+      // A wide establishing panel over a row of smaller beats.
+      const count = n - 1;
+      const w = (0.95 - gap * (count - 1)) / count;
+      frames = [frame(0.025, 0, 0.95, 0.44)];
+      for (let i = 0; i < count; i++)
+        frames.push(frame(0.025 + i * (w + gap), 0.47, w, 0.53));
       break;
     }
     case 'hero-inset': {
@@ -191,37 +201,27 @@ export function artMatches(
   );
 }
 
-const STYLE_GROUPS: [StyleFamily, string[]][] = [
-  ['ink', ['manga-ink', 'noir', 'ligne-claire']],
-  [
-    'flat-color',
-    [
-      'shonen-action',
-      'mecha-anime',
-      'chibi-anime',
-      'sunday-strip',
-      'rubber-hose',
-      'atomic-flat',
-      'vaporwave',
-    ],
-  ],
+/** Families of presets from earlier releases; current presets carry their own. */
+const LEGACY_STYLE_GROUPS: [StyleFamily, string[]][] = [
+  ['flat-color', ['mecha-anime', 'rubber-hose', 'atomic-flat', 'vaporwave']],
   ['painted', ['storybook-watercolor', 'pulp-scifi']],
-  ['print', ['silver-age', 'ukiyo-e']],
+  ['print', ['risograph', 'ukiyo-e']],
   ['dimensional', ['claymation']],
-  ['pixel', ['pixel-16bit']],
   ['technical', ['blueprint']],
 ];
+function presetFamily(style: string): StyleFamily | undefined {
+  return (
+    STYLES.find((s) => s.id === style)?.family ??
+    LEGACY_STYLE_GROUPS.find(([, ids]) => ids.includes(style))?.[0]
+  );
+}
 export function comicSummary(script: ComicScript): ComicSummary {
   const knownCast =
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
   return {
     style: script.style,
-    ...(script.styleFamily || STYLE_GROUPS.some(([, ids]) => ids.includes(script.style))
-      ? {
-          styleFamily:
-            script.styleFamily ??
-            STYLE_GROUPS.find(([, ids]) => ids.includes(script.style))![0],
-        }
+    ...(script.styleFamily || presetFamily(script.style)
+      ? { styleFamily: script.styleFamily ?? presetFamily(script.style)! }
       : {}),
     ...(script.composition
       ? {
@@ -305,6 +305,7 @@ export function compositionProblems(
     asymmetric: [3, 6],
     'hero-inset': [2, 6],
     diagonal: [2, 2],
+    tiered: [3, 5],
   };
   const range = limits[c.family];
   if (range && (script.panels.length < range[0] || script.panels.length > range[1]))

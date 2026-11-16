@@ -13,6 +13,7 @@ import { publicationLock } from './publication.ts';
 import { readSubmittedFile, repoPath } from '../util/repoFiles.ts';
 import { dependencyFingerprint } from './validationInputs.ts';
 import { count } from '../util/profile.ts';
+import { forgetGitAnswers } from '../util/exec.ts';
 
 export interface CheckReceipt {
   v: 1;
@@ -148,6 +149,8 @@ export function executeCheck(
           });
       if (result?.stdout) process.stderr.write(result.stdout);
       if (result?.stderr) process.stderr.write(result.stderr);
+      // The check is the user's own command and may have changed the repository.
+      if (result) forgetGitAnswers();
       return prepared.finish(result);
     },
     'checks.lock',
@@ -172,6 +175,7 @@ export function executeCheckLive(
       const result = opts.skip
         ? undefined
         : await streamCheck(opts.command, prepared.cwd);
+      if (result) forgetGitAnswers();
       return prepared.finish(result);
     },
     'checks.lock',

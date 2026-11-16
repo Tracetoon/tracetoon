@@ -9,7 +9,7 @@ import { decodeMeta } from './body.ts';
 import {
   CAST_KINDS,
   LAYOUT_FAMILIES,
-  STYLE_FAMILIES,
+  KNOWN_STYLE_FAMILIES,
   type ComicSummary,
 } from '../comic/types.ts';
 
@@ -59,7 +59,7 @@ export function recentComics(
         if (typeof meta.style === 'string' && meta.style.length <= 120)
           summary.style = meta.style;
         if (raw && typeof raw === 'object') {
-          if (raw.styleFamily && STYLE_FAMILIES.includes(raw.styleFamily))
+          if (raw.styleFamily && KNOWN_STYLE_FAMILIES.includes(raw.styleFamily))
             summary.styleFamily = raw.styleFamily;
           if (raw.layoutFamily && LAYOUT_FAMILIES.includes(raw.layoutFamily))
             summary.layoutFamily = raw.layoutFamily;

@@ -21,6 +21,21 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
+      # Every test makes temporary git repositories, and Windows pays per file and
+      # process. The standard runner's D: drive is as fast as a Dev Drive (see
+      # astral-sh/uv's setup-dev-drive.ps1); C: holds the default temp folder.
+      - name: Keep temporary files on the faster drive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (Test-Path 'D:\') {
+            $tmp = 'D:\tracetoon-tmp'
+            New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+            "TMP=$tmp" >> $env:GITHUB_ENV
+            "TEMP=$tmp" >> $env:GITHUB_ENV
+            Write-Output "Temporary files: $tmp"
+          }
+          try { Get-MpComputerStatus | Format-List RealTimeProtectionEnabled, AMRunningMode } catch { Write-Output 'Defender status unavailable' }
       - run: bun install --frozen-lockfile
       - uses: actions/setup-python@v5
         with:
