@@ -675,3 +675,50 @@ describe('receipts in the Validation section', () => {
     expect(states).toEqual(lines.map(() => 'observed'));
   });
 });
+
+describe('a fresh receipt covers a missing-pass open point', () => {
+  const parts = (receipt: boolean) => ({
+    sections: [
+      {
+        title: 'limits',
+        columns: ['ref', 'change', 'kind', 'limit'],
+        rows: [
+          {
+            ref: 'L1',
+            change: 'CH1',
+            kind: 'open',
+            limit:
+              'Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of src/a.ts.',
+          },
+          { ref: 'L2', change: null, kind: 'open', limit: 'A publish command failed.' },
+        ],
+      },
+      {
+        title: 'validation',
+        columns: ['check', 'kind', 'outcome', 'result', 'when', 'editedAfter', 'cmd'],
+        rows: receipt
+          ? [
+              {
+                check: 'V1',
+                kind: 'test',
+                outcome: 'passed',
+                result: '3 pass',
+                when: 'fresh',
+                editedAfter: [],
+                cmd: 'bun test',
+              },
+            ]
+          : [],
+      },
+    ],
+    unchecked: [],
+  });
+  test('the no-pass row is not left to cover once a receipt passed', () => {
+    const open = (receipt: boolean) =>
+      applyBrief('Some text here for the body.', parts(receipt) as any).uncovered.filter(
+        (u) => u.includes('open point'),
+      );
+    expect(open(false).map((u) => u.slice(0, 2))).toEqual(['L1', 'L2']);
+    expect(open(true).map((u) => u.slice(0, 2))).toEqual(['L2']);
+  });
+});

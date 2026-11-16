@@ -381,6 +381,10 @@ function proseUnits(text: string): string[] {
  * what the evidence brief doesn't back. Without a brief the marker and the
  * tags are dropped.
  */
+/** An open point about no pass, or only a historical pass, on the final content. */
+const PASS_LIMIT =
+  /\bno passing (?:check |test, build, lint or typecheck )?run\b|\bnot re-run on the final content\b|\bno pass(?:ing run)? (?:recorded )?after the last\b/i;
+
 export function applyBrief(body: string, b: BriefParts | undefined): BriefApplied {
   if (!b)
     return {
@@ -615,8 +619,19 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     if (!cited(r.ref))
       uncovered.push(`${String(r.ref)}: ${String(r.file ?? r.what ?? '')}`);
   // Open points: each deserves a sentence saying what the evidence leaves open.
+  // A check `tracetoon check` passed on the submitted content answers an open
+  // point about a missing or historical pass: it is not left to cover.
+  const receiptPassed =
+    !!b.freshPass ||
+    rowsOf(b, 'validation').some(
+      (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'passed',
+    );
   for (const r of rowsOf(b, 'limits'))
-    if (r.kind === 'open' && !cited(r.ref))
+    if (
+      r.kind === 'open' &&
+      !cited(r.ref) &&
+      !(receiptPassed && PASS_LIMIT.test(String(r.limit ?? '')))
+    )
       uncovered.push(`${String(r.ref)} (open point): ${clipped(String(r.limit ?? ''))}`);
 
   for (const r of rowsOf(b, 'requests'))

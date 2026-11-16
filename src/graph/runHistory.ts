@@ -146,6 +146,13 @@ export function selectValidationRuns(
     }
     const last = ofKind.at(-1);
     if (!best && last && last.outcome === 'unknown') best = last;
+    // The newest known run of the kind passed with no edit after it: an earlier
+    // run marked "before later edits" must not stand in for it (it read as the
+    // last word on the kind). Prefer that newest pass; when its result can't be
+    // stated (a chained command), show no session row for the kind.
+    const newest = ofKind.filter(KNOWN).at(-1);
+    if (best && !standing(best) && newest?.outcome === 'passed' && current(newest))
+      best = statableRun(newest) ? newest : undefined;
     if (best) out.set(kind, best);
   }
   return [...out.values()];
@@ -164,6 +171,8 @@ export function historyFallback(
   runs: RunRow[],
   chosen: RunRow[],
   skip: Set<string> = new Set(),
+  /** A run that saw every captured edit: a kind whose newest run passed so is not backfilled with a stale one. */
+  current?: (r: RunRow) => boolean,
 ): { run: RunRow; after?: RunRow }[] {
   const sorted = [...runs].sort(byTime);
   const out: { run: RunRow; after?: RunRow }[] = [];
@@ -173,6 +182,15 @@ export function historyFallback(
     const ofKind = sorted.filter((r) => String(r.kind) === kind);
     const run = ofKind.filter(statableRun).at(-1);
     if (!run) continue;
+    const newest = ofKind.filter(KNOWN).at(-1);
+    if (
+      current &&
+      newest !== run &&
+      newest?.outcome === 'passed' &&
+      current(newest) &&
+      !current(run)
+    )
+      continue;
     const after = ofKind.slice(ofKind.indexOf(run) + 1).at(-1);
     out.push(after ? { run, after } : { run });
   }

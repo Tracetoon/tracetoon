@@ -103,6 +103,29 @@ describe('session-log runs the Validation section may state', () => {
     expect(historyFallback(runs, chosen, new Set(['test']))).toEqual([]);
   });
 
+  test('a newer pass with no edit after it wins over an earlier run before later edits', () => {
+    const stale = row('R1', 1, {
+      cmd: 'bun test',
+      outcome: 'passed',
+      summary: ['9 pass', '0 fail'],
+      revision: 'before later edits',
+      later: ['src/a.ts'],
+    });
+    const fresh = row('R2', 2, {
+      cmd: 'bun test tests/a.test.ts',
+      outcome: 'passed',
+      summary: ['3 pass', '0 fail'],
+    });
+    expect(selectValidationRuns([stale, fresh]).map((r) => r.id)).toEqual(['R2']);
+    // The newer pass can't be stated (a chained command): no stale stand-in.
+    const chained = { ...fresh, cmd: "bash -c 'bun test && tsc'", statable: false };
+    const current = (r: any) =>
+      r.revision === 'no later edits seen' && !(r.later ?? []).length;
+    const chosen = selectValidationRuns([stale, chained], { current });
+    expect(chosen).toEqual([]);
+    expect(historyFallback([stale, chained], chosen, new Set(), current)).toEqual([]);
+  });
+
   test('an earlier failure known only from an exit status gets no clause', () => {
     const pass = row('R2', 2, {
       outcome: 'passed',

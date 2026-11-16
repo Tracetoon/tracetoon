@@ -1319,7 +1319,7 @@ export function briefParts(
   // Validation section).
   const fallback = receipts.some((v) => v.outcome === 'passed')
     ? []
-    : historyFallback(scopedRuns, chosen, receiptKinds);
+    : historyFallback(scopedRuns, chosen, receiptKinds, current);
   const laterOf = new Map(
     fallback.filter((f) => f.after).map((f) => [String(f.run.id), f.after!]),
   );
@@ -1391,8 +1391,12 @@ export function briefParts(
   const freshPass = receipts
     .filter((v) => v.outcome === 'passed')
     .map((v) => String(v.id));
-  // A chosen validation run that passed and saw every captured edit.
-  const passOnFinal = chosen.some((r) => r.outcome === 'passed' && current(r));
+  // A run that passed and saw every captured edit: a chosen validation row or
+  // any later check run (one whose result lines can't be stated still passed;
+  // "no passing run after the last edit" next to it read as a contradiction).
+  const passOnFinal =
+    chosen.some((r) => r.outcome === 'passed' && current(r)) ||
+    scopedRuns.some((r) => r.outcome === 'passed' && current(r));
   // A command a passing receipt ran (receipts store argv; compare as typed).
   const flat = (c: unknown) =>
     shownCommand(c).replace(/["']/g, '').replace(/\s+/g, ' ').trim();
@@ -1439,14 +1443,15 @@ export function briefParts(
       .filter((t): t is string => !!t)
       .sort()
       .at(-1);
-    const others = lastEdit && !freshPass.length ? lateAfter(lastEdit).slice(-3) : [];
+    const receiptPassed = freshPass.length > 0 || !!opts.freshPass;
+    const others = lastEdit && !receiptPassed ? lateAfter(lastEdit).slice(-3) : [];
     for (const cmd of others)
       if (!otherRuns.some((r) => r.cmd === cmd))
         otherRuns.push({ cmd, after: `last captured edit of ${unchecked.join(', ')}` });
     // A passing receipt (run on the submitted content) or a passing row that
     // saw every captured edit covers the files: saying no pass came after
     // their last edit sat next to that pass and read as a contradiction.
-    if (unchecked.length && !freshPass.length && !passOnFinal)
+    if (unchecked.length && !receiptPassed && !passOnFinal)
       limits.push({
         change: c.id,
         kind: 'open',
