@@ -18,6 +18,7 @@ import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
 import { shellSegments, splitCommands } from '../util/shell.ts';
+import { cloudNote, cloudSessions } from './cloud.ts';
 
 export interface DigestSession {
   ref: string;
@@ -1083,6 +1084,12 @@ function buildFullDigest(
       `Left out: ${m.session.agent} session "${scrub.text(m.session.title ?? 'untitled')}" (${ref}) worked in this repo while the commits were made, but no edits or commits of this PR were matched to it (score ${m.score}). It is left out; if it clearly belongs, add it with --include ${ref}.`,
     );
   }
+
+  // Commits a cloud agent made, when no session on this machine made them.
+  for (const s of cloudSessions(
+    truth.commits.filter((c) => !commitsInSessions.has(c.sha)),
+  ))
+    notes.push(cloudNote(s));
 
   const digest: TraceDigest = {
     v: 1,

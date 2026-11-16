@@ -28,7 +28,7 @@ export function listedIntegrations(): Integration[] {
 }
 
 /** Hosts on the roadmap, named in the support tables. */
-export const PLANNED_HOSTS = ['Windsurf'];
+export const PLANNED_HOSTS: string[] = []; // Windsurf is now Devin Desktop, under Devin.
 
 /** The hosts an intro names before "and N other agents": the most widely used. */
 const HEADLINE = ['claude', 'codex', 'copilot', 'cursor', 'antigravity'];
