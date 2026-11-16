@@ -90,12 +90,14 @@ function ok(root: string, args: string[], extra: Record<string, string> = {}) {
   expect(r.code).toBe(0);
   return r.json;
 }
+/** Reviewer runs only: render also asks Codex whether it can draw (`login status`). */
 const calls = () =>
   existsSync(log)
     ? readFileSync(log, 'utf8')
         .trim()
         .split('\n')
         .map((l) => JSON.parse(l) as { args: string[]; prompt: string })
+        .filter((c) => !(c.args[0] === 'login' && c.args[1] === 'status'))
     : [];
 
 /** A task run rendered and ready for reviewer passes. */

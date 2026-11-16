@@ -98,7 +98,7 @@ export const TOOLS: ToolDefinition[] = [
     name: 'tracetoon_publish_pr',
     title: 'Publish a Tracetoon PR',
     description:
-      "Render the run's `body.md` into the final PR body (leak scan, evidence check) and publish it. With dryRun true (the default) nothing is pushed or posted: it returns what publishing would do (target, title, gh and git commands). With dryRun false it pushes the branch and creates or updates the GitHub PR; only do that once the user has asked for the PR. Never sends comic prompts to an image service.",
+      "Render the run's `body.md` into the final PR body (leak scan, evidence check) and publish it. With dryRun true (the default) nothing is pushed or posted: it returns what publishing would do (target, title, gh and git commands). With dryRun false it pushes the branch and creates or updates the GitHub PR; only do that once the user has asked for the PR. Never sends comic prompts to an image service, so PRs published here have no comic (said once; the skill or CLI can draw one).",
     inputSchema: {
       type: 'object',
       properties: {
@@ -336,6 +336,9 @@ async function prepare(args: {
   });
 }
 
+const MCP_NO_COMIC =
+  "comics aren't drawn over MCP; publish with the Tracetoon skill or CLI to get one";
+
 async function publish(args: {
   run: string;
   dryRun?: boolean;
@@ -349,6 +352,18 @@ async function publish(args: {
   const how = args.render ?? 'full';
   let rendered: unknown;
   if (how !== 'skip') {
+    // MCP never sends prompts to an image service, so it can't draw: say so
+    // once, instead of leaving an expected comic unexplained. A comic drawn
+    // with the CLI for this run is still included.
+    await runCli(cwd, [
+      'comic',
+      'skip',
+      '--run',
+      args.run,
+      '--mcp',
+      '--reason',
+      MCP_NO_COMIC,
+    ]);
     const flag = how === 'full' ? [] : [`--${how}`];
     const r = await runCli(cwd, ['render', '--run', args.run, ...flag]);
     if (!r.ok) return failure(r.data, { step: 'render' });
