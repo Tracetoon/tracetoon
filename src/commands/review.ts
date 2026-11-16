@@ -407,7 +407,11 @@ export function leanPacket(input: PacketInput): Packet {
     ...hunks.map((h) =>
       [
         `- ${h.id} ${h.file} ${h.diff}`,
-        h.touched.length ? h.touched.join(', ') : (h.scope ?? '-'),
+        h.binary
+          ? `binary file ${h.binary}: no lines to read; compare the files`
+          : h.touched.length
+            ? h.touched.join(', ')
+            : (h.scope ?? '-'),
         h.fresh.length ? `new: ${h.fresh.join(', ')}` : '-',
         h.branches ? `branches: ${h.branches}` : '-',
         (changeOf.get(h.diff) ?? []).join(', ') || '-',

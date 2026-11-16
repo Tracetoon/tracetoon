@@ -659,10 +659,18 @@ export function behaviorOf(hunks: Record<string, unknown>[]): string[] {
   const items = [...hunks]
     .sort((a, b) => byDiff(String(a.diff), String(b.diff)))
     .flatMap((h) =>
-      ((h.conds as string[]) ?? []).map((c) => ({
-        text: clipText(`${String(h.file).split('/').pop()}: ${c}`, 160),
-        rank: rank(c),
-      })),
+      h.binary
+        ? // No lines to quote: the change is the file itself.
+          [
+            {
+              text: `${String(h.file).split('/').pop()}: binary file ${String(h.binary)}`,
+              rank: 0,
+            },
+          ]
+        : ((h.conds as string[]) ?? []).map((c) => ({
+            text: clipText(`${String(h.file).split('/').pop()}: ${c}`, 160),
+            rank: rank(c),
+          })),
     );
   return uniq(
     items
@@ -972,7 +980,7 @@ export function briefParts(
      OPTIONAL MATCH (h)<-[:INTRODUCED]-(k:Commit)
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
-            h.conds AS conds,
+            h.conds AS conds, h.binary AS binary,
             h.tests AS tests, h.words AS words, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
@@ -1013,6 +1021,9 @@ export function briefParts(
       .sort((a, b) => byDiff(String(a.diff), String(b.diff)));
     const files = (c.files as string[]) ?? [];
     const where = files.map((f) => {
+      // A binary file has no symbols or lines: say so, and how it changed.
+      const bin = hs.find((h) => h.file === f && h.binary)?.binary;
+      if (bin) return `${f} (binary, ${String(bin)})`;
       const syms = uniq(
         hs.filter((h) => h.file === f).flatMap((h) => (h.symbols as string[]) ?? []),
       ).slice(0, 6);
