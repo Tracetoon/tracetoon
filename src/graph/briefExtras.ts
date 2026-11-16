@@ -564,7 +564,18 @@ export function functionProfiles(
     const one = soleOf(h);
     if (one) {
       sole.set(one, [...(sole.get(one) ?? []), h]);
-      out.get(one)!.file = String(h.file);
+      // soleOf can pick a name only `fnLines` lists (not scope/touched/symbols).
+      const p = out.get(one);
+      if (p) p.file = String(h.file);
+      else
+        out.set(one, {
+          name: one,
+          file: String(h.file),
+          sentences: [],
+          conds: [],
+          nameWords: nameWordsOf(one),
+          words: [],
+        });
     }
   }
   const sentences = ctx?.sentences ?? [];

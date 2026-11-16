@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { clausesOf, ownerRows } from '../src/graph/briefExtras.ts';
+import { clausesOf, functionProfiles, ownerRows } from '../src/graph/briefExtras.ts';
 import { patchHunks } from '../src/graph/build.ts';
 import {
   addCodeCells,
@@ -188,6 +188,24 @@ describe('owners rows', () => {
       { ...extra[0]!, props: { ...extra[0]!.props, fnLines: undefined } },
     ];
     expect(withGraph(graph(uncounted, rels), of)[0]?.function).toBe('`markQueued`');
+  });
+
+  test('a function only the line counts name still gets a profile (no crash)', () => {
+    const extra = [
+      N('Hunk', 'H5', {
+        file: 'src/range.ts',
+        diff: 'diff:50-59',
+        scope: 'outerThing',
+        fnLines: ['innerWorker: 14', 'outerThing: 1'],
+      }),
+    ];
+    const rels = [
+      R('HAS', ['Change', 'CH1'], ['Hunk', 'H5']),
+      R('OF', ['Hunk', 'H5'], ['File', 'src/range.ts']),
+    ];
+    const profiles = withGraph(graph(extra, rels), (g) => functionProfiles(g, ctx));
+    expect(profiles.get('innerWorker')?.file).toBe('src/range.ts');
+    expect(() => withGraph(graph(extra, rels), (g) => ownerRows(g, ctx))).not.toThrow();
   });
 
   test('graphs without fnWords give no rows', () => {

@@ -204,7 +204,13 @@ export function graphBriefParts(
 
 export function graphBrief(
   graph: EvidenceGraph,
-  opts: { rowCap?: number; layout?: BriefLayout; freshPass?: boolean } = {},
+  opts: {
+    rowCap?: number;
+    layout?: BriefLayout;
+    freshPass?: boolean;
+    /** Rethrow a failing brief query instead of returning undefined. */
+    strict?: boolean;
+  } = {},
 ): string | undefined {
   const rowCap = opts.rowCap ?? 60;
   try {
@@ -226,7 +232,8 @@ export function graphBrief(
       }).trimEnd();
     const sections = withGraph(graph, (g) => brief(g, { freshPass: opts.freshPass }));
     return toToon(sections, { rowCap }).trimEnd();
-  } catch {
+  } catch (e) {
+    if (opts.strict) throw e;
     return undefined;
   }
 }

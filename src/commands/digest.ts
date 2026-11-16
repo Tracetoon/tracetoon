@@ -221,9 +221,17 @@ export function digestCmd(
   const path = writeJson(run, 'digest.json', digest);
   writeJson(run, 'digest-full.json', full);
   saveGraph(run, graph);
-  const brief = graph.graph
-    ? graphBrief(graph.graph, { layout: runLayout(run) })
-    : undefined;
+  let brief: string | undefined;
+  try {
+    brief = graph.graph
+      ? graphBrief(graph.graph, { layout: runLayout(run), strict: true })
+      : undefined;
+  } catch (e) {
+    // A brief that silently goes missing leaves the drafter without evidence.
+    throw new UserError(
+      `the evidence brief query failed for run ${run.id}: ${(e as Error).message}. Prepare stopped; report this error rather than drafting without the brief.`,
+    );
+  }
   writeFileSync(join(run.dir, 'evidence-notes.md'), evidenceNotes(full, brief), 'utf8');
   const captured = submissionSnapshot(truth);
   writeJson(run, 'submission.json', captured);
