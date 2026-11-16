@@ -146,9 +146,9 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
   <p class="lede">Tracetoon writes pull-request descriptions from the session logs your AI coding agent already keeps. Its evidence graph, built per PR in the embedded Relate database, gives the writing model a compact, cited brief instead of raw logs. On 61 real pull requests, judges preferred the graph-written description to Tracetoon's original multi-agent workflow 64 times to 38 on Codex, at 39% lower cost. On Claude Code it matched the original's quality at 28% lower cost.</p>
   <div class="tiles">
     <div class="tile"><span class="prov">Codex · judges' pick</span><span class="big">63%</span><span class="sub">of decided head-to-heads went to the graph PR (64 vs 38; 95% interval 51%–74%)</span></div>
-    <div class="tile"><span class="prov">Codex · cost per PR</span><span class="big">−39%</span><span class="sub">$0.265 vs $0.447 for the original workflow</span></div>
+    <div class="tile"><span class="prov">Codex · cost per PR</span><span class="big">−39%</span><span class="sub">typical saving per PR; average $0.265 vs $0.447 for the original workflow</span></div>
     <div class="tile"><span class="prov">Codex · key facts conveyed</span><span class="big">82%</span><span class="sub">of the expert fact sheet's claims, vs 72% for the original</span></div>
-    <div class="tile"><span class="prov">Claude Code · cost per PR</span><span class="big">−28%</span><span class="sub">$0.428 vs $0.654, at the same quality</span></div>
+    <div class="tile"><span class="prov">Claude Code · cost per PR</span><span class="big">−28%</span><span class="sub">typical saving per PR, at the same quality; average $0.428 vs $0.654</span></div>
   </div>
   <p class="meta">61 real PRs from 12 repositories · each written 3 times by each workflow · 2 judges per provider, both orders · 732 judgments per provider · factual errors checked by two expert models · prbench confirmation protocol</p>
 </header>
@@ -320,7 +320,7 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
 <text x="660" y="150" font-size="20" font-weight="700" class="g-text" text-anchor="middle">−28%</text>
 <text x="660" y="168" font-size="11" class="muted" text-anchor="middle">ratio 0.72 [0.66, 0.78]</text>
 </svg></div>
-<figcaption>Priced cost of every model call per PR, including subagents and the review pass. The ratio is the geometric mean of paired per-PR ratios (same case and run), with a 95% interval over cases. Codex costs use published per-token prices; Claude Code reports its own cost.</figcaption></figure>
+<figcaption>Bars show the average priced cost of every model call per PR, including subagents and the review pass. The headline percentage is the more conservative paired measure: the geometric mean of per-PR cost ratios (same case and run), with a 95% interval over cases. The plain averages give larger savings (41% on Codex, 35% on Claude Code). Codex costs use published per-token prices; Claude Code reports its own cost.</figcaption></figure>
 
 <h2 id="example">One PR, two ways</h2>
 <p>A change to Tracetoon itself: it bounded test processes that stalled CI and fixed PR targeting from forks. Both judges preferred the graph-written description in all three runs. Below are both descriptions from the third run, written by Codex (GPT-6.1 Terra).</p>
@@ -531,7 +531,7 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
   <li><b>Uncertainties on Claude Code.</b> Graph drafts on Claude Code respected fewer of the fact sheets' uncertainties (53% vs 67%). This is the main open quality gap.</li>
   <li><b>Wall time.</b> On Claude Code the graph workflow took about 1.8× as long per PR; on Codex it was about the same (1.05×).</li>
   <li><b>Sandbox validation.</b> Writers ran tests in an offline sandbox. 31 of 61 cases' test suites pass there at the PR's final commit; the rest fail for host reasons or have no test command. Both workflows saw the same environment.</li>
-  <li><b>Smaller cost gain than our first test.</b> An earlier 5-PR comparison measured 3.3× (Codex) and 2.3× (Claude Code) cheaper. Since then the graph workflow gained a review pass and fresh checks to fix accuracy, which cost tokens. The quality picture held: +2.9 then, +2.7 now on Codex, with a much tighter interval.</li>
+  <li><b>Compared with our earlier 5-PR report.</b> That report measured 35% lower cost on Codex and 41% on Claude Code. On 61 PRs the Codex saving held (39%) and the Claude Code saving is smaller (28%); since then the graph workflow added fresh checks and a review pass to fix accuracy. The earlier score gains came from 5 PRs; this run uses 61.</li>
   <li><b>Models and versions.</b> Writers: GPT-6.1 Terra (medium effort) in the Codex CLI and Claude Sonnet 5.5 (medium) in Claude Code 2.1.319. Tracetoon build candidate53 (Tracetoon 532372d); baseline is Tracetoon's original multi-agent workflow. Harness: prbench bench-v4 f4f7139, confirmation protocol, 61 cases x 3 replicates.</li>
 </ul>
 
