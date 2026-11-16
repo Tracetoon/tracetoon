@@ -12,6 +12,12 @@ import {
   terminalResult,
 } from '../src/integrations/zed/trace.ts';
 import {
+  blockConversation,
+  parseWarp,
+  plain,
+  warpTime,
+} from '../src/integrations/warp/trace.ts';
+import {
   cleanUserContent,
   parseAntigravityLines,
   unwrapArg,
@@ -1897,5 +1903,89 @@ describe('Zed agent threads', () => {
     expect(decodeThread(data, 'zstd', warnings)).toEqual({ messages: [] });
     expect(decodeThread(new Uint8Array([1, 2, 3]), 'zstd', warnings)).toBeUndefined();
     expect(warnings).toHaveLength(1);
+  });
+});
+
+describe('Warp agent conversations', () => {
+  // Rows recorded from Warp 2026.11 (warp.sqlite): ai_queries and blocks.
+  const conv = 'b2e50ec4-5d14-429b-a993-8b90cf68bc1a';
+  const agentRun = (id: string) =>
+    JSON.stringify({ requested_command_action_id: id, conversation_id: conv });
+  const blocks = [
+    {
+      pwd: '/repo',
+      exit_code: 0,
+      start_ts: '2026-11-15 23:09:36.371708600',
+      ai_metadata: agentRun('call_1'),
+      agent_view_visibility: null,
+      stylized_command: new TextEncoder().encode(
+        '\x1b[32mgit commit -m "Add note"\x1b[0m',
+      ),
+      stylized_output: '[feature abc1234] Add note\r\n 1 file changed',
+    },
+    {
+      pwd: '/repo',
+      exit_code: 1,
+      start_ts: '2026-11-15 23:09:40.000000000',
+      ai_metadata: null,
+      agent_view_visibility: JSON.stringify({ Agent: { origin_conversation_id: conv } }),
+      stylized_command: 'npm test',
+      stylized_output: '',
+    },
+  ];
+
+  test('reads prompts and the commands the agent ran, in time order', () => {
+    const s = session('w');
+    parseWarp(
+      [
+        {
+          input: JSON.stringify([{ Query: { text: 'commit the note', context: [] } }]),
+          start_ts: '2026-11-15 23:09:22.048653900',
+          working_directory: '/repo',
+        },
+      ],
+      blocks,
+      s,
+    );
+    expect(s.records).toEqual([
+      {
+        kind: 'prompt',
+        text: 'commit the note',
+        ts: '2026-11-15T23:09:22.048Z',
+        cwd: '/repo',
+      },
+      {
+        kind: 'command',
+        cmd: 'git commit -m "Add note"',
+        ts: '2026-11-15T23:09:36.371Z',
+        cwd: '/repo',
+        output: '[feature abc1234] Add note\n 1 file changed',
+      },
+      {
+        kind: 'command',
+        cmd: 'npm test',
+        ts: '2026-11-15T23:09:40.000Z',
+        cwd: '/repo',
+        isError: true,
+      },
+    ]);
+    expect(s.toolCalls).toBe(2);
+  });
+
+  test('a block belongs to the conversation named in either column', () => {
+    expect(blocks.map(blockConversation)).toEqual([conv, conv]);
+    expect(
+      blockConversation({
+        ...blocks[0]!,
+        ai_metadata: null,
+        agent_view_visibility: null,
+      }),
+    ).toBeUndefined();
+  });
+
+  test('times and terminal styling', () => {
+    expect(warpTime('2026-11-15 23:01:14.564237800')).toBe('2026-11-15T23:01:14.564Z');
+    expect(warpTime('not a time')).toBeUndefined();
+    expect(plain('\x1b]0;title\x07\x1b[1mbold\x1b[0m\r\n')).toBe('bold');
   });
 });

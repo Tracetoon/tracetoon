@@ -23,6 +23,7 @@ import { integration as qwen } from './qwen/index.ts';
 import { integration as crush } from './crush/index.ts';
 import { integration as amp } from './amp/index.ts';
 import { integration as zed } from './zed/index.ts';
+import { integration as warp } from './warp/index.ts';
 
 /** In display order. Hook targets, skill installs and doctor follow it. */
 export const INTEGRATIONS: readonly Integration[] = [
@@ -43,6 +44,7 @@ export const INTEGRATIONS: readonly Integration[] = [
   crush,
   amp,
   zed,
+  warp,
   geminiCli,
 ];
 

@@ -3,7 +3,7 @@
 #   irm https://raw.githubusercontent.com/Tracetoon/tracetoon/main/install.ps1 | iex
 #
 # Installs the Tracetoon skill for every agent found on this machine (Claude Code,
-# Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo, Kiro, Cline, Junie, Devin, Goose, Qwen Code, Crush, Amp, Zed), caches the prebuilt binary so nothing else
+# Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo, Kiro, Cline, Junie, Devin, Goose, Qwen Code, Crush, Amp, Zed, Warp), caches the prebuilt binary so nothing else
 # (Bun, Node) is needed, and adds a small hook to each agent that routes
 # `gh pr create` through Tracetoon. Re-run to update.
 #
@@ -42,6 +42,7 @@ function Get-Targets {
   if (Has 'devin') { $t += [pscustomobject]@{ Name = 'Devin'; Dir = Join-Path $HOME '.agents\skills\tracetoon' } }
   if ((Has 'amp') -or (Test-Path (Join-Path $HOME '.config\amp'))) { $t += [pscustomobject]@{ Name = 'Amp'; Dir = Join-Path $HOME '.agents\skills\tracetoon' } }
   if ((Has 'zed') -or (Test-Path (Join-Path $env:LOCALAPPDATA 'Zed'))) { $t += [pscustomobject]@{ Name = 'Zed'; Dir = Join-Path $HOME '.agents\skills\tracetoon' } }
+  if ((Has 'warp') -or (Test-Path (Join-Path $env:LOCALAPPDATA 'warp\Warp'))) { $t += [pscustomobject]@{ Name = 'Warp'; Dir = Join-Path $HOME '.agents\skills\tracetoon' } }
   if ((Has 'crush') -or (Test-Path (Join-Path $env:LOCALAPPDATA 'crush'))) { $t += [pscustomobject]@{ Name = 'Crush'; Dir = Join-Path $HOME '.agents\skills\tracetoon' } }
   $qwen = if ($env:QWEN_DATA_DIR) { $env:QWEN_DATA_DIR } else { Join-Path $HOME '.qwen' }
   if ((Test-Path $qwen) -or (Has 'qwen')) { $t += [pscustomobject]@{ Name = 'Qwen Code'; Dir = Join-Path $qwen 'skills\tracetoon' } }
@@ -91,7 +92,7 @@ if ($env:TRACETOON_UNINSTALL -eq '1') {
   return
 }
 
-if ($targets.Count -eq 0) { throw 'No supported agent found (Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo, Kiro, Cline, Junie, Devin, Goose, Qwen Code, Crush, Amp, Zed).' }
+if ($targets.Count -eq 0) { throw 'No supported agent found (Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo, Kiro, Cline, Junie, Devin, Goose, Qwen Code, Crush, Amp, Zed, Warp).' }
 
 $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
 $bin = "tracetoon-windows-$arch.exe"
