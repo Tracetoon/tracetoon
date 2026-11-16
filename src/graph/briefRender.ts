@@ -358,6 +358,14 @@ const LOOSE_REF = /^(?:diff:\d+(?:-\d+)?|h:[0-9a-f]{6,40})$/;
 const VALIDATION_CLAIM =
   /\b(\d+\s*(pass|passed|fail|failed|failures?)\b|tests? (pass|passed|fail|failed|ran|run)\b|(passed|passes|passing|failed|failing)\b|untested|not tested|exercised|typecheck(s|ed)?\b|no recorded run)/i;
 
+/**
+ * A sentence saying something was not tested, run or recorded ("not tested on
+ * hardware", "no live run was recorded", "untested"). Tracetoon reads only the
+ * turns attributed to this PR, so such an absence needs a `limits` row.
+ */
+const ABSENCE =
+  /\b(?:untested|not (?:been |yet )?(?:tested|run|re-?run|recorded|verified|exercised|executed)|never (?:been )?(?:tested|run|executed)|(?:was|were|is|are|has|have)(?:n't| not)(?: been)? (?:tested|run|recorded|verified|exercised)|no\s+(?:[\w-]+\s+){0,5}(?:was|were|has been|have been|is|are)\s+(?:run|recorded|executed|tested|performed)|without (?:running|testing|a (?:test|live) run))\b/i;
+
 /** Lines of prose: skips headings, code, HTML, tables and the generated section. */
 function proseUnits(text: string): string[] {
   const out: string[] = [];
@@ -530,6 +538,31 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
         problem:
           'only a commit message says this: write "the commit message says…" or leave it out.',
       });
+  }
+  // An absence ("not tested", "no … was run") with no limits row behind it:
+  // the logs Tracetoon read are not the whole history (judged contradicted
+  // where the session did test it). Blocking.
+  const limitRefs = new Set(rowsOf(b, 'limits').map((r) => String(r.ref)));
+  const unrunReceipts = new Set(
+    rowsOf(b, 'validation')
+      .filter(
+        (r) =>
+          /^V\d/.test(String(r.check ?? '')) &&
+          (r.outcome === 'not-run' || /could not run/i.test(String(r.result ?? ''))),
+      )
+      .map((r) => String(r.check)),
+  );
+  for (const unit of proseUnits(body)) {
+    const clean = unit.replace(TAG, '').trim();
+    if (!ABSENCE.test(clean)) continue;
+    const refs = [...unit.matchAll(TAG)].flatMap((m) => tagRefs(m[1]!));
+    if (refs.some((r) => limitRefs.has(r) || unrunReceipts.has(r))) continue;
+    flags.push({
+      sentence: clean,
+      severity: 'fix',
+      problem:
+        'unsupported absence: no limits row says this was not tested, run or recorded (Tracetoon reads only some of the session). Tag the limits row that says it, or drop the sentence.',
+    });
   }
   // A review pointer that pins a behavior on the wrong function.
   for (const unit of proseUnits(body)) {

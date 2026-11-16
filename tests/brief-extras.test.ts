@@ -960,13 +960,14 @@ describe('stale "no passing run after the last commit"', () => {
         },
       ],
     } as any;
-    expect(applyBrief(body, receipt).flags.map((f) => f.severity)).toEqual(['fix']);
+    // (Unsupported-absence flags are their own check: left out here.)
+    const stale = (b: any) =>
+      applyBrief(body, b).flags.filter((f) => !/unsupported absence/.test(f.problem));
+    expect(stale(receipt).map((f) => f.severity)).toEqual(['fix']);
     const failed = structuredClone(receipt);
     failed.sections[0].rows[0].outcome = 'failed';
-    expect(applyBrief(body, failed).flags).toEqual([]);
-    expect(
-      applyBrief(body, { sections: [], unchecked: [], freshPass: true }).flags,
-    ).toHaveLength(1);
+    expect(stale(failed)).toEqual([]);
+    expect(stale({ sections: [], unchecked: [], freshPass: true })).toHaveLength(1);
   });
 });
 
