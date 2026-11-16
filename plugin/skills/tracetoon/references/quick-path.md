@@ -42,7 +42,7 @@ check → review → final render → publish. Write the description yourself, i
 5. **Required checks.** If `context.json` or the repository's contributing
    guide names checks contributors must run (tests, typecheck, lint), and the
    brief's validation rows have no `tracetoon check` receipt (a `V` row) for
-   them, run each once with `tracetoon check --run <id> --name <check> -- <command>`
+   them, run each once, each as its own `tracetoon check --run <id> --name <check> -- <command>` (no chained `bash -c '… && …'`)
    (one at a time; this records the result on the submitted content, as the
    full path does). Don't run anything else to fill gaps.
 6. **Check.** `tracetoon render --check --json --run <id>`. Fix every sentence

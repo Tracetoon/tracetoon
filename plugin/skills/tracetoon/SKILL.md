@@ -71,7 +71,8 @@ reviewer separate.
      Serialize `tracetoon check` attempts for the same run; wait for each
      command to finish before starting the next. A check already run on the
      same tracked code returns its receipt without rerunning (`reused`); run
-     each check once, and pass `--force` only to rerun a flaky one.
+     each check once, each as its own `tracetoon check` (no chained
+     `bash -c '… && …'`), and pass `--force` only to rerun a flaky one.
    - `task complete`, `task defer` and `task block` remain optional bookkeeping.
      Reuse unchanged research and art; refresh PR evidence and review when inputs change.
 
@@ -156,7 +157,12 @@ reviewer separate.
         (`[CH1, commit:<sha>#2]`) and put `<!-- tracetoon:validation -->`
         where the Validation section belongs.
      3. Run each required check that has no current receipt once with
-        `tracetoon check --run <id> --name <check> -- <command>`.
+        `tracetoon check --run <id> --name <check> -- <command>`: one
+        `tracetoon check` per repository check, never several chained in one
+        `bash -c '… && …'` (its result can't be told apart per check). A check
+        that can't run here gets `--skip "<reason>"`; when the repository
+        declares test/check/typecheck scripts, publish requires a receipt or a
+        recorded skip on this path.
      4. `tracetoon render --check --json --run <id>`: fix every sentence it lists
         and cover every listed row, up to three rounds.
      5. `tracetoon render --json --run <id>`, then

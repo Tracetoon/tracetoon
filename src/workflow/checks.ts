@@ -1,7 +1,7 @@
 /** Explicit verification receipts; raw output and environment values are never persisted. */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { contentFingerprint, readTask } from './state.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
@@ -619,4 +619,57 @@ export function receiptEvidence(
       revision: 'no later edits seen',
       verificationBasis: 'exact-content-receipt',
     }));
+}
+
+/** package.json scripts that check the code (not `pretest`-style hooks). */
+const CHECK_SCRIPT = /^(?:test|check|typecheck|type-check|tsc|lint)(?::\S+)?$/;
+
+/**
+ * The checks a repository declares for itself, found generically: package.json
+ * scripts named test/check/typecheck/lint, a Makefile `test:`/`check:` target,
+ * or a Cargo, Go or pytest project. Each entry is how to run it.
+ */
+export function declaredChecks(root: string): string[] {
+  const out: string[] = [];
+  const read = (f: string) => {
+    try {
+      return readFileSync(join(root, f), 'utf8');
+    } catch {
+      return undefined;
+    }
+  };
+  const pkg = read('package.json');
+  if (pkg)
+    try {
+      const scripts = (JSON.parse(pkg) as { scripts?: Record<string, unknown> }).scripts;
+      for (const [name, cmd] of Object.entries(scripts ?? {}))
+        if (
+          CHECK_SCRIPT.test(name) &&
+          typeof cmd === 'string' &&
+          !/no test specified/i.test(cmd)
+        )
+          out.push(`npm run ${name}`);
+    } catch {
+      /* not JSON: no scripts */
+    }
+  const make = read('Makefile');
+  if (make)
+    for (const t of ['test', 'check'])
+      if (new RegExp(`^${t}\\s*:`, 'm').test(make)) out.push(`make ${t}`);
+  if (read('Cargo.toml')) out.push('cargo test');
+  if (read('go.mod')) out.push('go test ./...');
+  const py = read('pyproject.toml');
+  if (py && /\[tool\.pytest/.test(py)) out.push('pytest');
+  return out;
+}
+
+/**
+ * Why publishing lacks check evidence: the repository declares checks but the
+ * run holds no `tracetoon check` receipt at all (a pass, a failure or a
+ * recorded `--skip` reason each count). Undefined when nothing is missing.
+ */
+export function checkReceiptGap(run: Run, root: string): string | undefined {
+  const declared = declaredChecks(root);
+  if (!declared.length || receipts(run).length) return undefined;
+  return `The repository declares checks (${declared.slice(0, 4).join(', ')}) but this run has no check receipt. Run each one on its own: tracetoon check --run ${run.id} --name <check> -- <program> <args> (one command per check, no chained bash -c '… && …'), or record why it can't run: tracetoon check --run ${run.id} --name <check> --skip "<reason>".`;
 }

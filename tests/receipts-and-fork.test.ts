@@ -1,9 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { prHead } from '../src/commands/publish.ts';
-import { checkEnvironment, checkSummary, setupFailure } from '../src/workflow/checks.ts';
+import {
+  checkEnvironment,
+  checkReceiptGap,
+  checkSummary,
+  declaredChecks,
+  setupFailure,
+} from '../src/workflow/checks.ts';
 import { validationSection } from '../src/graph/briefRender.ts';
 import { makeRepo, tempDir } from './helpers.ts';
 
@@ -206,5 +212,31 @@ describe('receipts without task bookkeeping', () => {
     expect(digest.verification).toEqual([
       expect.objectContaining({ id: 'V1', outcome: 'passed', summary: ['3 pass'] }),
     ]);
+  });
+});
+
+describe('declared repository checks need a receipt or a recorded skip', () => {
+  test('package.json check scripts are found; a placeholder test script is not', () => {
+    const root = tempDir('declared');
+    writeFileSync(
+      join(root, 'package.json'),
+      JSON.stringify({ scripts: { test: 'bun test', typecheck: 'tsc', build: 'x' } }),
+    );
+    expect(declaredChecks(root)).toEqual(['npm run test', 'npm run typecheck']);
+    writeFileSync(
+      join(root, 'package.json'),
+      JSON.stringify({ scripts: { test: 'echo "Error: no test specified" && exit 1' } }),
+    );
+    expect(declaredChecks(root)).toEqual([]);
+  });
+  test('the gap closes once any receipt (a pass, a failure or a skip) exists', () => {
+    const root = tempDir('declared-gap');
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 't' } }));
+    const dir = join(root, 'run');
+    mkdirSync(dir, { recursive: true });
+    const run = { id: 'r1', dir } as any;
+    expect(checkReceiptGap(run, root)).toContain('no chained');
+    writeFileSync(join(dir, 'checks.json'), JSON.stringify([{ v: 1, outcome: 'not-run' }]));
+    expect(checkReceiptGap(run, root)).toBeUndefined();
   });
 });

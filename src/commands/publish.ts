@@ -91,7 +91,7 @@ import { comicSummary } from '../comic/composition.ts';
 import { comicObservationInput } from '../contribution/comicReview.ts';
 import { readTask, saveTask, workFingerprint } from '../workflow/state.ts';
 import { fileHash, publishProblem } from '../workflow/readiness.ts';
-import { passOnSubmittedContent, receipts } from '../workflow/checks.ts';
+import { checkReceiptGap, passOnSubmittedContent, receipts } from '../workflow/checks.ts';
 import { publicationLock, recordTiming } from '../workflow/publication.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
 import { acknowledgeRepository } from '../workflow/hostSession.ts';
@@ -1011,6 +1011,14 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
         ? `${planProblem}\nRun the missing passes with tracetoon review run --all --run ${run.id}, render again, then publish.`
         : `${planProblem}\nImport each missing pass with tracetoon review import --run ${run.id}, render again, then publish.`,
     );
+  // Declared repository checks need a receipt (or a recorded skip): required
+  // on the reviewed path (a review plan), a warning otherwise.
+  const checkGap = checkReceiptGap(run, truth.toplevel);
+  if (checkGap) {
+    if (planEnforced(loadReviewPlan(run)))
+      throw new UserError(`${checkGap}\nThen render again and publish.`);
+    if (!opts.json) process.stderr.write(`tracetoon: warning: ${checkGap}\n`);
+  }
   // On a brief path the brief check is the review: open items block publishing.
   const briefOpen = briefPathOpen(run);
   if (briefOpen) {
