@@ -34,7 +34,8 @@ let cachedToken: { value: string | undefined } | undefined;
  * A token for GitHub's API. Without one, requests share the anonymous limit of 60 an
  * hour per IP address, which other tools on the machine (and every agent session's
  * update check) use up. GH_TOKEN or GITHUB_TOKEN wins; otherwise the gh CLI's own
- * login, looked up once per process. A test server (TRACETOON_UPDATE_URL) gets none.
+ * login, looked up once per process. With a test server (TRACETOON_UPDATE_URL) the gh
+ * lookup is skipped; the token still never reaches that host (see requestHeaders).
  */
 export function githubToken(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const fromEnv = env.GH_TOKEN?.trim() || env.GITHUB_TOKEN?.trim();
