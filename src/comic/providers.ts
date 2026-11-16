@@ -19,7 +19,13 @@ import {
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { formatById } from './formats.ts';
-import { paletteText, styleById, styleLettering, styleText } from './styles.ts';
+import {
+  paletteText,
+  styleById,
+  styleLettering,
+  styleText,
+  wantsNonComicMedium,
+} from './styles.ts';
 import {
   compositionPrompt,
   frameAspect,
@@ -84,6 +90,23 @@ export type Readiness = 'ready' | 'not ready' | 'unknown';
 /** Things image models must avoid, on every comic. */
 export const NEGATIVE =
   'fictional characters only (human characters are welcome); original character designs that do not resemble existing cartoon, film or game characters; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
+/** With an explicit user request, their characters are allowed; the rest still holds. */
+export const NEGATIVE_WITH_REQUEST =
+  'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
+/** Keeps the page a drawn comic rather than an illustration or render. */
+export const COMIC_MEDIUM =
+  "It must look like a drawn comic: inked line art with flat or cel coloring, real panel borders and gutters, lettering in balloons and caption boxes. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
+
+/** The avoid-list for this script. */
+export function negativeFor(script: ComicScript): string {
+  return script.request?.trim() ? NEGATIVE_WITH_REQUEST : NEGATIVE;
+}
+
+function requestLine(script: ComicScript): string {
+  return script.request?.trim()
+    ? `The user asked for this; honor it exactly: ${script.request.trim()}.`
+    : '';
+}
 
 function characterLine(script: ComicScript, name: string): string {
   const c = script.characters?.find((x) => x.name.toLowerCase() === name.toLowerCase());
@@ -123,7 +146,8 @@ export function artPrompt(panel: Panel, index: number, script: ComicScript): str
       ? `A ${SHAPE[frameAspect(script, index)]} panel image. Keep this normalized area plain for later lettering: ${JSON.stringify(frame?.textBox ?? { x: 0, y: 0, w: 1, h: 0.4 })}. Compose the subject outside it. No text, no letters.`
       : 'Square image. Keep the top third as plain, uncluttered background so speech bubbles can be added later. No text, no letters.',
     'If a reference image is given, keep every character and the art style consistent with it.',
-    `Strictly: ${NEGATIVE}.`,
+    requestLine(script),
+    `Strictly: ${negativeFor(script)}.`,
   ]
     .filter(Boolean)
     .join(' ');
@@ -146,9 +170,9 @@ function textLine(d: Dialogue): string {
     case 'sfx':
       return `big sound-effect lettering: ${q}`;
     case 'sign':
-      return `written on a sign, screen or label in the scene: ${q}`;
     case 'label':
-      return `a small typewriter-style callout tag with a thin leader line pointing at ${d.points?.trim() || 'the element it names'}, reading exactly ${q}`;
+      // Words belong to the world: painted, printed or shown on something, never a pointer tag.
+      return `written on ${d.points?.trim() || 'a screen, sign or object in the scene'} as a natural part of the scene (no callout tag, no pointer line): ${q}`;
     default:
       return d.speaker === 'caption'
         ? `caption box: ${q}`
@@ -184,6 +208,8 @@ export function pagePrompt(script: ComicScript): string {
   return [
     `A finished comic page, ${SHAPE[aspect]} image.`,
     `Art style: ${scriptStyle(script)}.`,
+    requestLine(script),
+    wantsNonComicMedium(script.style) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'
       ? `Format: ${format.name}. ${format.layout}.`
       : '',
@@ -204,12 +230,8 @@ export function pagePrompt(script: ComicScript): string {
             .filter((part) => !/headline|title/i.test(part))
             .join(',') || 'clear comic lettering suited to this art'
         : styleLettering(script.style)
-    }. Letter every quoted text exactly as written, spelled correctly, large enough to read on a phone.${
-      script.panels.some((p) => p.dialogue?.some((d) => d.kind === 'label'))
-        ? ' Callout tags are small and tidy, in a plain typewriter face that contrasts with the speech lettering, each with a thin line to the thing it names.'
-        : ''
-    } No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
-    `Strictly: ${NEGATIVE}.`,
+    }. Letter every quoted text exactly as written, spelled correctly, large enough to read on a phone. Words on screens, signs and objects are part of the drawing, never floating tags or arrows. No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
+    `Strictly: ${negativeFor(script)}.`,
   ]
     .filter(Boolean)
     .join('\n');

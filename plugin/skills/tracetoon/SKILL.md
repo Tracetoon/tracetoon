@@ -360,32 +360,32 @@ reviewer separate.
    the user doesn't want one, or `aiPolicy.media` is `prohibited` and `comic`
    isn't `always`; render applies the comic setting either way). Follow
    [references/comic-guide.md](references/comic-guide.md). The comic sits in
-   the PR, so its first reader is the reviewer: after reading it they should
-   know _what changed_ and smile. Labels with the PR's real names let someone
-   outside the repo get it too:
-   - compare three distinct short story/composition/cast concepts in local
-     `comic-design.json`, following [comic-direction.md](references/comic-direction.md).
-     First apply the PR test (could a developer name the change from the comic
-     alone?), then choose the strongest supported joke: record its technical
-     anchor, reader expectation, comic turn, visible clues and likely misreading.
-     Prefer metaphors close to the system; a distant everyday analogy needs
-     labels on the elements that carry the mapping.
-     Reconcile synopsis, scenes, dialogue and alt text before drawing. Then use
-     `context.comic.recentComics` for art direction; draw one finished image.
-     Panel count follows necessary story beats, not diff length. Pick a format
-     and any art style that suits it (ideas in
-     [references/styles.md](references/styles.md), or your own description);
-   - use explicit `composition` geometry and choose `none`, `integrated` or
-     `heading` title treatment. Do not default to a big top title and three
-     equal panels. Compare broad style family, layout, panel count and cast with
-     recent comics; a new style name alone does not create variety;
+   the PR, so its first reader is the reviewer: it should make them laugh and
+   leave them knowing _what changed_. It must look and read like a real comic:
+   - find the joke first: mine the PR description and digest for what really
+     happened, write the punchline, then compare three distinct concepts in
+     local `comic-design.json` following
+     [comic-direction.md](references/comic-direction.md). Pick the one that
+     makes sense on a cold read, is genuinely funny, and is recognizably this
+     PR. Characters talk like people (never in code), and the PR's real names
+     appear in the scene itself (screens, signs, box stamps) or in dialogue,
+     never as pointer tags or callout labels;
+   - use the beats the joke needs, usually three or four panels; two-panel
+     before/afters only when the contrast is the punchline. Vary the layout
+     with explicit `composition` geometry (tiered, manga page, vertical,
+     hero-inset, ...) and choose `none`, `integrated` or `heading` title
+     treatment;
+   - pick a comic style (ideas in [references/styles.md](references/styles.md),
+     or name a comic tradition); it must look like a drawn comic, not a 3D
+     render or illustration. Reusing a style is fine. If the user asked for a
+     particular look or characters, put their words in `request` and honor it;
    - invent this comic's own characters (or none) and describe each once in
      `comic.json`, with each `kind` (`human`, `creature`, `object`); never reuse
-     characters from earlier comics. Use fictional people for human situations,
-     creatures or objects when they strengthen the gag, or no cast at all;
+     characters from earlier comics;
    - write `comic.json` (`"v": 2`) with its `anchor` (the change, 1–4 real
-     terms, and what each drawn element stands for) and `label` callouts, then
-     `tracetoon comic check`; at least one term must be lettered in the art;
+     terms, and what each drawn element stands for), then
+     `tracetoon comic check`; at least one term must be lettered in the scene
+     or dialogue;
    - make the art: `tracetoon comic art` draws the whole page with its lettering
      through the Codex or Antigravity CLI, or the OpenAI or Gemini API, after the
      user agrees once (exit code 4 means: ask them, then add `--consent`). Or

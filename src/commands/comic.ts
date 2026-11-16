@@ -636,8 +636,8 @@ export async function comicRerollCmd(cwd: string, opts: RerollOpts): Promise<voi
       throw new UserError(
         `This repo pins the style "${check.pinnedStyle}"; there is nothing to reroll to.`,
       );
-    // Some randomness among the freshest few, so rerolls don't always land on the same one.
-    const pool = freshStyles(check.recentStyles, script.style).slice(0, 4);
+    // Any other comic preset; reusing a recent style is fine.
+    const pool = freshStyles([], script.style);
     style = pool[Math.floor(Math.random() * pool.length)]!.id;
   }
   const next: ComicScript = { ...script, style };
@@ -667,6 +667,9 @@ export async function comicRerollCmd(cwd: string, opts: RerollOpts): Promise<voi
         );
       const family = {
         strip: 'sequence',
+        'tiered-strip': 'tiered',
+        'manga-page': 'asymmetric',
+        webtoon: 'vertical',
         '4koma': 'vertical',
         'before-after': 'comparison',
         splash: script.panels.length === 1 ? 'single' : 'hero-inset',

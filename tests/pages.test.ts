@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import { composePage, imageSize, pageWithFooter } from '../src/comic/compose.ts';
 import { artPrompt, pagePrompt } from '../src/comic/providers.ts';
 import { checkScript, errors, pageText, transcript } from '../src/comic/script.ts';
-import { freshStyles, styleById } from '../src/comic/styles.ts';
+import { freshStyles, STYLES, styleById } from '../src/comic/styles.ts';
 import { pageScript } from './pageScript.ts';
 
 // A 1x1 PNG.
@@ -56,8 +56,9 @@ describe('page scripts', () => {
     const wordy = pageScript();
     wordy.panels[0]!.dialogue = Array.from({ length: 4 }, () => ({
       speaker: 'caption',
-      text: 'twelve words that go on and on and on and on still',
+      text: 'words that go on and on and on and on and on and on and on still',
     }));
+    wordy.panels.push(structuredClone(wordy.panels[0]!));
     expect(
       errors(checkScript(wordy)).some((p) => p.problem.includes('reads on a phone')),
     ).toBe(true);
@@ -66,15 +67,14 @@ describe('page scripts', () => {
     ).toBe('layout');
   });
 
-  test('any art style: an idea by id, or free text; recent ones warn', () => {
+  test('any art style: a preset by id, or free text; reuse is fine', () => {
     const own = pageScript({ style: '1970s Saturday-morning cel animation' });
     expect(errors(checkScript(own))).toEqual([]);
     expect(pagePrompt(own)).toContain('Art style: 1970s Saturday-morning cel animation');
     expect(pagePrompt(pageScript())).toContain(styleById('sunday-strip')!.prompt);
     expect(errors(checkScript(pageScript({ style: '' })))[0]!.where).toBe('style');
     const p = checkScript(pageScript(), { recentStyles: ['Sunday-Strip'] });
-    expect(p.find((x) => x.where === 'style')?.severity).toBe('warning');
-    expect(errors(p)).toEqual([]);
+    expect(p.find((x) => x.where === 'style')).toBeUndefined();
     expect(errors(checkScript(pageScript(), { pinnedStyle: 'noir' }))[0]!.where).toBe(
       'style',
     );
@@ -118,6 +118,37 @@ describe('page scripts', () => {
       expect(svg).toContain('CLICK HERE, HUMAN');
       expect(svg).toContain('made with Tracetoon');
     }
+  });
+});
+
+describe('comic look and user requests', () => {
+  test('pages are asked to look like drawn comics unless the style wants another medium', () => {
+    expect(pagePrompt(pageScript())).toContain('It must look like a drawn comic');
+    expect(
+      pagePrompt(pageScript({ style: 'stop-motion claymation diorama' })),
+    ).not.toContain('It must look like a drawn comic');
+    // Old presets still expand to their tested prompt.
+    expect(pagePrompt(pageScript({ style: 'claymation' }))).toContain('plasticine');
+    for (const s of STYLES) expect(s.family).not.toBe('custom');
+  });
+
+  test('an explicit user request is sent and lifts the original-characters rule', () => {
+    const plain = pagePrompt(pageScript());
+    expect(plain).toContain('original character designs');
+    const asked = pageScript({ request: 'stormtroopers arguing about tabs' });
+    expect(errors(checkScript(asked))).toEqual([]);
+    const prompt = pagePrompt(asked);
+    expect(prompt).toContain(
+      'The user asked for this; honor it exactly: stormtroopers arguing about tabs.',
+    );
+    expect(prompt).not.toContain('original character designs');
+    expect(prompt).toContain('no identifiable real-person or celebrity likenesses');
+    expect(artPrompt(asked.panels[0]!, 0, asked)).not.toContain(
+      'original character designs',
+    );
+    expect(
+      errors(checkScript(pageScript({ request: '  ' }))).map((p) => p.where),
+    ).toContain('request');
   });
 });
 

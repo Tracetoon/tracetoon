@@ -2,23 +2,22 @@
 import { writeFileSync } from 'node:fs';
 import { STYLES } from '../src/comic/styles.ts';
 const rows = STYLES.map(
-  (s) => `| \`${s.id}\` | ${s.name} | ${s.moods.join(', ')} | ${s.palettes.join(', ')} |`,
+  (s) =>
+    `| \`${s.id}\` | ${s.name} | ${s.family} | ${s.moods.join(', ')} | ${s.palettes.join(', ')} |`,
 );
-const md = `# Art style ideas
+const md = `# Comic styles
 
-A comic can use any art style. Set \`"style"\` to one of these ids (it expands to
-a tested prompt) or to your own description ("1970s Saturday-morning cel
-animation", "linocut print"). Pick what suits this PR's story, and something
-different from the repo's recent comics (\`tracetoon context\` lists them;
-\`tracetoon comic check\` warns on a repeat).
+Every comic should look like a drawn comic. Set \`"style"\` to one of these
+ids (it expands to a tested prompt) or name a comic tradition in your own
+words ("90s alt-weekly strip", "gag manga with screentone"). Pick what suits
+this PR's joke; reusing a recent style is fine. If the user asked for a
+specific look or characters, use their words in \`"request"\` and honor them.
 
 These lettering notes suggest a treatment, not a mandatory headline.
 \`composition.title\` decides whether a title is drawn and where it belongs.
-Also compare broad \`styleFamily\`, layout and cast in \`recentComics\`;
-renaming the same treatment is not variety.
 
-| Style | Look | Good for | Palettes |
-|---|---|---|---|
+| Style | Look | Family | Good for | Palettes |
+|---|---|---|---|---|
 ${rows.join('\n')}
 
 Details (what the image model is asked for):
