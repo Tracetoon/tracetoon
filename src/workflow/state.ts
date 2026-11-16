@@ -75,12 +75,16 @@ export function workFingerprint(root: string): string {
 }
 
 /** Test identity follows content, not commit time or SHA. Includes nonignored new files. */
-export function contentFingerprint(root: string): string {
+/**
+ * The worktree's content: every tracked and untracked (not ignored) file, or
+ * with `tracked`, the tracked files only (the code tree, without drafts or
+ * scratch files a writer leaves beside it).
+ */
+export function contentFingerprint(root: string, tracked = false): string {
   const files = git(root, [
     'ls-files',
     '--cached',
-    '--others',
-    '--exclude-standard',
+    ...(tracked ? [] : ['--others', '--exclude-standard']),
     '-z',
   ]);
   if (!files.ok) throw new Error('Cannot fingerprint validation inputs.');
@@ -96,7 +100,7 @@ export function contentFingerprint(root: string): string {
     }
     hash.update(file).update('\0');
     if (info.isDirectory())
-      hash.update(contentFingerprint(path)); // checked-out git submodule
+      hash.update(contentFingerprint(path, tracked)); // checked-out git submodule
     else hash.update(String(info.mode & 0o111)).update(readSubmittedFile(root, file));
     hash.update('\0');
   }

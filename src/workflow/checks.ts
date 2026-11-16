@@ -1,8 +1,8 @@
 /** Explicit verification receipts; raw output and environment values are never persisted. */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, realpathSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { contentFingerprint, readTask } from './state.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
 import type { Run } from '../run.ts';
@@ -28,6 +28,8 @@ export interface CheckReceipt {
   summary: string[];
   /** It failed before running for want of a tool, a dependency or the network: why. */
   couldNotRun?: string;
+  /** `fingerprint` over tracked files only: the code tree it ran on, for reuse. */
+  tracked?: string;
   startedAt: string;
   durationMs: number;
   commandSha256?: string;
@@ -346,38 +348,51 @@ function prepareCheck(
   if (!opts.name.trim() || (!opts.command.length && !opts.skip?.trim()))
     throw new Error('Supply a check command or an explicit --skip reason.');
   const fingerprint = inputFingerprint(root, opts.input ?? []);
+  const tracked = inputFingerprint(
+    root,
+    opts.input ?? [],
+    contentFingerprint(root, true),
+  );
   const environment = checkEnvironment();
   const safeName = makeScrubber([root]).text(opts.name);
   const previous = receipts(run);
-  const old = previous.find(
-    (c) =>
-      c.outcome === 'passed' &&
-      c.fingerprint === fingerprint &&
-      c.environment === environment &&
-      c.cwd === rel &&
-      (c.commandSha256 ?? hash(c.command)) === hash(opts.command),
-  );
-  if (
-    !opts.force &&
-    old?.outcome === 'passed' &&
-    old.fingerprint === fingerprint &&
-    old.environment === environment &&
-    old.cwd === rel &&
-    (old.commandSha256 ?? hash(old.command)) === hash(opts.command) &&
-    !opts.skip
-  ) {
+  // The latest receipt of this command on the same code tree (tracked files
+  // unchanged; untracked drafts beside it don't matter), here or in another
+  // run of this repository: rerunning it would say the same. A check the
+  // environment stopped is rerun, as the environment may have been fixed.
+  const old =
+    opts.force || opts.skip
+      ? undefined
+      : latestReceipt(run, previous, {
+          fingerprint,
+          tracked,
+          environment,
+          cwd: rel,
+          command: hash(opts.command),
+        });
+  if (old) {
     count('check.reused');
     const reused = {
       ...old,
       name: safeName,
+      // Current again: the content it ran on is the content now.
+      fingerprint,
+      tracked,
       reused: true,
       reuse: {
         state: 'reused' as const,
-        reason: 'Exact command, inputs, directory and environment match.',
+        reason:
+          old.fingerprint === fingerprint
+            ? 'Exact command, inputs, directory and environment match.'
+            : 'Same command, directory and environment, and the tracked code is unchanged since this receipt; pass --force to rerun.',
         matchedName: old.name,
       },
     };
-    if (old.name !== safeName)
+    if (
+      old.name !== safeName ||
+      old.fingerprint !== fingerprint ||
+      !previous.includes(old)
+    )
       writeLocal(join(run.dir, 'checks.json'), [
         ...previous.filter((c) => c.name !== safeName),
         reused,
@@ -431,6 +446,7 @@ function prepareCheck(
         cwd: rel,
         kind: checkKind(`${opts.name} ${opts.command.join(' ')}`),
         fingerprint,
+        tracked,
         inputs: opts.input,
         environment,
         outcome: opts.skip
@@ -470,6 +486,52 @@ function prepareCheck(
       return receipt;
     },
   };
+}
+/**
+ * The newest finished receipt (passed, or failed on the code) for this
+ * command, directory and environment whose content matches exactly or whose
+ * tracked code tree matches: in this run first, then in the repository's
+ * other runs, newest first.
+ */
+function latestReceipt(
+  run: Run,
+  previous: CheckReceipt[],
+  want: {
+    fingerprint: string;
+    tracked: string;
+    environment: string;
+    cwd: string;
+    command: string;
+  },
+): CheckReceipt | undefined {
+  const fits = (c: CheckReceipt) =>
+    // A failure is the code's only with a nonzero exit and no environment
+    // stop (an exit-0 failure means the command changed its own inputs).
+    (c.outcome === 'passed' ||
+      (c.outcome === 'failed' && !c.couldNotRun && !!c.exitCode)) &&
+    c.environment === want.environment &&
+    c.cwd === want.cwd &&
+    (c.commandSha256 ?? hash(c.command)) === want.command &&
+    (c.fingerprint === want.fingerprint || c.tracked === want.tracked);
+  const newest = (xs: CheckReceipt[]) =>
+    xs
+      .filter(fits)
+      .sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)))[0];
+  const here = newest(previous);
+  if (here) return here;
+  let others: CheckReceipt[] = [];
+  try {
+    const runs = dirname(run.dir);
+    others = readdirSync(runs, { withFileTypes: true })
+      .filter(
+        (d) => d.isDirectory() && !d.isSymbolicLink() && d.name !== basename(run.dir),
+      )
+      .flatMap((d) => readLocal<CheckReceipt[]>(join(runs, d.name, 'checks.json')) ?? [])
+      .filter((c) => c && c.v === 1);
+  } catch {
+    return undefined;
+  }
+  return newest(others);
 }
 export function checkReport(root: string, run: Run) {
   const fingerprint = contentFingerprint(root);

@@ -529,6 +529,52 @@ describe('receipts follow tested content', () => {
     expect(contentFingerprint(repo.root)).toBe(source);
     expect(executeCheck(repo.root, run, options).reused).toBeUndefined();
   });
+  test('reuses the latest receipt while the tracked code is unchanged, passed or failed, across runs', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo.root, 'code.ts'), 'one');
+    git(repo.root, ['add', 'code.ts']);
+    git(repo.root, ['commit', '-qm', 'Add code']);
+    const { run } = beginTask(repo.root);
+    const failing = {
+      name: 'tests',
+      command: [process.execPath, '-e', 'process.exit(3)'],
+    };
+    const first = executeCheck(repo.root, run, failing);
+    expect(first.outcome).toBe('failed');
+    expect(first.tracked).toBeString();
+    // An untracked draft beside the code changes nothing a check reads here.
+    writeFileSync(join(repo.root, 'draft.md'), 'a PR description');
+    const again = executeCheck(repo.root, run, failing);
+    expect(again.reused).toBe(true);
+    expect(again.outcome).toBe('failed');
+    expect(again.reuse?.reason).toContain('--force');
+    // Reused, it counts as current for the content now.
+    expect(checkReport(repo.root, run).find((c) => c.name === 'tests')!.current).toBe(
+      true,
+    );
+    expect(
+      executeCheck(repo.root, run, { ...failing, force: true }).reused,
+    ).toBeUndefined();
+    // Another run of the repository on the same code tree reuses it too.
+    git(repo.root, ['checkout', '-qb', 'other']);
+    const second = beginTask(repo.root);
+    expect(second.run.id).not.toBe(run.id);
+    expect(executeCheck(repo.root, second.run, failing).reused).toBe(true);
+    // A tracked edit reruns it.
+    writeFileSync(join(repo.root, 'code.ts'), 'two');
+    expect(executeCheck(repo.root, second.run, failing).reused).toBeUndefined();
+    // A check the environment stopped is rerun: the environment may be fixed.
+    const missing = {
+      name: 'deps',
+      command: [
+        process.execPath,
+        '-e',
+        'console.error("sh: 1: cargo: not found"); process.exit(127)',
+      ],
+    };
+    expect(executeCheck(repo.root, second.run, missing).couldNotRun).toBeString();
+    expect(executeCheck(repo.root, second.run, missing).reused).toBeUndefined();
+  });
   test('reuses unchanged input, survives commits and ignores private trails; edits and environment changes invalidate', () => {
     const repo = makeRepo();
     const { run } = beginTask(repo.root);
@@ -679,10 +725,25 @@ describe('requested PR to publication rehearsal', () => {
     );
     writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
     ok(repo.root, 'render', '--run', run.id, '--no-comic');
-    const digestChecksBefore = readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha;
-    ok(repo.root, 'check', '--run', run.id, '--name', 'lint', '--', process.execPath, '-e', 'console.log("ok")');
+    const digestChecksBefore = readLocal<{ checksSha?: string }>(
+      join(run.dir, 'digest.json'),
+    )!.checksSha;
+    ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'lint',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("ok")',
+    );
     ok(repo.root, 'render', '--run', run.id, '--no-comic');
-    expect(readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha).not.toBe(digestChecksBefore);
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).not.toBe(digestChecksBefore);
   });
 
   test('prepares, publishes without rerunning work, and recovers an interrupted create', () => {
