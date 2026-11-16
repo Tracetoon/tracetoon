@@ -1473,6 +1473,7 @@ describe('the brief states recorded process and behavior', () => {
         title: null,
         failedCommands: 2,
         failedCommand: 'git push',
+        firstPromptT: t(1),
       }),
       N('Prompt', 'S1', {
         t: t(1),
@@ -1775,6 +1776,18 @@ describe('the brief states recorded process and behavior', () => {
       // At most the goal and one plan: a decision gives way to the plan.
       ['P1', 'earlier plan (not approved as written) in the session', 'Limit v1'],
     ]);
+    // An earlier prompt the digest did not keep: S1 is only the earliest kept.
+    const earlier = {
+      ...graph,
+      nodes: graph.nodes.map((n: any) =>
+        n.label === 'Session' ? { ...n, props: { ...n.props, firstPromptT: t(0) } } : n,
+      ),
+    };
+    const bg = withGraph(earlier, (e) => briefParts(e)).sections.find(
+      (x) => x.title === 'background',
+    )!.rows;
+    expect(String(bg[0]!.kind)).toMatch(/^why this work started: the earliest request Tracetoon kept/);
+    expect(String(bg[0]!.kind)).not.toContain("session's first request");
     // Optional context: refs render accepts, never required for coverage.
     const r = applyBrief(
       'The limit is now 12. [CH1]\n\nIt started from earlier work. [S1]',

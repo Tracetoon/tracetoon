@@ -1014,6 +1014,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
     );
     node('Session', s.ref, {
       agent: s.agent,
+      // Every user prompt in the session log, kept or not (older digests: unknown).
+      userPrompts: s.userPrompts?.count ?? null,
+      firstPromptT: s.userPrompts?.firstT ?? null,
       band: s.band,
       score: s.score,
       title: s.title ?? null,

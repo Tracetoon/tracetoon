@@ -448,8 +448,12 @@ export interface PrTurns {
   productive: Set<string>;
   /** Turns with no edits right before a productive turn: where its work was set up. */
   leadIn: Set<string>;
-  /** The first prompt of the included sessions. */
-  opening?: { id: string; text: string; t: string };
+  /**
+   * The first kept prompt of the included sessions. `first`: it is also the
+   * first prompt the user typed in its session log (no earlier prompt, kept
+   * or not); otherwise it is only the earliest Tracetoon kept.
+   */
+  opening?: { id: string; text: string; t: string; first: boolean };
   /** Per included session, the time of its first productive or lead-in turn. */
   start: Map<string, string>;
   /** Included sessions, with their prompts in order. */
@@ -466,7 +470,8 @@ export function thisPrTurns(g: GraphEngine): PrTurns {
   const rows = g.run(
     `MATCH (p:Prompt)-[:IN_SESSION]->(s:Session {band: 'included'})
      OPTIONAL MATCH (e:Edit)-[:IN_TURN]->(p)
-     RETURN p.id AS id, p.t AS t, p.text AS text, s.id AS session, count(e) AS edits,
+     RETURN p.id AS id, p.t AS t, p.text AS text, s.id AS session,
+            s.firstPromptT AS firstPromptT, count(e) AS edits,
             sum(CASE WHEN e.surviving > 0 AND e.inPr = true THEN 1 ELSE 0 END) AS surviving`,
   ).rows;
   const made = g.run(
@@ -524,6 +529,10 @@ export function thisPrTurns(g: GraphEngine): PrTurns {
           id: String(opening.id),
           text: String(opening.text ?? ''),
           t: String(opening.t ?? ''),
+          first:
+            !!opening.t &&
+            !!opening.firstPromptT &&
+            String(opening.t) === String(opening.firstPromptT),
         }
       : undefined,
     start,
@@ -564,7 +573,8 @@ export function backgroundRows(
 ): Record<string, unknown>[] {
   const prompts = g.run(
     `MATCH (p:Prompt)-[:IN_SESSION]->(s:Session {band: 'included'})
-     RETURN p.id AS id, p.t AS t, p.text AS text, s.id AS session`,
+     RETURN p.id AS id, p.t AS t, p.text AS text, s.id AS session,
+            s.firstPromptT AS firstPromptT`,
   ).rows;
   const promptSession = new Map(prompts.map((p) => [String(p.id), String(p.session)]));
   const promptTime = new Map(prompts.map((p) => [String(p.id), String(p.t ?? '')]));
@@ -580,7 +590,10 @@ export function backgroundRows(
     if (!first || exclude.has(String(first.id))) continue;
     goals.push({
       ref: String(first.id),
-      kind: "why this work started: the session's first request",
+      kind:
+        first.t && first.firstPromptT && String(first.t) === String(first.firstPromptT)
+          ? "why this work started: the session's first request"
+          : 'why this work started: the earliest request Tracetoon kept (the session log holds earlier prompts or their order is unknown)',
       text: clipText(String(first.text ?? '').trim(), 600),
       t: first.t,
     });
@@ -1127,18 +1140,22 @@ export function briefParts(
   // The session's opening request is the goal when its own turn produced
   // surviving edits or commits in this PR; otherwise it is earlier work.
   const opening = turns.opening;
+  // "First request of the session" only when no earlier prompt exists in the
+  // session log at all; a setup or install ask Tracetoon left out still counts.
+  const openingKind = opening?.first
+    ? 'goal: the first request of the session'
+    : 'goal: the earliest request Tracetoon kept (the session log holds earlier prompts or their order is unknown)';
   if (opening && turns.productive.has(opening.id)) {
     if (!seen.has(opening.id)) {
       seen.add(opening.id);
       requests.unshift({
         ref: opening.id,
-        kind: 'goal: the first request of the session',
+        kind: openingKind,
         text: clipText(opening.text, 600),
       });
     } else
       for (const r of requests)
-        if (r.ref === opening.id)
-          r.kind = `goal: the first request of the session; ${String(r.kind)}`;
+        if (r.ref === opening.id) r.kind = `${openingKind}; ${String(r.kind)}`;
   }
   // Each user request's order: the session's first, or a later one. Writers
   // said "the session started with …" of a request asked well into it.
@@ -1148,13 +1165,17 @@ export function briefParts(
       const k = String(r.kind);
       if (!/^(?:goal|user request|user pushback)/.test(k)) continue;
       n++;
-      if (opening && r.ref === opening.id) continue; // says "the first request of the session"
+      if (opening && r.ref === opening.id && /^goal/.test(k)) continue; // says its order
       r.kind = `${k}; ${
-        opening
-          ? 'later request, not the first of the session'
-          : n === 1
-            ? "earliest request in this PR's turns (the session may hold earlier ones)"
-            : 'later request'
+        opening && r.ref === opening.id
+          ? opening.first
+            ? 'the first request of the session'
+            : 'earliest request Tracetoon kept, not necessarily the first of the session'
+          : opening
+            ? 'later request, not the first of the session'
+            : n === 1
+              ? 'earliest request Tracetoon kept, not necessarily the first of the session'
+              : 'later request'
       }`;
     }
   }

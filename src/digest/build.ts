@@ -13,7 +13,7 @@ import {
   type SessionMatch,
 } from '../correlate/correlate.ts';
 import type { PrTruth } from '../git/pr.ts';
-import { ORPHAN_COMMAND, type Usage } from '../trace/types.ts';
+import { ORPHAN_COMMAND, type TraceRecord, type Usage } from '../trace/types.ts';
 import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
@@ -43,6 +43,12 @@ export interface DigestSession {
     ledToEdits: boolean;
     pushback?: boolean;
   }[];
+  /**
+   * Every prompt the user typed in the whole session log Tracetoon read
+   * (kept or not): how many, and when the first was typed. A kept prompt is
+   * "the first request of the session" only when it is that first one.
+   */
+  userPrompts?: { count: number; firstT?: string };
   /** Tasks the agent handed to its own subagents. */
   delegations: { t?: string; text: string }[];
   /** Short SHAs of PR commits made during this session. */
@@ -880,6 +886,21 @@ export function invocationsOf(
   return out;
 }
 
+/** Every user-typed prompt in the session log (see `DigestSession.userPrompts`). */
+function userPromptsOf(
+  records: TraceRecord[] = [],
+): NonNullable<DigestSession['userPrompts']> {
+  const typed = records.filter(
+    (r): r is Extract<TraceRecord, { kind: 'prompt' }> =>
+      r.kind === 'prompt' && !r.delegated,
+  );
+  const first = typed[0];
+  return {
+    count: typed.length,
+    ...(first?.ts ? { firstT: first.ts } : {}),
+  };
+}
+
 function sessionDigest(
   m: SessionMatch,
   ref: string,
@@ -1151,6 +1172,7 @@ function sessionDigest(
     band: m.band === 'included' ? 'included' : 'ambiguous',
     reasons: m.reasons,
     prompts,
+    userPrompts: userPromptsOf(m.session.records),
     delegations: delegations.slice(0, 10),
     commitsMade: m.commitsMade.map((s) => s.slice(0, 12)),
     plans,
