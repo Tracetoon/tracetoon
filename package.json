@@ -1,6 +1,6 @@
 {
   "name": "tracetoon",
-  "version": "1.0.0-rc.29",
+  "version": "1.0.0-rc.30",
   "description": "Write pull request descriptions from the AI agent session logs already on your machine, plus a one-off comic.",
   "private": true,
   "mcpName": "io.github.tracetoon/tracetoon",
@@ -38,6 +38,8 @@
     "qwen-code",
     "crush",
     "amp",
+    "zed",
+    "warp",
     "session-logs",
     "agent-trace",
     "provenance",

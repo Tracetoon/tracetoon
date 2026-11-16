@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.29",
-  "buildId": "2536d1fd9d4e4a4260ac200802b6ff20224aba1d40829bc0a5131ccd4e5fd74f",
+  "version": "1.0.0-rc.30",
+  "buildId": "aefd8ed2c1e338b3574acbfe03894b320d7d4877e1fd36ad4c228c761149b71a",
   "artifact": {
-    "runId": 43583157441,
-    "id": 14108889359,
-    "name": "tracetoon-candidate-c731b8cac895d2f996636b6480b25ecaf140ccea-attempt-1",
-    "digest": "sha256:8f4b3d6e86dcb42d6c8d1b1942d3dcfa13c16e3f3f870724cf806f3c9a647558"
+    "runId": 43790796110,
+    "id": 14192447808,
+    "name": "tracetoon-candidate-fe485d820ff72a15a925f401e1f68db72a0327b5-attempt-1",
+    "digest": "sha256:4654896f28670dbd8cf57ac771cfbfbd1f451ed6c65c3eecd4f072d7837836b5"
   },
   "expected": {
-    "manifestSha256": "789d712418e630c0cac719207e12415629c7595306e1099f1f1bda908d52e0d7",
-    "checksumsSha256": "72fb027ed1ffa7d90a586d0eaabe31bf9b49e4c52a3dd5b7221f62b5a2712593",
-    "windowsSha256": "41c1b3dbdb46404546b54f28f0f4aeac3b5265f32186d8a56112f1d77edbaef7",
-    "bundleSha256": "5ddea11b7c880fea722557a838642de6c891a517d1d55714f78d51b1a1eaeaf5"
+    "manifestSha256": "27bf59b5daf0caef3f25b68efcc3a6d2bc58cf5c96f069acd0f363cc5736b21e",
+    "checksumsSha256": "80faccdf0679f591e840dc7d1cd1b7239fafffc1eb6c549485fb16585fb47bf3",
+    "windowsSha256": "91df9f10136f6555c164984b4a1548b4094d37ba4c687e13bcb578fe8bf451b7",
+    "bundleSha256": "1be86e005e27e691658a2759794c117b41f34e86d870ee393f9bbb9ffb316fb6"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-14T10:15:29.000Z",
-    "reason": "The user asked to merge the follow-up PRs and do the follow-up items, which include releasing them: Tracetoon support for the Cline VS Code extension (#109) and the clearer block message (#111). The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-16T02:33:13.000Z",
+    "reason": "The user asked for the next round of agent support to be built and shipped end to end: readers for Zed and Warp, IDE coverage wording for JetBrains and Devin Desktop, and the note pointing to Claude Code on the web sessions (#118). The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

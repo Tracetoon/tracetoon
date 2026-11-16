@@ -94,25 +94,26 @@ Comics: tracetoon config set comic off|allowed|always (now: allowed)
 ```
 
 <!-- hosts:start (generated from the integration registry) -->
-| Agent                                                    | Status                                                                  |
-| -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Claude Code (CLI, IDE extensions and desktop app)        | ✅ supported                                                             |
-| Codex (CLI and app)                                      | ✅ supported                                                             |
-| Antigravity (CLI and IDE)                                | ✅ supported                                                             |
-| Factory Droid (Droid CLI)                                | ✅ supported                                                             |
-| Copilot (CLI and VS Code agent mode)                     | ✅ supported                                                             |
-| Cursor (IDE and CLI)                                     | ✅ supported ([see notes](docs/agents/support.md#notes))                 |
-| OpenCode (CLI)                                           | ✅ supported                                                             |
-| Kilo CLI (CLI, and Kilo Code for VS Code, which runs it) | ✅ supported                                                             |
-| Kiro (IDE and CLI)                                       | ✅ supported                                                             |
-| Cline (CLI and VS Code extension)                        | ✅ supported ([see notes](docs/agents/support.md#notes))                 |
-| Junie (JetBrains CLI)                                    | ✅ supported                                                             |
-| Devin (CLI)                                              | ✅ supported (uses Claude Code's hook)                                   |
-| Goose (CLI and desktop app)                              | ✅ supported                                                             |
-| Qwen Code (CLI)                                          | ✅ supported                                                             |
-| Crush (CLI)                                              | ✅ supported                                                             |
-| Amp (CLI)                                                | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes)) |
-| Windsurf                                                 | 🗓️ planned                                                             |
+| Agent                                                                 | Status                                                                           |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Claude Code (CLI, IDE extensions and desktop app)                     | ✅ supported                                                                      |
+| Codex (CLI, app and IDE extensions)                                   | ✅ supported                                                                      |
+| Antigravity (CLI and IDE)                                             | ✅ supported                                                                      |
+| Factory Droid (Droid CLI)                                             | ✅ supported                                                                      |
+| Copilot (CLI, VS Code agent mode and JetBrains)                       | ✅ supported                                                                      |
+| Cursor (IDE and CLI)                                                  | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
+| OpenCode (CLI)                                                        | ✅ supported                                                                      |
+| Kilo CLI (CLI, and Kilo Code for VS Code and JetBrains, which run it) | ✅ supported                                                                      |
+| Kiro (IDE and CLI)                                                    | ✅ supported                                                                      |
+| Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
+| Junie (CLI and JetBrains IDE plugin)                                  | ✅ supported                                                                      |
+| Devin (CLI and Devin Desktop, formerly Windsurf)                      | ✅ supported (uses Claude Code's hook; [see notes](docs/agents/support.md#notes)) |
+| Goose (CLI and desktop app)                                           | ✅ supported                                                                      |
+| Qwen Code (CLI)                                                       | ✅ supported                                                                      |
+| Crush (CLI)                                                           | ✅ supported                                                                      |
+| Amp (CLI)                                                             | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes))          |
+| Zed (Zed Agent)                                                       | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
+| Warp (Warp agent)                                                     | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
 
 Hook files, skill folders and the notes: [supported agents](docs/agents/support.md).
 <!-- hosts:end -->
@@ -631,14 +632,14 @@ trust the new hook entries in `/hooks`.
   skills folder:
 
   <!-- skill-folders:start (generated from the integration registry) -->
-  | Agent                                                                                      | Folder                              |
-  | ------------------------------------------------------------------------------------------ | ----------------------------------- |
-  | Claude Code                                                                                | `~/.claude/skills/tracetoon`        |
-  | Codex, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Cline, Devin, Goose, Crush, Amp | `~/.agents/skills/tracetoon`        |
-  | Antigravity                                                                                | `~/.gemini/config/skills/tracetoon` |
-  | Kiro                                                                                       | `~/.kiro/skills/tracetoon`          |
-  | Junie                                                                                      | `~/.junie/skills/tracetoon`         |
-  | Qwen Code                                                                                  | `~/.qwen/skills/tracetoon`          |
+  | Agent                                                                                                 | Folder                              |
+  | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
+  | Claude Code                                                                                           | `~/.claude/skills/tracetoon`        |
+  | Codex, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Cline, Devin, Goose, Crush, Amp, Zed, Warp | `~/.agents/skills/tracetoon`        |
+  | Antigravity                                                                                           | `~/.gemini/config/skills/tracetoon` |
+  | Kiro                                                                                                  | `~/.kiro/skills/tracetoon`          |
+  | Junie                                                                                                 | `~/.junie/skills/tracetoon`         |
+  | Qwen Code                                                                                             | `~/.qwen/skills/tracetoon`          |
   <!-- skill-folders:end -->
 
   Codex and Antigravity also read `.agents/skills/` inside a repo.

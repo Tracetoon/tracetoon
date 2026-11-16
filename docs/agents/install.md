@@ -138,6 +138,8 @@ directly, use `cmd /c tracetoon mcp`.
 | Qwen Code | `~/.qwen/skills/tracetoon` | yes |
 | Crush | `~/.agents/skills/tracetoon` | yes |
 | Amp | `~/.agents/skills/tracetoon` | yes |
+| Zed | `~/.agents/skills/tracetoon` | no |
+| Warp | `~/.agents/skills/tracetoon` | no |
 
 ## Check the install
 
