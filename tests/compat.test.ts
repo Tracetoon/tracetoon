@@ -11,6 +11,7 @@ import {
   type ToolSpec,
 } from '../scripts/compat/fake-llm.ts';
 import { merge } from '../scripts/compat/publish.ts';
+import { scrubEmails } from '../scripts/compat/scrub.ts';
 import { RECIPES } from '../scripts/compat/recipes.ts';
 import type { VerificationRun } from '../scripts/compat/records.ts';
 import { INTEGRATIONS } from '../src/integrations/registry.ts';
@@ -136,5 +137,15 @@ describe('recording results', () => {
       upstreamVersion: '2.0.0',
       detectedAt: '2026-11-03T00:00:00Z',
     });
+  });
+});
+
+describe('diagnostics', () => {
+  test('an account email in a hook payload never reaches the uploaded files', () => {
+    const payload =
+      '{"model":"auto","user_email":"someone.name@example.co","command":"git status"}';
+    expect(scrubEmails(payload)).toBe(
+      '{"model":"auto","user_email":"<email>","command":"git status"}',
+    );
   });
 });
