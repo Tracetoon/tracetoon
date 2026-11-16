@@ -76,6 +76,12 @@ export interface PatchHunk {
   lines: Set<string>;
   /** Normalized removed lines, for matching commits that only delete. Never written out. */
   gone: Set<string>;
+  /**
+   * A binary file: git prints `Binary files … differ` instead of hunks. The whole
+   * file is one hunk with no lines, so it still gets a change unit, its commits
+   * and the requests behind them.
+   */
+  binary?: 'added' | 'deleted' | 'modified';
   /** Raw removed and added lines, for search indexing and key lines. Never written out. */
   minus?: string[];
   plus?: string[];
@@ -266,7 +272,36 @@ export function patchHunks(patch: string): PatchHunk[] {
       continue;
     }
     close();
-    if (
+    const bin =
+      /^Binary files (?:a\/(.+?)|\/dev\/null) and (?:b\/(.+?)|\/dev\/null) differ$/.exec(
+        line,
+      );
+    if (bin && (bin[1] || bin[2])) {
+      hunks.push({
+        id: `H${hunks.length + 1}`,
+        file: (bin[2] ?? bin[1])!,
+        start: 0,
+        end: 0,
+        added: 0,
+        removed: 0,
+        diff: `diff:${n}`,
+        binary: !bin[1] ? 'added' : !bin[2] ? 'deleted' : 'modified',
+        symbols: [],
+        touched: [],
+        branches: 0,
+        fresh: [],
+        pairs: [],
+        dropped: [],
+        conds: [],
+        tests: [],
+        fnWords: [],
+        words: [],
+        code: [],
+        lines: new Set(),
+        gone: new Set(),
+      });
+      file = oldFile = undefined;
+    } else if (
       line.startsWith('diff --git ') ||
       line.startsWith('Untracked content sha256:') ||
       line.startsWith('Binary file')
@@ -761,6 +796,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       fnWords: h.fnWords,
       words: h.words,
       code: h.code,
+      binary: h.binary ?? null,
     });
     rel('OF', ['Hunk', h.id], ['File', h.file]);
   }
@@ -893,8 +929,18 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       body: c.body ? clip(c.body, 4000) : null,
       t: c.time ?? null,
     });
-    for (const path of lookup(input.commitFiles, c.sha) ?? [])
-      if (prFiles.has(path)) rel('TOUCHES', ['Commit', sha], ['File', path]);
+    for (const path of lookup(input.commitFiles, c.sha) ?? []) {
+      if (!prFiles.has(path)) continue;
+      rel('TOUCHES', ['Commit', sha], ['File', path]);
+      // A binary file has no lines to match: the commits that touched it introduced it.
+      for (const h of hunksByFile.get(path) ?? [])
+        if (h.binary) {
+          rel('INTRODUCED', ['Commit', sha], ['Hunk', h.id], { lines: 1 });
+          const m = hunkCommits.get(h.id) ?? new Map<string, number>();
+          m.set(sha, (m.get(sha) ?? 0) + 1);
+          hunkCommits.set(h.id, m);
+        }
+    }
     for (const [path, added] of lookup(input.commitLines, c.sha) ?? []) {
       const set = new Set(added);
       for (const h of hunksByFile.get(path) ?? []) {

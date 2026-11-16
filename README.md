@@ -315,10 +315,16 @@ mascots and no recurring cast.
   the repo's rules (contributing guide, code of conduct, agent and AI policy
   files, the README's contributing section, and the policy docs they link to)
   and skips the comic where they forbid images in PRs, naming the file and
-  line. Your `comic always` overrides the repo; your `comic off` turns comics
-  off everywhere.
+  line, once per repo. Where a repo asks for comics, it says so. Your `comic
+  always` overrides the repo; your `comic off` turns comics off everywhere,
+  with nothing more said about them.
+- **Decided up front.** Tracetoon works out whether a PR should get a comic
+  before your agent writes it, and the agent draws it. A skip needs a reason
+  (`tracetoon comic skip --reason "…"`), shown after the PR is created.
 - **Never a blocker.** Without an approved image route, or if drawing fails,
   the PR is created without a comic, and the message after the PR says why.
+  A missing image route is mentioned once per machine, not on every PR
+  (`tracetoon images --dismiss` stops the setup offer too).
 
 ### Set up an image route
 

@@ -21,6 +21,7 @@ import {
   renderClineObserver,
   renderClinePowerShell,
   renderClinePre,
+  renderClineRule,
   renderClineShell,
 } from './hook.ts';
 import { clineAdapter } from './trace.ts';
@@ -72,7 +73,7 @@ export const integration: Integration = {
   variants: 'CLI, VS Code and JetBrains extensions',
   limits: [
     'PRs opened through GitHub connector or MCP tools are not redirected; `gh` and other shell commands are.',
-    'In the VS Code extension, a blocked PR command stops the task, since its hooks cannot skip a single command.',
+    'In the VS Code and JetBrains extensions, a blocked PR command stops the task, since their hooks cannot skip a single command; a global Cline rule (~/.cline/rules/tracetoon.md) points the agent to the Tracetoon skill first.',
   ],
   traces: [clineAdapter],
   hook: {
@@ -86,6 +87,9 @@ export const integration: Integration = {
       siblings: {
         'PostToolUse.mjs': (c) => renderClineObserver(c, 'PostToolUse'),
         'TaskStart.mjs': (c) => renderClineObserver(c, 'SessionStart'),
+        // A global rule (~/.cline/rules), read by the CLI and the extensions,
+        // that points the agent to the skill before any hook has to block.
+        '../rules/tracetoon.md': renderClineRule,
         // The VS Code extension reads hooks from ~/Documents/Cline/Hooks only:
         // PreToolUse.ps1 on Windows, an executable PreToolUse elsewhere.
         ...(process.platform === 'win32'

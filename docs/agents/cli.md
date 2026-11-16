@@ -97,6 +97,7 @@ image routes for comics: which can draw, which are approved, and what to do next
 | `--test [route]` | draw one small test picture (no repo content) with this route |
 | `--consent` | with --test: the user agreed to this route |
 | `--brief` | one line, for the installers |
+| `--dismiss` | don't ask about image setup again on this machine (asked again only if a working route breaks) |
 
 ## `tracetoon update`
 
@@ -303,6 +304,16 @@ create or update the PR with exactly what was rendered
 ## `tracetoon comic`
 
 make this PR's comic
+
+## `tracetoon comic skip`
+
+record why this PR has no comic when one was expected (the user declined, or drawing kept failing)
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--reason <text>` | why, in the user's terms (shown after publishing) |
+| `--mcp` | recorded by the MCP server, which cannot draw |
 
 ## `tracetoon comic check`
 

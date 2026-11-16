@@ -50,8 +50,15 @@ import { pathToFileURL } from 'node:url';
 import { approvalCode, scanComment } from '@showtail/agent-traces/share/comment';
 import { transcript } from '../comic/script.ts';
 import type { ComicScript } from '../comic/types.ts';
-import { loadConfig, type ComicMode } from '../config.ts';
-import { comicDecision } from '../comic/decision.ts';
+import { comicSource, loadConfig, type ComicMode } from '../config.ts';
+import { comicDecision, type ComicDecision } from '../comic/decision.ts';
+import {
+  forgetNotices,
+  markNoticesSeen,
+  noticeKey,
+  noticeSeen,
+} from '../comic/notices.ts';
+import { nextStep, routeStatuses, type NextStep } from '../comic/routes.ts';
 import type { TraceDigest } from '../digest/build.ts';
 import { checkClaims, claimSummary, type ClaimFinding } from '../digest/claims.ts';
 import { checkChangeMap } from '../digest/changeMap.ts';
@@ -141,10 +148,31 @@ export function disclosureLine(
   return `<sub>${trailer} · description drafted from the session logs with [Tracetoon](https://github.com/Tracetoon/tracetoon)</sub>`;
 }
 
-/** Whether the PR has a comic and, if not, why. */
+/**
+ * Whether the PR has a comic and, if not, why. `missing` means one was
+ * expected, an image route could draw it, and nobody drew it or said why:
+ * publish refuses that. `none` only appears in renders from older releases.
+ */
 export interface ComicStatus {
-  state: 'included' | 'off' | 'policy' | 'skipped' | 'no-route' | 'failed' | 'none';
+  state:
+    | 'included'
+    | 'off'
+    | 'repo-off'
+    | 'policy'
+    | 'skipped'
+    | 'no-route'
+    | 'failed'
+    | 'missing'
+    | 'none';
   detail?: string;
+  /** For a skip: the user decided, or a host that can't draw (MCP). */
+  by?: 'user' | 'mcp';
+  /** The repo asks for comics (`file:line`), shown when a PR has none. */
+  request?: string;
+  /** Included although the repo's rules forbid images (`always`): where the rule is. */
+  overBan?: string;
+  /** For `no-route`: which kind, so a broken route is told apart from never set up. */
+  route?: { kind: 'setup' | 'approve' | 'fix'; id?: string };
 }
 
 /**
@@ -418,19 +446,19 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
 
   const script = readJson<ComicScript>(run, 'comic.json');
   const comicMode = loadConfig(truth.toplevel).comic;
-  const decision = comicDecision(comicMode, ctx.aiPolicy);
+  const decision = comicDecision(comicMode, ctx.aiPolicy, comicSource(truth.toplevel));
   const mediaBanned = decision.state === 'policy';
   const comic = opts.noComic || !decision.include ? undefined : renderedComic(run);
-  const comicStatus: ComicStatus =
-    comic && script
-      ? { state: 'included' }
-      : opts.noComic
-        ? { state: 'skipped', detail: 'left out for this PR' }
-        : !decision.include
-          ? { state: decision.state ?? 'off', detail: decision.reason }
-          : (((s) => (s ? { state: s.state, detail: s.detail } : undefined))(
-              readComicStatus(run),
-            ) ?? { state: 'none', detail: 'none was drawn for this PR' });
+  const comicStatus = renderComicStatus({
+    included: !!(comic && script),
+    noComic: !!opts.noComic,
+    decision,
+    recorded: readComicStatus(run),
+    policy: ctx.aiPolicy,
+    // No CLI probe here: an approved route that turns out unable to draw
+    // fails in `comic art`, which records why.
+    route: () => nextStep(routeStatuses(truth.toplevel, false), comicMode),
+  });
   // The description comes first; the comic is the closing beat, unless the
   // writer placed it with the marker. A short disclosure goes last.
   let content = defuseMentions(draft).replace(COMIC_MARKER, '');
@@ -715,16 +743,20 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
           : '',
         comicStatus.state === 'included'
           ? 'Comic: included.'
-          : `Comic: none — ${comicStatus.detail ?? comicStatus.state}.`,
+          : comicStatus.state === 'missing'
+            ? `Comic: missing — ${comicStatus.detail}${comicStatus.request ? ` (this repo asks for comics: ${comicStatus.request})` : ''}.`
+            : `Comic: none — ${comicStatus.detail ?? comicStatus.state}.`,
         findings.length && !approval.allowFindings
           ? 'Not ready to publish: fix what the leak scan found (above), then render again.'
-          : briefMode === 'lean'
-            ? planEnforced(plan)
-              ? `Next: tracetoon render --json --run ${run.id}, then ${tracetoonRuns(plan) ? `tracetoon review run --all --run ${run.id} (Tracetoon runs every planned pass on ${plan.reviewerModel} in parallel and writes review-findings-merged.md), apply it in ONE edit pass, render --check --json, then ${recheckStep(run.id, plan)}` : `the reviewer passes the review plan asks for, all started in one message (SKILL step 2b.5-7), then tracetoon review merge --run ${run.id}, ONE edit pass, then ${recheckStep(run.id, plan)}`}. ${planText}`
-              : `Next: tracetoon render --json --run ${run.id}, then one fresh independent reviewer writes review.json v2 (SKILL step 2b.5). Quick path only: the slim reviewer (references/quick-path.md step 7), then render --reviewed.`
-            : planNeeds.length
-              ? `Next: not ready to publish. ${planText}\n${tracetoonRuns(plan) ? `Run the missing passes with tracetoon review run --all --run ${run.id} (Tracetoon starts the reviewers; don't start a reviewer agent), then render again.` : `Import each pass with tracetoon review import --run ${run.id}, then render again.`}`
-              : `${planText ? `${planText}\n` : ''}Next: tracetoon publish --run ${run.id}`,
+          : comicStatus.state === 'missing'
+            ? `Next: not ready to publish. Draw the comic (SKILL step 5), or if the user declined it or drawing keeps failing, record why: tracetoon comic skip --run ${run.id} --reason "<why>". Then render again.`
+            : briefMode === 'lean'
+              ? planEnforced(plan)
+                ? `Next: tracetoon render --json --run ${run.id}, then ${tracetoonRuns(plan) ? `tracetoon review run --all --run ${run.id} (Tracetoon runs every planned pass on ${plan.reviewerModel} in parallel and writes review-findings-merged.md), apply it in ONE edit pass, render --check --json, then ${recheckStep(run.id, plan)}` : `the reviewer passes the review plan asks for, all started in one message (SKILL step 2b.5-7), then tracetoon review merge --run ${run.id}, ONE edit pass, then ${recheckStep(run.id, plan)}`}. ${planText}`
+                : `Next: tracetoon render --json --run ${run.id}, then one fresh independent reviewer writes review.json v2 (SKILL step 2b.5). Quick path only: the slim reviewer (references/quick-path.md step 7), then render --reviewed.`
+              : planNeeds.length
+                ? `Next: not ready to publish. ${planText}\n${tracetoonRuns(plan) ? `Run the missing passes with tracetoon review run --all --run ${run.id} (Tracetoon starts the reviewers; don't start a reviewer agent), then render again.` : `Import each pass with tracetoon review import --run ${run.id}, then render again.`}`
+                : `${planText ? `${planText}\n` : ''}Next: tracetoon publish --run ${run.id}`,
       ]
         .filter(Boolean)
         .join('\n'),
@@ -1034,6 +1066,13 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
   if (approval.findings.length && !approval.allowFindings) {
     throw new UserError(leakNotice(approval));
   }
+  // A comic was expected and a route could draw it, but nobody drew it or said why.
+  if (approval.comicStatus?.state === 'missing')
+    throw codedError(
+      'COMIC_UNEXPLAINED',
+      `This PR should have a comic${approval.comicStatus.request ? ` (this repo asks for comics: ${approval.comicStatus.request})` : ''} and none was drawn or skipped with a reason.`,
+      `Draw it (SKILL step 5), or if the user declined it or drawing keeps failing: tracetoon comic skip --run ${run.id} --reason "<why>"; then render again.`,
+    );
   const config = loadConfig(truth.toplevel);
 
   if (approval.comicFile && sha(readFileSync(approval.comicFile)) !== approval.comicSha)
@@ -1089,11 +1128,11 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
         mode: approval.mode,
         hosting: published.hosting,
         reused: true,
-        message: publishSummary(approval, published.url),
+        message: publishSummary(approval, published.url, noticeSeen),
         ci: 'not-waited',
         merged: false,
       },
-      () => publishSummary(approval, published.url),
+      () => publishSummary(approval, published.url, noticeSeen),
     );
     return;
   }
@@ -1351,7 +1390,8 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
           image: hosted.imageUrl ?? null,
         }
       : undefined;
-  const message = publishSummary(approval, url);
+  const message = publishSummary(approval, url, (k) => noticeSeen(k));
+  recordComicNotices(approval);
   emit(
     opts,
     {
@@ -1379,28 +1419,152 @@ function leakLocations(title: string, body: string): string[] {
 }
 
 /**
- * The few lines the agent relays after creating the PR: that Tracetoon made
- * it, whether it has a comic (and why not), and how to change that.
+ * The comic status render freezes into the approval. Pure, so the rules are
+ * tested directly: a comic the user's setting and the repo allow, with an image
+ * route that can draw, must be drawn or have a recorded reason (`missing`
+ * otherwise); with no route, the PR goes out without one and says so.
  */
-export function publishSummary(approval: Approval, url: string): string {
+export function renderComicStatus(input: {
+  included: boolean;
+  noComic: boolean;
+  decision: ComicDecision;
+  recorded?: {
+    state: 'no-route' | 'failed' | 'skipped';
+    detail: string;
+    by?: 'user' | 'mcp';
+  };
+  policy: Pick<AiPolicy, 'media' | 'mediaSource' | 'mediaRequest'>;
+  route: () => NextStep;
+}): ComicStatus {
+  const { decision, recorded, policy } = input;
+  const request =
+    policy.media === 'requested' && policy.mediaRequest
+      ? `${policy.mediaRequest.file}:${policy.mediaRequest.line}`
+      : undefined;
+  const withRequest = (s: ComicStatus): ComicStatus => (request ? { ...s, request } : s);
+  if (input.included)
+    return policy.media === 'prohibited' && policy.mediaSource
+      ? {
+          state: 'included',
+          overBan: `${policy.mediaSource.file}:${policy.mediaSource.line}`,
+        }
+      : { state: 'included' };
+  if (input.noComic)
+    return withRequest({ state: 'skipped', by: 'user', detail: 'left out for this PR' });
+  if (!decision.include)
+    return { state: decision.state ?? 'off', detail: decision.reason };
+  if (recorded)
+    return withRequest({
+      state: recorded.state,
+      detail: recorded.detail,
+      ...(recorded.by ? { by: recorded.by } : {}),
+    });
+  const route = input.route();
+  if (route.kind === 'ready')
+    return withRequest({
+      state: 'missing',
+      detail: 'a comic is expected and none was drawn or skipped with a reason',
+    });
+  return withRequest({
+    state: 'no-route',
+    detail:
+      route.kind === 'fix'
+        ? `the image route needs fixing (${route.text.replace(/\.$/, '')})`
+        : route.kind === 'approve'
+          ? `no image route approved yet (tracetoon images)`
+          : 'no image route set up (tracetoon images)',
+    route: { kind: route.kind, ...('route' in route ? { id: route.route } : {}) },
+  });
+}
+
+/**
+ * The comic lines after publishing, and the notices they use up. Quiet by
+ * design: nothing when the user turned comics off; a repo's "no" and a missing
+ * image route are said once (per repo, per machine), not on every PR. A skip
+ * the user chose is echoed each time, with the settings hint once per repo.
+ */
+export function comicNotices(
+  approval: Pick<Approval, 'comicStatus' | 'comicMode' | 'repo'>,
+  seen: (key: string) => boolean = () => false,
+): { lines: string[]; keys: string[] } {
+  const s = approval.comicStatus;
+  const repo = approval.repo ?? 'this repo';
+  const asked = s?.request ? ` (this repo asks for comics: ${s.request})` : '';
+  const once = (key: string, line: string) =>
+    seen(key) ? { lines: [], keys: [] } : { lines: [line], keys: [key] };
+  if (!s) return { lines: [], keys: [] };
+  switch (s.state) {
+    case 'included':
+      return s.overBan
+        ? seen(noticeKey.alwaysOverBan(repo, s.overBan))
+          ? { lines: ['Comic: included.'], keys: [] }
+          : {
+              lines: [
+                `Comic: included, although this repo's rules forbid images in PRs (${s.overBan}), because your comic setting is always.`,
+              ],
+              keys: [noticeKey.alwaysOverBan(repo, s.overBan)],
+            }
+        : { lines: ['Comic: included.'], keys: [] };
+    case 'off':
+      return { lines: [], keys: [] };
+    case 'repo-off':
+    case 'policy':
+      return once(
+        noticeKey.repoNo(repo, s.detail ?? s.state),
+        `No comic: ${s.detail ?? s.state}. You won't see this again for this repo.`,
+      );
+    case 'no-route':
+      return once(
+        noticeKey.route(s.route?.kind ?? 'setup', s.route?.id),
+        `Comic: none — ${s.detail}${asked}. You won't see this again unless that changes.`,
+      );
+    case 'skipped': {
+      if (s.by === 'mcp')
+        return once(noticeKey.mcp, `Comic: none — ${s.detail}${asked}.`);
+      const hint = noticeKey.skipHint(repo);
+      return {
+        lines: [
+          `Comic: none — ${s.detail}${asked}.`,
+          ...(seen(hint)
+            ? []
+            : [
+                `Comics: tracetoon config set comic off|allowed|always (now: ${approval.comicMode ?? 'allowed'})`,
+              ]),
+        ],
+        keys: seen(hint) ? [] : [hint],
+      };
+    }
+    default:
+      return { lines: [`Comic: none — ${s.detail ?? s.state}${asked}.`], keys: [] };
+  }
+}
+
+/**
+ * The few lines the agent relays after creating the PR: that Tracetoon made
+ * it and, when it matters, whether it has a comic and why not.
+ */
+export function publishSummary(
+  approval: Approval,
+  url: string,
+  seen?: (key: string) => boolean,
+): string {
   const number = /\/pull\/(\d+)$/.exec(url)?.[1];
   const verb = approval.mode === 'edit' ? 'updated' : 'created';
-  const status = approval.comicStatus;
-  const comic =
-    !status || status.state === 'included'
-      ? status
-        ? 'Comic: included.'
-        : ''
-      : `Comic: none — ${status.detail ?? status.state}.`;
   const left = approval.ambiguousSessions.length;
   return [
     `Tracetoon ${verb} PR${number ? ` #${number}` : ''}: ${url}`,
-    comic,
+    ...comicNotices(approval, seen).lines,
     left
       ? `Left out: ${left} session${left === 1 ? '' : 's'} that may not belong to this PR.`
       : '',
-    `Comics: tracetoon config set comic off|allowed|always (now: ${approval.comicMode ?? 'allowed'})`,
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+/** Use up the comic notices a publish just showed; a drawn comic resets route notices. */
+function recordComicNotices(approval: Approval): void {
+  const { keys } = comicNotices(approval, (k) => noticeSeen(k));
+  markNoticesSeen(keys);
+  if (approval.comicStatus?.state === 'included') forgetNotices('route:');
 }

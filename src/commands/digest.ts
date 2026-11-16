@@ -4,6 +4,11 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeResearchPacket } from '../contribution/guidance.ts';
 import { loadConfig } from '../config.ts';
+import {
+  comicExpectation,
+  comicStep,
+  type ComicExpectation,
+} from '../comic/expectation.ts';
 import { buildDigestPair, type TraceDigest } from '../digest/build.ts';
 import { findPrTemplate, detectAiPolicy } from '../github/repoContext.ts';
 import { decodeMeta, humanPart, regionContent, regionEdited } from '../github/body.ts';
@@ -347,6 +352,9 @@ export function contextCmd(
     comic: {
       recentStyles: recent.flatMap((c) => (c.style ? [c.style] : [])),
       recentComics: recent,
+      // Decided here, once, so the agent is told before drafting rather than
+      // left to judge whether a comic is wanted.
+      expectation: comicExpectation(truth.toplevel, policy),
     },
     titleRules,
     contribution,
@@ -398,13 +406,23 @@ export function contextCmd(
   return { run, context: ctx };
 }
 
+/** The comic step for the next-steps line ("…; then "), or '' when none is expected or due. */
+function comicPart(run: string, comic?: ComicExpectation): string {
+  const step = comic ? comicStep(comic).replaceAll('<run>', run) : '';
+  return step ? `${step}; then ` : '';
+}
+
 /** One immutable preparation snapshot shared by digest and contributor research. */
 /**
  * The first drafting step, printed where every drafter looks: agents that
  * write the description themselves often go from `prepare` straight to the
  * body, past the skill's drafter instructions.
  */
-export function graphNext(run: string, plan?: ReviewPlan): string {
+export function graphNext(
+  run: string,
+  plan?: ReviewPlan,
+  comic?: ComicExpectation,
+): string {
   const enforced = planEnforced(plan);
   const settings = enforced
     ? `${plan.reviewerModel ? ` on model ${plan.reviewerModel}` : ''}${plan.reviewerEffort ? ` at effort ${plan.reviewerEffort}` : ''}`
@@ -422,7 +440,7 @@ export function graphNext(run: string, plan?: ReviewPlan): string {
       : plan.lenses.length
         ? `for each lens ${plan.lenses.join(', ')}: \`tracetoon review-packet --lean --lens <lens> --run ${run}\`; start one fresh reviewer per lens${requiredPasses(plan) > plan.lenses.length ? ` and ${requiredPasses(plan) - plan.lenses.length} general reviewer(s) (review-packet.md)` : ''} IN PARALLEL (all in one message)${settings} (packet plus references/reviewer-lens-<lens>.md); import each with \`tracetoon review import --run ${run} --lens <lens> --agent-id <its id>${flags}\`; then \`tracetoon review merge --run ${run}\` and ${onePass}`
         : `\`tracetoon review-packet --lean --run ${run}\`; ${requiredPasses(plan)} fresh reviewer pass(es), each a NEW reviewer${settings} (packet plus references/reviewer-lean.md)${requiredPasses(plan) > 1 ? ', all started in one message' : ''}; import each with \`tracetoon review import --run ${run} --agent-id <its id>${flags}\`; then \`tracetoon review merge --run ${run}\` and ${onePass}`;
-  return `take the reviewed brief path (SKILL step 2b): draft title.txt and body.md yourself from the evidence brief (\`tracetoon query brief --run ${run}\`) and the patch, following references/drafting.md (what the PR does and why first; no fixed section list; 250–400 words; state every open \`limits\` row; point reviewers to the \`entry\` row's function and file, with only the behaviors that row ties to it); run the repository's required checks once with tracetoon check; \`tracetoon render --check --json --run ${run}\` until nothing is listed; then \`tracetoon render --json --run ${run}\` and ${review}; publish when the review is current${enforced ? ` (publish refuses until the review plan is met: ${planSummary(plan)})` : ''}. Read every command's whole output (no head or tail). Only on the user's request: the quick path (SKILL step 2a) or the three-role thorough path.`;
+  return `take the reviewed brief path (SKILL step 2b): draft title.txt and body.md yourself from the evidence brief (\`tracetoon query brief --run ${run}\`) and the patch, following references/drafting.md (what the PR does and why first; no fixed section list; 250–400 words; state every open \`limits\` row; point reviewers to the \`entry\` row's function and file, with only the behaviors that row ties to it); run the repository's required checks once with tracetoon check; \`tracetoon render --check --json --run ${run}\` until nothing is listed; then \`tracetoon render --json --run ${run}\` and ${review}; ${comicPart(run, comic)}publish when the review is current${enforced ? ` (publish refuses until the review plan is met: ${planSummary(plan)})` : ''}. Read every command's whole output (no head or tail). Only on the user's request: the quick path (SKILL step 2a) or the three-role thorough path.`;
 }
 
 export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
@@ -518,7 +536,9 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
     opts,
     {
       run: prepared.run.id,
-      ...(prepared.graph ? { next: graphNext(prepared.run.id, plan) } : {}),
+      ...(prepared.graph
+        ? { next: graphNext(prepared.run.id, plan, context.context.comic.expectation) }
+        : {}),
       // One JSON line, so piping through `head` still shows the whole map.
       ...(prepared.brief ? { brief: prepared.brief } : {}),
       ...(planEnforced(plan) ? { reviewPlan: plan } : {}),
@@ -526,12 +546,17 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
       rolePackets: join(prepared.run.dir, 'role-packets.json'),
       digestPath: join(prepared.run.dir, 'digest.json'),
       contextPath: join(prepared.run.dir, 'context.json'),
+      comic: context.context.comic.expectation,
       ...context.context.contribution,
     },
     () =>
       [
         `Run ${prepared.run.id}: digest, context and role-packets.json prepared from one snapshot.`,
-        prepared.graph ? `Next: ${graphNext(prepared.run.id, plan)}` : '',
+        prepared.graph
+          ? `Next: ${graphNext(prepared.run.id, plan, context.context.comic.expectation)}`
+          : comicPart(prepared.run.id, context.context.comic.expectation)
+            ? `Comic: ${comicPart(prepared.run.id, context.context.comic.expectation)}`
+            : '',
         prepared.brief ? `Evidence brief:\n${prepared.brief}` : '',
       ]
         .filter(Boolean)

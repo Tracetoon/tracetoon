@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.30",
-  "buildId": "aefd8ed2c1e338b3574acbfe03894b320d7d4877e1fd36ad4c228c761149b71a",
+  "version": "1.0.0-rc.31",
+  "buildId": "d1e2b5ed5b78f2590db69902f86f6ba99e0cb22cd75d7e73c1e789731b619a94",
   "artifact": {
-    "runId": 43790796110,
-    "id": 14192447808,
-    "name": "tracetoon-candidate-fe485d820ff72a15a925f401e1f68db72a0327b5-attempt-1",
-    "digest": "sha256:4654896f28670dbd8cf57ac771cfbfbd1f451ed6c65c3eecd4f072d7837836b5"
+    "runId": 43814093528,
+    "id": 14201519126,
+    "name": "tracetoon-candidate-1ea4f530877e0c690a2ea74e500e9cbaa2832b14-attempt-1",
+    "digest": "sha256:066f5f88464adbce0f1897f329838a0f9804fe8e897211442ebe7ffe7d33b8fb"
   },
   "expected": {
-    "manifestSha256": "27bf59b5daf0caef3f25b68efcc3a6d2bc58cf5c96f069acd0f363cc5736b21e",
-    "checksumsSha256": "80faccdf0679f591e840dc7d1cd1b7239fafffc1eb6c549485fb16585fb47bf3",
-    "windowsSha256": "91df9f10136f6555c164984b4a1548b4094d37ba4c687e13bcb578fe8bf451b7",
-    "bundleSha256": "1be86e005e27e691658a2759794c117b41f34e86d870ee393f9bbb9ffb316fb6"
+    "manifestSha256": "c3f1252868a4d59179e891ac71eb0b2e6f262dfbb5c37211e6a7f0144ce91ade",
+    "checksumsSha256": "2787b606121ff353fd4653233e6e2b53dd1b85f2a9d72c357bd12962af55b551",
+    "windowsSha256": "d1fa32d3e08f571e66fcbf7421aaca2e1a7c4e711bc6e84cd743e2d081cf819c",
+    "bundleSha256": "25296f61a114ed70efb5a158fc0fbba25e92c02c6d99bce9c19989c2c6ec1783"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-16T02:33:13.000Z",
-    "reason": "The user asked for the next round of agent support to be built and shipped end to end: readers for Zed and Warp, IDE coverage wording for JetBrains and Devin Desktop, and the note pointing to Claude Code on the web sessions (#118). The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-16T06:20:50.000Z",
+    "reason": "The user asked to merge the Cline rule fix (#122) and release it, so that Cline in the VS Code and JetBrains extensions uses Tracetoon instead of retrying a blocked PR command. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

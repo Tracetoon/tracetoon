@@ -3,9 +3,15 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Run } from '../run.ts';
 
-/** Why the last `comic art` drew nothing, for publish to say so. */
+/**
+ * Why this PR has no comic, for render and publish to say so: no image route,
+ * drawing failed, or a recorded skip (`tracetoon comic skip`, or MCP, which
+ * can't draw). Without one, an expected comic that is missing stops publish.
+ */
 export interface ComicStatus {
-  state: 'no-route' | 'failed';
+  state: 'no-route' | 'failed' | 'skipped';
+  /** For a skip: who decided (the user, or a host that can't draw). */
+  by?: 'user' | 'mcp';
   detail: string;
   at: string;
 }
@@ -18,6 +24,7 @@ export function writeComicStatus(
 ): void {
   const record: ComicStatus = {
     state: status.state,
+    ...(status.by ? { by: status.by } : {}),
     detail: status.detail.replace(/\s+/g, ' ').trim().slice(0, 120),
     at: status.at ?? new Date().toISOString(),
   };
@@ -31,7 +38,7 @@ export function writeComicStatus(
 export function readComicStatus(run: Run): ComicStatus | undefined {
   try {
     const s = JSON.parse(readFileSync(join(run.dir, STATUS_FILE), 'utf8')) as ComicStatus;
-    return s && (s.state === 'no-route' || s.state === 'failed') ? s : undefined;
+    return s && ['no-route', 'failed', 'skipped'].includes(s.state) ? s : undefined;
   } catch {
     return undefined;
   }
