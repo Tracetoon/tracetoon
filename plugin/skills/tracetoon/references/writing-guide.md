@@ -263,6 +263,10 @@ result to its source without guessing a command or dropping a material outcome.
 - **Don't put words in anyone's mouth.** "I chose X because…" claims who decided
   and why. Write it only when a prompt, a recorded decision or the user's own
   text supports it. Otherwise state the reason neutrally, or leave it out.
+  Quote or paraphrase the request itself rather than characterizing the
+  session: never "the session started with…" unless the request is marked
+  the first of the session, and never "the session chose…" or "the user
+  chose…" without a recorded decision or the user's own words.
 - **Where the change came from is context only the trace has.** The user's
   report or request ("a Codex test showed the PR link couldn't be
   clicked") tells a reviewer why the change exists; put it in a sentence,

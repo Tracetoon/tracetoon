@@ -276,6 +276,11 @@ describe('evidence graph', () => {
     expect(of('src/farewell.ts')).not.toBe(of('src/greet.ts'));
     expect(sec('requests').map((x: any) => x.ref)).toEqual(['S1', 'S2']);
     expect(sec('requests')[0].text).toContain('greet helper');
+    // Each request says its order.
+    expect(sec('requests').map((x: any) => x.kind)).toEqual([
+      'goal: the first request of the session; user request',
+      'user request; later request, not the first of the session',
+    ]);
     // The goal is this PR's own request already: no background row repeats it.
     expect(sec('background')).toEqual([]);
     // The last run of each command; it ran before farewell's final edit.
@@ -1758,6 +1763,10 @@ describe('the brief states recorded process and behavior', () => {
       ['P2', null],
     ]);
     expect(sec('requests')[2]!.kind).toBe('plan (approved) in the turn of S3');
+    // The session's first request lies outside this PR's turns: this one is later.
+    expect(sec('requests')[0]!.kind).toBe(
+      'user request; later request, not the first of the session',
+    );
   });
 
   test('background: the session goal and earlier plans and decisions, outside requests', () => {
@@ -1844,7 +1853,9 @@ describe('the brief states recorded process and behavior', () => {
       parts
         .find((s) => s.title === 'doNotSay')!
         .rows.find((r) => r.kind === 'recorded requests')?.text,
-    ).toBe("Plans were recorded (P1, P2): don't say none was recorded, or that an approval or review wasn't.");
+    ).toBe(
+      "Plans were recorded (P1, P2): don't say none was recorded, or that an approval or review wasn't.",
+    );
     // Before a captured prompt, a turnless plan is the tail of earlier work.
     const tail: EvidenceGraph = structuredClone(graph);
     tail.nodes.push(

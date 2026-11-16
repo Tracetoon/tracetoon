@@ -1140,6 +1140,24 @@ export function briefParts(
         if (r.ref === opening.id)
           r.kind = `goal: the first request of the session; ${String(r.kind)}`;
   }
+  // Each user request's order: the session's first, or a later one. Writers
+  // said "the session started with …" of a request asked well into it.
+  {
+    let n = 0;
+    for (const r of requests) {
+      const k = String(r.kind);
+      if (!/^(?:goal|user request|user pushback)/.test(k)) continue;
+      n++;
+      if (opening && r.ref === opening.id) continue; // says "the first request of the session"
+      r.kind = `${k}; ${
+        opening
+          ? 'later request, not the first of the session'
+          : n === 1
+            ? "earliest request in this PR's turns (the session may hold earlier ones)"
+            : 'later request'
+      }`;
+    }
+  }
   // Plans and decisions made in turns that produced this PR's edits or commits.
   for (const [id, x] of [...turnFacts].sort((a, b) =>
     String(a[1].t ?? '').localeCompare(String(b[1].t ?? '')),

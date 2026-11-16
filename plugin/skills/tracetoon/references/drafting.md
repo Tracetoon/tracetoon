@@ -17,6 +17,10 @@ instructions. These rules are for you: never copy their wording into the PR.
   lines, and a `behavior` line saying what the unit now does. Read the diff
   refs a unit cites before describing it.
 - `requests`: the user's asks scoped to this PR's turns; one is marked goal.
+  Each `kind` gives its order: the first request of the session, the earliest
+  in this PR's turns, or a later request. Quote or paraphrase a request with
+  its order as given; never characterize how the session started or what the
+  session or the user "chose" beyond a request, plan or decision row.
 - `background`: why the work started (the session's first request) and
   plans or decisions from earlier turns, when this PR's own turns don't show
   how the work came about. Facts to cover, attributed to the session.
@@ -71,8 +75,9 @@ section-per-topic template down as "inventory-like".
   around that goal too. Give old → new behavior only where the removed lines or
   `changes.was` show the old value (quote it: 30 minutes → 5 minutes). When a
   `background` row or a change's `why` row exists, one clause on the motive or
-  trigger, attributed to the session ("the session started from…", "an earlier
-  plan…"). Take it from the row; never invent a motive, and call it the user's
+  trigger, attributed to the session ("a later request asked…", "an earlier
+  plan…"); "the session started from…" only for a row marked the first
+  request of the session. Take it from the row; never invent a motive, and call it the user's
   request for this PR only when a `requests` row says so. Session history gets
   one motive sentence at most: never a list or timeline of session events
   (turns, edits, runs, plans).

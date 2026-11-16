@@ -681,7 +681,7 @@ test('drafting guidance: word target, one motive sentence, the entry row', () =>
   expect(drafting).toMatch(/never widen it: not to "no\s+tests were run"/);
   // Environment scope is allowed only with a citation; session runs are history.
   expect(drafting).toMatch(/environment-scope statement[\s\S]{0,200}with that tag/);
-  expect(drafting).toMatch(/could not\s+run here/);
+  expect(drafting).toMatch(/could not\s+run in\s+this\s+environment/);
   expect(drafting).toMatch(
     /agent-instruction text that changes what users or agents are told/,
   );
