@@ -17,6 +17,7 @@ import { isSyntheticPrompt } from '@showtail/agent-traces/prompts/synthetic';
 import { splitLines } from '../../trace/diffLines.ts';
 import { discoveryIndex } from '../../trace/discovery.ts';
 import type { SessionRef, TraceAdapter, TraceSession } from '../../trace/types.ts';
+import { sawToolCall, sawUnknownTool } from '../../trace/toolCalls.ts';
 
 type Obj = Record<string, any>;
 const isObj = (v: unknown): v is Obj =>
@@ -99,6 +100,7 @@ export function parseCursorLines(
       const input = p.input;
       const file = str(input.path) ?? str(input.file_path) ?? str(input.target_file);
       const at = (f: string) => resolve(cwd ?? '.', f);
+      sawToolCall(into);
       switch (p.name) {
         case 'Shell':
         case 'run_terminal_cmd':
@@ -147,6 +149,8 @@ export function parseCursorLines(
                 cwd,
               });
           break;
+        default:
+          sawUnknownTool(into, str(p.name));
       }
     }
   }
@@ -157,15 +161,26 @@ interface Found {
   sessionId: string;
   mtimeMs: number;
   parent?: string;
+  /** The project folder Cursor filed it under: the workspace path, encoded. */
+  project: string;
+}
+
+/**
+ * Cursor names each project folder after its workspace path, with every run
+ * of other characters turned into '-' (`/tmp/x/repo` -> `tmp-x-repo`,
+ * `C:\Users\x\repo` -> `C-Users-x-repo`).
+ */
+export function cursorProjectName(path: string): string {
+  return path.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function transcripts(): Found[] {
   const root = join(cursorHome(), 'projects');
   if (!existsSync(root)) return [];
   const out: Found[] = [];
-  const add = (path: string, sessionId: string, parent?: string) => {
+  const add = (path: string, sessionId: string, project: string, parent?: string) => {
     try {
-      out.push({ path, sessionId, mtimeMs: statSync(path).mtimeMs, parent });
+      out.push({ path, sessionId, mtimeMs: statSync(path).mtimeMs, parent, project });
     } catch {
       /* vanished */
     }
@@ -175,12 +190,12 @@ function transcripts(): Found[] {
     if (!existsSync(dir)) continue;
     for (const id of readdirSync(dir)) {
       const main = join(dir, id, `${id}.jsonl`);
-      if (existsSync(main)) add(main, id);
+      if (existsSync(main)) add(main, id, project);
       const subs = join(dir, id, 'subagents');
       if (existsSync(subs))
         for (const name of readdirSync(subs))
           if (name.endsWith('.jsonl'))
-            add(join(subs, name), basename(name, '.jsonl'), id);
+            add(join(subs, name), basename(name, '.jsonl'), project, id);
     }
   }
   return out;
@@ -209,6 +224,9 @@ export const cursorAdapter: TraceAdapter = {
   discover(query) {
     const index = discoveryIndex(query, 'cursor');
     const out: SessionRef[] = [];
+    // A session whose tools only used relative paths never names the repo in
+    // its text, but Cursor still files it under the repo's project folder.
+    const projects = new Set(query.roots.map(cursorProjectName));
     for (const f of transcripts()) {
       const info = index.inspect(f.path);
       if (!info) continue;
@@ -216,7 +234,7 @@ export const cursorAdapter: TraceAdapter = {
         query.currentSessionPath && resolve(f.path) === resolve(query.currentSessionPath);
       if (
         (active || Math.max(info.recent, f.mtimeMs) >= query.sinceMs) &&
-        (info.match || active)
+        (info.match || active || projects.has(f.project))
       )
         out.push({
           agent: 'cursor',

@@ -64,6 +64,20 @@ describe('policy classification', () => {
     expect(p.verdict).toBe('disclosure-required');
   });
 
+  test('a bolded "**Never**: open a PR" rule still sets noPullRequests', () => {
+    // Agent instructions are markdown, so the rule is routinely emphasised and
+    // followed by a colon: the literal line a real CLAUDE.md carries.
+    const p = detectAiPolicy(
+      repoWith({
+        'CLAUDE.md':
+          '# Working in this repo (Claude-driven, trunk-based)\n' +
+          'Land straight to `main` when your work is done and tests pass. No PR.\n' +
+          '**Never**: open a PR, `git push --force`, or `git checkout main`.',
+      }),
+    );
+    expect(p.noPullRequests).toBe(true);
+  });
+
   test('Django: disclose the tool and how it was used', () => {
     const p = detectAiPolicy(
       repoWith({
@@ -100,5 +114,154 @@ describe('policy classification', () => {
   test('no policy at all', () => {
     const p = detectAiPolicy(repoWith({ 'README.md': 'Hello' }));
     expect(p).toMatchObject({ verdict: 'none', text: 'none', media: 'none' });
+  });
+});
+
+describe('where policies are found', () => {
+  const ban = "Please don't include images or AI-generated art in pull requests.";
+
+  test("a ban in the README's contributing section counts", () => {
+    const p = detectAiPolicy(
+      repoWith({ 'README.md': `# Project\n\nAbout it.\n\n## Contributing\n\n${ban}\n` }),
+    );
+    expect(p.media).toBe('prohibited');
+    expect(p.mediaSource).toMatchObject({ file: 'README.md', line: 7 });
+  });
+
+  test('a README describing image rules outside a rules section is not a ban', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': [
+          '# Tool',
+          '',
+          '## Features',
+          '',
+          'Where contributing rules forbid images in PRs, the tool skips the picture.',
+          'It adds an Assisted-by trailer when a repo asks AI users to disclose.',
+          '',
+          '## Contributing',
+          '',
+          'Pull requests welcome.',
+        ].join('\n'),
+      }),
+    );
+    expect(p).toMatchObject({ media: 'none', verdict: 'none' });
+  });
+
+  test('a policy doc the contributing guide links to counts', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md': 'Read our [AI policy](docs/ai-policy.md) first.\n',
+        'docs/ai-policy.md': `# AI\n${ban}\n`,
+      }),
+    );
+    expect(p.media).toBe('prohibited');
+    expect(p.mediaSource).toMatchObject({ file: 'docs/ai-policy.md', line: 2 });
+  });
+
+  test('links are followed by their text too, and relative to the linking file', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        '.github/CONTRIBUTING.md':
+          'See [the rules for contributors](../handbook/rules.md).\n',
+        'handbook/rules.md': ban,
+      }),
+    );
+    expect(p.mediaSource?.file).toBe('handbook/rules.md');
+  });
+
+  test('policy-named docs in .github/ and docs/ count without a link', () => {
+    for (const rel of ['.github/AI_GUIDELINES.md', 'docs/contributor-guidelines.rst']) {
+      const p = detectAiPolicy(repoWith({ [rel]: ban }));
+      expect([rel, p.media]).toEqual([rel, 'prohibited']);
+    }
+  });
+
+  test('unrelated links, outside paths and URLs are not followed', () => {
+    const root = repoWith({
+      'README.md': [
+        'See the [changelog](CHANGELOG.md),',
+        '[policy outside](../outside-policy.md) and',
+        '[hosted policy](https://example.com/policy.md).',
+      ].join('\n'),
+      'CHANGELOG.md': ban,
+    });
+    writeFileSync(join(root, '..', 'outside-policy.md'), ban);
+    expect(detectAiPolicy(root).media).toBe('none');
+  });
+
+  test('README lines that are not PR rules are not bans', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md':
+          '## Contributing\n\nThis repo contains no binary images.\nScreenshots are welcome in issues.\n',
+      }),
+    );
+    expect(p.media).toBe('none');
+  });
+});
+
+describe('repos that ask for comics', () => {
+  test('a contributing line asking for a comic is a request, with its source', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md':
+          '# Contributing\n\n**We strongly encourage opening your PR with Tracetoon**, comic included.\n',
+      }),
+    );
+    expect(p.media).toBe('requested');
+    expect(p.mediaRequest).toMatchObject({ file: 'CONTRIBUTING.md', line: 3 });
+  });
+
+  test('a request that wraps onto the next line in a blockquote is read whole', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': [
+          '# Tool',
+          '',
+          '## Contributing',
+          '',
+          '> **We strongly encourage opening your PR with Tracetoon**, so it ships with',
+          '> receipts and a comic.',
+        ].join('\n'),
+      }),
+    );
+    expect(p.mediaRequest).toMatchObject({ file: 'README.md', line: 5 });
+  });
+
+  test('a "Comics wanted" heading over the contributing section counts', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': '# Tool\n\n## Contributing: AI welcome. Comics wanted.\n',
+      }),
+    );
+    expect(p.media).toBe('requested');
+  });
+
+  test('image alt text and issue-only invitations are not requests', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md': [
+          '<img alt="pull requests: COMICS ENCOURAGED" src="x.png">',
+          'Screenshots are welcome in issues.',
+          'We love the comics people draw about this project in their issues.',
+        ].join('\n'),
+      }),
+    );
+    expect(p.media).toBe('none');
+    expect(p.mediaRequest).toBeUndefined();
+  });
+
+  test('a ban wins over a request', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md': [
+          'Comics are welcome in pull requests.',
+          "Please don't include images in pull requests.",
+        ].join('\n'),
+      }),
+    );
+    expect(p.media).toBe('prohibited');
+    expect(p.mediaRequest).toBeUndefined();
   });
 });

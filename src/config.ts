@@ -29,7 +29,10 @@ export interface Config {
   hosting: 'auto' | 'branch' | 'attach';
   /** Image providers the user agreed to send comic prompts to. */
   imageConsent: string[];
-  /** Make a comic: `off`, `allowed` (unless the repo forbids images in PRs), or `always`. */
+  /**
+   * Make a comic: `off`, `allowed` (unless the repo forbids images in PRs), or `always`.
+   * The user's `off` or `always` wins; the user's `allowed` takes the repo's value.
+   */
   comic: ComicMode;
   /** Pin one art style for every comic (a style idea id or any description), or `auto` to vary. */
   style: string;
@@ -89,6 +92,21 @@ function oneOf<T extends string>(allowed: readonly T[], v: unknown, fallback: T)
   return (allowed as readonly unknown[]).includes(v) ? (v as T) : fallback;
 }
 
+/**
+ * Where the effective comic setting came from: the user's own `off`/`always`,
+ * the repo's `.github/tracetoon.json` (only when the user left it at `allowed`),
+ * or the default. The repo's `off` is reported differently from the user's,
+ * since the user is told about it once per repo and never about their own.
+ */
+export function comicSource(root?: string): 'user' | 'repo' | 'default' {
+  const user = readJson(userConfigPath());
+  const userComic = comicMode(user.comic ?? DEFAULTS.comic);
+  if (user.comic !== undefined && userComic !== 'allowed') return 'user';
+  const repo = root ? readJson(repoConfigPath(root)) : {};
+  if (repo.comic !== undefined) return 'repo';
+  return user.comic !== undefined ? 'user' : 'default';
+}
+
 export function loadConfig(root?: string): Config {
   const user = readJson(userConfigPath());
   // Only the user can approve sending prompts to an image service: a repo's
@@ -100,11 +118,14 @@ export function loadConfig(root?: string): Config {
     updateChannel: _channel,
     ...repo
   } = root ? readJson(repoConfigPath(root)) : {};
+  // The user's comic choice decides: `off` never, `always` every PR. Only
+  // `allowed` (the default) defers to the repo's own `comic` value.
+  const userComic = comicMode(user.comic ?? DEFAULTS.comic);
   return {
     ...DEFAULTS,
     ...user,
     ...repo,
-    comic: comicMode(repo.comic ?? user.comic ?? DEFAULTS.comic),
+    comic: userComic === 'allowed' ? comicMode(repo.comic ?? 'allowed') : userComic,
     imageConsent: user.imageConsent ?? DEFAULTS.imageConsent,
     autoUpdate: oneOf(AUTO_UPDATES, user.autoUpdate, DEFAULTS.autoUpdate),
     updateChannel: oneOf(UPDATE_CHANNELS, user.updateChannel, DEFAULTS.updateChannel),

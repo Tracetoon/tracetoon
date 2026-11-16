@@ -9,6 +9,7 @@
 import type { TraceAdapter } from '../trace/types.ts';
 
 export type Json = Record<string, any>;
+export type SupportTier = 'recommended' | 'community';
 export type Env = NodeJS.ProcessEnv;
 
 /** A host's hook payload, reduced to what Tracetoon needs. */
@@ -79,6 +80,14 @@ export interface HookIntegration {
   text?: {
     render(commands: HookCommands): string;
     command(text: string): string | undefined;
+    /**
+     * Further files Tracetoon owns beside the main one, by file name in the same
+     * folder (Cline reads one script per event). Each must be recognized by
+     * `command`, so a file of that name Tracetoon didn't write is never replaced.
+     */
+    siblings?: Record<string, (commands: HookCommands) => string>;
+    /** Sibling names written as executables (mode 755): the host runs the file itself. */
+    executable?: string[];
   };
   /** Something to tell the user after installing (a trust or restart step). */
   installNote?(file: string, data: Json): string | undefined;
@@ -98,10 +107,26 @@ export interface Integration {
   id: string;
   label: string;
   /**
-   * supported: logs, hook and skill. skill-only: runs the skill; logs aren't read.
-   * legacy: kept for existing users of a retired host.
+   * supported: logs, hook and skill. partial: the skill plus some of logs and
+   * hook (`limits` says what's missing). skill-only: runs the skill; logs
+   * aren't read. legacy: kept for existing users of a retired host, and left
+   * out of every published list.
    */
-  status: 'supported' | 'skill-only' | 'legacy';
+  status: 'supported' | 'partial' | 'skill-only' | 'legacy';
+  /**
+   * The project's maintenance commitment, separate from what the integration
+   * can do (`status`). recommended: every new upstream release is verified by
+   * .github/workflows/integration-compat.yml. community: covered by ordinary CI
+   * only, fixed on a best-effort basis. New hosts start as community; promotion
+   * is a decision recorded in docs/agents/support-policy.md.
+   */
+  supportTier: SupportTier;
+  /** The forms of the host this covers, for the support table ("CLI and VS Code"). */
+  variants?: string;
+  /** User-facing gaps, one short sentence each; shown in the support table and `integrations`. */
+  limits?: string[];
+  /** The id of another host whose hook this one runs, when it has none of its own. */
+  hookVia?: string;
   /** One adapter per log store this host writes. */
   traces: TraceAdapter[];
   hook?: HookIntegration;

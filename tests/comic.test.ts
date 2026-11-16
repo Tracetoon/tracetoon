@@ -123,7 +123,13 @@ describe('comic end to end', () => {
     expect(d.code).toBe(0);
     const c = cli(repo.root, 'context', '--offline');
     expect(c.code).toBe(0);
-    expect(c.json.comic).toEqual({ recentStyles: [], recentComics: [] });
+    expect(c.json.comic).toMatchObject({ recentStyles: [], recentComics: [] });
+    // Decided up front: with no image route here, a comic is expected and setup is due.
+    expect(c.json.comic.expectation).toMatchObject({
+      expected: true,
+      route: { kind: 'setup' },
+      askSetup: true,
+    });
     expect(c.json.cast).toBeUndefined();
     const runDir = d.json.runDir as string;
     expect(existsSync(join(runDir, 'bible.json'))).toBe(false);
@@ -279,9 +285,8 @@ describe('comic end to end', () => {
     expect(pub.code).toBe(0);
     expect(pub.json.error).toBeUndefined();
     expect(pub.json.message).toContain('Comic: none — no image route');
-    expect(pub.json.message).toContain(
-      'Comics: tracetoon config set comic off|allowed|always (now: allowed)',
-    );
+    // Said once per machine: no settings nag about a route the user hasn't set up.
+    expect(pub.json.message).not.toContain('Comics: tracetoon config set');
   });
 
   test('art the host agent saved itself is used even with no approved route', () => {
@@ -475,7 +480,7 @@ describe('comic end to end', () => {
     expect(body).toContain('AI use:');
     expect(r.json.comicStatus.state).toBe('policy');
     expect(r.json.comicStatus.detail).toContain(
-      "this repo's contributing rules forbid images in PRs (AI_POLICY.md:2)",
+      "this repo's rules forbid images in PRs (AI_POLICY.md:2)",
     );
     expect(existsSync(join(runDir, 'preview.html'))).toBe(false);
     expect(existsSync(join(runDir, 'evidence-notes.md'))).toBe(true);
@@ -484,16 +489,15 @@ describe('comic end to end', () => {
       env,
       encoding: 'utf8',
     }).stdout;
-    expect(text).toContain(
-      "Comic: none — this repo's contributing rules forbid images in PRs",
-    );
+    expect(text).toContain("Comic: none — this repo's rules forbid images in PRs");
     expect(text).toContain('The user asked for this one, so it is still posted');
 
     // The user asked for this PR, so the agent-instructions rule doesn't stop it.
     const posted = cli(repo.root, 'publish', '--push');
     expect(posted.code).toBe(0);
+    // Told once for this repo, with where the rule is.
     expect(posted.json.message).toContain(
-      "Comic: none — this repo's contributing rules forbid images in PRs",
+      "No comic: this repo's rules forbid images in PRs (AI_POLICY.md:2). You won't see this again for this repo.",
     );
     const create = ghCalls().find((c) => c.args[1] === 'create')!;
     expect(create.body).not.toContain('comic.png');
@@ -529,8 +533,52 @@ describe('comic end to end', () => {
     );
     const pub = cli(repo.root, 'publish', '--push');
     expect(pub.code).toBe(0);
-    expect(pub.json.message).toContain('Comic: none — comic is off in your settings.');
-    expect(pub.json.message).toContain('(now: off)');
+    // The user turned comics off: nothing about comics, ever.
+    expect(pub.json.message).not.toContain('Comic');
+  });
+
+  test('an expected comic with a ready route must be drawn or skipped with a reason', () => {
+    const { repo } = prepared();
+    env.TRACETOON_CODEX_BIN = FAKE_CODEX;
+    expect(cli(repo.root, 'images', '--approve', 'codex').code).toBe(0);
+    const r = cli(repo.root, 'render');
+    expect(r.code).toBe(0);
+    expect(r.json.comicStatus.state).toBe('missing');
+    const text = spawnSync(process.execPath, [CLI, 'render'], {
+      cwd: repo.root,
+      env,
+      encoding: 'utf8',
+    }).stdout;
+    expect(text).toContain('Next: not ready to publish. Draw the comic');
+    const refused = cli(repo.root, 'publish', '--push');
+    expect(refused.code).toBe(1);
+    expect(refused.json.errorCode).toBe('COMIC_UNEXPLAINED');
+    expect(ghCalls().some((c) => c.args[1] === 'create')).toBe(false);
+
+    const skip = cli(repo.root, 'comic', 'skip', '--reason', 'the user declined it');
+    expect(skip.code).toBe(0);
+    expect(cli(repo.root, 'render').json.comicStatus).toMatchObject({
+      state: 'skipped',
+      by: 'user',
+      detail: 'the user declined it',
+    });
+    const pub = cli(repo.root, 'publish', '--push');
+    expect(pub.code).toBe(0);
+    expect(pub.json.message).toContain('Comic: none — the user declined it.');
+  });
+
+  test('comic skip needs a reason; images --dismiss stops the setup offer on this machine', () => {
+    const { repo } = prepared();
+    expect(cli(repo.root, 'comic', 'skip').code).toBe(1);
+    const before = cli(repo.root, 'context', '--offline');
+    expect(before.json.comic.expectation).toMatchObject({
+      route: { kind: 'setup' },
+      askSetup: true,
+    });
+    const dismissed = cli(repo.root, 'images', '--dismiss');
+    expect(dismissed.json.dismissed).toBe(true);
+    const after = cli(repo.root, 'context', '--offline');
+    expect(after.json.comic.expectation.askSetup).toBe(false);
   });
 
   test('comic always: a repo media ban does not stop the comic', () => {
@@ -550,7 +598,10 @@ describe('comic end to end', () => {
     const r = cli(repo.root, 'render');
     expect(r.code).toBe(0);
     expect(r.json.comicMode).toBe('always');
-    expect(r.json.comicStatus).toEqual({ state: 'included' });
+    expect(r.json.comicStatus).toMatchObject({
+      state: 'included',
+      overBan: expect.any(String),
+    });
     expect(r.json.comicSha).toMatch(/^[0-9a-f]{64}$/);
     expect(readFileSync(join(runDir, 'final-body.md'), 'utf8')).toContain(
       '{{tracetoon:comic-src}}',
@@ -563,8 +614,9 @@ describe('comic end to end', () => {
     expect(text).toContain('the comic is included because the comic setting is always');
     const pub = cli(repo.root, 'publish', '--push');
     expect(pub.code).toBe(0);
-    expect(pub.json.message).toContain('Comic: included.');
-    expect(pub.json.message).toContain('(now: always)');
+    expect(pub.json.message).toContain(
+      "Comic: included, although this repo's rules forbid images in PRs",
+    );
   });
 
   test('exports an Agent Trace record with line ranges', () => {

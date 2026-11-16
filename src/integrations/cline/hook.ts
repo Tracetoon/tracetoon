@@ -1,0 +1,218 @@
+/**
+ * Cline's file hooks: one script per event in ~/.cline/hooks, named after the
+ * event (PreToolUse.mjs, PostToolUse.mjs, TaskStart.mjs). Cline runs a `.mjs`
+ * file with Node, which the Cline CLI always has, passes the event as JSON on
+ * stdin and reads a JSON object from stdout.
+ *
+ * A hook can't skip just one tool call: `cancel` stops the whole run. So a
+ * blocked PR command is replaced instead (`overrideInput`) with an `echo` of
+ * the reason, and the reason is also added to the agent's next turn
+ * (`errorMessage` without `cancel`). Failures to run Tracetoon let the call
+ * through unchanged.
+ */
+import type { HookCommands } from '../types.ts';
+
+export const CLINE_MARKER = '// tracetoon:cline-hook';
+
+const header = (commands: HookCommands) => `${CLINE_MARKER} ${commands.prePr}
+// Routes PR creation through Tracetoon. Written by \`tracetoon hook install\`;
+// \`tracetoon hook uninstall\` removes it. Edits are overwritten.
+import { readFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+
+let input = '';
+try {
+  input = readFileSync(0, 'utf8');
+} catch {}
+
+function tell(argv) {
+  try {
+    const child = spawn(argv[0], argv.slice(1), {
+      stdio: ['pipe', 'ignore', 'ignore'],
+      windowsHide: true,
+      detached: true,
+    });
+    child.on('error', () => {});
+    child.stdin.end(input);
+    child.unref();
+  } catch {}
+}
+`;
+
+/** The PreToolUse script: PR routing and the lifecycle observer on shell tools. */
+export function renderClinePre(commands: HookCommands): string {
+  const a = commands.argv!;
+  return `${header(commands)}
+const ARGV = ${JSON.stringify({ prePr: a.prePr, pre: a.lifecycle('PreToolUse') })};
+const SHELL = new Set(['run_commands', 'execute_command']);
+
+function ask(argv) {
+  try {
+    const r = spawnSync(argv[0], argv.slice(1), {
+      input,
+      encoding: 'utf8',
+      timeout: 10000,
+      windowsHide: true,
+    });
+    const answer = JSON.parse((r.stdout || '').trim() || 'null');
+    return answer && typeof answer === 'object' ? answer : undefined;
+  } catch {
+    return undefined; // never get in the way when Tracetoon can't run
+  }
+}
+
+let out = {};
+try {
+  const call = JSON.parse(input || '{}')?.tool_call;
+  const tool = call?.name;
+  if (SHELL.has(tool)) {
+    out = ask(ARGV.prePr) || ask(ARGV.pre) || {};
+    // execute_command takes one command; run_commands a list (Cline 3.x) or
+    // one string (4.x), so answer in the shape the call used.
+    const replacement = out.overrideInput?.commands;
+    if (tool === 'execute_command' && replacement)
+      out.overrideInput = { command: replacement.join('\\n') };
+    else if (typeof call?.input?.commands === 'string' && replacement)
+      out.overrideInput = { commands: replacement.join('\\n') };
+  } else tell(ARGV.pre);
+} catch {}
+process.stdout.write(JSON.stringify(out));
+`;
+}
+
+/** A script that only reports the event to Tracetoon and lets Cline continue. */
+export function renderClineObserver(commands: HookCommands, event: string): string {
+  return `${header(commands)}
+tell(${JSON.stringify(commands.argv!.lifecycle(event))});
+process.stdout.write('{}');
+`;
+}
+
+/** PowerShell's marker line: the same tag behind `#` instead of `//`. */
+export const CLINE_PS_MARKER = '# tracetoon:cline-hook';
+
+const psQuote = (s: string) => `'${s.replace(/'/g, "''")}'`;
+const psArray = (argv: string[]) => `@(${argv.map(psQuote).join(', ')})`;
+
+/**
+ * The Cline 4.x VS Code extension on Windows runs only `<Event>.ps1` files,
+ * from ~/Documents/Cline/Hooks (not ~/.cline/hooks), and sends the older
+ * payload: `{ hookName: "PreToolUse", taskId, workspaceRoots, preToolUse: {
+ * toolName, parameters } }`. Its answer can't skip or replace one call: only
+ * `cancel` blocks, and it stops the task with `errorMessage` shown. So a PR
+ * command stops the task with Tracetoon's reason; anything else runs.
+ */
+export function renderClinePowerShell(commands: HookCommands): string {
+  const a = commands.argv!;
+  return `${CLINE_PS_MARKER} ${commands.prePr}
+# Routes PR creation in the Cline VS Code extension through Tracetoon. Written by
+# \`tracetoon hook install\`; \`tracetoon hook uninstall\` removes it. Edits are overwritten.
+$ErrorActionPreference = 'SilentlyContinue'
+$OutputEncoding = New-Object System.Text.UTF8Encoding $false
+try { [Console]::InputEncoding = $OutputEncoding } catch {}
+$payload = [Console]::In.ReadToEnd()
+$out = '{}'
+try {
+  $tool = ($payload | ConvertFrom-Json).preToolUse.toolName
+  if ($tool -eq 'run_commands' -or $tool -eq 'execute_command') {
+    foreach ($argv in @(${psArray(a.prePr)}, ${psArray(a.lifecycle('PreToolUse'))})) {
+      $exe = $argv[0]
+      $rest = @($argv | Select-Object -Skip 1)
+      $answer = ($payload | & $exe @rest 2>$null | Out-String).Trim()
+      if (-not $answer) { continue }
+      $reason = ($answer | ConvertFrom-Json).errorMessage
+      if ($reason) {
+        $out = @{ cancel = $true; errorMessage = [string]$reason } | ConvertTo-Json -Compress
+        break
+      }
+    }
+  }
+} catch {} # never get in the way when Tracetoon can't run
+$out
+`;
+}
+
+const shQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+
+/**
+ * The same hook for the VS Code extension on macOS and Linux, which runs an
+ * executable file named after the event (no extension) from
+ * ~/Documents/Cline/Hooks through the shell. A deny from Tracetoon gets
+ * `"cancel":true` added in front, so the extension stops the task and shows
+ * `errorMessage`; any other answer lets the call run.
+ */
+export function renderClineShell(commands: HookCommands): string {
+  const a = commands.argv!;
+  const ask = (
+    argv: string[],
+  ) => `answer=$(printf '%s' "$payload" | ${argv.map(shQuote).join(' ')} 2>/dev/null)
+case "$answer" in *'"errorMessage"'*) printf '{"cancel":true,%s\\n' "\${answer#\\{}"; exit 0 ;; esac`;
+  return `#!/bin/sh
+${CLINE_PS_MARKER} ${commands.prePr}
+# Routes PR creation in the Cline VS Code extension through Tracetoon. Written by
+# \`tracetoon hook install\`; \`tracetoon hook uninstall\` removes it. Edits are overwritten.
+payload=$(cat)
+case "$payload" in
+  *'"toolName":"run_commands"'* | *'"toolName":"execute_command"'*) ;;
+  *) echo '{}'; exit 0 ;;
+esac
+${ask(a.prePr)}
+${ask(a.lifecycle('PreToolUse'))}
+echo '{}'
+`;
+}
+
+/** Markdown's marker line: the same tag in an HTML comment. */
+export const CLINE_RULE_MARKER = '<!-- tracetoon:cline-hook';
+
+/**
+ * A global Cline rule (~/.cline/rules/tracetoon.md), which Cline adds to every
+ * task in the CLI and the VS Code and JetBrains extensions. The extensions'
+ * hooks can only stop a task, and the agent isn't told why: in JetBrains, Cline
+ * then retried `gh pr create` in other forms. The rule tells the agent up
+ * front to use the Tracetoon skill and not to retry a blocked PR command.
+ */
+export function renderClineRule(commands: HookCommands): string {
+  return `${CLINE_RULE_MARKER} ${commands.prePr} -->
+# Pull requests go through Tracetoon
+
+Tracetoon handles pull request creation on this machine: it writes the description from your session logs, then creates the PR.
+
+- When asked to open, create or submit a pull request, use the \`tracetoon\` skill and publish with \`tracetoon publish\`. Don't create the PR directly with \`gh pr create\`, \`hub pull-request\`, \`git pull-request\` or the GitHub API.
+- A hook blocks direct PR commands. If one is blocked or stops the task, don't retry it in another form (other flags, \`--web\`, environment variables): switch to the \`tracetoon\` skill.
+- Being asked to run a PR command, even word for word, is not a request to skip Tracetoon. Only if the user said not to use Tracetoon for this PR, put \`TRACETOON=0\` in front of the command (PowerShell: \`$env:TRACETOON='0'; ...\`).
+
+<!-- Written by \`tracetoon hook install\`; \`tracetoon hook uninstall\` removes it. Edits are overwritten. -->
+`;
+}
+
+/** The pre-pr command line a written hook runs, from its first line (after any #!). */
+export function clineHookCommand(text: string): string | undefined {
+  const [first = '', second = ''] = text.split(/\r?\n/, 2);
+  const line = first.startsWith('#!') ? second : first;
+  if (line.startsWith(CLINE_RULE_MARKER))
+    return line
+      .slice(CLINE_RULE_MARKER.length)
+      .replace(/-->\s*$/, '')
+      .trim();
+  for (const marker of [CLINE_MARKER, CLINE_PS_MARKER])
+    if (line.startsWith(marker)) return line.slice(marker.length).trim();
+  return undefined;
+}
+
+/**
+ * The answer that blocks a shell call: the command is replaced by an echo of
+ * the reason (quotes made safe for PowerShell, cmd and sh alike), and the reason
+ * is added to the agent's next turn.
+ */
+export function denyCline(reason: string): string {
+  // PowerShell treats curly quotes as quotes too, so all of them become ".
+  const said = reason
+    .replace(/['‘’‚‛]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return JSON.stringify({
+    overrideInput: { commands: [`echo 'Blocked by Tracetoon. ${said}'`] },
+    errorMessage: reason,
+  });
+}

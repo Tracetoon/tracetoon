@@ -15,6 +15,15 @@ import { integration as cursor } from './cursor/index.ts';
 import { integration as opencode } from './opencode/index.ts';
 import { integration as kilo } from './kilo/index.ts';
 import { integration as kiro } from './kiro/index.ts';
+import { integration as cline } from './cline/index.ts';
+import { integration as junie } from './junie/index.ts';
+import { integration as devin } from './devin/index.ts';
+import { integration as goose } from './goose/index.ts';
+import { integration as qwen } from './qwen/index.ts';
+import { integration as crush } from './crush/index.ts';
+import { integration as amp } from './amp/index.ts';
+import { integration as zed } from './zed/index.ts';
+import { integration as warp } from './warp/index.ts';
 
 /** In display order. Hook targets, skill installs and doctor follow it. */
 export const INTEGRATIONS: readonly Integration[] = [
@@ -27,6 +36,15 @@ export const INTEGRATIONS: readonly Integration[] = [
   opencode,
   kilo,
   kiro,
+  cline,
+  junie,
+  devin,
+  goose,
+  qwen,
+  crush,
+  amp,
+  zed,
+  warp,
   geminiCli,
 ];
 

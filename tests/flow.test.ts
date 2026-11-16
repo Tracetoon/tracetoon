@@ -397,7 +397,7 @@ describe('render and publish', () => {
       'Tracetoon created PR #7: https://github.com/acme/demo/pull/7\n',
     );
     expect(ok.json.message).toMatch(/^Comic: (included|none — .+)\.$/m);
-    expect(ok.json.message).toContain(
+    expect(ok.json.message).not.toContain(
       'Comics: tracetoon config set comic off|allowed|always (now: ',
     );
     const create = ghCalls().find((c) => c.args[1] === 'create');

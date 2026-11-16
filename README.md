@@ -31,6 +31,12 @@ and caveats.</sub>
 
 </div>
 
+> [!NOTE]
+> **For AI agents:** start with [AGENTS.md](AGENTS.md) (how to run Tracetoon,
+> exit codes, which commands publish) and
+> [docs/agents/install.md](docs/agents/install.md) (install routes an agent can
+> run, per host). [llms.txt](llms.txt) indexes both.
+
 **Contents:** [Quick start](#-quick-start) ·
 [Better PRs](#-better-prs-judged-blind-picked-almost-every-time) ·
 [Evidence graph](#%EF%B8%8F-evidence-graph-every-sentence-has-a-receipt) ·
@@ -61,6 +67,18 @@ curl -fsSL https://raw.githubusercontent.com/Tracetoon/tracetoon/main/install.sh
 irm https://raw.githubusercontent.com/Tracetoon/tracetoon/main/install.ps1 | iex
 ```
 
+Or let your agent install it. Agent sandboxes often block piping a download
+into a shell, so these routes work better from inside an agent:
+
+```sh
+# Claude Code plugin
+claude plugin marketplace add Tracetoon/tracetoon
+claude plugin install tracetoon@tracetoon
+```
+
+Any other host: ask your agent to follow
+[docs/agents/install.md](docs/agents/install.md).
+
 **2. Restart your agent.** Then, on any branch with your work, ask:
 
 > _"Open a PR for this branch with Tracetoon."_
@@ -75,20 +93,44 @@ Left out: 1 session that may not belong to this PR.
 Comics: tracetoon config set comic off|allowed|always (now: allowed)
 ```
 
-| Agent                     | Status                                                                       |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| Claude Code               | ✅ supported                                                                 |
-| Codex (CLI and app)       | ✅ supported                                                                 |
-| Antigravity (CLI and IDE) | ✅ supported                                                                 |
-| Factory Droid             | ✅ supported                                                                 |
-| Copilot (CLI and VS Code) | ✅ supported                                                                 |
-| Cursor (IDE and CLI)      | ✅ supported                                                                 |
-| OpenCode                  | ✅ supported (hook is a plugin in `~/.config/opencode/plugins`)              |
-| Kilo CLI                  | ✅ supported (hook is a plugin in `~/.config/kilo/plugins`)                  |
-| Kilo Code (VS Code)       | ✅ supported through Kilo CLI, which the extension runs                      |
-| Kiro (IDE and CLI)        | ✅ supported (hook file in `~/.kiro/hooks`)                                  |
-| Gemini CLI                | 🟡 legacy: runs the skill (replaced by Antigravity CLI for individual users) |
-| Windsurf                  | 🗓️ planned                                                                   |
+<!-- hosts:start (generated from the integration registry) -->
+Tracetoon works across a broad range of coding agents and IDEs. Recommended integrations are actively maintained and continuously compatibility-tested. Community Supported integrations are available on a best-effort basis.
+
+**Recommended:** retested on every new release of the agent.
+
+| Agent                                             | Status                                                  |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| Claude Code (CLI, IDE extensions and desktop app) | ✅ supported                                             |
+| Codex (CLI, app and IDE extensions)               | ✅ supported                                             |
+| Copilot (CLI, VS Code agent mode and JetBrains)   | ✅ supported                                             |
+| Cursor (IDE and CLI)                              | ✅ supported ([see notes](docs/agents/support.md#notes)) |
+| OpenCode (CLI)                                    | ✅ supported                                             |
+
+**IDE workflows:** VS Code and Zed with specific recommended agents; each says
+"verified" only once its own test passes ([IDE workflows](docs/agents/support.md#ide-workflows)).
+
+**Community Supported:** available and tested with every Tracetoon change, fixed
+on a best-effort basis.
+
+| Agent                                                                 | Status                                                                           |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Antigravity (CLI and IDE)                                             | ✅ supported                                                                      |
+| Factory Droid (Droid CLI)                                             | ✅ supported                                                                      |
+| Kilo CLI (CLI, and Kilo Code for VS Code and JetBrains, which run it) | ✅ supported                                                                      |
+| Kiro (IDE and CLI)                                                    | ✅ supported                                                                      |
+| Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
+| Junie (CLI and JetBrains IDE plugin)                                  | ✅ supported                                                                      |
+| Devin (CLI and Devin Desktop, formerly Windsurf)                      | ✅ supported (uses Claude Code's hook; [see notes](docs/agents/support.md#notes)) |
+| Goose (CLI and desktop app)                                           | ✅ supported                                                                      |
+| Qwen Code (CLI)                                                       | ✅ supported                                                                      |
+| Crush (CLI)                                                           | ✅ supported                                                                      |
+| Amp (CLI)                                                             | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes))          |
+| Zed (Zed Agent)                                                       | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
+| Warp (Warp agent)                                                     | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
+
+Hook files, skill folders, verification results and the notes:
+[supported agents](docs/agents/support.md).
+<!-- hosts:end -->
 
 > [!TIP]
 > Already installed? Ask your agent: _"Update Tracetoon."_ It works for the
@@ -102,7 +144,7 @@ Comics: tracetoon config set comic off|allowed|always (now: allowed)
 <p align="center"><a href="https://tracetoon.ai/#why"><img src="docs/img/comic-quality.webp" alt="Two-panel comic. The old way: three bored robot judges hold up question-mark scorecards at a sad pull request that says 'Improves stuff.' With Tracetoon: the judges leap up holding scores of 10, 10 and 10 while a confident pull request with a comic pinned to it takes a bow and the developer cheers." width="640"></a></p>
 
 AI-written PRs are usually vague and padded, and they sound sure about tests
-nobody saw pass. Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo and Kiro already keep session logs on
+nobody saw pass. <!-- host-names:start -->Claude Code, Codex, Copilot, Cursor, Antigravity and [10 other agents](docs/agents/support.md)<!-- host-names:end --> already keep session logs on
 your machine. Tracetoon finds the sessions that produced this branch and turns
 them into a redacted evidence brief your agent writes from.
 
@@ -176,7 +218,7 @@ tracetoon query outline          # changed units, their requests and checks
 tracetoon query why src/foo.ts   # which request and which runs are behind this file (or a hunk: H3)
 tracetoon query unverified       # changes no run saw after their last edit
 tracetoon query stale R2         # what changed after run R2
-tracetoon query --cypher 'MATCH (h:Hunk) RETURN h.path LIMIT 5'   # read-only Cypher
+tracetoon query --cypher 'MATCH (h:Hunk) RETURN h.file LIMIT 5'   # read-only Cypher
 ```
 
 Named queries also include `verified`, `unexplained`, `turn <S#>`, `dead-ends`,
@@ -283,11 +325,20 @@ mascots and no recurring cast.
 - **Proofread.** An image model you choose draws the whole page, lettering
   included. `comic render` prints every word for the agent to proofread, and
   adds a small "made with Tracetoon" footer bar.
-- **It respects the repo.** Where contributing rules forbid images in PRs,
-  Tracetoon skips the comic and tells you why. `comic always` overrides that;
-  `comic off` turns comics off.
+- **It respects the repo.** With the default `comic allowed`, Tracetoon reads
+  the repo's rules (contributing guide, code of conduct, agent and AI policy
+  files, the README's contributing section, and the policy docs they link to)
+  and skips the comic where they forbid images in PRs, naming the file and
+  line, once per repo. Where a repo asks for comics, it says so. Your `comic
+  always` overrides the repo; your `comic off` turns comics off everywhere,
+  with nothing more said about them.
+- **Decided up front.** Tracetoon works out whether a PR should get a comic
+  before your agent writes it, and the agent draws it. A skip needs a reason
+  (`tracetoon comic skip --reason "…"`), shown after the PR is created.
 - **Never a blocker.** Without an approved image route, or if drawing fails,
   the PR is created without a comic, and the message after the PR says why.
+  A missing image route is mentioned once per machine, not on every PR
+  (`tracetoon images --dismiss` stops the setup offer too).
 
 ### Set up an image route
 
@@ -343,38 +394,45 @@ add `export OPENAI_API_KEY="<key>"` to your shell profile.
 ### The PR hook
 
 The installer adds a small hook to each agent. When an agent tries to open a PR,
-or rewrite a PR's title or body, the hook points it to Tracetoon instead.
+the hook points it to Tracetoon instead.
 
 | Redirected to Tracetoon                                                                    | Left alone                                                                         |
 | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `gh pr create`, `gh pr edit` and gh aliases for them                                       | `git push` (branches for CI, tags, release commits)                                |
+| `gh pr create` and gh aliases for it                                                        | `git push` (branches for CI, tags, release commits), `gh pr edit`                  |
 | `hub pull-request`, git-extras `git pull-request`, Git Town `git town propose`             | Stacking tools: Graphite, git-spice                                                |
 | Writes to GitHub's pulls API through `gh api`, `hub api`, curl, wget, HTTPie or PowerShell | API reads, state-only changes (closing a PR), other forges                         |
 | GraphQL `createPullRequest`, and the GitHub connector tools agents use                     | Calls made inside a script, or a GraphQL mutation read from a file (can't be seen) |
 
 The hook only touches its own entries in each agent's config, backs up each file
-before the first change, and lists every file it changed. If a PR command was
-redirected, the agent's stop hook keeps it from finishing until that PR is
-published, so a redirected PR isn't left behind. Codex asks you to trust a new
-hook once (`/hooks`), and again whenever the hook entry changes;
+before the first change, and lists every file it changed. Codex asks you to
+trust a new hook once (`/hooks`), and again whenever the hook entry changes;
 `tracetoon doctor` says when Codex would skip it. The Antigravity IDE picks it
-up after a restart. Skip
+up after a restart. Goose runs hooks with `sh`, so on Windows it needs Git for
+Windows' `usr\bin` on `PATH`. Where each agent keeps its hook is listed in
+[supported agents](docs/agents/support.md). Skip
 installing it with `TRACETOON_NO_HOOK=1`, or manage it with
 `tracetoon hook install` and `tracetoon hook uninstall`.
 
 ### Turn it off at whichever level you need
 
-Any "off" wins:
+Any "off" wins, with one exception: your own `comic always` beats a repo's comic "off".
 
-| Scope                   | Off                                                                 | On again               |
-| ----------------------- | ------------------------------------------------------------------- | ---------------------- |
-| One command             | `TRACETOON=0 gh pr create ...`                                      | (just once)            |
-| You, everywhere         | `tracetoon off`                                                     | `tracetoon on`         |
-| This repo, for everyone | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`  |
-| This repo, just you     | `tracetoon off --local` (git config)                                | `tracetoon on --local` |
-| CI                      | off automatically when `CI=true`                                    | `TRACETOON=1`          |
+| Scope                          | Off                                                                 | On again                                           |
+| ------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------- |
+| One command                    | `TRACETOON=0 gh pr create ...`                                      | (just once)                                        |
+| You, everywhere                | `tracetoon off`                                                     | `tracetoon on`                                     |
+| This repo, for everyone        | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`                              |
+| This repo, just you            | `tracetoon off --local` (git config)                                | `tracetoon on --local`                             |
+| CI                             | off automatically when `CI=true`                                    | `TRACETOON=1`                                      |
+| Comics, one PR                 | ask your agent to skip the comic                                    | (just once)                                        |
+| Comics, you everywhere         | `tracetoon config set comic off`                                    | `tracetoon config set comic allowed` (or `always`) |
+| Comics, this repo for everyone | `"comic": "off"` in `.github/tracetoon.json`; commit it             | remove it                                          |
 
 `tracetoon status` shows whether it's on here and which setting decided.
+
+For comics, `allowed` (the default) follows each repo's rules: no comic where
+its `"comic"` setting, contributing guide, code of conduct, README or a policy
+doc they link to forbids images in PRs. `always` means every PR regardless.
 
 ---
 
@@ -587,17 +645,18 @@ trust the new hook entries in `/hooks`.
   [release](https://github.com/Tracetoon/tracetoon/releases) into your agent's
   skills folder:
 
-  | Agent          | Folder                                                               |
-  | -------------- | -------------------------------------------------------------------- |
-  | Claude Code    | `~/.claude/skills/tracetoon`                                         |
-  | Codex          | `~/.agents/skills/tracetoon` (or `.agents/skills/` in a repo)        |
-  | Antigravity    | `~/.gemini/config/skills/tracetoon` (or `.agents/skills/` in a repo) |
-  | Factory Droid  | `~/.agents/skills/tracetoon` (shared with Codex)                     |
-  | Copilot        | `~/.agents/skills/tracetoon` (shared with Codex)                     |
-  | Cursor         | `~/.agents/skills/tracetoon` (shared with Codex)                     |
-  | OpenCode, Kilo | `~/.agents/skills/tracetoon` (shared with Codex)                     |
-  | Kiro           | `~/.kiro/skills/tracetoon`                                           |
-  | Gemini CLI     | `~/.gemini/skills/tracetoon`                                         |
+  <!-- skill-folders:start (generated from the integration registry) -->
+  | Agent                                                                                                 | Folder                              |
+  | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
+  | Claude Code                                                                                           | `~/.claude/skills/tracetoon`        |
+  | Codex, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Cline, Devin, Goose, Crush, Amp, Zed, Warp | `~/.agents/skills/tracetoon`        |
+  | Antigravity                                                                                           | `~/.gemini/config/skills/tracetoon` |
+  | Kiro                                                                                                  | `~/.kiro/skills/tracetoon`          |
+  | Junie                                                                                                 | `~/.junie/skills/tracetoon`         |
+  | Qwen Code                                                                                             | `~/.qwen/skills/tracetoon`          |
+  <!-- skill-folders:end -->
+
+  Codex and Antigravity also read `.agents/skills/` inside a repo.
 
 - **From source:** see [Contributing](#-contributing-ai-welcome-comics-wanted).
   A source checkout updates with `git pull`.
@@ -624,7 +683,7 @@ Windows; override with `TRACETOON_CONFIG`). A repo can set shared defaults in
 | Key             | Default       | Meaning                                                                                                   |
 | --------------- | ------------- | --------------------------------------------------------------------------------------------------------- |
 | `enabled`       | `true`        | Use Tracetoon for PRs (also `tracetoon on`/`off`)                                                         |
-| `comic`         | `allowed`     | `off`, `allowed` (unless the repo forbids images in PRs) or `always`. `true`/`false` mean `allowed`/`off` |
+| `comic`         | `allowed`     | `off`, `allowed` (follow the repo's rules) or `always`. Your `off`/`always` beats the repo's. `true`/`false` mean `allowed`/`off` |
 | `style`         | `auto`        | Pin one art style for every comic (an idea from `references/styles.md` or any description)                |
 | `promptQuoting` | `paraphrase`  | `verbatim` quotes your prompts in the PR                                                                  |
 | `disclosure`    | `assisted-by` | Disclosure style (a repo's AI policy can ask for another)                                                 |

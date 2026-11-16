@@ -21,6 +21,7 @@ import type {
   TraceRecord,
   TraceSession,
 } from '../../trace/types.ts';
+import { sawToolCall, sawUnknownTool } from '../../trace/toolCalls.ts';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj =>
@@ -189,8 +190,9 @@ export function parseAntigravityLines(
       for (const call of calls) {
         if (!isObj(call)) continue;
         const name = str(call.name) ?? '';
+        sawToolCall(into);
         const args = isObj(call.args) ? call.args : {};
-        const target = fileFromArg(args.TargetFile);
+        const target = fileFromArg(args.TargetFile ?? args.Path);
         if (
           target &&
           brainKey &&
@@ -199,7 +201,17 @@ export function parseAntigravityLines(
           continue;
         const file = target ? resolve(cwd ?? '.', target) : undefined;
         const at = { ts, cwd: file ? dirname(file) : cwd, model };
-        if (name === 'write_to_file' && file) {
+        if (name === 'write_file' && file) {
+          // Antigravity CLI 1.5.8 renamed write_to_file to write_file (Path/Content).
+          pendingEdits.push({
+            kind: 'edit',
+            file,
+            added: splitLines(unwrapArg(args.Content) ?? ''),
+            removed: [],
+            created: true,
+            ...at,
+          });
+        } else if (name === 'write_to_file' && file) {
           pendingEdits.push({
             kind: 'edit',
             file,
@@ -236,11 +248,47 @@ export function parseAntigravityLines(
           if (cmd) pendingCommands.push({ cmd, ts, cwd: fileFromArg(args.Cwd) ?? cwd });
         } else if (name === 'ask_question') {
           pendingQuestion = { text: unwrapArg(args.questions) ?? '', ts };
+        } else {
+          sawUnknownTool(into, name);
         }
       }
       continue;
     }
 
+    if (type === 'GENERIC') {
+      // Antigravity CLI 1.5.8 confirms a tool call with a GENERIC record instead of
+      // the CODE_ACTION / RUN_COMMAND records the IDE and older CLI emit. A command
+      // result reports its exit code and output; a file action does not.
+      const content = str(o.content) ?? '';
+      const exit = /Command exited with code[:\s]+(\d+)/i.exec(content)?.[1];
+      if (exit !== undefined || /Command output:/i.test(content)) {
+        const c = pendingCommands.shift();
+        if (c)
+          into.records.push({
+            kind: 'command',
+            cmd: c.cmd,
+            isError: /error|fail/i.test(status) || (exit !== undefined && exit !== '0'),
+            output: headTail(
+              (
+                /Command output:\s*\n?([\s\S]*)$/i.exec(content)?.[1] ??
+                // No output section: drop the record's own timing and exit preamble.
+                content.replace(
+                  /^(?:(?:Created|Completed) At:.*|Command exited with code[^\n]*)$\n?/gim,
+                  '',
+                )
+              ).trim(),
+            ),
+            ts: c.ts,
+            cwd: c.cwd,
+          });
+        continue;
+      }
+      if (pendingEdits.length) {
+        if (!/error|fail|cancel|reject/i.test(status)) into.records.push(...pendingEdits);
+        pendingEdits = [];
+      }
+      continue;
+    }
     if (type === 'CODE_ACTION') {
       // Confirms the edit(s) proposed just before it.
       if (!/error|fail|cancel|reject/i.test(status)) into.records.push(...pendingEdits);

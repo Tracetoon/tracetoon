@@ -4,7 +4,12 @@ import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { readRepoFile, readSubmittedFile, repoPath } from '../util/repoFiles.ts';
 export { repoPath } from '../util/repoFiles.ts';
-import { POLICY_FILES, findPrTemplate, type AiPolicy } from '../github/repoContext.ts';
+import {
+  POLICY_FILES,
+  findPrTemplate,
+  policyFiles,
+  type AiPolicy,
+} from '../github/repoContext.ts';
 import type { PrTruth } from '../git/pr.ts';
 import { readText, writeJson, type Run } from '../run.ts';
 import { git } from '../util/exec.ts';
@@ -106,6 +111,9 @@ export function researchPacket(
     'README.rst',
   ])
     candidates.set(path, '.');
+  // Policy-named docs and the ones the policy files link to.
+  for (const { rel } of policyFiles(truth.toplevel))
+    if (!candidates.has(rel)) candidates.set(rel, '.');
   const template = findPrTemplate(truth.toplevel);
   if (template) candidates.set(template.path, '.');
   for (const file of changedPaths) {
@@ -214,10 +222,13 @@ const RENDERING = [
   'disclosure-required',
   'disclosure-prohibited',
   'media-prohibited',
+  'media-requested',
   'text-prohibited',
   'author-written-recommended',
   'no-pull-requests',
 ];
+/** Renderings that encourage rather than restrict, so a `recommended` strength fits them. */
+const ADVISORY_RENDERING = ['author-written-recommended', 'media-requested'];
 
 export function parseGuidance(raw: string): Guidance {
   const value: unknown = JSON.parse(raw);
@@ -306,7 +317,7 @@ export function parseGuidance(raw: string): Guidance {
       rule.rendering === undefined || RENDERING.includes(rule.rendering),
       `Invalid rendering rule for ${rule.id}.`,
     );
-    if (rule.rendering && rule.rendering !== 'author-written-recommended') {
+    if (rule.rendering && !ADVISORY_RENDERING.includes(rule.rendering)) {
       const strengths =
         rule.rendering === 'disclosure-required'
           ? ['required', 'conditional']
@@ -438,6 +449,22 @@ export function contributionPolicy(
       const source = ref && result.guidance?.sources.find((s) => s.id === ref.source);
       if (ref && source)
         next.mediaSource = {
+          file: source.location,
+          line: ref.startLine,
+          text: rule.text.slice(0, 300),
+        };
+    }
+    // A ban wins over any request.
+    delete next.mediaRequest;
+  } else if (has('media-requested') && next.media !== 'prohibited') {
+    // A ban the line check found still wins over a researched request.
+    next.media = 'requested';
+    if (!next.mediaRequest) {
+      const rule = rules.find((r) => r.rendering === 'media-requested')!;
+      const ref = rule.sources[0];
+      const source = ref && result.guidance?.sources.find((s) => s.id === ref.source);
+      if (ref && source)
+        next.mediaRequest = {
           file: source.location,
           line: ref.startLine,
           text: rule.text.slice(0, 300),

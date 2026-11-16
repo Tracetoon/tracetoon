@@ -1,0 +1,77 @@
+{
+  "$comment": "Verification targets for Recommended integrations and workflows. source says how the newest stable upstream version is found (npm registry, or the official installer when there is no feed); evidence says how the live session runs (fake-llm: the scripted local model in scripts/compat/fake-llm.ts, no credits; free-plan: one short real session on a free account whose token is the named secret, only for a version not yet verified). Each run needs a recipe in scripts/compat/recipes.ts. Read by scripts/compat/*.ts and scripts/agent-surfaces.ts.",
+  "targets": {
+    "claude-cli": {
+      "integration": "claude",
+      "surface": "cli",
+      "source": {
+        "type": "npm",
+        "package": "@anthropic-ai/claude-code"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "codex-cli": {
+      "integration": "codex",
+      "surface": "cli",
+      "source": {
+        "type": "npm",
+        "package": "@openai/codex"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "opencode-cli": {
+      "integration": "opencode",
+      "surface": "cli",
+      "source": {
+        "type": "npm",
+        "package": "opencode-ai"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "copilot-cli": {
+      "integration": "copilot",
+      "surface": "cli",
+      "source": {
+        "type": "npm",
+        "package": "@github/copilot"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "cursor-cli": {
+      "integration": "cursor",
+      "surface": "cli",
+      "source": {
+        "type": "installer",
+        "url": "https://cursor.com/install",
+        "binary": "cursor-agent"
+      },
+      "evidence": "free-plan",
+      "secret": "CURSOR_API_KEY",
+      "os": ["ubuntu-latest"]
+    },
+    "zed-claude": {
+      "integration": "claude",
+      "surface": "zed-acp",
+      "source": {
+        "type": "npm",
+        "package": "@agentclientprotocol/claude-agent-acp"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "zed-codex": {
+      "integration": "codex",
+      "surface": "zed-acp",
+      "source": {
+        "type": "npm",
+        "package": "@agentclientprotocol/codex-acp"
+      },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    }
+  }
+}

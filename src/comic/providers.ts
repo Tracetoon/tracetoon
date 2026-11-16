@@ -326,7 +326,12 @@ function codexReadiness(bin: string): { ready: Readiness; why: string } {
   return result;
 }
 
-export function providerInfo(id: ProviderId): ProviderInfo {
+/**
+ * What this machine has for a route. `probe: false` skips starting a CLI to ask
+ * whether it can draw (Codex's `login status`), for checks that run on every
+ * prepare and render; readiness is then `unknown`, and a failed drawing says why.
+ */
+export function providerInfo(id: ProviderId, probe = true): ProviderInfo {
   switch (id) {
     case 'openai': {
       const key = openaiKey();
@@ -361,16 +366,18 @@ export function providerInfo(id: ProviderId): ProviderInfo {
     }
     case 'codex': {
       const bin = codexBin();
-      const check = bin ? codexReadiness(bin) : undefined;
+      const check = bin && probe ? codexReadiness(bin) : undefined;
       return {
         id,
         label: 'Codex CLI image tool',
         sendsTo: 'OpenAI, through your Codex login',
         cost: 'covered by your ChatGPT plan (counts toward Codex usage limits)',
         available: !!bin,
-        ready: check?.ready ?? 'not ready',
+        ready: !bin ? 'not ready' : (check?.ready ?? 'unknown'),
         detail: bin
-          ? `codex found; ${check!.why}`
+          ? check
+            ? `codex found; ${check.why}`
+            : 'codex found'
           : 'install the Codex CLI and sign in with ChatGPT',
       };
     }

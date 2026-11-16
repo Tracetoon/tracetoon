@@ -76,8 +76,10 @@ A citation is `{ "source": "source-id", "startLine": 1, "endLine": 3 }`.
 Ranges are inclusive and must exist in the snapshot. Preserve headings and nearby
 exceptions instead of extracting an isolated keyword. An optional requirement
 `rendering` is one of `disclosure-required`, `disclosure-prohibited`,
-`media-prohibited`, `text-prohibited`, `author-written-recommended`, or
-`no-pull-requests`. Only applicable directives affect rendering. When explicit
+`media-prohibited`, `media-requested`, `text-prohibited`,
+`author-written-recommended`, or `no-pull-requests`. `media-requested` records
+a repo asking for comics or images in PRs; like `author-written-recommended`
+it is an encouragement, so `recommended` strength fits it. Only applicable directives affect rendering. When explicit
 mandatory directives are used, their strength must be `required`, `prohibited`,
 or `conditional` (`disclosure-required` accepts `required` or `conditional`).
 Recommendations and advisory guidance cannot create mandatory restrictions.

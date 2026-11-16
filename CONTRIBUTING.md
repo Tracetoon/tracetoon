@@ -85,14 +85,35 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
    `PAYLOADS` in `tests/integrations.test.ts` (the hook contract requires one),
    parser tests in `tests/adapters.test.ts`, and an end-to-end test in
    `tests/flow.test.ts` with an isolated home directory.
-5. Update the support table in `README.md`. The installers ask the binary
-   (`tracetoon integrations --skill-targets`) where the skill goes, so they need
-   no change.
-6. If the agent runs headlessly, add a step to `.github/workflows/canary.yml`:
-   install it, have it create its own file, and append `<adapter-id>:<file>`
-   to the expect list, gated on the secret it needs. The weekly run then fails
-   if the reader stops finding its sessions (`scripts/canary-check.ts`) or meets
-   record types it doesn't know (`doctor --probe`).
+5. Set `supportTier: 'community'`. Every new agent starts there. Promotion to
+   `recommended` is a separate decision that needs a working verification route
+   ([support policy](docs/agents/support-policy.md#promotion-and-demotion)).
+   Set the integration's `variants`, and `limits` for anything a user would
+   miss (no session logs, PR tools the hook can't see), then run
+   `bun scripts/agent-surfaces.ts`. It rewrites the README's agent lists,
+   `docs/agents/support.md` and every catalog description from the registry.
+   Add the agent to the installers' header comments and "no supported agent"
+   messages and to `keywords` in `package.json`. The installers ask the binary
+   (`tracetoon integrations --skill-targets`) where the skill goes, so their
+   logic needs no change.
+6. Promoting an agent to Recommended also needs a verification route. Add a
+   recipe to `scripts/compat/recipes.ts` (install, point the agent at the
+   scripted model, run one prompt headless) and a target to
+   `compat/upstream.json`, then run
+   `bun scripts/compat/verify.ts --integration <id> --keep` until every check
+   passes. Prefer the scripted model (`evidence: fake-llm`). An agent that can
+   only use its vendor's service needs a free-plan key (`free-plan`), never a
+   paid one. `.github/workflows/integration-compat.yml` then checks each new
+   release of it.
+7. Call `sawToolCall` from `src/trace/toolCalls.ts` wherever the adapter reads a
+   tool call, and `sawUnknownTool` in the branch that handles none. `doctor
+   --probe` then reports drift when a host's tool use stops becoming edits and
+   commands, which is what a renamed tool looks like. That matters most for
+   Community Supported agents, which no workflow retests on each release, and
+   for hosts that can't run headless at all: Antigravity signs in through a
+   browser only. Don't add a list of known tool names: hosts add tools
+   constantly and the list would go stale, which is the failure this check
+   exists to avoid.
 
 ## Before sending a change
 
@@ -103,10 +124,12 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   (in `node_modules/.cache`), files start slowest first, so a long end-to-end
   file no longer starts last; without that history (a fresh checkout, CI) they
   start largest first. `bun run typecheck && bun run test`
-  macOS runs one file at a time because the pinned Bun version's subprocess-heavy
-  suites fail intermittently under concurrent macOS load. Full coverage is kept.
-  Windows runs two files at a time to reduce Git-process contention; Linux runs
-  up to four. Every invocation retains per-file logs under `node_modules/.cache/test-logs`.
+  macOS scales with the machine: the pinned Bun version's subprocess-heavy suites
+  fail intermittently when the box is oversubscribed, so a CI runner (3-4 cores)
+  still runs one file at a time, while a Mac with 8 or more cores runs four, as
+  Linux does. Windows runs two to reduce Git-process contention. Full coverage is
+  kept either way, and `TRACETOON_TEST_WORKERS` pins the count if a flake appears.
+  Every invocation retains per-file logs under `node_modules/.cache/test-logs`.
 - Don't commit build outputs. `bun run bundle` writes `plugin/skills/tracetoon/dist/tracetoon.mjs`
   and `build.json` for local packaged runs; both are ignored, because every source change
   regenerates them. The release workflow publishes them on the `release` branch. A

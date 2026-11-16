@@ -1,6 +1,7 @@
 /** What the repo asks of a PR: its template, and any policy on AI contributions. */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
+import { readRepoFile, repoPath } from '../util/repoFiles.ts';
 
 const TEMPLATE_PATHS = [
   '.github/pull_request_template.md',
@@ -58,6 +59,102 @@ export const POLICY_FILES = [
   'contributing/ai-tools.md',
 ];
 
+/** Other places repos state their rules, read alongside POLICY_FILES. */
+const OTHER_POLICY_FILES = ['README.md', 'README.rst', 'CONTRIBUTING.rst', 'GEMINI.md'];
+/** Folders whose policy-named docs are read without being linked. */
+const POLICY_DIRS = ['.github', 'docs'];
+/** A file name or link text that sounds like rules for contributors. */
+const POLICY_NAME =
+  /contribut|polic(y|ies)|guideline|conduct|governance|(^|[^a-z])ai([^a-z]|$)|agent|pull.?request/i;
+const DOC_FILE = /\.(md|markdown|rst|txt)$/i;
+/** Enough for any real repo's policy docs; bounds the work on huge doc trees. */
+const MAX_POLICY_FILES = 40;
+
+const readText = (root: string, rel: string): string | undefined => {
+  try {
+    return readRepoFile(root, rel).toString('utf8');
+  } catch {
+    return undefined; // missing, unsafe (outside the repo) or unreadable
+  }
+};
+
+/**
+ * A README mostly describes the project, so only its rule sections count:
+ * those under a heading like "Contributing", "AI policy" or "Code of conduct".
+ * Other lines are blanked, so line numbers still point at the file.
+ */
+function ruleSections(text: string): string {
+  const lines = text.split(/\r?\n/);
+  let keep = false;
+  let level = 0;
+  return lines
+    .map((line, i) => {
+      const md = /^(#{1,6})\s+(.*)$/.exec(line);
+      const rstUnder =
+        /^([=\-~^"'`#*+])\1{2,}\s*$/.test(lines[i + 1] ?? '') && line.trim();
+      if (md) {
+        const depth = md[1]!.length;
+        if (POLICY_NAME.test(md[2]!)) [keep, level] = [true, depth];
+        else if (!keep || depth <= level) keep = false;
+      } else if (rstUnder) keep = POLICY_NAME.test(line);
+      return keep ? line : '';
+    })
+    .join('\n');
+}
+
+/** Local doc links in Markdown (`[text](path)`) and reST (`` `text <path>`_ ``). */
+function docLinks(text: string): { text: string; path: string }[] {
+  const out: { text: string; path: string }[] = [];
+  for (const m of text.matchAll(/\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g))
+    out.push({ text: m[1] ?? '', path: m[2] ?? '' });
+  for (const m of text.matchAll(/`([^`<]*)<([^>`]+)>`_/g))
+    out.push({ text: m[1] ?? '', path: m[2] ?? '' });
+  return out;
+}
+
+/**
+ * Every file whose rules Tracetoon reads, with its text: the known policy
+ * files, the README, policy-named docs in .github/ and docs/, and the
+ * policy-looking docs those link to (one hop). Only files inside the repo.
+ */
+export function policyFiles(root: string): { rel: string; text: string }[] {
+  const out: { rel: string; text: string }[] = [];
+  const seen = new Set<string>();
+  const add = (rel: string) => {
+    const key = rel.toLowerCase();
+    if (seen.has(key) || out.length >= MAX_POLICY_FILES || !repoPath(rel)) return;
+    seen.add(key);
+    const text = readText(root, rel);
+    if (text !== undefined)
+      out.push({
+        rel,
+        text: /^readme\./i.test(posix.basename(rel)) ? ruleSections(text) : text,
+      });
+  };
+  for (const rel of [...POLICY_FILES, ...OTHER_POLICY_FILES]) add(rel);
+  for (const dir of POLICY_DIRS) {
+    let names: string[] = [];
+    try {
+      names = readdirSync(join(root, dir));
+    } catch {
+      continue;
+    }
+    for (const name of names.sort())
+      if (DOC_FILE.test(name) && POLICY_NAME.test(name)) add(`${dir}/${name}`);
+  }
+  for (const { rel, text } of [...out]) {
+    for (const link of docLinks(text)) {
+      const path = link.path.split('#')[0] ?? '';
+      if (!path || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('/')) continue;
+      if (!DOC_FILE.test(path)) continue;
+      if (!POLICY_NAME.test(path) && !POLICY_NAME.test(link.text)) continue;
+      const target = posix.normalize(posix.join(posix.dirname(rel), path));
+      add(target);
+    }
+  }
+  return out;
+}
+
 const AI_TERMS =
   /\b(AI|A\.I\.|LLM|LLMs|large language model|generative|copilot|chatgpt|claude|gpt|machine[- ]generated|coding assistants?|AI[- ]assisted|agents?)\b/i;
 const PROHIBIT =
@@ -79,10 +176,29 @@ const MEDIA_PROHIBIT = new RegExp(
 );
 const MEDIA_ANY =
   /\b(images?|graphics?|art(work)?|illustrations?|infographics?|comics?|cartoons?|diagrams?|gifs?|memes?|drawings?|pictures?|screenshots?|emoji art|visuals?)\b/i;
+/**
+ * A repo asking for pictures in PRs ("comics wanted", "we strongly encourage
+ * ... comic included"). Read with the same PR-context gate as a ban; a ban
+ * always wins over a request.
+ */
+const MEDIA_REQUEST =
+  /\b(encourag\w*|welcome[ds]?|wanted|appreciated|love to see|we('d| would) (love|like)|please (include|add|attach)|should (include|add|have)|(comics?|images?|pictures?|illustrations?) included)\b/i;
+/** Markup that isn't rule text: HTML tags (and their alt text), emphasis, blockquote marks. */
+const prose = (line: string) =>
+  line
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/^\s*>\s?/, '')
+    .trim();
 // Rules about issues (screenshots of a bug, say) say nothing about PRs.
 const ABOUT_PRS = /\b(contribut\w*|pull requests?|PR descriptions?)\b/i;
 const PR_TEXT = /\b(pull requests?|PRs?\b|commit messages?)/i;
 const NO_PR = /\bnever (create|open|submit) (an? )?(issue|pr|pull request)/i;
+/**
+ * Agent instructions are markdown, so the rule is usually emphasised and often
+ * punctuated: `**Never**: open a PR`. Drop emphasis marks and the punctuation
+ * between words before matching, so the wording is what decides, not the styling.
+ */
+const plain = (text: string) => text.replace(/[*_`~]/g, '').replace(/\s*[:;,-]\s+/g, ' ');
 
 export type PolicyVerdict = 'prohibited' | 'disclosure-required' | 'mentioned' | 'none';
 
@@ -96,14 +212,17 @@ export interface AiPolicy {
    *  - text: AI-written text prohibited, author-written text recommended
    *    (e.g. LLVM "strongly recommends"; not a requirement), or nothing special;
    *  - media: images in PRs prohibited, AI-generated or not (e.g. Ghostty), which
-   *    turns the comic off unless the comic setting is `always`;
+   *    turns the comic off unless the comic setting is `always`; or requested
+   *    ("comics wanted"), which Tracetoon cites when a comic is expected;
    *  - disclosure: the form the repo asks for, if it names one;
    *  - noPullRequests: an instruction to agents never to open PRs.
    */
   text?: 'prohibited' | 'author-written-recommended' | 'none';
-  media?: 'prohibited' | 'none';
+  media?: 'prohibited' | 'requested' | 'none';
   disclosure?: 'assisted-by' | 'tool-and-use' | 'unspecified';
   noPullRequests?: boolean;
+  /** Where the repo asks for comics or images in PRs, when `media` is requested. */
+  mediaRequest?: { file: string; line: number; text: string };
   /** The first line that forbids images in PRs, when `media` is prohibited. */
   mediaSource?: { file: string; line: number; text: string };
   /** Instructions about PR text or commit messages from agent files (AGENTS.md…). */
@@ -121,20 +240,19 @@ export function detectAiPolicy(root: string): AiPolicy {
   let disclose = false;
   let mediaBan = false;
   let mediaSource: AiPolicy['mediaSource'];
+  let mediaRequest: AiPolicy['mediaRequest'];
   let authorWritten = false;
   let assistedBy = false;
   let toolAndUse = false;
   let noPullRequests = false;
-  for (const rel of POLICY_FILES) {
-    const p = join(root, rel);
-    if (!existsSync(p)) continue;
+  for (const { rel, text: content } of policyFiles(root)) {
     const agentFile = /AGENTS\.md|CLAUDE\.md|copilot-instructions/i.test(rel);
-    const lines = readFileSync(p, 'utf8').split(/\r?\n/);
+    const lines = content.split(/\r?\n/);
     lines.forEach((text, i) => {
-      const t = text.trim();
+      const t = prose(text);
       if (agentFile && PR_TEXT.test(t) && t.length > 10)
         prInstructions.push({ file: rel, line: i + 1, text: t.slice(0, 300) });
-      if (NO_PR.test(t)) noPullRequests = true;
+      if (NO_PR.test(plain(t))) noPullRequests = true;
       const here = { file: rel, line: i + 1, text: t.slice(0, 300) };
       // Pictures banned from PRs or contributions, whether or not AI is named.
       // Rules about code assets ("no binary images in the repo") don't count.
@@ -152,7 +270,19 @@ export function detectAiPolicy(root: string): AiPolicy {
         if (!excerpts.some((e) => e.file === rel && e.line === i + 1))
           excerpts.push(here);
       }
-      if (!AI_TERMS.test(t) && !(agentFile && NO_PR.test(t))) return;
+      // A request often wraps onto the next line ("…, so it ships with /
+      // receipts and a comic."), so read it with the rest of its sentence.
+      const next = prose(lines[i + 1] ?? '');
+      const window = next && !/^(#|[-*+]\s|\d+\.\s|\|)/.test(next) ? `${t} ${next}` : t;
+      if (
+        !mediaRequest &&
+        MEDIA_REQUEST.test(t) &&
+        MEDIA_ANY.test(window) &&
+        (PR_TEXT.test(window) || ABOUT_PRS.test(window)) &&
+        !(/\bissues?\b/i.test(window) && !PR_TEXT.test(window))
+      )
+        mediaRequest = here;
+      if (!AI_TERMS.test(t) && !(agentFile && NO_PR.test(plain(t)))) return;
       if (!excerpts.some((e) => e.file === rel && e.line === i + 1)) excerpts.push(here);
       const bans = PROHIBIT.test(t);
       if (bans && MEDIA.test(t)) {
@@ -182,8 +312,9 @@ export function detectAiPolicy(root: string): AiPolicy {
       : authorWritten
         ? 'author-written-recommended'
         : 'none',
-    media: mediaBan ? 'prohibited' : 'none',
+    media: mediaBan ? 'prohibited' : mediaRequest ? 'requested' : 'none',
     ...(mediaSource ? { mediaSource } : {}),
+    ...(!mediaBan && mediaRequest ? { mediaRequest } : {}),
     disclosure: assistedBy
       ? 'assisted-by'
       : toolAndUse

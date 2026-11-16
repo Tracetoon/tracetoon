@@ -49,6 +49,8 @@ export const integration: Integration = {
   id: 'factory',
   label: 'Factory Droid',
   status: 'supported',
+  supportTier: 'community',
+  variants: 'Droid CLI',
   traces: [factoryAdapter],
   hook: {
     file(h, env) {

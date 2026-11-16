@@ -20,6 +20,14 @@ import { codexHookHash, codexTrust } from '../src/integrations/codex/trust.ts';
 import { decide, DENY_REASON } from '../src/hook/prHook.ts';
 import { hookTargets, installHooks, uninstallHooks } from '../src/hook/install.ts';
 import { tempDir } from './helpers.ts';
+import { WORKFLOWS } from '../src/integrations/workflows.ts';
+import {
+  readVerification,
+  summarize,
+  versionStatus,
+  type VerificationRun,
+} from '../scripts/compat/records.ts';
+import upstream from '../compat/upstream.json';
 
 const SRC = resolve(import.meta.dir, '../src');
 const HOSTS = resolve(SRC, 'integrations');
@@ -101,6 +109,62 @@ const PAYLOADS: Record<string, (command: string, cwd: string) => unknown> = {
     sessionID: 'ses_1',
     tool: 'bash',
     callID: 'call_1',
+    args: { command },
+    directory: cwd,
+  }),
+  // Recorded from Cline CLI 3.0.74 (the shell tool takes a list of commands).
+  cline: (command, cwd) => ({
+    clineVersion: '',
+    timestamp: '2026-11-14T01:20:39.174Z',
+    taskId: 'conv_1794619235211_eapht52',
+    sessionContext: { rootSessionId: '1794619234824_5dvqy' },
+    workspaceRoots: [cwd],
+    userId: 'unknown',
+    agent_id: 'agent_1',
+    parent_agent_id: null,
+    hookName: 'tool_call',
+    iteration: 1,
+    tool_call: { id: 'call_1', name: 'run_commands', input: { commands: [command] } },
+  }),
+  // Recorded from Junie 26.11.1 on Windows (cwd is Junie's folder; the repo is project_path).
+  junie: (command, cwd) => ({
+    hook_event_name: 'PreToolUse',
+    session_id: 'session-261113-174344-4lpz',
+    cwd: 'C:\Users\me\.junie',
+    project_path: cwd,
+    tool_name: 'powershell',
+    tool_input: { command, timeout: 30 },
+  }),
+  // Recorded from Goose 1.58.1 (the shell tool is `shell`).
+  goose: (command, cwd) => ({
+    event: 'PreToolUse',
+    session_id: '20261114_3',
+    tool_name: 'shell',
+    tool_input: { command },
+    working_dir: cwd,
+  }),
+  // Qwen Code speaks Claude Code's protocol (shell tool: run_shell_command).
+  qwen: (command, cwd) => ({
+    session_id: 'be6aeb9e-ee90-49ee-926c-d5d2e27f7809',
+    hook_event_name: 'PreToolUse',
+    cwd,
+    tool_name: 'run_shell_command',
+    tool_input: { command, is_background: false },
+  }),
+  // Crush sends Claude-style payloads (shell tool: bash).
+  crush: (command, cwd) => ({
+    hook_event_name: 'PreToolUse',
+    session_id: '923d3c49-2fe3-4fee-9c30-51890c104ee3',
+    cwd,
+    tool_name: 'bash',
+    tool_input: { command, working_dir: cwd },
+  }),
+  // What Tracetoon's Amp plugin sends (the OpenCode plugin shape, host amp).
+  amp: (command, cwd) => ({
+    source: 'tracetoon-plugin',
+    host: 'amp',
+    sessionID: 'T-01a1d813',
+    tool: 'Bash',
     args: { command },
     directory: cwd,
   }),
@@ -193,11 +257,15 @@ describe('hook contract', () => {
     const hook = i.hook!;
     test(`${i.label}: install is idempotent and uninstall restores the config`, () => {
       if (hook.text) {
-        // A file Tracetoon owns: rendering is stable and names the pre-pr command.
+        // Files Tracetoon owns: rendering is stable and names the pre-pr command.
         const text = hook.text.render(commands);
         expect(hook.text.render(commands)).toBe(text);
         expect(hook.text.command(text)).toBe(commands.prePr);
         expect(hook.text.command('// another plugin')).toBeUndefined();
+        // Each extra file must be recognized as Tracetoon's, so install and
+        // uninstall never mistake it for someone else's.
+        for (const render of Object.values(hook.text.siblings ?? {}))
+          expect(hook.text.command(render(commands))).toBeTruthy();
         return;
       }
       const once = hook.apply(foreign, commands);
@@ -453,5 +521,129 @@ describe('Codex hook trust', () => {
     expect(codexTrust('/h/.codex/hooks.json', data, undefined, 'linux')).toEqual([
       'untrusted',
     ]);
+  });
+});
+
+describe('support tiers', () => {
+  test('the Recommended agents are exactly the ones the support policy names', () => {
+    const recommended = INTEGRATIONS.filter((i) => i.supportTier === 'recommended').map(
+      (i) => i.id,
+    );
+    expect(recommended.sort()).toEqual([
+      'claude',
+      'codex',
+      'copilot',
+      'cursor',
+      'opencode',
+    ]);
+  });
+
+  test('a legacy host is never Recommended', () => {
+    for (const i of INTEGRATIONS.filter((i) => i.status === 'legacy'))
+      expect(i.supportTier).toBe('community');
+  });
+
+  test('every Recommended agent has a verification route', () => {
+    const targets = Object.values(upstream.targets).map((t) => t.integration);
+    for (const i of INTEGRATIONS.filter((i) => i.supportTier === 'recommended'))
+      expect(targets).toContain(i.id);
+  });
+
+  test('every IDE workflow names an integration, and its target verifies that integration', () => {
+    const targets = upstream.targets as Record<
+      string,
+      { integration: string; os: string[] }
+    >;
+    for (const w of WORKFLOWS) {
+      expect(INTEGRATIONS.some((i) => i.id === w.agentIntegrationId)).toBe(true);
+      const target = targets[w.verificationTarget];
+      if (target) expect(target.integration).toBe(w.agentIntegrationId);
+    }
+  });
+
+  test('the support page calls nothing verified that has no passing run', () => {
+    const data = readVerification();
+    const support = readFileSync(resolve(SRC, '../docs/agents/support.md'), 'utf8');
+    for (const [key, t] of Object.entries(
+      upstream.targets as Record<string, { os: string[] }>,
+    ))
+      if (!summarize(data, key, t.os).lastVerified)
+        for (const line of support.split('\n').filter((l) => l.includes('✅ passed')))
+          expect(line).not.toContain(key);
+    if (!data.runs.length) expect(support).not.toContain('✅ passed');
+  });
+});
+
+describe('verification records', () => {
+  const run = (
+    os: string,
+    status: 'passed' | 'failed' | 'blocked',
+    version: string,
+    at: string,
+  ): VerificationRun => ({
+    target: 'claude-cli',
+    integration: 'claude',
+    surface: 'cli',
+    os,
+    upstreamVersion: version,
+    status,
+    evidence: 'fake-llm',
+    checks: {},
+    verifiedAt: at,
+    workflowUrl: `https://example.test/${version}/${os}`,
+    tracetoonRevision: 'abc',
+  });
+  const OS = ['ubuntu-latest', 'windows-latest'];
+
+  test('a version is verified only when every required platform passed', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {},
+      runs: [run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z')],
+    };
+    expect(summarize(data, 'claude-cli', OS).lastVerified).toBeUndefined();
+    data.runs.push(run('windows-latest', 'passed', '1.0.0', '2026-11-01T00:05:00Z'));
+    expect(summarize(data, 'claude-cli', OS).lastVerified?.version).toBe('1.0.0');
+  });
+
+  test('a newer release that fails keeps the older verified one visible', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {},
+      runs: [
+        run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z'),
+        run('windows-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z'),
+        run('ubuntu-latest', 'failed', '1.1.0', '2026-11-02T00:00:00Z'),
+        run('windows-latest', 'passed', '1.1.0', '2026-11-02T00:00:00Z'),
+      ],
+    };
+    const s = summarize(data, 'claude-cli', OS);
+    expect(s.lastVerified?.version).toBe('1.0.0');
+    expect(s.latest).toEqual({ version: '1.1.0', status: 'failed' });
+  });
+
+  test('a detected release with no run is pending; a blocked run never counts as passed', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {
+        'claude-cli': { upstreamVersion: '1.2.0', detectedAt: '2026-11-03T00:00:00Z' },
+      },
+      runs: [
+        run('ubuntu-latest', 'passed', '1.1.0', '2026-11-02T00:00:00Z'),
+        run('windows-latest', 'blocked', '1.1.0', '2026-11-02T00:00:00Z'),
+      ],
+    };
+    const s = summarize(data, 'claude-cli', OS);
+    expect(s.lastVerified).toBeUndefined();
+    expect(s.latest).toEqual({ version: '1.2.0', status: 'pending' });
+    expect(versionStatus(data.runs, '1.1.0', OS)).toBe('blocked');
+  });
+
+  test('a rerun on the same platform replaces the earlier attempt', () => {
+    const runs = [
+      run('ubuntu-latest', 'blocked', '1.0.0', '2026-11-01T00:00:00Z'),
+      run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T01:00:00Z'),
+    ];
+    expect(versionStatus(runs, '1.0.0', ['ubuntu-latest'])).toBe('passed');
   });
 });

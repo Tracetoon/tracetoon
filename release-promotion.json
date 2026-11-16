@@ -1,28 +1,36 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.27",
-  "buildId": "347388fc5a55fad98181ac186ecb243b5ced5e56139c4b300ad4eb1283da405c",
+  "version": "1.0.0-rc.31",
+  "buildId": "d1e2b5ed5b78f2590db69902f86f6ba99e0cb22cd75d7e73c1e789731b619a94",
   "artifact": {
-    "runId": 43522840960,
-    "id": 14084177729,
-    "name": "tracetoon-candidate-bb3ae414b7d3ec6af04ac293ca8bb305f7c30347-attempt-1",
-    "digest": "sha256:e22cfd96329b695747274b83aeb08b33b8214b455e3c9eb69a9e30379fa34fcc"
+    "runId": 43814093528,
+    "id": 14201519126,
+    "name": "tracetoon-candidate-1ea4f530877e0c690a2ea74e500e9cbaa2832b14-attempt-1",
+    "digest": "sha256:066f5f88464adbce0f1897f329838a0f9804fe8e897211442ebe7ffe7d33b8fb"
   },
   "expected": {
-    "manifestSha256": "988d03a09d1a0aa90bac28892fe0c2dec5abd7d8036ed85815e116e862665a44",
-    "checksumsSha256": "d3abae3e177f32b201ce42b34a6b2801a3b00f9ed9cdfd9b0e6042eb0d2548f0",
-    "windowsSha256": "84111a821be19f72cd29fc0a1c74e98976dca301bf396cb6e7f73c7cc54ff582",
-    "bundleSha256": "d1809835bfc01f5635791d9505ba8881e55c6ffe41c1b1ee6082175dda4d5d8d"
+    "manifestSha256": "c3f1252868a4d59179e891ac71eb0b2e6f262dfbb5c37211e6a7f0144ce91ade",
+    "checksumsSha256": "2787b606121ff353fd4653233e6e2b53dd1b85f2a9d72c357bd12962af55b551",
+    "windowsSha256": "d1fa32d3e08f571e66fcbf7421aaca2e1a7c4e711bc6e84cd743e2d081cf819c",
+    "bundleSha256": "25296f61a114ed70efb5a158fc0fbba25e92c02c6d99bce9c19989c2c6ec1783"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-13T23:09:14.000Z",
-    "reason": "The user explicitly requested the rc.27 release with the Windows update fix and merged its PRs. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-16T06:20:50.000Z",
+    "reason": "The user asked to merge the Cline rule fix (#122) and release it, so that Cline in the VS Code and JetBrains extensions uses Tracetoon instead of retrying a blocked PR command. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
-    "calibration": { "status": "not-run" },
-    "admission": { "status": "not-run" },
-    "development": { "status": "not-run" },
-    "heldout": { "status": "not-run" }
+    "calibration": {
+      "status": "not-run"
+    },
+    "admission": {
+      "status": "not-run"
+    },
+    "development": {
+      "status": "not-run"
+    },
+    "heldout": {
+      "status": "not-run"
+    }
   }
 }
