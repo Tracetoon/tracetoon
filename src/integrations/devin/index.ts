@@ -16,6 +16,7 @@ export const integration: Integration = {
   id: 'devin',
   label: 'Devin',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI and Devin Desktop, formerly Windsurf',
   limits: [
     'Devin Desktop runs the Devin CLI engine and keeps its sessions in the same database, so it is read the same way; it has not yet been tested end to end.',

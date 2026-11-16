@@ -84,6 +84,7 @@ export const integration: Integration = {
   id: 'cursor',
   label: 'Cursor',
   status: 'supported',
+  supportTier: 'recommended',
   variants: 'IDE and CLI',
   limits: [
     "Cursor's logs don't record exit codes, so the PR can't confirm that tests or builds passed.",

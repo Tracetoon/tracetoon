@@ -20,6 +20,7 @@ export const integration: Integration = {
   id: 'amp',
   label: 'Amp',
   status: 'partial',
+  supportTier: 'community',
   variants: 'CLI',
   limits: [
     "Amp keeps its threads on Amp's servers, so the PR is written from the diff and git history, not session logs.",
