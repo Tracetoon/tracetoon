@@ -814,7 +814,8 @@ async function main(): Promise<number> {
     evidence: recipe.evidence,
     checks,
     ...(failureCategory ? { failureCategory } : {}),
-    ...(detail ? { detail: detail.slice(0, 1000) } : {}),
+    // The detail can quote the agent's output; it is uploaded and published too.
+    ...(detail ? { detail: scrubEmails(detail).slice(0, 1000) } : {}),
     verifiedAt: new Date().toISOString(),
     workflowUrl: process.env.GITHUB_RUN_ID
       ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
