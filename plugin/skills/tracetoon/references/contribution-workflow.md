@@ -283,7 +283,7 @@ Include `comicReview` in review.json for new comic packets:
     },
     "relevance": {
       "state": "satisfied",
-      "reason": "The inferred change matches the PR; labels name the real parts",
+      "reason": "The inferred change matches the PR; the real names appear in the scene",
       "panels": [1]
     }
   },
@@ -295,11 +295,18 @@ States are `satisfied`, `needs-revision`, `uncertain`, or `inapplicable` (the la
 only for continuity, with a reason such as a static scene). Panel references are
 one-based observed panels. Correction is optional; target is `premise`, `script`,
 `art`, or `lettering`. Judge clarity, continuity, factual fidelity, payoff,
-readability and relevance separately. A readable illustration or matching
+readability and relevance separately. Treat these as `needs-revision`:
+pointer tags, arrows or callout labels annotating the drawing (readability;
+words belong in the scene or dialogue); characters speaking in code (payoff);
+props or characters that change between panels (continuity); a key clue too
+small to see, or a reaction that contradicts the event (clarity); a 3D render,
+clay or picture-book look instead of a drawn comic (readability); no actual
+punchline (payoff). A readable illustration or matching
 transcript does not establish a joke, and a good joke that never points at the
 change is not relevant. Relevance compares `inferredChange` with the PR; when a
-reader could not name the change, correct the `script` (labels, nearer
-metaphor) or `premise`, not the art. Reports written before relevance review
+reader could not name the change, correct the `script` (put the real names on
+something in the scene or in dialogue, or use a nearer metaphor) or `premise`,
+not the art. Reports written before relevance review
 stay readable but count as incomplete. Preserve useful inference and fictional exaggeration without
 inventing actual results. Route defects to the appropriate correction, not an
 automatic style reroll. Findings remain advisory and appear in `render` output;

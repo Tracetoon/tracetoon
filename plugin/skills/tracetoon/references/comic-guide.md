@@ -1,198 +1,227 @@
 # Making the comic
 
-Every PR gets one comic image, shown right under the description. Its first
-reader is the reviewer. The goal: after reading the comic they know **what
-changed**, remember it, and smile. Someone who has never seen the repo should
-still get the joke, because labels name the real parts. Fun, true to the digest
-(no invented features, no fake results), and about *this* change.
+Every PR gets one comic, shown right under the description. Its first reader
+is the reviewer. The goal: they laugh, and afterwards they know **what
+changed**. It should feel like a real comic someone would share: drawn and
+lettered like a comic, with characters who talk, a setup and a punchline.
+True to the digest (no invented features, no fake results), and about *this*
+change.
 
-A comic can be well drawn and funny yet explain nothing. A waiter serving a
-photo of soup is a good gag, but no reader connects it to "the PR link in the
-terminal looked clickable but didn't open". Name the real thing and the same
-gag works: label the photo `PR #34`.
+## 1. Find the joke first
 
-## 1. Anchor the change, then find the joke
-
-Start with the change itself: one sentence a reviewer would agree with, and the
-1–4 real names the PR uses for it (a command, flag, file, error, setting or
-concept: `publish --draft`, "skipped tests", `comic.json`). Write them in the
-script's `anchor` with a `mapping` from each drawn element to the technical
-thing it stands for. Then find the supported event, decision, or changed
-behavior from the digest that makes it funny. Keep the evidence reference in
-local comic-design.json.
-
-**The PR test.** Cover the title and description. Could a developer name the
-change from the comic alone? Apply it to each concept before judging humor or
-novelty. If the answer is no, add labels, move the metaphor closer to the
-system, or pick another concept.
-
-**Metaphor distance.** Choose the nearest metaphor that still gives a joke, and
-justify going further:
-1. The system's own parts as characters or objects: the hook, the leak
-   scanner, a CI job, a cache entry, two requests racing, with their real names.
-2. A developer-world scene: a terminal, a review thread, a CI page, a stand-up.
-3. An everyday analogy (a restaurant, a bakery, a classroom). Allowed when it
-   is the strongest joke, but only with labels on the elements that carry the
-   mapping, the way xkcd's "Dependency" labels a block tower as all modern
-   digital infrastructure.
-
-**Labels.** Use `"kind": "label"` callouts (up to 4 words, with `points`
-naming the drawn element) for the 1–3 elements that carry the mapping. Use the
-PR's real names, not paraphrases. Keep the punchline in the picture or dialogue;
-a label names things, it doesn't explain the joke. Don't label everything.
-`tracetoon comic check` requires at least one anchor term to be lettered in the
-art and warns when a mapped element has no label or a term isn't in the PR.
-Fictional exaggeration inside the metaphor is welcome; it must not invent real
-test outcomes, measured delays, deployments, or decisions by real people.
-
-For each of the three short concepts, state the reader's expectation, the
-specific comic turn (reversal, consequence, incongruity, escalation, wordplay,
-or another mechanism), and the visible clues that make it understandable.
-"The bug is fixed" and "this explains the feature" are not themselves jokes.
-Name one likely misreading or weak point. Choose the strongest premise before
-styling it; novelty is a secondary consideration, not a reason to keep a weaker
-story. A recurring layout is acceptable when it serves the best joke.
-
-Before drawing, reconcile the synopsis, panel actions, dialogue and alt text.
-List the important props/identities that stay consistent, what actually changes,
-and what the reader can reasonably infer. A last remaining seat cannot be
-surrounded by unexplained available seats; preservation needs recognizable
-contents; waiting alone cannot establish a later retry or successful response.
-Put necessary meaning in the actual scenes, not only in metadata. Do not ask
-the image model to rescue an underspecified story.
-
-This is not a requirement to show every action or to end with success. Static
-contradictions, verbal jokes, inferred transitions, and unresolved technical
-outcomes can work. The reader needs enough cues to understand this particular
-joke without reading the PR. A caption may deliver a punchline; check whether it
-adds a turn rather than merely announcing the technical lesson.
-
-Read the digest for the moment that's funny *because it really happened*:
+Read the PR description you just wrote and the digest. Look for the moment
+that is funny *because it really happened*:
 - a twist (`milestones`: "tests went from failing to passing", "edits did not
   survive");
 - a decision the user made, or a plan that changed;
 - a number (7 images for 4 prompts, 57/57 checks, 9 minutes);
 - the user's own pushback (paraphrased; never quote private details);
-- the gap between what was asked and what it took.
+- the gap between what was asked and what it took;
+- a tool, hook or check behaving like a person: stubborn, greedy, smug, scared.
 
-Then shape it:
-- **One joke per image.** Set it up, then pay it off at the end (the last panel,
-  or the bottom of a poster).
-- **A title only when it helps.** Keep a metadata title, but choose no visible
-  title, an integrated title, or a separate heading. A visible title has at most
-  6 words; it need not sit at the top or dominate the art.
-- **Specific beats generic.** "The panels came back in the wrong order" is funny;
-  "tests pass" is not.
-- **Make it relatable**: every developer knows flaky tests, a fix that needs a fix,
-  or a "quick change" that wasn't. No in-jokes that need the *session history*;
-  labels supply the PR context, so the comic can be about this exact change.
-- **Punch at the problem, never at people.** The bug, the build, or the agent's
-  own blunder are fair game. The user, other contributors and real
-  companies are not.
-- **Fewer words**: the whole page holds at most 50 words, headline included. If
-  it doesn't read on a phone, cut.
+Write the **punchline first**: the last balloon, caption or sign the reader
+sees. Then work backwards to the setup that makes it land.
 
-## 2. Pick a format
+Shapes that work for developer comics (tools, not quotas):
+- **Escalation**: each panel raises the stakes of something small.
+- **Rule of three**: two normal beats, the third breaks the pattern.
+- **Deadpan last panel**: chaos, then one calm line that undercuts it.
+- **Literalism**: a tool takes an instruction exactly at its word.
+- **Misdirection and reveal**: the reader assumes one thing; the last panel
+  shows the real reason.
+- **"It was one line"**: a huge hunt ends at something tiny.
+- **The confident one who is wrong**: someone, or something, sure of itself
+  until the payoff.
+- **Personified parts**: the hook, the linter, the cache or the CI job as
+  characters with an attitude, called by their real names.
 
-Before writing the final script, compare **three genuinely different concepts**
-in local `comic-design.json`: the joke, necessary story beats, composition,
-cast and visual treatment, plus the chosen concept and why it wins. Use
-`context.comic.recentComics` and [comic-direction.md](comic-direction.md).
-These are short text concepts, not three image-generation requests.
+"The bug is fixed" and "this explains the feature" are not jokes. Aim for a
+laugh, not a polite smile:
+- **No exposition panels.** Every panel either gets a laugh or raises the
+  tension; a panel that only states the rules or diagrams the mechanism gets
+  cut or turned into a gag. The comic doesn't have to explain how the fix
+  works; the PR description does that.
+- **Don't repeat a beat.** Two near-identical setup panels slow the build;
+  make the second one escalate.
+- **Surprise in the last panel.** The punchline should turn the situation, not
+  restate it. Never end on a caption that explains the joke or the lesson.
+- **Exaggerate.** Push reactions, stakes and absurdity further than feels
+  safe; a mild version reads as an illustrated explanation.
 
-Choose the fewest panels that tell this joke. Diff length is not panel count:
-a large refactor can have a two-panel payoff; a small race fix can need five
-beats. Do not pad or compress the story just to rotate a quota.
+If a developer would not laugh, keep looking.
 
-Pick what makes the best image for this PR, not always the same one:
+**Characters talk.** Dialogue carries most good comics: people and personified
+parts say short, natural lines with an attitude. Nobody speaks in code, flags
+or log lines; a character dealing with "exit status 2" says it the way a person
+would ("It only listens when I slam the gate").
+
+**Bake the PR into the world, not onto it.** A reviewer recognizes the change
+from things that naturally carry words in a scene: a terminal or CI screen, a
+sticky note, a box stamp, a door sign, a mug, a T-shirt, a newspaper headline,
+or a character's line. Use the PR's real names there (`publish --draft`,
+`comic.json`, "skipped tests"). **Never use pointer tags, arrows or callout
+labels** that annotate the drawing from outside; they make a comic look like a
+diagram. If an element only makes sense with a tag on it, choose another scene.
+
+## 2. Three concepts, then pick one
+
+Record three genuinely different concepts in local `comic-design.json`: the
+punchline, the joke shape, each character's attitude, the beats it needs,
+where the PR's real names appear in the scene or dialogue, the panel layout,
+and one likely misreading. These are short text concepts, not image requests.
+Also write the script's `anchor`: the change in one sentence, the 1–4 real
+names the PR uses, and which drawn element stands for which technical thing.
+Keep the evidence reference in `comic-design.json`.
+
+Pick in this order:
+1. **It makes sense on a cold read.** Someone who sees only the image can say
+   what happens in each panel and why the ending is funny.
+2. **It is genuinely funny** to a developer.
+3. **It is recognizably this PR**, through words in the scene or dialogue.
+4. **It looks good.**
+
+Before drawing, check continuity:
+- the same characters and props in every panel;
+- the clue the joke depends on is drawn big enough to see at phone size;
+- reactions match what happens (nobody cheers at a failure unless that is the
+  joke);
+- synopsis, scenes, dialogue and alt text tell the same story.
+
+Do not ask the image model to rescue an underspecified story.
+
+**Punch at the problem, never at people.** The bug, the build, or the agent's
+own blunder are fair game. The user, other contributors and real companies are
+not. Fictional exaggeration is welcome; never invent real test outcomes,
+measured delays, deployments, or decisions by real people.
+
+## 3. Panels and layout follow the beats
+
+Use the beats the joke needs. Most jokes are setup → build → turn →
+punchline, three or four panels. Use two panels only when the contrast itself
+is the punchline; before/after is one option, not the default. A single panel
+suits one strong visual gag with a line of dialogue or a caption.
+
+Vary the page. Panels need not be equal boxes:
+- a wide establishing panel over quick beats;
+- a tall vertical scroll with a pause before the payoff;
+- a manga page with slanted panels leading into one big reaction;
+- a hero panel with insets;
+- a borderless moment.
+
+Give the payoff the most space when it is visual.
 
 | Format (`format`) | Use it when | Panels |
 |---|---|---|
-| `strip` | one gag with a punchline | 2–4 |
+| `strip` | a joke told in beats: setup, build, punchline | 3–4 |
+| `tiered-strip` | establish a scene, then quick beats to the punchline | 3–5 |
+| `manga-page` | escalation or an overreaction into one big reaction panel | 3–6 |
+| `webtoon` | a slow reveal or a pause before the punchline | 3–5 |
 | `4koma` | setup, development, twist, resolution | 4 |
-| `before-after` | the change is easy to see (broken → fixed, slow → fast) | 2–3 |
+| `newspaper-sunday` | an everyday, relatable story in a few beats | 4–6 |
 | `splash` | one big moment: a launch, a rescue, a victory | 1–2 |
 | `mission-briefing` | a tricky multi-part fix: objectives, obstacles, outcome | 3–5 |
 | `movie-poster` | a big feature or dramatic rescue | 1 |
 | `manual-page` | a new workflow or setup, as numbered steps | 3–6 |
-| `newspaper-sunday` | an everyday, relatable story in a few beats | 4–6 |
 | `trading-card` | a new capability or tool, with stats and powers | 1 |
+| `before-after` | only when the contrast itself is the punchline | 2–3 |
 | `custom` | none fits; supply composition frames or describe `layout` | 1–6 |
 
-New scripts use `composition` for actual page geometry. Its families are
-`single`, `comparison`, `sequence`, `vertical`, `asymmetric`, `hero-inset`,
-`diagonal` and `custom`. Presets create frames for the panel count; custom
-geometry supplies frames explicitly. `layout` can refine the intent in words,
-but must not contradict the geometry. The prompt and overlay renderer share it.
+New scripts use `composition` for the actual page geometry. Its families are
+`single`, `comparison`, `sequence`, `vertical`, `asymmetric`, `tiered`,
+`hero-inset`, `diagonal` and `custom`. Presets create frames for the panel
+count; custom geometry supplies frames explicitly. `layout` can refine the
+intent in words, but must not contradict the geometry.
 
-## 3. Pick or invent a style
+A visible title is optional. Choose no visible title, an integrated title, or a
+separate heading; a visible title has at most 6 words. The page holds at most
+80 words, and most good comics use 25–60. If it doesn't read on a phone, cut.
 
-Any art style works. Choose one that suits this PR's story (a tense debug might
-be film noir, a big launch a pulp sci-fi poster, a gentle cleanup a watercolor
-storybook), and make it different from the repo's recent comics, which
-`tracetoon context` lists. Set `"style"` to an idea from [styles.md](styles.md)
-by id, or describe your own in a few words ("1970s Saturday-morning cel
-animation", "linocut print", "museum diorama"). Vary the format and `palette`
-too: `bw-accent` (black and white with one accent color, set `accent`, e.g.
-"red"), `duotone`, `limited` or `full-color`. If the repo pins a style
-(`config style`), use it.
+## 4. Style and characters
 
-Set `styleFamily` to `ink`, `flat-color`, `painted`, `print`, `dimensional`,
-`pixel`, `technical` or `custom`. Renaming the same visual treatment does not
-create variety. A pinned style still allows different compositions and casts.
+**Make it look like a comic.** Pick a comic style that suits the joke from
+[styles.md](styles.md) by id, or name a comic tradition in your own words
+("90s alt-weekly strip", "Silver Age romance comic", "gag manga with
+screentone"). Every page should look like a drawn comic: inked line art, comic
+coloring, panel borders, balloons and caption boxes. Do not choose
+illustration media (claymation, dioramas, 3D renders, paper cutouts,
+watercolor picture books) unless the user asked for one. Reusing a style the
+repo used recently is fine when it suits the joke; modern and funny matters
+more than novelty.
 
-## 4. Characters: invent them for this comic
+**The user's request wins.** If the user asked for something specific (a
+style, characters, a theme, "stormtroopers"), put their words in `"request"`
+and honor it, even when it departs from these defaults. Tracetoon then drops
+its own original-characters rule for this comic. Real-person likenesses, logos
+and watermarks stay off. The image provider may still refuse; if it does, tell
+the user instead of quietly substituting something else. If the repo pins a
+style (`config style`), use it.
 
-Every comic has its own characters, made up for this PR's joke: people,
-creatures, objects with faces, or no characters at all. Never reuse characters
-from an earlier comic, and don't turn the agents into recurring mascots. List
-each one once in `"characters"` with a short visual description (what they look
-like, what they wear, their colors), so every panel draws them the same way.
-Panels and dialogue refer to them by `name`. Use fictional people, never
-identifiable real people. Set each character's `kind` to `human`, `creature`
-or `object`; `characters: []` means the story needs no cast.
+Set `styleFamily` to `webcomic`, `american`, `manga`, `euro`, `newspaper`,
+`indie` or `custom`, and `palette` to `full-color`, `bw-accent` (set `accent`,
+e.g. "red"), `duotone` or `limited`.
 
-Choose people for recognizably human situations. Use personified objects,
-animals or aliens when their characteristics make this particular joke work.
-Do not automatically turn a developer into another animal in office clothes.
-Notice recent creature-led casts, but do not ban them or rotate species by quota.
+**Invent the characters for this comic.** People, personified tools,
+creatures, or no characters at all. Never reuse characters from an earlier
+comic or turn the agents into recurring mascots. Give each one a look and an
+attitude, and list each once in `"characters"` with a short visual description
+(what they look like, what they wear, their colors) so every panel draws them
+the same way. Set `kind` to `human`, `creature` or `object`. Use fictional
+people for human situations, never identifiable real people. Use creatures or
+personified objects when their traits make this joke work, not as default
+stand-ins for developers.
 
 ## 5. comic.json
 
 ```json
 {
   "v": 2,
-  "title": "The Last Drip",
-  "synopsis": "One forgotten resource handle causes an outsized leak.",
-  "altText": "An enormous pristine machine nearly sinks in water from one tiny open tap.",
-  "format": "splash",
-  "composition": {
-    "family": "single",
-    "title": { "mode": "none" },
-    "frames": [{ "x": 0, "y": 0, "w": 1, "h": 1, "border": "none" }]
-  },
-  "designReason": "One visual contradiction carries the joke; a cast and heading would distract.",
+  "title": "Why Didn't You Just Say So",
+  "synopsis": "A courier robot ignores every polite note telling it to stop, until a gate slams down with the reason written on it.",
+  "altText": "Three comic panels. A courier robot rolls past a sticky note reading JSON: please stop, then over a big note reading PLEASE. Finally a striped gate drops in front of it with a sign reading stderr: use the tracetoon skill, and the robot says: Oh. Why didn't you just say so?",
+  "format": "strip",
+  "composition": { "family": "sequence", "title": { "mode": "none" } },
+  "designReason": "Rule of three: two polite notes ignored, then the gate; the robot's cheerful obliviousness carries it.",
   "anchor": {
-    "change": "The file reader now closes its handle after each read instead of leaking it.",
-    "terms": ["file handle"],
+    "change": "Tracetoon blocks PR creation in Kiro by exiting with status 2 and writing the reason to stderr, because Kiro ignores JSON answers.",
+    "terms": ["Kiro", "stderr", "gh pr create"],
     "mapping": [
-      { "visual": "the tiny open tap", "technical": "the unclosed file handle" },
-      { "visual": "the sinking machine", "technical": "the server" }
+      { "visual": "the sticky notes", "technical": "JSON deny answers, which Kiro ignores" },
+      { "visual": "the sign on the gate", "technical": "exit status 2 with the reason on stderr" }
     ]
   },
-  "style": "precise technical ink, a single red accent, ample negative space",
-  "styleFamily": "technical",
-  "palette": "bw-accent",
-  "accent": "red",
-  "characters": [],
+  "style": "webcomic",
+  "styleFamily": "webcomic",
+  "characters": [
+    {
+      "name": "Kiro",
+      "kind": "object",
+      "description": "a cheerful one-wheeled courier robot with a round antenna and KIRO painted on its chest, carrying a parcel stamped gh pr create"
+    }
+  ],
   "panels": [
     {
-      "scene": "A huge pristine machine nearly sinks in water from one tiny forgotten tap; one clear callout points to the tap",
-      "characters": [],
+      "scene": "Kiro zooms past a post with a sticky note on it, not even looking",
+      "characters": [{ "name": "Kiro", "position": "center", "expression": "happy" }],
       "dialogue": [
-        { "speaker": "caption", "kind": "label", "points": "the tiny open tap", "text": "file handle" },
-        { "speaker": "caption", "kind": "label", "points": "the sinking machine", "text": "server" },
-        { "speaker": "caption", "text": "Closed after every read now." }
+        { "speaker": "caption", "kind": "sign", "points": "the sticky note", "text": "JSON: please stop" },
+        { "speaker": "Kiro", "text": "Delivery coming through!" }
+      ]
+    },
+    {
+      "scene": "A bigger note is taped across the road; Kiro rolls right over it",
+      "characters": [{ "name": "Kiro", "position": "right", "expression": "excited" }],
+      "dialogue": [
+        { "speaker": "caption", "kind": "sign", "points": "the note on the road", "text": "PLEASE" },
+        { "speaker": "Kiro", "text": "Lovely handwriting!" }
+      ]
+    },
+    {
+      "scene": "A striped gate has slammed down; Kiro, stopped short, reads the sign hanging on it",
+      "characters": [{ "name": "Kiro", "position": "left", "expression": "surprised" }],
+      "dialogue": [
+        { "speaker": "caption", "kind": "sfx", "text": "CLUNK" },
+        { "speaker": "caption", "kind": "sign", "points": "the sign on the gate", "text": "stderr: use the tracetoon skill" },
+        { "speaker": "Kiro", "text": "Oh. Why didn't you just say so?" }
       ]
     }
   ]
@@ -200,34 +229,55 @@ Notice recent creature-led casts, but do not ban them or rotate species by quota
 ```
 
 Rules (checked by `tracetoon comic check`; warnings don't block):
-- 1–6 panels and at most 6 characters. At most 4 characters and 4 text items
-  per panel, 12 words per item, 50 words per page, headline at most 6 words.
-- A panel's `characters` lists objects, not names:
-  `{ "name": "Ada", "position": "left", "expression": "worried", "pose": "..." }`
-  (`position` is `left`, `center` or `right`; `expression` and `pose` are optional).
-- `speaker` is a character's `name` or `"caption"`. `kind`: `speech` (default),
-  `thought`, `caption` (narration), `sfx` (a sound effect), `sign` (words on a
-  screen or sign in the scene) or `label` (a callout tag, up to 4 words, whose
-  `points` names the drawn element it points at).
-- `anchor` (required with `composition`; local, never posted): `change` in one
-  sentence, 1–4 `terms` the PR really uses, and a `mapping` of
-  `{ "visual", "technical" }` pairs. At least one term must appear in the
-  lettering.
-- `aspect`: `4:3` (default), `1:1`, `16:9` or `3:4`; formats have sensible
-  defaults. A vertical composition defaults to `3:4`.
-- `composition.title.mode`: `none`, `integrated` or `heading`. An optional
+- **Size limits:**
+  - 1–6 panels and at most 6 characters per comic;
+  - at most 4 characters and 4 text items per panel;
+  - at most 18 words per item and 80 words per page;
+  - a headline of at most 6 words.
+- **A panel's `characters` lists objects, not names:**
+  `{ "name": "Ada", "position": "left", "expression": "worried", "pose": "..." }`.
+  `position` is `left`, `center` or `right`; `expression` and `pose` are
+  optional.
+- **`speaker`** is a character's `name` or `"caption"`.
+- **`kind`** is one of:
+  - `speech` (the default);
+  - `thought`;
+  - `caption` (narration);
+  - `sfx` (a sound effect);
+  - `sign`: words that are part of the scene. `points` names the surface: "the
+    terminal screen", "the box", "her mug".
+
+  `label` is deprecated because it draws as a pointer tag; `comic check` warns
+  about it.
+- **`request`** (optional): what the user explicitly asked for, in their words.
+  It is sent to the image model and overrides the original-characters default.
+- **`anchor`** (required with `composition`; local, never posted):
+  - `change` in one sentence;
+  - 1–4 `terms` the PR really uses;
+  - a `mapping` of `{ "visual", "technical" }` pairs.
+
+  At least one term must appear in the lettering: on a sign in the scene, in a
+  caption, or in someone's line.
+- **`aspect`**: `4:3` (the default), `1:1`, `16:9` or `3:4`. Formats have
+  sensible defaults, and a vertical composition defaults to `3:4`.
+- **`composition.title.mode`**: `none`, `integrated` or `heading`. An optional
   `box` is `{x,y,w,h}` in 0–1 page coordinates. `none` omits the art title from
-  prompts, overlay, proofread lists and the transcript; metadata keeps its title.
-- Optional `composition.frames`: one `{x,y,w,h}` per panel, in reading order,
-  with positive bounds inside the 0–1 page (before the branding footer).
-  A frame can use `border: "none"` and `clip: [[x,y], ...]` for a convex
-  polygon in its own 0–1 coordinates. Polygon dialogue needs a safe `textBox`
-  in frame coordinates. Intentional contained insets use `inset: true` (the
-  `hero-inset` preset declares these itself); other overlaps are rejected.
-- Legacy scripts without `composition` keep their old rendering defaults.
-- No links, no @mentions, no secrets, no real people's names, no company logos,
-  and no characters that look like existing cartoon, film or game characters
-  (retro styles such as rubber hose make this easy to do by accident).
+  prompts, overlay, proofread lists and the transcript; metadata keeps its
+  title.
+- **`composition.frames`** (optional): one `{x,y,w,h}` per panel, in reading
+  order, with positive bounds inside the 0–1 page (before the branding footer).
+  - A frame can use `border: "none"`, and `clip: [[x,y], ...]` for a convex
+    polygon in its own 0–1 coordinates.
+  - Dialogue in a polygon frame needs a safe `textBox` in frame coordinates.
+  - A deliberate inset inside another frame uses `inset: true` (the
+    `hero-inset` preset declares these itself). Other overlaps are rejected.
+- **Legacy scripts** without `composition` keep their old rendering defaults.
+- **Never include:**
+  - links, @mentions or secrets;
+  - real people's names;
+  - company logos;
+  - unrequested characters that look like existing cartoon, film or game
+    characters.
 
 ## 6. Make the art, then proofread
 
@@ -236,51 +286,64 @@ image, lettering included**, so the words look like part of the comic. Then:
 
 1. `tracetoon comic render` adds a small "made with Tracetoon" footer bar and
    prints a **proofread** list.
-2. **Look at `out/comic.png`** and check every word on the list is lettered
-   exactly, with nothing extra or garbled, and that each label sits on the
-   element it names. Check the actual panel count, reading
-   order, title treatment, framing and payoff at PR-column and phone widths.
+2. **Look at `out/comic.png`.** Check:
+   - every word on the list is lettered exactly, with nothing extra or garbled;
+   - words in the scene sit on the surfaces they belong to, with no floating
+     tags or pointer lines;
+   - it reads as a comic, not a 3D render or illustration;
+   - the actual panel count, reading order, title treatment and framing;
+   - the payoff, at PR-column and phone widths.
+
    A good prompt is not proof that the generated image followed it.
-3. Diagnose before retrying. A weak premise or missing/contradictory action needs
-   a script rewrite. A sound script drawn incorrectly needs a redraw. Wrong
-   lettering needs lettering repair. Tell the user the concrete reason for an
-   additional generation; do not draw routine hidden alternatives. Draw one
-   finished image initially; the three concepts are text, not image requests.
-   For an art defect, run `tracetoon comic art --force` to redraw (up to 2
-   times). If it's still wrong, run `tracetoon comic art --lettering overlay
-   --force`: the art is drawn without text and Tracetoon adds the bubbles.
-4. If the art is right but drawn a little differently from a panel's `scene`
-   (someone seated instead of standing, a pose that differs), don't edit
-   `scene`: that changes what the image model draws from, so the art becomes
-   stale. Set that panel's `drawn` to a sentence describing what the finished
-   panel shows (the transcript uses it) and correct `altText`. Neither is sent
-   to the image model, so no redraw is needed; run `tracetoon comic render`
-   again. Art drawn by an earlier Tracetoon build is adopted the first time
-   `comic render` (or `comic art`) runs, so run it once before correcting
-   that text.
-5. Not loving the look? `tracetoon comic reroll` keeps the story and redraws it
-   in a style idea the repo hasn't used lately (`--style "<any style>"` to choose
-   one, `--format`, `--palette` to change those too).
-   Format changes replace incompatible geometry. If the requested format needs
-   different story beats, have the drafter rewrite the script first. Changed
-   scripts invalidate cached art and rendered output; do not reuse an old page
-   with a newly named layout.
+3. **Diagnose before retrying.**
+   - A weak premise or a missing or contradictory action needs a script
+     rewrite.
+   - A sound script drawn incorrectly needs a redraw.
+   - Wrong lettering needs lettering repair.
 
-The independent review starts with the image alone, before the synopsis,
-transcript, technical explanation, or design reasoning. The reviewer records
-literal panel observations separately from inference, the perceived joke and
-the software change the image suggests, then compares the script, the PR's
-actual change and factual evidence. See contribution-workflow.md.
-Structural checks and a matching transcript do not certify comic quality.
+   Tell the user the concrete reason for any additional generation, and do not
+   draw routine hidden alternatives. Draw one finished image first; the three
+   concepts are text, not image requests. For an art defect, run
+   `tracetoon comic art --force` to redraw (up to 2 times). If it's still
+   wrong, run `tracetoon comic art --lettering overlay --force`: the art is
+   drawn without text and Tracetoon adds the bubbles.
+4. **The art is right but differs a little from a panel's `scene`** (someone
+   seated instead of standing, a different pose):
+   - Don't edit `scene`. The image model draws from it, so changing it makes
+     the art stale.
+   - Set that panel's `drawn` to a sentence describing what the finished panel
+     shows (the transcript uses it), and correct `altText`. Neither is sent to
+     the image model, so no redraw is needed; run `tracetoon comic render`
+     again.
+   - Art drawn by an earlier Tracetoon build is adopted the first time
+     `comic render` (or `comic art`) runs, so run it once before correcting
+     that text.
+5. **Not loving the look?** `tracetoon comic reroll` keeps the story and
+   redraws it in another comic style. Use `--style "<any style>"` to choose
+   one, and `--format` or `--palette` to change those too.
+   - Format changes replace incompatible geometry.
+   - If the requested format needs different story beats, have the drafter
+     rewrite the script first.
+   - Changed scripts invalidate cached art and rendered output; do not reuse an
+     old page with a newly named layout.
 
-With your own image tool instead: `tracetoon comic prompts` prints the
-whole-page prompt and where to save it (`art/page.png`). After a script change,
-request prompts again, save fresh images at the listed paths, then render.
-Printing prompts alone does not make an old cached drawing current.
+**Independent review.** It starts with the image alone, before the synopsis,
+transcript, technical explanation, or design reasoning. The reviewer:
+1. records literal panel observations separately from inference;
+2. records the perceived joke and the software change the image suggests;
+3. then compares the script, the PR's actual change and factual evidence.
 
-With overlay lettering, if a bubble covers something important, write
-`layout.json` to place bubbles by hand (0–1 coordinates within the panel, one
-entry per text item, `null` for automatic):
+See contribution-workflow.md. Structural checks and a matching transcript do
+not certify comic quality.
+
+**Using your own image tool.** `tracetoon comic prompts` prints the whole-page
+prompt and where to save it (`art/page.png`). After a script change, request
+prompts again, save fresh images at the listed paths, then render. Printing
+prompts alone does not make an old cached drawing current.
+
+**Placing bubbles by hand.** With overlay lettering, if a bubble covers
+something important, write `layout.json`: 0–1 coordinates within the panel,
+one entry per text item, `null` for automatic.
 
 ```json
 { "panels": [[{ "x": 0.05, "y": 0.04, "w": 0.45 }], []] }

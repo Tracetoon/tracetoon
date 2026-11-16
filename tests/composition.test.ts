@@ -177,12 +177,20 @@ describe('story-led compositions', () => {
     expect(findings.filter((p) => p.severity === 'warning').map((p) => p.where)).toEqual([
       'composition',
       'characters',
-      'styleFamily',
     ]);
     expect(errors(findings)).toEqual([]);
+    // Reusing a style or art family is fine; only the story shape is checked.
+    expect(findings.some((p) => p.where === 'styleFamily' || p.where === 'style')).toBe(
+      false,
+    );
+    const pair = example('comparison');
+    const pairs = checkScript(pair, { recentComics: [comicSummary(pair)] });
     expect(
-      checkScript(s, { recentComics: recent, pinnedStyle: s.style }).some(
-        (p) => p.where === 'styleFamily',
+      pairs.some((p) => p.where === 'composition' && p.problem.includes('two-panel')),
+    ).toBe(true);
+    expect(
+      checkScript(pair, { recentComics: [comicSummary(example('asymmetric'))] }).some(
+        (p) => p.problem.includes('two-panel'),
       ),
     ).toBe(false);
     expect(
@@ -305,9 +313,13 @@ describe('composition CLI and cache', () => {
     expect(cli('comic', 'reroll', '--format', '4koma').json.error).toContain(
       'rewrite the story',
     );
-    expect(cli('comic', 'reroll', '--format', 'strip').code).toBe(0);
+    // A gag strip needs a setup, a build and a punchline: three beats or more.
+    expect(cli('comic', 'reroll', '--format', 'strip').json.error).toContain(
+      'rewrite the story',
+    );
+    expect(cli('comic', 'reroll', '--format', 'splash').code).toBe(0);
     const rerolled = JSON.parse(readFileSync(join(run, 'comic.json'), 'utf8'));
-    expect(rerolled.composition.family).toBe('sequence');
+    expect(rerolled.composition.family).toBe('hero-inset');
     expect(rerolled.composition.title.mode).toBe('none');
     expect(rerolled.layout).toBeUndefined();
     // Printing host-tool prompts cannot make old art current. Saving a fresh
@@ -358,7 +370,7 @@ describe('technical anchor', () => {
   test('a real term must be lettered so the picture ties back to the PR', () => {
     const s = example('single');
     expect(errors(checkScript(s))).toEqual([]);
-    s.panels[0]!.dialogue = s.panels[0]!.dialogue.filter((d) => d.kind !== 'label');
+    s.panels[0]!.dialogue = s.panels[0]!.dialogue.filter((d) => d.kind !== 'sign');
     const problems = errors(checkScript(s));
     expect(problems.map((p) => p.where)).toEqual(['anchor.terms']);
     expect(problems[0]!.problem).toContain('"open handle"');
@@ -403,21 +415,23 @@ describe('technical anchor', () => {
     );
   });
 
-  test('labels are short, point at something, and reach the prompt, transcript and overlay', () => {
+  test('signs are words in the scene; legacy labels warn and draw the same way', () => {
     const s = example('single');
-    const label = s.panels[0]!.dialogue.find((d) => d.kind === 'label')!;
-    expect(pagePrompt(s)).toContain(
-      'callout tag with a thin leader line pointing at the tiny open tap',
+    const sign = s.panels[0]!.dialogue.find((d) => d.kind === 'sign')!;
+    const prompt = pagePrompt(s);
+    expect(prompt).toContain(
+      'written on the tiny open tap as a natural part of the scene',
     );
-    expect(pagePrompt(s)).toContain('"open handle"');
-    expect(pagePrompt(s)).not.toContain('no extra labels');
-    expect(transcript(s)).toContain('[label → the tiny open tap: open handle]');
+    expect(prompt).toContain('"open handle"');
+    expect(prompt).not.toContain('leader line');
+    expect(prompt).not.toContain('typewriter');
+    expect(transcript(s)).toContain('[on the tiny open tap: open handle]');
     expect(composePage(s, [])).toContain('open handle');
-    label.text = 'a label that is far too long';
-    expect(where(s)).toContain('error panels[0].dialogue[1].text');
-    label.text = 'open handle';
-    delete label.points;
-    expect(where(s)).toContain('error panels[0].dialogue[1].points');
+    expect(where(s).filter((w) => w.startsWith('error'))).toEqual([]);
+    sign.kind = 'label';
+    expect(where(s)).toContain('warning panels[0].dialogue[1].kind');
+    expect(pagePrompt(s)).not.toContain('leader line');
+    expect(pagePrompt(s)).toContain('written on the tiny open tap');
   });
 
   test('the anchor is local reasoning: editing it keeps cached art', () => {
