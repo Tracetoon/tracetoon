@@ -54,13 +54,17 @@ checks on the released version, in a throwaway repository:
 
 Verification never spends money:
 
-- **Claude Code, Codex and OpenCode** run against a scripted model server on the
-  CI machine, so no model provider is called. Their real API endpoints are
-  blocked on the runner.
-- **Cursor and Copilot** can't use a local model, so they run one short real
-  session on free-plan accounts, and only when a new version ships.
+- **Claude Code, Codex, OpenCode and Copilot CLI** run against a scripted model
+  server on the CI machine, so no model provider is called. Copilot runs in its
+  offline bring-your-own-model mode, with no GitHub sign-in. The real model
+  APIs are blocked on the runner.
+- **Cursor** can't use a local model, so it runs one short real session on a
+  free-plan account, and only for a build that hasn't been verified yet.
 
-Each result records which method ran (`evidence: fake-llm` or `free-plan`).
+Each result records which method ran (`evidence: fake-llm` or `free-plan`). A
+scripted model shows that the released agent's hooks, logs and tools still work
+with Tracetoon. It doesn't show how a real model would phrase things; that part
+doesn't depend on the agent's release.
 
 Results are written to `compat/verification.json` through a pull request, and
 the support table is generated from it.

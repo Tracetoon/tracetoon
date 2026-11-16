@@ -330,13 +330,13 @@ A recommended workflow is one agent running inside one editor. It doesn't
 cover the editor's other agents: Zed's own agent, for example, is Community
 Supported. A workflow says "verified" only after its own test has passed.
 
-| Workflow              | What is tested                                 | Last verified    | Status    |
-| --------------------- | ---------------------------------------------- | ---------------- | --------- |
-| VS Code + Claude Code | the Claude Code extension's bundled CLI        | not yet verified | candidate |
-| VS Code + Codex       | the Codex extension's bundled CLI              | not yet verified | candidate |
-| VS Code + Copilot     | Copilot agent mode                             | not yet verified | candidate |
-| Zed + Claude Code     | Zed's external-agent (ACP) path to Claude Code | not yet verified | candidate |
-| Zed + Codex           | Zed's external-agent (ACP) path to Codex       | not yet verified | candidate |
+| Workflow              | What is tested                                                        | Last verified    | Status           |
+| --------------------- | --------------------------------------------------------------------- | ---------------- | ---------------- |
+| VS Code + Claude Code | the Claude Code extension's bundled CLI (route not built yet)         | not yet verified | candidate        |
+| VS Code + Codex       | the Codex extension's bundled CLI (route not built yet)               | not yet verified | candidate        |
+| VS Code + Copilot     | Copilot agent mode (runs in the editor window; no headless route yet) | not yet verified | candidate        |
+| Zed + Claude Code     | Zed's external-agent (ACP) path to Claude Code                        | not yet verified | not yet verified |
+| Zed + Codex           | Zed's external-agent (ACP) path to Codex                              | not yet verified | not yet verified |
 
 ## Community Supported integrations
 
