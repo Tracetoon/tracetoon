@@ -159,8 +159,13 @@ strips tags and lists untagged sentences and unknown refs.
   a command the Validation section shows: a limit about an earlier run of it
   is not an open point then. A limit that says a run's exit status was hidden
   by a pipe says just that, not that the run had no result.
-- No blanket negatives ("no X was run", "nothing tests Y"), not even when a
-  limit is about the same thing. Give mechanism claims their conditions
+- No blanket negatives ("no X was run", "nothing tests Y"). In open points
+  never say no hardware, real-device, live-service or test run was recorded,
+  run or tested unless a `limits` row says that absence, and then in its
+  words: Tracetoon reads only the attributed turns, and such runs often sit
+  elsewhere in the logs. Phrase a limit as what the evidence shows ("the
+  recorded tests use a fake runtime", "the logs show unit tests only of the
+  parser"). Give mechanism claims their conditions
   (flags, fallbacks), not "any", "always" or "every".
 - A check that failed because the environment lacked something (a tool not
   installed, `command not found`, a module or package that could not be

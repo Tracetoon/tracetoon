@@ -385,18 +385,45 @@ describe('do not say', () => {
     const rows = doNotSayRows(sections(), ['load']);
     expect(rows.map((r) => r.kind)).toEqual([
       'recorded requests',
+      'absence',
       'existed before this PR',
       'conditional code',
       'commit message only',
       'old behavior',
       'files in this diff',
     ]);
-    expect(rows[1]!.text).toBe('`load`: changed, not "new" or "added".');
-    expect(String(rows[2]!.text)).toContain('(a.ts: + if (!cfg) return;)');
-    expect(String(rows[3]!.text)).toContain("commit abc1234's claim, not a run");
-    expect(rows[5]!.text).toBe(
+    expect(rows[1]!.text).toBe(
+      'Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested (no limits row says so).',
+    );
+    expect(rows[2]!.text).toBe('`load`: changed, not "new" or "added".');
+    expect(String(rows[3]!.text)).toContain('(a.ts: + if (!cfg) return;)');
+    expect(String(rows[4]!.text)).toContain("commit abc1234's claim, not a run");
+    expect(rows[6]!.text).toBe(
       '5: a.ts, install.sh, version.ts, package.json, app.mjs. 3 are beyond the version bump: never "housekeeping only", "version bump only" or "no logic changes".',
     );
+  });
+
+  test('absence: only what a limits row says', () => {
+    const withLimit = [
+      ...sections(),
+      {
+        title: 'limits',
+        columns: [],
+        rows: [
+          {
+            ref: 'L1',
+            kind: 'tests',
+            limit: 'No test run was recorded after the last commit.',
+          },
+          { ref: 'L2', kind: 'scope', limit: 'The diff touches two packages.' },
+        ],
+      },
+    ];
+    expect(doNotSayRows(withLimit).find((r) => r.kind === 'absence')).toEqual({
+      kind: 'absence',
+      text: 'Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested, beyond what L1 says.',
+      cites: ['L1'],
+    });
   });
 
   test('recorded requests, plans and decisions: never "none was recorded"', () => {
@@ -435,7 +462,9 @@ describe('do not say', () => {
       "Plans were recorded (P1): don't say none was recorded, or that an approval or review wasn't.",
     );
     // None linked in the attributed turns: the row forbids claiming absence.
-    expect(doNotSayRows(sections()).find((r) => r.kind === 'recorded requests')?.text).toBe(
+    expect(
+      doNotSayRows(sections()).find((r) => r.kind === 'recorded requests')?.text,
+    ).toBe(
       "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
     );
   });

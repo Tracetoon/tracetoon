@@ -83,6 +83,10 @@ export function beyondVersionBump(sections: Section[]): string[] {
     .sort((a, b) => Number(generated.has(a)) - Number(generated.has(b)));
 }
 
+/** A limit that states an absence: nothing ran, was recorded or was tested. */
+const ABSENCE =
+  /\b(?:no|none|nothing|never|not|without)\b[^.;]{0,60}\b(?:run|ran|recorded|tested|exercised|executed|checked)\b/i;
+
 const names = (xs: string[], cap: number) => {
   const shown = xs.slice(0, cap).map((x) => `\`${x}\``);
   return xs.length > cap
@@ -137,6 +141,18 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
       text: "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
       cites: [],
     });
+
+  // Absence of a run: the brief reads only the attributed turns, so "no
+  // hardware/live/test run was recorded" is a session-wide claim the full logs
+  // contradicted (live runs and device tests done earlier, or by others).
+  const absent = rowsOf(sections, 'limits')
+    .filter((r) => ABSENCE.test(String(r.limit ?? '')))
+    .map((r) => String(r.ref));
+  out.push({
+    kind: 'absence',
+    text: `Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested${absent.length ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}` : ' (no limits row says so)'}.`,
+    cites: absent.slice(0, 3),
+  });
 
   // Kept short: "new" for existing code is rare in judged errors.
   const existing = existingSymbols(sections).filter((x) => x.length >= 4);
