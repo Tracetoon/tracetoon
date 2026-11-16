@@ -18,7 +18,12 @@ import {
   type LiveEvidence,
 } from '../src/graph/briefExtras.ts';
 import { invocationsOf } from '../src/digest/build.ts';
-import { splitScriptUnits, unitRole, type PatchHunk } from '../src/graph/build.ts';
+import {
+  patchHunks,
+  splitScriptUnits,
+  unitRole,
+  type PatchHunk,
+} from '../src/graph/build.ts';
 import { withGraph } from '../src/graph/engine.ts';
 import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import { briefParts } from '../src/graph/queries.ts';
@@ -409,6 +414,110 @@ describe('the entry point', () => {
     );
     expect(entry(withOwns(['generateImages']))).toBeUndefined();
     expect(entry(withOwns(['providerInfo'], ['providerInfo']))).toBeUndefined();
+  });
+
+  test('a type is never the start: the function defined in its file, else the file alone', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    const lonely = rels.filter((r) => !JSON.stringify(r).includes('"H2"'));
+    const typeRef = N('HeadRef', 'HR1', {
+      ...headRef.props,
+      term: 'ProviderId',
+    });
+    const entry = (hs: any[]) =>
+      withGraph(graphOf([...files, ...hs, ...changes, typeRef], lonely), (g) =>
+        entryRow(g),
+      );
+    // `ProviderId` is a type: the function owning most added lines there instead.
+    const typed = lone.map((h) =>
+      h.id === 'H1' ? { ...h, props: { ...h.props, types: ['ProviderId'] } } : h,
+    );
+    expect(entry(typed)?.fact).toMatch(
+      /^Start at `(providerInfo|providerAvailable|generateImages)` in src\/comic\/providers\.ts/,
+    );
+    expect(entry(typed)?.fact).not.toContain('ProviderId');
+    // Only the type is defined there: the file alone.
+    const onlyType = lone.map((h) =>
+      h.id === 'H1'
+        ? {
+            ...h,
+            props: {
+              ...h.props,
+              symbols: ['ProviderId'],
+              touched: ['ProviderId'],
+              types: ['ProviderId'],
+            },
+          }
+        : h,
+    );
+    expect(entry(onlyType)?.fact).toBe('Start in src/comic/providers.ts.');
+  });
+
+  test('a name the file only imports is not defined there', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,3 +1,8 @@',
+      ' import { x } from "./x.ts";',
+      '+import {',
+      '+  usageOf,',
+      '+  type Usage,',
+      '+} from "./usage.ts";',
+      '+export interface Options { cwd?: string }',
+      ' const y = 1;',
+      ' ',
+    ].join('\n');
+    const [h] = patchHunks(patch);
+    expect(h!.symbols).toEqual(['Options']);
+    expect(h!.types).toEqual(['Options']);
+  });
+
+  test("a hunk's behavior belongs to the function with most of its changed lines", () => {
+    const patch = [
+      'diff --git a/src/auth.ts b/src/auth.ts',
+      '--- a/src/auth.ts',
+      '+++ b/src/auth.ts',
+      '@@ -1,4 +1,16 @@',
+      '+export function setSharing(on: boolean) {',
+      '+  sharing = on;',
+      '+}',
+      ' export function withShared(run: () => void) {',
+      '-  run();',
+      '+  const lease = takeLease();',
+      '+  if (!lease) throw new Error("busy");',
+      '+  try {',
+      '+    linkLogin(lease);',
+      '+    run();',
+      '+  } finally {',
+      '+    unlinkLogin(lease);',
+      '+    lease.release();',
+      '+  }',
+      ' }',
+    ].join('\n');
+    const [h] = patchHunks(patch);
+    expect(h!.fnLines).toEqual(['setSharing: 2', 'withShared: 7']);
+    const node = hunkNode('H1', 'src/auth.ts', {
+      symbols: h!.symbols,
+      touched: h!.touched,
+      owns: h!.owns,
+      fnLines: h!.fnLines,
+      types: h!.types,
+    });
+    const ctx = {
+      sentences: [
+        { ref: 'abc#1', text: 'Concurrent runs share one login through a lease.' },
+      ],
+      links: { 'abc#1': ['H1'] },
+    };
+    const profiles = withGraph(
+      graphOf(
+        [fileNode('src/auth.ts'), node],
+        [R('OF', ['Hunk', 'H1'], ['File', 'src/auth.ts'])],
+      ),
+      (g) => functionProfiles(g, ctx),
+    );
+    expect(profiles.get('withShared')!.sentences.map((x) => x.ref)).toEqual(['abc#1']);
+    expect(profiles.get('setSharing')!.sentences).toEqual([]);
   });
 
   test('moved lines are said as moved in `was`, not as a changed value', () => {

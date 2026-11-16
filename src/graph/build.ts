@@ -76,6 +76,17 @@ export interface PatchHunk {
    * a sentence can be matched to the function inside a hunk that holds several.
    */
   fnWords: string[];
+  /**
+   * Per function that owns changed code (see `owns`): `name: N`, its changed
+   * code lines in this hunk, so a hunk's behavior goes to the function holding
+   * most of it rather than the first one named.
+   */
+  fnLines?: string[];
+  /**
+   * Names this hunk shows defined as types (class, interface, enum, type alias,
+   * struct, trait…) rather than functions: never where a reviewer starts.
+   */
+  types?: string[];
   /** Lowercased words of the changed lines (identifiers split, strings), for matching prose to code. */
   words: string[];
   /**
@@ -128,10 +139,13 @@ const DEFINITIONS = [
 export function definedSymbol(line: string): string | undefined {
   // Imports name types (`import { type X }`) without defining them.
   if (
-    /^\s*(import\b|from\s+\S+\s+import\b|use\s|using\s|#\s*include\b|export\s*\{|export\s+\*)/.test(
+    /^\s*(import\b|from\s+\S+\s+import\b|use\s|using\s|#\s*include\b|export\s*\{|export\s+\*|export\s+type\s*\{)/.test(
       line,
     )
   )
+    return undefined;
+  // One specifier of a multi-line import or export list (`  type X,`, `  type X as Y }`).
+  if (/^\s*type\s+[A-Za-z_$][\w$]*\s*(?:as\s+[A-Za-z_$][\w$]*\s*)?(?:[,}]|$)/.test(line))
     return undefined;
   for (const re of DEFINITIONS) {
     const m = re.exec(line);
@@ -139,6 +153,22 @@ export function definedSymbol(line: string): string | undefined {
   }
   return undefined;
 }
+/** A line that defines a type (class, interface, enum, type alias, struct…), not a function. */
+export function definesType(line: string): boolean {
+  const name = definedSymbol(line);
+  if (!name) return false;
+  const esc = name.replace(/[$]/g, '\\$');
+  return new RegExp(
+    `\\b(?:class|interface|enum|type|struct|trait|module|record|protocol|union)\\s+${esc}\\b`,
+  ).test(line);
+}
+/**
+ * Opens a multi-line import or export list (`import {`, `export type {`,
+ * `from x import (`): the lines up to its close name, never define.
+ */
+const OPENS_IMPORT =
+  /^\s*(?:(?:import|export)\b[^;{}]*\{[^}]*$|from\s+\S+\s+import\s*\([^)]*$|use\s+[\w:]+::\{[^}]*$)/;
+
 /** Lines that add a branch or a fallback: each path deserves its own sentence. */
 export const BRANCHING =
   /(\bif\s*\(|\bif\s+[^=]|\belse\b|\belif\b|\bswitch\s*\(|\bcase\s+[^:]+:|\bcatch\b|\bexcept\b|\?\?|\|\||\bdefault\s*:|\bfallback\b|\?\s*[^:?]+\s*:\s*)/;
@@ -168,6 +198,8 @@ export function patchHunks(patch: string): PatchHunk[] {
   const byFn = new Map<PatchHunk, Map<string, string[]>>();
   // Changed comment lines outside any body, waiting for the definition below them.
   let pendingDoc: string[] = [];
+  // Inside a multi-line import or export list: its names are not definitions.
+  let inImport = false;
   const touch = (h: PatchHunk) => {
     if (current && !h.touched.includes(current)) h.touched.push(current);
   };
@@ -189,7 +221,13 @@ export function patchHunks(patch: string): PatchHunk[] {
       const c = line[0];
       const text = line.slice(1);
       const indent = /^\s*/.exec(text)![0].replace(/\t/g, '    ').length;
-      const def = definedSymbol(text);
+      const listed = inImport;
+      if (inImport) {
+        if (/[})]/.test(text)) inImport = false;
+      } else if (OPENS_IMPORT.test(text)) inImport = true;
+      const def = listed ? undefined : definedSymbol(text);
+      if (def && definesType(text) && !(cur.types ??= []).includes(def))
+        cur.types.push(def);
       // A line back at the definition's indent ends its body: a closing brace
       // still belongs to it, anything else (the next function, a comment) doesn't.
       let closes = false;
@@ -232,7 +270,7 @@ export function patchHunks(patch: string): PatchHunk[] {
         const raw = line.slice(1);
         const e = evidenceLine(raw);
         if (e) cur.lines.add(e);
-        const sym = definedSymbol(raw);
+        const sym = listed ? undefined : definedSymbol(raw);
         if (sym && !cur.symbols.includes(sym)) cur.symbols.push(sym);
         if (BRANCHING.test(raw) && !/^\s*(\/\/|#|\*)/.test(raw)) cur.branches++;
       } else if (c === '-') {
@@ -256,6 +294,7 @@ export function patchHunks(patch: string): PatchHunk[] {
       newLeft = h[3] === undefined ? 1 : Number(h[3]);
       first = last = n;
       pendingDoc = [];
+      inImport = false;
       current = h[4]?.trim() ? definedSymbol(h[4]) : undefined;
       currentIndent = current ? /^\s*/.exec(h[4]!)![0].replace(/\t/g, '    ').length : -1;
       cur = {
@@ -268,6 +307,7 @@ export function patchHunks(patch: string): PatchHunk[] {
         diff: '',
         ...(h[4]?.trim() ? { context: clip(h[4].trim(), 160) } : {}),
         ...(h[4]?.trim() && definedSymbol(h[4]) ? { scope: definedSymbol(h[4]) } : {}),
+        ...(h[4]?.trim() && definesType(h[4]) ? { types: [definedSymbol(h[4])!] } : {}),
         symbols: [],
         touched: [],
         branches: 0,
@@ -338,17 +378,20 @@ export function patchHunks(patch: string): PatchHunk[] {
       left.set(l, (left.get(l) ?? 0) + 1);
     h.owns = [];
     h.readers = [];
+    h.fnLines = [];
     for (const [fn, ls] of byFn.get(h) ?? []) {
       const code = ls.filter(isCodeLine);
-      const own = code.some((l) => {
+      // Each kept (not moved) changed code line in the function's body.
+      const kept = code.filter((l) => {
         const k = normLine(l);
         const n = left.get(k) ?? 0;
         if (n <= 0) return false;
         left.set(k, n - 1);
         return true;
-      });
-      if (!own) continue;
+      }).length;
+      if (!kept) continue;
       h.owns.push(fn);
+      h.fnLines.push(`${fn}: ${kept}`);
       if (readsOnly(code)) h.readers.push(fn);
     }
     h.pairs = valuePairs(kept.minus, kept.plus);
@@ -922,6 +965,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       moved: h.moved ?? null,
       owns: h.owns ?? [],
       readers: h.readers ?? [],
+      fnLines: h.fnLines ?? [],
+      types: h.types ?? [],
       fnWords: h.fnWords,
       words: h.words,
       code: h.code,

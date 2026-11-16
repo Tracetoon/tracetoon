@@ -461,6 +461,21 @@ const CALLABLE = /^[a-z_$][\w$]*[a-z][\w$]*$/;
 const uniqStr = (xs: string[]) => [...new Set(xs)];
 const MIN_CALLS = 2;
 
+/**
+ * A hunk's changed code lines per function that owns them (`fnLines`), empty
+ * for a graph built before they were counted.
+ */
+export function linesIn(h: Row): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const e of ((h.fnLines as string[]) ?? []).map(String)) {
+    const i = e.lastIndexOf(': ');
+    if (i > 0) m.set(e.slice(0, i), Number(e.slice(i + 2)) || 0);
+  }
+  return m;
+}
+/** Names the hunk shows defined as types (class, interface, struct…). */
+const typesIn = (h: Row) => ((h.types as string[]) ?? []).map(String);
+
 /** Commit-message rows and their `→ H#` links (structural and search), for ownership. */
 export interface SentenceLinks {
   sentences: { ref: string; text: string }[];
@@ -488,10 +503,26 @@ const fnNames = (h: Row) =>
   uniqStr(
     [h.scope, ...((h.touched as string[]) ?? []), ...((h.symbols as string[]) ?? [])]
       .filter((x): x is string => typeof x === 'string')
-      .filter((x) => NAME.test(x) && CALLABLE.test(x) && x.length >= 4),
+      .filter(
+        (x) =>
+          NAME.test(x) && CALLABLE.test(x) && x.length >= 4 && !typesIn(h).includes(x),
+      ),
   );
-/** The one function a hunk belongs to, when it is clear: it defines one, or touches one. */
+/**
+ * The one function a hunk belongs to, when it is clear: the function holding
+ * most of its changed code lines, at least twice any other's (a setter or a
+ * predicate the hunk also adds is not where its behavior lives). For a graph
+ * without line counts: the one it defines, or the one it touches.
+ */
 const soleOf = (h: Row): string | undefined => {
+  const lines = [...linesIn(h)]
+    .filter(([n]) => NAME.test(n) && CALLABLE.test(n) && n.length >= 4)
+    .filter(([n]) => !typesIn(h).includes(n))
+    .sort((a, b) => b[1] - a[1]);
+  if (lines.length)
+    return lines.length === 1 || lines[0]![1] >= 2 * lines[1]![1]
+      ? lines[0]![0]
+      : undefined;
   const defined = ((h.symbols as string[]) ?? [])
     .map(String)
     .filter((x) => NAME.test(x) && CALLABLE.test(x) && x.length >= 4);
@@ -512,7 +543,8 @@ export function functionProfiles(
     .run(
       `MATCH (h:Hunk)-[:OF]->(f:File)
        RETURN h.id AS id, h.file AS file, f.role AS role, h.scope AS scope, h.touched AS touched,
-              h.symbols AS symbols, h.conds AS conds, h.words AS words`,
+              h.symbols AS symbols, h.conds AS conds, h.words AS words,
+              h.fnLines AS fnLines, h.types AS types`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
@@ -609,12 +641,29 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.scope AS scope,
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
               h.diff AS diff, h.branches AS branches, h.added AS added,
-              h.owns AS owns, h.readers AS readers`,
+              h.owns AS owns, h.readers AS readers, h.fnLines AS fnLines, h.types AS types`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
   if (!hunks.length) return undefined;
   const { owning, ownsIn } = changeOwners(hunks);
+  // A start point is a function defined in the file the row names: never a
+  // type, an interface or a name the file only imports.
+  const typed = hunks.some((h) => Array.isArray(h.types));
+  const types = new Set(
+    hunks.flatMap((h) => typesIn(h).map((n) => `${String(h.file)}#${n}`)),
+  );
+  const anyType = new Set(hunks.flatMap(typesIn));
+  const definedHere = (name: string, file: string) =>
+    hunks.some(
+      (h) =>
+        String(h.file) === file &&
+        [h.scope, ...((h.symbols as string[]) ?? []), ...((h.touched as string[]) ?? [])]
+          .map((x) => (x == null ? '' : String(x)))
+          .includes(name),
+    );
+  const fnLike = (name: string, file: string) =>
+    !types.has(`${file}#${name}`) && (typed || CALLABLE.test(name));
   const definedIn = new Map<string, string>();
   for (const h of hunks)
     for (const s of [
@@ -645,9 +694,19 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
     // The function that owns the hunk's changed code: never one git only names
     // after the @@ while the changes sit below it, one whose lines only moved,
     // or a getter that only reads a value.
-    const owner = [h.scope, ...((h.touched as string[]) ?? []), ...(ownsIn(h) ?? [])]
-      .map((x) => (x == null ? '' : String(x)))
-      .find((x) => NAME.test(x) && (!ownsIn(h) || ownsIn(h)!.includes(x)));
+    // Of those, the one holding most of the hunk's changed lines (a setter or
+    // predicate named first is not where the behavior lives); a type never.
+    const lines = linesIn(h);
+    const owner = uniqStr(
+      [h.scope, ...((h.touched as string[]) ?? []), ...(ownsIn(h) ?? [])]
+        .map((x) => (x == null ? '' : String(x)))
+        .filter(
+          (x) =>
+            NAME.test(x) &&
+            (!ownsIn(h) || ownsIn(h)!.includes(x)) &&
+            fnLike(x, String(h.file)),
+        ),
+    ).sort((a, b) => (lines.get(b) ?? 0) - (lines.get(a) ?? 0))[0];
     if (!owner) continue;
     const code = addedCode(h.code);
     const key = `${String(h.file)}#${owner}`;
@@ -691,7 +750,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
     const parts: string[] = [];
     for (const r of related) {
       // Only functions that own changed code are named (see `changeOwners`).
-      if (!owning(r.name)) continue;
+      if (!owning(r.name) || anyType.has(r.name)) continue;
       const what = ownedBy(profiles.get(r.name), 48);
       // A callee the lead already names adds something only with what is tied to it.
       if (r.how === 'called' && !what) continue;
@@ -778,10 +837,31 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const top = [...refsOf.values()].find((r) => r.kind === 'most referenced');
   const file = top ? ((top.definedIn as string[]) ?? []).map(String)[0] : undefined;
   if (!top || !file || unitRole(file, pathRole(file)) !== 'src') return undefined;
-  const term = String(top.term);
-  if (!owning(term)) return undefined;
-  if (ownedShare(hunks, term, file) < MIN_ENTRY_SHARE) return undefined;
+  const named = String(top.term);
+  if (!owning(named)) return undefined;
+  if (ownedShare(hunks, named, file) < MIN_ENTRY_SHARE) return undefined;
   const h = hunks.find((x) => x.file === file);
+  const where = h ? [String(h.change), String(h.diff)] : [];
+  // A type, or a name the file doesn't define: the function there that owns
+  // the most added lines instead, else the file alone.
+  const term =
+    definedHere(named, file) && fnLike(named, file)
+      ? named
+      : uniqStr(
+          hunks
+            .filter((x) => String(x.file) === file)
+            .flatMap((x) => [
+              x.scope,
+              ...((x.symbols as string[]) ?? []),
+              ...((x.touched as string[]) ?? []),
+            ])
+            .map((x) => (x == null ? '' : String(x))),
+        )
+          .filter((n) => NAME.test(n) && owning(n) && fnLike(n, file))
+          .map((n) => ({ n, share: ownedShare(hunks, n, file) }))
+          .filter((x) => x.share >= MIN_ENTRY_SHARE)
+          .sort((a, b) => b.share - a.share || a.n.localeCompare(b.n))[0]?.n;
+  if (!term) return { kind: 'entry', fact: `Start in ${file}.`, cites: where };
   const related = callersOf(term).map((o) => ({
     name: o.name,
     how: `calls \`${term}\``,
@@ -790,7 +870,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   return {
     kind: 'entry',
     fact: text,
-    cites: uniqStr([...(h ? [String(h.change), String(h.diff)] : []), ...cites]),
+    cites: uniqStr([...where, ...cites]),
   };
 }
 
@@ -848,6 +928,10 @@ function ownedShare(hunks: Row[], name: string, file: string): number {
 /** Most `owners` rows, and per change unit. */
 export const MAX_OWNER_ROWS = 6;
 const OWNERS_PER_CHANGE = 5;
+/** Changed code lines at or under which a function is a thin helper for `owners`. */
+const THIN_LINES = 3;
+/** How many times a thin helper's lines another function must hold to own the clause instead. */
+const THIN_RATIO = 3;
 /** Characters of a sentence excerpt in an `owners` row. */
 const OWNER_TEXT = 80;
 
@@ -886,7 +970,7 @@ export function ownerRows(
     hunks = g.run(
       `MATCH (c:Change)-[:HAS]->(h:Hunk)-[:OF]->(f:File)
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.diff AS diff,
-              h.fnWords AS fnWords, h.owns AS owns`,
+              h.fnWords AS fnWords, h.owns AS owns, h.fnLines AS fnLines, h.types AS types`,
     ).rows;
   } catch {
     return [];
@@ -898,6 +982,8 @@ export function ownerRows(
     hunk: string;
     diff: string;
     words: Set<string>;
+    /** Its changed code lines in the hunk, when counted. */
+    lines?: number;
   };
   const segs: Seg[] = [];
   for (const h of hunks) {
@@ -909,7 +995,9 @@ export function ownerRows(
       // A function whose changed lines only moved owns no behavior here.
       if (Array.isArray(h.owns) && !(h.owns as string[]).map(String).includes(fn))
         continue;
+      if (typesIn(h).includes(fn)) continue;
       segs.push({
+        lines: linesIn(h).get(fn),
         fn,
         file: String(h.file),
         change: String(h.change),
@@ -973,6 +1061,25 @@ export function ownerRows(
       if (rest && rest.score > top.score * (linked.size ? 0.7 : 0.6)) continue;
       // Both functions in one file, or the row would name two places.
       if (chosen.some((c) => c.xs[0]!.file !== top.xs[0]!.file)) continue;
+      // A thin helper (a setter, a predicate) whose words match while a
+      // function of the same file holding several times its changed lines also
+      // clears the bar: the behavior most likely lives there, so no row.
+      const linesOf = (xs: Seg[]) =>
+        xs.some((x) => x.lines == null)
+          ? undefined
+          : xs.reduce((n, x) => n + (x.lines ?? 0), 0);
+      const thin = chosen.some((c) => {
+        const mine = linesOf(c.xs);
+        if (mine == null || mine > THIN_LINES) return false;
+        return scored.some(
+          (o) =>
+            !chosen.includes(o) &&
+            o.score >= bar &&
+            o.xs[0]!.file === c.xs[0]!.file &&
+            (linesOf(o.xs) ?? 0) >= THIN_RATIO * Math.max(mine, 1),
+        );
+      });
+      if (thin) continue;
       const key = chosen.map((c) => c.xs[0]!.fn).join(' ');
       if (done.has(key)) continue;
       done.add(key);

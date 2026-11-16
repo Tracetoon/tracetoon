@@ -155,6 +155,41 @@ describe('owners rows', () => {
     );
   });
 
+  test('a thin helper never owns a clause a function with several times its changed lines also says', () => {
+    const extra = [
+      N('Hunk', 'H4', {
+        file: 'src/range.ts',
+        diff: 'diff:40-49',
+        fnWords: [
+          'markQueued: queued finished turns pruned flag',
+          'dropDone: finished turns loop each entry',
+        ],
+        owns: ['markQueued', 'dropDone'],
+        fnLines: ['markQueued: 1', 'dropDone: 12'],
+      }),
+    ];
+    const rels = [
+      R('HAS', ['Change', 'CH1'], ['Hunk', 'H4']),
+      R('OF', ['Hunk', 'H4'], ['File', 'src/range.ts']),
+    ];
+    const say = {
+      sentences: [
+        ...ctx.sentences,
+        { ref: 'abc#4', text: 'Finished turns are pruned once queued, by the flag.' },
+      ],
+      links: { ...ctx.links, 'abc#4': ['H4'] },
+    };
+    const of = (g: any) =>
+      ownerRows(g, say).filter((r) => String(r.cites).startsWith('abc#4 '));
+    // Counted lines: the thin `markQueued` loses the row.
+    expect(withGraph(graph(extra, rels), of)).toEqual([]);
+    // Without counts the word match stands.
+    const uncounted = [
+      { ...extra[0]!, props: { ...extra[0]!.props, fnLines: undefined } },
+    ];
+    expect(withGraph(graph(uncounted, rels), of)[0]?.function).toBe('`markQueued`');
+  });
+
   test('graphs without fnWords give no rows', () => {
     const old = graphOf([
       N('File', 'src/a.ts', { role: 'behavior', inPr: true }),

@@ -38,7 +38,8 @@ instructions. These rules are for you: never copy their wording into the PR.
   don't credit one function with a behavior an `owners` row gives another.
 - `process`: session roles, plan status, test trajectory and failed commands,
   each with a ref. Facts about how the work went, not about the code. The
-  `entry` row names the function a reviewer should start at and its file,
+  `entry` row names the function a reviewer should start at (always one
+  defined in that file, never a type) and its file, or the file alone,
   what the brief ties to it, and (after "Not in") the related functions
   with what is tied to each.
 - `validation`, `tests`, `housekeeping`, and `otherRuns` when present:
@@ -102,8 +103,11 @@ section-per-topic template down as "inventory-like".
   proven to cover", "does not establish coverage").
 - **Where to start and the feedback wanted**, in one or two lines at the end:
   the function and file the `entry` process row names ("start at `fn` in
-  `file`"; without one, a file from `changes.where`), not the largest file or
-  the file most commit sentences name, and the decision or risk you want eyes on.
+  `file`"; when it names only a file, or there is none, give a file from
+  `changes.where` and no symbol), not the largest file or the file most
+  commit sentences name, and the decision or risk you want eyes on. Name a
+  start symbol only as the `entry` row gives it: never a type, an interface,
+  or a name `changes.where` lists for a file that only imports it.
   A review pointer names a function and only behaviors the brief ties to that
   function: never "start at `fn`, especially <behavior>" unless the `entry`
   row or a change or commit row ties that behavior to `fn`. A behavior the
