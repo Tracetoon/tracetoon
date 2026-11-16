@@ -20,6 +20,7 @@ import { BUILD_INFO } from '../version.ts';
 import { userConfigPath } from '../config.ts';
 import { publicationTargets } from './publicationTarget.ts';
 import { updateNotice } from '../update/state.ts';
+import { withGitAnswers } from '../util/exec.ts';
 
 // Stop remains accepted for installed hooks from older releases, but is inert.
 export type LifecycleEvent = 'SessionStart' | 'PreToolUse' | 'PostToolUse' | 'Stop';
@@ -83,6 +84,18 @@ export function lifecycle(
   raw: unknown,
   env: NodeJS.ProcessEnv = process.env,
   /** Told which host an answer blocks for (see writeAnswer). */
+  onDeny?: (host: Integration) => void,
+): string | undefined {
+  // Hooks run on every tool call: ask each repository's top level, branch,
+  // origin and switch setting once per event, not once per check.
+  return withGitAnswers(() => observe(agent, event, raw, env, onDeny));
+}
+
+function observe(
+  agent: HookAgent,
+  event: LifecycleEvent,
+  raw: unknown,
+  env: NodeJS.ProcessEnv,
   onDeny?: (host: Integration) => void,
 ): string | undefined {
   if (event === 'Stop') return;

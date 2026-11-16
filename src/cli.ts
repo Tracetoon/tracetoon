@@ -7,6 +7,7 @@ import { repository } from './workflow/state.ts';
 import { recordTiming } from './workflow/publication.ts';
 import { saveProfile } from './util/profile.ts';
 import { claudeCodeHint } from './util/claudeHint.ts';
+import { withGitAnswers } from './util/exec.ts';
 
 const cwd = process.cwd();
 
@@ -30,7 +31,8 @@ const COMMANDER_EXITS = [
 ];
 
 try {
-  await program.parseAsync(process.argv);
+  // One command: repeated read-only git questions are answered once (see withGitAnswers).
+  await withGitAnswers(() => program.parseAsync(process.argv));
 } catch (e) {
   const err = e as Error & { exitCode?: number; code?: unknown };
   const json = !!program.opts().json || argvWantsJson(process.argv);
