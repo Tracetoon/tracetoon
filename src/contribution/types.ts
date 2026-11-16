@@ -30,6 +30,8 @@ export type RenderingRule =
   | 'disclosure-required'
   | 'disclosure-prohibited'
   | 'media-prohibited'
+  /** The repo asks for comics or images in PRs: an encouragement, never a restriction. */
+  | 'media-requested'
   | 'text-prohibited'
   | 'author-written-recommended'
   | 'no-pull-requests';

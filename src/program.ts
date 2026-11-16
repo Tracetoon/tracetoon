@@ -35,6 +35,7 @@ import {
   comicArtCmd,
   comicRerollCmd,
   comicCheckCmd,
+  comicSkipCmd,
   comicPromptsCmd,
   comicRenderCmd,
 } from './commands/comic.ts';
@@ -202,6 +203,10 @@ export function buildProgram(cwd: string = process.cwd()): {
     )
     .option('--consent', 'with --test: the user agreed to this route')
     .option('--brief', 'one line, for the installers')
+    .option(
+      '--dismiss',
+      "don't ask about image setup again on this machine (asked again only if a working route breaks)",
+    )
     .action((o) => imagesCmd({ ...g(), ...o }));
 
   program
@@ -494,6 +499,15 @@ export function buildProgram(cwd: string = process.cwd()): {
     .action((o) => publishCmd(cwd, { ...g(), ...o, noReview: o.review === false }));
 
   const comic = program.command('comic').description("make this PR's comic");
+  comic
+    .command('skip')
+    .description(
+      'record why this PR has no comic when one was expected (the user declined, or drawing kept failing)',
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option('--reason <text>', "why, in the user's terms (shown after publishing)")
+    .option('--mcp', 'recorded by the MCP server, which cannot draw')
+    .action((o) => comicSkipCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
     .description('check comic.json before any art is made')

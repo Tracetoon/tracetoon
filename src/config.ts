@@ -92,6 +92,21 @@ function oneOf<T extends string>(allowed: readonly T[], v: unknown, fallback: T)
   return (allowed as readonly unknown[]).includes(v) ? (v as T) : fallback;
 }
 
+/**
+ * Where the effective comic setting came from: the user's own `off`/`always`,
+ * the repo's `.github/tracetoon.json` (only when the user left it at `allowed`),
+ * or the default. The repo's `off` is reported differently from the user's,
+ * since the user is told about it once per repo and never about their own.
+ */
+export function comicSource(root?: string): 'user' | 'repo' | 'default' {
+  const user = readJson(userConfigPath());
+  const userComic = comicMode(user.comic ?? DEFAULTS.comic);
+  if (user.comic !== undefined && userComic !== 'allowed') return 'user';
+  const repo = root ? readJson(repoConfigPath(root)) : {};
+  if (repo.comic !== undefined) return 'repo';
+  return user.comic !== undefined ? 'user' : 'default';
+}
+
 export function loadConfig(root?: string): Config {
   const user = readJson(userConfigPath());
   // Only the user can approve sending prompts to an image service: a repo's

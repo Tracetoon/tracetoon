@@ -101,11 +101,9 @@ describe('comicDecision', () => {
     const d = comicDecision('allowed', ban);
     expect(d.include).toBe(false);
     expect(d.state).toBe('policy');
-    expect(d.reason).toBe(
-      "this repo's contributing rules forbid images in PRs (CONTRIBUTING.md:7)",
-    );
+    expect(d.reason).toBe("this repo's rules forbid images in PRs (CONTRIBUTING.md:7)");
     expect(comicDecision('allowed', { media: 'prohibited' }).reason).toBe(
-      "this repo's contributing rules forbid images in PRs",
+      "this repo's rules forbid images in PRs",
     );
   });
   test('always ignores the repo', () => {

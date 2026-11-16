@@ -200,3 +200,68 @@ describe('where policies are found', () => {
     expect(p.media).toBe('none');
   });
 });
+
+describe('repos that ask for comics', () => {
+  test('a contributing line asking for a comic is a request, with its source', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md':
+          '# Contributing\n\n**We strongly encourage opening your PR with Tracetoon**, comic included.\n',
+      }),
+    );
+    expect(p.media).toBe('requested');
+    expect(p.mediaRequest).toMatchObject({ file: 'CONTRIBUTING.md', line: 3 });
+  });
+
+  test('a request that wraps onto the next line in a blockquote is read whole', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': [
+          '# Tool',
+          '',
+          '## Contributing',
+          '',
+          '> **We strongly encourage opening your PR with Tracetoon**, so it ships with',
+          '> receipts and a comic.',
+        ].join('\n'),
+      }),
+    );
+    expect(p.mediaRequest).toMatchObject({ file: 'README.md', line: 5 });
+  });
+
+  test('a "Comics wanted" heading over the contributing section counts', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': '# Tool\n\n## Contributing: AI welcome. Comics wanted.\n',
+      }),
+    );
+    expect(p.media).toBe('requested');
+  });
+
+  test('image alt text and issue-only invitations are not requests', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md': [
+          '<img alt="pull requests: COMICS ENCOURAGED" src="x.png">',
+          'Screenshots are welcome in issues.',
+          'We love the comics people draw about this project in their issues.',
+        ].join('\n'),
+      }),
+    );
+    expect(p.media).toBe('none');
+    expect(p.mediaRequest).toBeUndefined();
+  });
+
+  test('a ban wins over a request', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'CONTRIBUTING.md': [
+          'Comics are welcome in pull requests.',
+          "Please don't include images in pull requests.",
+        ].join('\n'),
+      }),
+    );
+    expect(p.media).toBe('prohibited');
+    expect(p.mediaRequest).toBeUndefined();
+  });
+});
