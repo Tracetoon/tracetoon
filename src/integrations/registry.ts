@@ -22,6 +22,7 @@ import { integration as goose } from './goose/index.ts';
 import { integration as qwen } from './qwen/index.ts';
 import { integration as crush } from './crush/index.ts';
 import { integration as amp } from './amp/index.ts';
+import { integration as zed } from './zed/index.ts';
 
 /** In display order. Hook targets, skill installs and doctor follow it. */
 export const INTEGRATIONS: readonly Integration[] = [
@@ -41,6 +42,7 @@ export const INTEGRATIONS: readonly Integration[] = [
   qwen,
   crush,
   amp,
+  zed,
   geminiCli,
 ];
 

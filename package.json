@@ -38,6 +38,7 @@
     "qwen-code",
     "crush",
     "amp",
+    "zed",
     "session-logs",
     "agent-trace",
     "provenance",
