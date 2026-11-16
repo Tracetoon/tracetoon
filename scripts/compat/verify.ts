@@ -46,6 +46,7 @@ import { parseArgs } from 'node:util';
 import { spawn } from 'node:child_process';
 import { COMPAT_FILE, type FakeLlmEvent } from './fake-llm.ts';
 import { RECIPES, type Command, type Sandbox } from './recipes.ts';
+import { scrubEmails } from './scrub.ts';
 import type {
   CheckId,
   CheckResult,
@@ -813,7 +814,8 @@ async function main(): Promise<number> {
     evidence: recipe.evidence,
     checks,
     ...(failureCategory ? { failureCategory } : {}),
-    ...(detail ? { detail: detail.slice(0, 1000) } : {}),
+    // The detail can quote the agent's output; it is uploaded and published too.
+    ...(detail ? { detail: scrubEmails(detail).slice(0, 1000) } : {}),
     verifiedAt: new Date().toISOString(),
     workflowUrl: process.env.GITHUB_RUN_ID
       ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
@@ -826,8 +828,10 @@ async function main(): Promise<number> {
     writeFileSync(opts.out, json + '\n');
   }
   console.log(json);
-  // What a maintainer needs to see why a run failed. Everything in it is made up
-  // by the check (the prompt, the fake token, the toy repo), never user data.
+  // What a maintainer needs to see why a run failed: the prompt, the fake token
+  // and the toy repo are made up by the check. A free-plan agent also puts its
+  // account's email in hook payloads (Cursor's user_email), so email addresses
+  // are scrubbed before anything is uploaded.
   if (opts.diagnostics) {
     mkdirSync(opts.diagnostics, { recursive: true });
     const files: [string, string][] = [
@@ -838,7 +842,11 @@ async function main(): Promise<number> {
       [join(home, 'shell-gh.log'), 'shell-gh.log'],
     ];
     for (const [from, to] of files)
-      if (existsSync(from)) writeFileSync(join(opts.diagnostics, to), readFileSync(from));
+      if (existsSync(from))
+        writeFileSync(
+          join(opts.diagnostics, to),
+          scrubEmails(readFileSync(from, 'utf8')),
+        );
   }
   if (opts.keep || status !== 'passed') log(`kept ${root}`);
   else rmSync(root, { recursive: true, force: true });
