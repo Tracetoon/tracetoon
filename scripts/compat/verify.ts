@@ -534,7 +534,9 @@ async function main(): Promise<number> {
      */
     const realModelRun = (r: ReturnType<typeof exec>) => {
       const output = `${r.stdout}\n${r.stderr}`;
-      const calls = hookCalls(home).filter((c) => c.args.includes('pre-pr'));
+      // Any of Tracetoon's hooks may answer the PR command: Cursor's preToolUse
+      // (lifecycle) hook blocks it before beforeShellExecution (pre-pr) runs.
+      const calls = hookCalls(home);
       if (!existsSync(join(repo, COMPAT_FILE))) {
         if (r.timedOut || ACCOUNT_TROUBLE.test(output))
           throw new CheckFailure(
