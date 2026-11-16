@@ -143,7 +143,8 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   Packaged runs select the public CLI/asset/launcher contracts declared in
   scripts/packaged-contracts.ts. Their JUnit results must contain every selected
   contract; renamed, skipped, failed, or empty selections cannot pass silently.
-  All source tests still run on each supported CI platform. Publication itself
+  All source tests still run on each supported CI platform; on Windows they are
+  split across three machines (`TRACETOON_TEST_SHARD`). Publication itself
   reuses current validation; it never launches these suites at publish.
   CI runs both packaged suites on every PR, on every platform, and is their
   gate before merge: any change to shipped code (`src/`, assets, the launchers,
@@ -156,6 +157,17 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   `tracetoon check --run <id> --name test-bundled --skip "Left to CI, which runs
   the packaged contracts on every PR"` (likewise `test-compiled`).
 - Never commit real session logs. Fixtures are synthetic or scrubbed.
+
+## Merging
+
+`main` uses a merge queue. Queue a PR with `gh pr merge <number> --squash --auto`
+as soon as you want it merged; don't update the branch from `main` or wait for
+CI first. The queue tests it on top of `main` and every PR ahead of it, then
+merges it when that run passes. The one required check is `ci-ok`, which passes
+only when every test job did. If the queue removes your PR (a failure or a
+conflict), the reason is on the PR's timeline: fix it and queue it again.
+Several agents can queue at once; nobody's run restarts because another PR
+merged.
 
 Contributor research and review handoffs live in `src/contribution/`; their host
 agent role prompts and v2 claim/source contracts are documented in the packaged skill's
