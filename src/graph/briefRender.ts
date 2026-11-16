@@ -554,7 +554,17 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
   );
   for (const unit of proseUnits(body)) {
     const clean = unit.replace(TAG, '').trim();
-    if (!ABSENCE.test(clean)) continue;
+    const m = ABSENCE.exec(clean);
+    if (!m) continue;
+    // "not run"/"never executed" also describe code ("the hook is not run for
+    // drafts"): an absence only next to words about checking it.
+    if (
+      !/test|verif|record|exercis/i.test(m[0]) &&
+      !/\b(?:tests?|check(?:s|ed)?|suite|validation|hardware|device|live|manual(?:ly)?|end-to-end|e2e|CI|smoke|typecheck|lint|build|verified|session)\b/i.test(
+        clean,
+      )
+    )
+      continue;
     const refs = [...unit.matchAll(TAG)].flatMap((m) => tagRefs(m[1]!));
     if (refs.some((r) => limitRefs.has(r) || unrunReceipts.has(r))) continue;
     flags.push({

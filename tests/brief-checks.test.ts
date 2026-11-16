@@ -761,3 +761,13 @@ describe('unsupported absence', () => {
     expect(absent('The change adds a retry to the client. [CH1]')).toEqual([]);
   });
 });
+
+describe('unsupported absence and code behavior', () => {
+  test('"not run" about code is not an absence of checks', () => {
+    const parts = { sections: [], unchecked: [] } as any;
+    const flags = (body: string) =>
+      applyBrief(body, parts).flags.filter((f) => /unsupported absence/.test(f.problem));
+    expect(flags('The hook is not run for draft pull requests. [CH1]')).toEqual([]);
+    expect(flags('The suite was not run after the rename. [CH1]').length).toBe(1);
+  });
+});
