@@ -69,7 +69,7 @@ export const integration: Integration = {
   id: 'cline',
   label: 'Cline',
   status: 'supported',
-  variants: 'CLI and VS Code extension',
+  variants: 'CLI, VS Code and JetBrains extensions',
   limits: [
     'PRs opened through GitHub connector or MCP tools are not redirected; `gh` and other shell commands are.',
     'In the VS Code extension, a blocked PR command stops the task, since its hooks cannot skip a single command.',

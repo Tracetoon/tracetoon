@@ -303,31 +303,31 @@ commands (`gh pr create` and the like) to Tracetoon, and the skill is
 installed where the agent looks for skills. A 🟡 agent is missing part of
 that; the notes below say what.
 
-| Agent         | Covers                                        | Support                 | PR hook                                        | Skill folder                        |
-| ------------- | --------------------------------------------- | ----------------------- | ---------------------------------------------- | ----------------------------------- |
-| Claude Code   | CLI, IDE extensions and desktop app           | ✅ supported             | `~/.claude/settings.json`                      | `~/.claude/skills/tracetoon`        |
-| Codex         | CLI and app                                   | ✅ supported             | `~/.codex/hooks.json`                          | `~/.agents/skills/tracetoon`        |
-| Antigravity   | CLI and IDE                                   | ✅ supported             | `~/.gemini/config/hooks.json`                  | `~/.gemini/config/skills/tracetoon` |
-| Factory Droid | Droid CLI                                     | ✅ supported             | `~/.factory/hooks.json`                        | `~/.agents/skills/tracetoon`        |
-| Copilot       | CLI and VS Code agent mode                    | ✅ supported             | `~/.copilot/hooks/tracetoon.json`              | `~/.agents/skills/tracetoon`        |
-| Cursor        | IDE and CLI                                   | ✅ supported (see notes) | `~/.cursor/hooks.json`                         | `~/.agents/skills/tracetoon`        |
-| OpenCode      | CLI                                           | ✅ supported             | `~/.config/opencode/plugins/tracetoon.js`      | `~/.agents/skills/tracetoon`        |
-| Kilo CLI      | CLI, and Kilo Code for VS Code, which runs it | ✅ supported             | `~/.config/kilo/plugins/tracetoon.js`          | `~/.agents/skills/tracetoon`        |
-| Kiro          | IDE and CLI                                   | ✅ supported             | `~/.kiro/hooks/tracetoon.json`                 | `~/.kiro/skills/tracetoon`          |
-| Cline         | CLI and VS Code extension                     | ✅ supported (see notes) | `~/.cline/hooks/PreToolUse.mjs`                | `~/.agents/skills/tracetoon`        |
-| Junie         | JetBrains CLI                                 | ✅ supported             | `~/.junie/config.json`                         | `~/.junie/skills/tracetoon`         |
-| Devin         | CLI                                           | ✅ supported             | Claude Code's hook, which Devin imports        | `~/.agents/skills/tracetoon`        |
-| Goose         | CLI and desktop app                           | ✅ supported             | `~/.agents/plugins/tracetoon/hooks/hooks.json` | `~/.agents/skills/tracetoon`        |
-| Qwen Code     | CLI                                           | ✅ supported             | `~/.qwen/settings.json`                        | `~/.qwen/skills/tracetoon`          |
-| Crush         | CLI                                           | ✅ supported             | `~/.config/crush/crush.json`                   | `~/.agents/skills/tracetoon`        |
-| Amp           | CLI                                           | 🟡 partial (see notes)  | `~/.config/amp/plugins/tracetoon.ts`           | `~/.agents/skills/tracetoon`        |
-| Zed           | Zed Agent                                     | 🟡 partial (see notes)  | none                                           | `~/.agents/skills/tracetoon`        |
-| Windsurf      |                                               | 🗓️ planned             |                                                |                                     |
+| Agent         | Covers                                                     | Support                 | PR hook                                        | Skill folder                        |
+| ------------- | ---------------------------------------------------------- | ----------------------- | ---------------------------------------------- | ----------------------------------- |
+| Claude Code   | CLI, IDE extensions and desktop app                        | ✅ supported             | `~/.claude/settings.json`                      | `~/.claude/skills/tracetoon`        |
+| Codex         | CLI, app and IDE extensions                                | ✅ supported             | `~/.codex/hooks.json`                          | `~/.agents/skills/tracetoon`        |
+| Antigravity   | CLI and IDE                                                | ✅ supported             | `~/.gemini/config/hooks.json`                  | `~/.gemini/config/skills/tracetoon` |
+| Factory Droid | Droid CLI                                                  | ✅ supported             | `~/.factory/hooks.json`                        | `~/.agents/skills/tracetoon`        |
+| Copilot       | CLI, VS Code agent mode and JetBrains                      | ✅ supported             | `~/.copilot/hooks/tracetoon.json`              | `~/.agents/skills/tracetoon`        |
+| Cursor        | IDE and CLI                                                | ✅ supported (see notes) | `~/.cursor/hooks.json`                         | `~/.agents/skills/tracetoon`        |
+| OpenCode      | CLI                                                        | ✅ supported             | `~/.config/opencode/plugins/tracetoon.js`      | `~/.agents/skills/tracetoon`        |
+| Kilo CLI      | CLI, and Kilo Code for VS Code and JetBrains, which run it | ✅ supported             | `~/.config/kilo/plugins/tracetoon.js`          | `~/.agents/skills/tracetoon`        |
+| Kiro          | IDE and CLI                                                | ✅ supported             | `~/.kiro/hooks/tracetoon.json`                 | `~/.kiro/skills/tracetoon`          |
+| Cline         | CLI, VS Code and JetBrains extensions                      | ✅ supported (see notes) | `~/.cline/hooks/PreToolUse.mjs`                | `~/.agents/skills/tracetoon`        |
+| Junie         | CLI and JetBrains IDE plugin                               | ✅ supported             | `~/.junie/config.json`                         | `~/.junie/skills/tracetoon`         |
+| Devin         | CLI and Devin Desktop, formerly Windsurf                   | ✅ supported (see notes) | Claude Code's hook, which Devin imports        | `~/.agents/skills/tracetoon`        |
+| Goose         | CLI and desktop app                                        | ✅ supported             | `~/.agents/plugins/tracetoon/hooks/hooks.json` | `~/.agents/skills/tracetoon`        |
+| Qwen Code     | CLI                                                        | ✅ supported             | `~/.qwen/settings.json`                        | `~/.qwen/skills/tracetoon`          |
+| Crush         | CLI                                                        | ✅ supported             | `~/.config/crush/crush.json`                   | `~/.agents/skills/tracetoon`        |
+| Amp           | CLI                                                        | 🟡 partial (see notes)  | `~/.config/amp/plugins/tracetoon.ts`           | `~/.agents/skills/tracetoon`        |
+| Zed           | Zed Agent                                                  | 🟡 partial (see notes)  | none                                           | `~/.agents/skills/tracetoon`        |
 
 ## Notes
 
 - **Cursor:** Cursor's logs don't record exit codes, so the PR can't confirm that tests or builds passed.
 - **Cline:** PRs opened through GitHub connector or MCP tools are not redirected; `gh` and other shell commands are. In the VS Code extension, a blocked PR command stops the task, since its hooks cannot skip a single command.
+- **Devin:** Devin Desktop runs the Devin CLI engine and keeps its sessions in the same database, so it is read the same way; it has not yet been tested end to end.
 - **Amp:** Amp keeps its threads on Amp's servers, so the PR is written from the diff and git history, not session logs. Only PR commands run in the shell are redirected to Tracetoon.
 - **Zed:** Zed has no hook before its agent's tools, so a PR command run by the Zed Agent isn't redirected; the agent can still use the Tracetoon skill. Claude Code, Codex and Copilot CLI run inside Zed are covered by their own integrations.
 
