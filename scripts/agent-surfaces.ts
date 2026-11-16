@@ -8,7 +8,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { INTEGRATIONS } from '../src/integrations/registry.ts';
-import type { Integration } from '../src/integrations/types.ts';
+import type { Integration, SupportTier } from '../src/integrations/types.ts';
+import { WORKFLOWS } from '../src/integrations/workflows.ts';
+import { readVerification, summarize } from './compat/records.ts';
+import upstream from '../compat/upstream.json';
 import { ERROR_CODES, EXIT_CODES } from '../src/commands/exitCodes.ts';
 import { buildProgram, commandTree, type CommandSpec } from '../src/program.ts';
 import pkg from '../package.json';
@@ -86,35 +89,147 @@ const MARK: Record<Integration['status'], string> = {
 function hookCell(i: Integration): string {
   if (i.hook) return `\`${home(i.hook.file('~', {}))}\``;
   const via = INTEGRATIONS.find((o) => o.id === i.hookVia);
-  return via ? `${via.label}'s hook, which ${i.label} imports` : 'none';
+  return via ? `inherited: ${via.label}'s hook, which ${i.label} imports` : 'none';
 }
 
-/** docs/agents/support.md: every listed host, what it covers and any gaps. */
+/** The sentence every support listing opens with. Never claims more than the tiers promise. */
+export const TIER_PITCH =
+  'Tracetoon works across a broad range of coding agents and IDEs. Recommended integrations are actively maintained and continuously compatibility-tested. Community Supported integrations are available on a best-effort basis.';
+
+/** Listed hosts in one tier, in registry order. */
+export function tierIntegrations(tier: SupportTier): Integration[] {
+  return listedIntegrations().filter((i) => i.supportTier === tier);
+}
+
+interface UpstreamTarget {
+  integration: string;
+  surface: string;
+  evidence: string;
+  os: string[];
+}
+
+/** compat/upstream.json: the targets the compatibility workflow verifies. */
+export function upstreamTargets(): Record<string, UpstreamTarget> {
+  return (upstream as { targets: Record<string, UpstreamTarget> }).targets;
+}
+
+const OS_NAME: Record<string, string> = {
+  'ubuntu-latest': 'Linux',
+  'windows-latest': 'Windows',
+  'macos-latest': 'macOS',
+};
+const STATUS_MARK: Record<string, string> = {
+  passed: '✅ passed',
+  pending: '⏳ pending',
+  failed: '❌ failed',
+  blocked: '⛔ blocked',
+  'not yet verified': 'not yet verified',
+};
+
+/**
+ * The "Last verified" and "Verification" cells for one target. A version is
+ * named as verified only when every required platform passed it; a newer
+ * release shows as pending, failed or blocked beside the older verified one.
+ */
+function verificationCells(target: string | undefined): [string, string] {
+  const t = target ? upstreamTargets()[target] : undefined;
+  if (!target || !t) return ['not yet verified', 'no verification route yet'];
+  const s = summarize(readVerification(), target, t.os);
+  const last = s.lastVerified
+    ? `${s.lastVerified.version} on ${s.lastVerified.os.map((o) => OS_NAME[o] ?? o).join(', ')}, ${s.lastVerified.at.slice(0, 10)} ([run](${s.lastVerified.url}))`
+    : 'not yet verified';
+  const latest =
+    s.latest && s.latest.version !== s.lastVerified?.version
+      ? `${STATUS_MARK[s.latest.status]} (${s.latest.version})`
+      : STATUS_MARK[s.status];
+  return [last, latest ?? s.status];
+}
+
+/** The CLI target of a recommended integration. */
+function cliTarget(i: Integration): string | undefined {
+  return Object.entries(upstreamTargets()).find(
+    ([, t]) => t.integration === i.id && t.surface === 'cli',
+  )?.[0];
+}
+
+/** docs/agents/support.md: every listed host by tier, what it covers and any gaps. */
 export function supportMd(): string {
   const hosts = listedIntegrations();
-  const rows = hosts.map((i) => [
+  const capability = (i: Integration) =>
+    `${MARK[i.status]}${i.limits?.length ? ' (see notes)' : ''}`;
+  const skill = (i: Integration) => (i.skill ? `\`${home(i.skill('~', {}).dir)}\`` : '');
+  const recommended = tierIntegrations('recommended').map((i) => [
     i.label,
     i.variants ?? '',
-    `${MARK[i.status]}${i.limits?.length ? ' (see notes)' : ''}`,
+    capability(i),
     hookCell(i),
-    i.skill ? `\`${home(i.skill('~', {}).dir)}\`` : '',
+    ...verificationCells(cliTarget(i)),
   ]);
-  for (const p of PLANNED_HOSTS) rows.push([p, '', '🗓️ planned', '', '']);
+  const workflows = WORKFLOWS.map((w) => {
+    const agent = INTEGRATIONS.find((i) => i.id === w.agentIntegrationId);
+    // A workflow with no automated route is a candidate, whatever anyone tried by hand.
+    const [last, status] = upstreamTargets()[w.verificationTarget]
+      ? verificationCells(w.verificationTarget)
+      : ['not yet verified', 'candidate'];
+    return [
+      `${w.editor} + ${agent?.label ?? w.agentIntegrationId}`,
+      w.scope,
+      last,
+      status,
+    ];
+  });
+  const community = tierIntegrations('community').map((i) => [
+    i.label,
+    i.variants ?? '',
+    capability(i),
+    hookCell(i),
+    skill(i),
+  ]);
+  for (const p of PLANNED_HOSTS) community.push([p, '', '🗓️ planned', '', '']);
+  const skills = tierIntegrations('recommended').map((i) => [i.label, skill(i)]);
   const notes = hosts
     .filter((i) => i.limits?.length)
     .map((i) => `- **${i.label}:** ${i.limits?.join(' ')}`)
     .join('\n');
   return `# Supported agents
 
-<!-- Generated by scripts/agent-surfaces.ts from src/integrations/registry.ts. Do not edit by hand. -->
+<!-- Generated by scripts/agent-surfaces.ts from src/integrations/registry.ts, src/integrations/workflows.ts and compat/verification.json. Do not edit by hand. -->
+
+${TIER_PITCH}
 
 Tracetoon works with ${hosts.length} coding agents. For a ✅ agent it reads the
 session logs the agent keeps on your machine, a PR hook sends the agent's PR
 commands (\`gh pr create\` and the like) to Tracetoon, and the skill is
 installed where the agent looks for skills. A 🟡 agent is missing part of
-that; the notes below say what.
+that; the notes below say what. What the two tiers commit to:
+[support policy](support-policy.md).
 
-${table(['Agent', 'Covers', 'Support', 'PR hook', 'Skill folder'], rows)}
+## Recommended integrations
+
+Every new release of these agents is installed and tested by the
+compatibility workflow ([how](support-policy.md#how-recommended-integrations-are-verified)). "Last
+verified" is the newest release that passed on every listed platform; a newer
+release shows as pending, failed or blocked until it passes.
+
+${table(['Agent', 'Covers', 'Support', 'PR hook', 'Last verified', 'Newest release'], recommended)}
+
+Skill folders: ${skills.map(([l, d]) => `${l} ${d}`).join(', ')}.
+
+## IDE workflows
+
+A recommended workflow is one agent running inside one editor. It doesn't
+cover the editor's other agents: Zed's own agent, for example, is Community
+Supported. A workflow says "verified" only after its own test has passed.
+
+${table(['Workflow', 'What is tested', 'Last verified', 'Status'], workflows)}
+
+## Community Supported integrations
+
+Available and documented, with the same tests on every Tracetoon change, but
+not retested on each new release of the agent. Fixes are best-effort, and
+contributions are welcome.
+
+${table(['Agent', 'Covers', 'Support', 'PR hook', 'Skill folder'], community)}
 
 ## Notes
 
@@ -125,9 +240,9 @@ agents it found. Install routes are in [install.md](install.md).
 `;
 }
 
-/** The README's support table: one row per host, gaps in a few words. */
+/** The README's support tables: one row per host, gaps in a few words. */
 function readmeTable(): string {
-  const rows = listedIntegrations().map((i) => {
+  const row = (i: Integration) => {
     const via = INTEGRATIONS.find((o) => o.id === i.hookVia);
     const note = [
       ...(i.traces.length ? [] : ['no session logs']),
@@ -138,11 +253,26 @@ function readmeTable(): string {
       i.variants ? `${i.label} (${i.variants})` : i.label,
       `${MARK[i.status]}${note ? ` (${note})` : ''}`,
     ];
-  });
-  for (const p of PLANNED_HOSTS) rows.push([p, '🗓️ planned']);
-  return `${table(['Agent', 'Status'], rows)}
+  };
+  const community = tierIntegrations('community').map(row);
+  for (const p of PLANNED_HOSTS) community.push([p, '🗓️ planned']);
+  const editors = [...new Set(WORKFLOWS.map((w) => w.editor))];
+  return `${TIER_PITCH}
 
-Hook files, skill folders and the notes: [supported agents](docs/agents/support.md).`;
+**Recommended:** retested on every new release of the agent.
+
+${table(['Agent', 'Status'], tierIntegrations('recommended').map(row))}
+
+**IDE workflows:** ${list(editors)} with specific recommended agents; each says
+"verified" only once its own test passes ([IDE workflows](docs/agents/support.md#ide-workflows)).
+
+**Community Supported:** available and tested with every Tracetoon change, fixed
+on a best-effort basis.
+
+${table(['Agent', 'Status'], community)}
+
+Hook files, skill folders, verification results and the notes:
+[supported agents](docs/agents/support.md).`;
 }
 
 /** The README intro's agent list: the best known by name, then a count. */
@@ -466,7 +596,7 @@ still prepare the description; only publishing needs it.
 **How do I turn it off for a repo?** \`tracetoon off\`; \`tracetoon status\`
 says which setting decided.
 
-**Which hosts are supported?** ${list(supportedLabels())}${partialNote()}. Details and gaps: [support.md](support.md).
+**Which hosts are supported?** ${list(supportedLabels())}${partialNote()}. Recommended, and retested on every new release: ${list(tierIntegrations('recommended').map((i) => i.label))}. The rest are Community Supported (best-effort). Details and gaps: [support.md](support.md).
 `;
 }
 

@@ -1,13 +1,16 @@
 /**
- * Art style ideas. A comic can use any art style: one of these by id (it
- * expands to a tested prompt), or the agent's own description. Each comic
- * picks a style that suits the PR and differs from the repo's recent comics.
+ * Comic art styles. Every preset is a comic tradition (inks, color, lettering,
+ * balloons, panels), because a PR comic should look like a comic, not an
+ * illustration. A comic can also use the agent's own words, and an explicit
+ * user request always wins. Reusing a style is fine when it suits the joke.
  */
-import type { Palette } from './types.ts';
+import type { Palette, StyleFamily } from './types.ts';
 
 export interface Style {
   id: string;
   name: string;
+  /** The comic tradition, for the page summary. */
+  family: StyleFamily;
   /** The style block for image prompts. */
   prompt: string;
   /** Palettes that suit it; the first is the default. */
@@ -20,173 +23,274 @@ export interface Style {
 
 export const STYLES: Style[] = [
   {
-    id: 'manga-ink',
-    name: 'Manga ink',
+    id: 'webcomic',
+    name: 'Modern webcomic',
+    family: 'webcomic',
     prompt:
-      'black-and-white manga page, crisp ink linework, screentone shading, speed lines and impact bursts, dramatic angles, expressive eyes',
-    palettes: ['bw-accent', 'limited'],
-    moods: ['dramatic', 'intense', 'heroic', 'victory'],
-    lettering: 'hand-lettered manga captions in boxes, bold brush-script headline',
-  },
-  {
-    id: 'shonen-action',
-    name: 'Shonen action',
-    prompt:
-      'full-color shonen anime action page, dynamic poses, motion blur, glowing energy effects, bold cel shading',
+      'modern webcomic, bold clean black ink outlines, bright cel-shaded color, very expressive cartoon faces and big reactions, simple readable backgrounds, crisp panel borders with white gutters',
     palettes: ['full-color'],
-    moods: ['epic', 'battle', 'comeback', 'speed'],
-    lettering: 'big angled sound effects, bold outlined headline',
+    moods: ['gag', 'relatable', 'everyday', 'any'],
+    lettering:
+      'bold hand-lettered comic font in white speech balloons, yellow caption boxes, punchy sound effects',
   },
   {
-    id: 'mecha-anime',
-    name: 'Mecha anime',
+    id: 'superhero',
+    name: 'American superhero',
+    family: 'american',
     prompt:
-      'mecha anime style, detailed robots and cockpits, holographic HUD panels, cinematic lighting',
-    palettes: ['full-color', 'bw-accent'],
-    moods: ['systems', 'infrastructure', 'launch', 'precision'],
-    lettering: 'HUD labels and readouts on screens, condensed sci-fi headline',
-  },
-  {
-    id: 'chibi-anime',
-    name: 'Chibi anime',
-    prompt:
-      'cute chibi anime style, big heads, small bodies, soft cel shading, pastel colors',
+      'modern American superhero comic book, dynamic foreshortened poses, confident inking with feathered shadows, rich digital coloring, dramatic lighting',
     palettes: ['full-color'],
-    moods: ['cozy', 'silly', 'small fix', 'wholesome'],
-    lettering: 'rounded bubbly lettering, playful headline',
-  },
-  {
-    id: 'noir',
-    name: 'Film noir',
-    prompt:
-      'film noir graphic novel, heavy black shadows, venetian-blind light, rain, chiaroscuro, trench coats',
-    palettes: ['bw-accent', 'limited'],
-    moods: ['mystery', 'debugging', 'investigation', 'suspense'],
-    lettering: 'typewriter caption boxes, hard-boiled narration, stark serif headline',
+    moods: ['heroic', 'rescue', 'big win', 'showdown'],
+    lettering:
+      'uppercase comic-book lettering in oval balloons, bold caption boxes, big angular sound effects',
   },
   {
     id: 'silver-age',
-    name: 'Silver-age comic',
+    name: 'Silver Age comic',
+    family: 'american',
     prompt:
-      '1960s American comic book, Ben-Day halftone dots, bold primary colors, thick outlines, heroic poses',
+      '1960s American comic book page, Ben-Day halftone dots, bold primary colors, thick inked outlines, melodramatic poses, slightly yellowed newsprint',
     palettes: ['full-color', 'limited'],
-    moods: ['heroic', 'rescue', 'big win', 'retro'],
+    moods: ['heroic', 'melodrama', 'retro', 'big claim'],
     lettering:
-      'classic comic lettering in white balloons, exclamation-heavy, burst headline',
+      'classic uppercase comic lettering in white balloons, exclamation-heavy, narration boxes',
+  },
+  {
+    id: 'alt-comix',
+    name: 'Indie alt-comix',
+    family: 'indie',
+    prompt:
+      'indie alternative comic, loose expressive brush ink, slightly wobbly hand-drawn panel borders, flat muted colors, deadpan characters',
+    palettes: ['limited', 'bw-accent'],
+    moods: ['deadpan', 'awkward', 'dry humor', 'existential'],
+    lettering: 'uneven hand-lettered capitals in simple balloons',
+  },
+  {
+    id: 'shonen-action',
+    name: 'Shonen manga',
+    family: 'manga',
+    prompt:
+      'shonen manga page, energetic black ink, screentone shading, speed lines and impact frames, exaggerated reactions, dynamic camera angles',
+    palettes: ['bw-accent', 'full-color'],
+    moods: ['epic', 'battle', 'comeback', 'speed', 'rivalry'],
+    lettering:
+      'manga balloons with bold lettering, huge hand-drawn sound effects integrated into the art',
+  },
+  {
+    id: 'manga-ink',
+    name: 'Seinen manga',
+    family: 'manga',
+    prompt:
+      'seinen manga page, detailed black ink linework, crosshatching and screentone, cinematic paneling, restrained, tense expressions',
+    palettes: ['bw-accent', 'limited'],
+    moods: ['tense', 'mystery', 'debugging', 'serious-as-a-joke'],
+    lettering: 'clean manga lettering in balloons, sparse narration boxes',
+  },
+  {
+    id: 'shojo',
+    name: 'Shojo manga',
+    family: 'manga',
+    prompt:
+      'shojo manga page, delicate fine linework, sparkle and flower screentones, big emotive eyes, soft pastel tones, panels that break their borders for emotional beats',
+    palettes: ['limited', 'full-color'],
+    moods: ['dramatic feelings', 'romance parody', 'wholesome', 'devotion'],
+    lettering: 'elegant manga lettering, floating inner-monologue text, sparkly emphasis',
+  },
+  {
+    id: 'chibi-anime',
+    name: 'Chibi manga comedy',
+    family: 'manga',
+    prompt:
+      'comedic chibi manga, super-deformed characters with big heads, sweat drops, anger marks and comic tears, simple screentone backgrounds, bold ink outlines',
+    palettes: ['full-color', 'limited'],
+    moods: ['silly', 'panic', 'small fix', 'cute'],
+    lettering: 'rounded bubbly balloons, wobbly panic lettering',
+  },
+  {
+    id: 'yonkoma',
+    name: 'Yonkoma gag manga',
+    family: 'manga',
+    prompt:
+      'yonkoma gag manga, clean simple ink linework, cute deformed characters, flat light tones, tidy rectangular panels',
+    palettes: ['bw-accent', 'limited'],
+    moods: ['gag', 'twist', 'everyday', 'deadpan'],
+    lettering: 'small neat balloons, a quiet beat before the last-panel punchline',
   },
   {
     id: 'ligne-claire',
     name: 'Ligne claire',
+    family: 'euro',
     prompt:
-      'ligne claire European comic style, clean uniform outlines, flat colors, detailed tidy backgrounds, no hatching',
+      'ligne claire European comic, clean uniform ink outlines, flat bright colors, detailed tidy backgrounds, no hatching',
     palettes: ['full-color'],
-    moods: ['adventure', 'exploration', 'clever', 'travel'],
-    lettering: 'neat hand lettering in clean balloons, elegant headline',
+    moods: ['adventure', 'investigation', 'clever', 'travel'],
+    lettering: 'neat hand lettering in clean rounded balloons',
+  },
+  {
+    id: 'euro-humor',
+    name: 'Franco-Belgian humor',
+    family: 'euro',
+    prompt:
+      'Franco-Belgian humor comic, round bouncy cartoon characters with big noses, lively brush ink, bright flat colors, busy funny background details',
+    palettes: ['full-color'],
+    moods: ['slapstick', 'chaos', 'escalation', 'ensemble'],
+    lettering:
+      'lively hand lettering in rounded balloons, onomatopoeia drawn into the scene',
   },
   {
     id: 'sunday-strip',
-    name: 'Sunday newspaper strip',
+    name: 'Sunday funnies',
+    family: 'newspaper',
     prompt:
-      'classic Sunday newspaper comic strip, simple expressive cartoon characters, warm flat colors, slight paper texture',
+      'classic Sunday newspaper comic strip, simple expressive cartoon characters, warm flat colors, confident brush outlines, slight newsprint texture',
     palettes: ['full-color', 'limited'],
     moods: ['gag', 'everyday', 'relatable', 'small fix'],
-    lettering: 'friendly hand-lettered balloons, strip title in a banner',
+    lettering: 'friendly hand-lettered balloons',
   },
   {
-    id: 'rubber-hose',
-    name: '1930s rubber hose',
+    id: 'editorial-cartoon',
+    name: 'Editorial cartoon',
+    family: 'newspaper',
     prompt:
-      '1930s rubber-hose cartoon, bendy limbs, pie-cut eyes, white gloves, sepia film grain, bouncy motion',
-    palettes: ['limited', 'duotone'],
-    moods: ['slapstick', 'chaos', 'silly', 'retro'],
-    lettering: 'vintage title card lettering, bouncy balloons',
+      'newspaper editorial cartoon, scratchy pen-and-ink crosshatching, exaggerated original figures, words written on the objects that matter, single gray wash',
+    palettes: ['bw-accent'],
+    moods: ['commentary', 'irony', 'big picture', 'satire'],
+    lettering:
+      'hand-lettered words on objects in the scene, a short caption under the drawing',
   },
   {
-    id: 'storybook-watercolor',
-    name: 'Storybook watercolor',
+    id: 'magazine-cartoon',
+    name: 'Magazine gag cartoon',
+    family: 'newspaper',
     prompt:
-      "children's storybook watercolor illustration, soft washes, pencil linework, gentle light",
+      'sophisticated magazine gag cartoon, loose confident pen line, light gray wash, understated deadpan characters',
+    palettes: ['bw-accent'],
+    moods: ['dry wit', 'understatement', 'one-liner'],
+    lettering:
+      'a single typeset caption beneath the drawing, set in quotes when someone speaks',
+  },
+  {
+    id: 'webtoon',
+    name: 'Full-color webtoon',
+    family: 'webcomic',
+    prompt:
+      'full-color webtoon, clean digital lineart, soft gradient cel shading, glossy modern characters, big reaction close-ups, generous space between panels',
     palettes: ['full-color'],
-    moods: ['gentle', 'cleanup', 'care', 'wholesome'],
-    lettering: 'handwritten storybook captions, whimsical headline',
+    moods: ['drama', 'reaction', 'slow reveal', 'vertical'],
+    lettering: 'clean digital balloons, oversized reaction text',
   },
   {
-    id: 'claymation',
-    name: 'Claymation',
+    id: 'saturday-cartoon',
+    name: '90s Saturday-morning cartoon',
+    family: 'american',
     prompt:
-      'stop-motion claymation diorama, plasticine characters with fingerprints, miniature set, soft studio lighting',
+      '1990s Saturday-morning TV cartoon look drawn as a comic, thick outlines, angular stylized characters, saturated flat colors, squash-and-stretch expressions',
     palettes: ['full-color'],
-    moods: ['handmade', 'building', 'silly', 'craft'],
-    lettering: 'cut-paper signs and labels in the set, chunky headline',
+    moods: ['zany', 'chaos', 'slapstick', 'villain plan'],
+    lettering: 'chunky cartoon lettering in bold balloons, loud sound effects',
+  },
+  {
+    id: 'noir',
+    name: 'Noir graphic novel',
+    family: 'american',
+    prompt:
+      'noir graphic novel, heavy black ink shadows, venetian-blind light, rain, chiaroscuro, trench coats',
+    palettes: ['bw-accent', 'limited'],
+    moods: ['mystery', 'debugging', 'investigation', 'confession'],
+    lettering: 'typewriter caption boxes with hard-boiled narration, tight balloons',
   },
   {
     id: 'pixel-16bit',
-    name: '16-bit pixel art',
+    name: 'Pixel comic',
+    family: 'webcomic',
     prompt:
-      '16-bit pixel art like a 1990s console game, crisp pixels, limited palette, game UI elements',
+      'pixel-art comic, crisp 16-bit pixels, clear panel borders, chunky expressive sprites, video-game UI framing',
     palettes: ['limited', 'full-color'],
     moods: ['quest', 'level up', 'boss fight', 'retro'],
-    lettering: 'pixel font dialogue boxes like an RPG, "LEVEL CLEAR" style headline',
-  },
-  {
-    id: 'risograph',
-    name: 'Risograph zine',
-    prompt:
-      'risograph-printed zine, two overprinted ink colors, grainy texture, slight misregistration, bold shapes',
-    palettes: ['duotone'],
-    moods: ['indie', 'tooling', 'docs', 'craft'],
-    lettering: 'chunky grotesque type, stamped labels',
-  },
-  {
-    id: 'pulp-scifi',
-    name: 'Pulp sci-fi',
-    prompt:
-      '1950s pulp science fiction magazine art, ray guns, rocket fins, painted gouache, dramatic sky',
-    palettes: ['full-color', 'limited'],
-    moods: ['launch', 'future', 'bold claim', 'adventure'],
-    lettering: 'pulp magazine cover headline, starburst blurbs',
-  },
-  {
-    id: 'ukiyo-e',
-    name: 'Ukiyo-e woodblock',
-    prompt:
-      'Japanese ukiyo-e woodblock print, flat color areas, carved outlines, stylized waves and clouds, washi paper texture',
-    palettes: ['limited'],
-    moods: ['calm', 'refactor', 'balance', 'migration'],
-    lettering: 'vertical cartouche labels, brush headline',
-  },
-  {
-    id: 'atomic-flat',
-    name: 'Mid-century flat',
-    prompt:
-      'mid-century modern illustration, atomic-age shapes, flat geometric characters, starbursts, cream background',
-    palettes: ['limited', 'full-color'],
-    moods: ['optimistic', 'product', 'feature', 'clean'],
-    lettering: 'retro display type, small caption labels',
-  },
-  {
-    id: 'blueprint',
-    name: 'Blueprint',
-    prompt:
-      'technical blueprint, white linework on cyan blueprint paper, callouts, dimension lines, exploded views',
-    palettes: ['duotone'],
-    moods: ['architecture', 'internals', 'how it works', 'design'],
-    lettering: 'drafting stencil labels and callouts, title block headline',
-  },
-  {
-    id: 'vaporwave',
-    name: 'Vaporwave',
-    prompt:
-      'vaporwave aesthetic, neon pink and cyan, synthwave sun, chrome text, grid horizon, retro computer windows',
-    palettes: ['full-color'],
-    moods: ['performance', 'speed', 'nostalgia', 'ui'],
-    lettering: 'chrome and neon headline, window-title labels',
+    lettering: 'pixel-font RPG dialogue boxes',
   },
 ];
 
-export const styleById = (id: string | undefined) => STYLES.find((s) => s.id === id);
+/**
+ * Presets from earlier releases. Old scripts that name them still expand to
+ * the same prompt; they are no longer offered or picked on reroll.
+ */
+const LEGACY_STYLES: Style[] = [
+  [
+    'mecha-anime',
+    'mecha anime style, detailed robots and cockpits, holographic HUD panels, cinematic lighting',
+    'HUD labels and readouts on screens, condensed sci-fi headline',
+    ['full-color', 'bw-accent'],
+  ],
+  [
+    'rubber-hose',
+    '1930s rubber-hose cartoon, bendy limbs, pie-cut eyes, white gloves, sepia film grain, bouncy motion',
+    'vintage title card lettering, bouncy balloons',
+    ['limited', 'duotone'],
+  ],
+  [
+    'storybook-watercolor',
+    "children's storybook watercolor illustration, soft washes, pencil linework, gentle light",
+    'handwritten storybook captions, whimsical headline',
+    ['full-color'],
+  ],
+  [
+    'claymation',
+    'stop-motion claymation diorama, plasticine characters with fingerprints, miniature set, soft studio lighting',
+    'cut-paper signs and labels in the set, chunky headline',
+    ['full-color'],
+  ],
+  [
+    'risograph',
+    'risograph-printed zine, two overprinted ink colors, grainy texture, slight misregistration, bold shapes',
+    'chunky grotesque type, stamped labels',
+    ['duotone'],
+  ],
+  [
+    'pulp-scifi',
+    '1950s pulp science fiction magazine art, ray guns, rocket fins, painted gouache, dramatic sky',
+    'pulp magazine cover headline, starburst blurbs',
+    ['full-color', 'limited'],
+  ],
+  [
+    'ukiyo-e',
+    'Japanese ukiyo-e woodblock print, flat color areas, carved outlines, stylized waves and clouds, washi paper texture',
+    'vertical cartouche labels, brush headline',
+    ['limited'],
+  ],
+  [
+    'atomic-flat',
+    'mid-century modern illustration, atomic-age shapes, flat geometric characters, starbursts, cream background',
+    'retro display type, small caption labels',
+    ['limited', 'full-color'],
+  ],
+  [
+    'blueprint',
+    'technical blueprint, white linework on cyan blueprint paper, callouts, dimension lines, exploded views',
+    'drafting stencil labels and callouts, title block headline',
+    ['duotone'],
+  ],
+  [
+    'vaporwave',
+    'vaporwave aesthetic, neon pink and cyan, synthwave sun, chrome text, grid horizon, retro computer windows',
+    'chrome and neon headline, window-title labels',
+    ['full-color'],
+  ],
+].map(([id, prompt, lettering, palettes]) => ({
+  id: id as string,
+  name: id as string,
+  family: 'custom' as StyleFamily,
+  prompt: prompt as string,
+  // The palettes each preset had, so old scripts keep their default palette.
+  palettes: palettes as Palette[],
+  moods: [],
+  lettering: lettering as string,
+}));
 
-/** Style ideas not used recently (and not `current`), least recently used last. */
+export const styleById = (id: string | undefined) =>
+  STYLES.find((s) => s.id === id) ?? LEGACY_STYLES.find((s) => s.id === id);
+
+/** Style presets other than `current`, least recently used first. */
 export function freshStyles(recent: string[] = [], current?: string): Style[] {
   const pool = STYLES.filter((s) => s.id !== current);
   return [
@@ -195,17 +299,29 @@ export function freshStyles(recent: string[] = [], current?: string): Style[] {
   ];
 }
 
-/** The style block for a prompt: a known idea's tested prompt, or the text as written. */
+/** The style block for a prompt: a preset's tested prompt, or the text as written. */
 export function styleText(style: string): string {
   return styleById(style)?.prompt ?? style.trim();
 }
 
-/** Lettering direction for a style: the idea's, or a neutral default. */
+/** Lettering direction for a style: the preset's, or a neutral default. */
 export function styleLettering(style: string): string {
   return (
     styleById(style)?.lettering ??
-    'clean hand-lettered comic text that suits the art style, easy to read at phone size'
+    'hand-lettered comic text in speech balloons and caption boxes that suits the art, easy to read at phone size'
   );
+}
+
+const NON_COMIC_MEDIUM =
+  /\b(3d|cgi|render(ed)?|clay|claymation|plasticine|diorama|plush|toy|figurine|watercolou?r|gouache|oil paint|painted|picture[- ]book|storybook|photo(graph|real)?|stop[- ]motion|papercraft|paper[- ]cut)/i;
+
+/**
+ * Whether the style, or the user's explicit request, asks for a non-comic
+ * medium (3D, clay, painting). Then the "must look like an inked comic" guard
+ * is left out of the prompt, so it never contradicts what was asked for.
+ */
+export function wantsNonComicMedium(style: string, request?: string): boolean {
+  return NON_COMIC_MEDIUM.test(styleText(style)) || NON_COMIC_MEDIUM.test(request ?? '');
 }
 
 /** How a palette reads in a prompt. */

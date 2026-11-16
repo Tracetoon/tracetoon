@@ -19,11 +19,38 @@ export const FORMATS: Format[] = [
   {
     id: 'strip',
     name: 'Gag strip',
-    useWhen: 'a single joke with a punchline: something went funny along the way',
+    useWhen: 'a joke told in beats: setup, build, punchline',
     layout:
       'a horizontal row of panels read left to right; the last panel lands the punchline',
-    panels: [2, 4],
+    panels: [3, 4],
     aspect: '16:9',
+  },
+  {
+    id: 'tiered-strip',
+    name: 'Tiered page',
+    useWhen: 'a scene that needs establishing first, then quick beats to the punchline',
+    layout:
+      'a wide establishing panel across the top, then a row of 2 to 4 smaller panels below it; the last one lands the joke',
+    panels: [3, 5],
+    aspect: '4:3',
+  },
+  {
+    id: 'manga-page',
+    name: 'Manga page',
+    useWhen: 'escalation or a dramatic overreaction: quick beats into one big reaction',
+    layout:
+      'a manga page with irregular, slanted panels of different sizes; small fast beats lead into one dominant reaction panel',
+    panels: [3, 6],
+    aspect: '3:4',
+  },
+  {
+    id: 'webtoon',
+    name: 'Vertical webtoon',
+    useWhen: 'a slow reveal or a pause before the punchline: read top to bottom',
+    layout:
+      'a vertical scroll of 3 to 5 stacked wide panels with space between them for timing; the last panel is the payoff',
+    panels: [3, 5],
+    aspect: '3:4',
   },
   {
     id: '4koma',
@@ -36,7 +63,8 @@ export const FORMATS: Format[] = [
   {
     id: 'before-after',
     name: 'Before / after',
-    useWhen: 'the change is easy to see: something broken or slow becomes fixed or fast',
+    useWhen:
+      'only when the contrast itself is the punchline; most changes make a better joke as a story',
     layout:
       'split page: BEFORE on the left, AFTER on the right, optionally a narrow FIX panel between them',
     panels: [2, 3],

@@ -8,16 +8,20 @@ import {
   PALETTES,
   CAST_KINDS,
   DIALOGUE_KINDS,
+  KNOWN_STYLE_FAMILIES,
   STYLE_FAMILIES,
   type ComicScript,
   type ComicSummary,
 } from './types.ts';
 import { comicSummary, compositionProblems, visibleHeadline } from './composition.ts';
 
-/** Words per text item on a page: the model letters them, so keep them short. */
-export const MAX_ITEM_WORDS = 12;
-/** All the words on a page, headline included: it has to read on a phone. */
-export const MAX_PAGE_WORDS = 50;
+/** Words per text item on a page: one balloon, one breath. */
+export const MAX_ITEM_WORDS = 18;
+/**
+ * All the words on a page, headline included. Room for a setup, a build and a
+ * punchline in dialogue; most good comics use 25–60.
+ */
+export const MAX_PAGE_WORDS = 80;
 export const MAX_HEADLINE_WORDS = 6;
 export const MAX_CHARACTERS = 6;
 export const MAX_STYLE_CHARS = 120;
@@ -100,7 +104,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
-  if (s.styleFamily && !STYLE_FAMILIES.includes(s.styleFamily))
+  if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
     bad('headline', 'must be text');
@@ -113,13 +117,9 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   else {
     if (opts.pinnedStyle && !same(s.style, opts.pinnedStyle))
       bad('style', `this repo pins the style "${opts.pinnedStyle}" (config style)`);
-    const recent = (opts.recentStyles ?? []).slice(0, 3);
-    if (!opts.pinnedStyle && recent.some((r) => same(r, s.style!)))
-      warn(
-        'style',
-        `"${s.style}" was used in one of the last ${recent.length} comics; pick something fresh`,
-      );
   }
+  if (s.request !== undefined && (typeof s.request !== 'string' || !s.request.trim()))
+    bad('request', "must be the user's request in words (or left out)");
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
   const idea = styleById(s.style);
@@ -195,9 +195,12 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       if (d.kind && !DIALOGUE_KINDS.includes(d.kind))
         bad(`${w}.kind`, `must be ${DIALOGUE_KINDS.join(', ')}`);
       if (d.points !== undefined && typeof d.points !== 'string')
-        bad(`${w}.points`, 'must describe the drawn element the label points at');
-      if (d.kind === 'label' && !d.points?.trim())
-        bad(`${w}.points`, 'a label needs the drawn element it points at');
+        bad(`${w}.points`, 'must name the surface or element the words are on');
+      if (d.kind === 'label')
+        warn(
+          `${w}.kind`,
+          'labels look like pointer tags; letter the words on something in the scene ("kind": "sign", with `points` naming the surface) or say them in dialogue',
+        );
       if (!d.text?.trim()) bad(`${w}.text`, 'is empty');
       else if (d.kind === 'label' && words(d.text) > MAX_LABEL_WORDS)
         bad(
@@ -230,6 +233,17 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
       );
     if (
+      current.panelCount === 2 &&
+      current.layoutFamily === 'comparison' &&
+      recent
+        .slice(0, 2)
+        .some((r) => r.panelCount === 2 && r.layoutFamily === 'comparison')
+    )
+      warn(
+        'composition',
+        'Another two-panel before/after. Most jokes want a setup, a build and a punchline; use two panels only when the contrast itself is the punchline.',
+      );
+    if (
       current.castKinds?.includes('creature') &&
       !current.castKinds.includes('human') &&
       recent.slice(0, 2).length === 2 &&
@@ -240,15 +254,6 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       warn(
         'characters',
         'Recent comics already used creature-led casts. Consider people, objects or a characterless metaphor; keep creatures when they strengthen this gag.',
-      );
-    if (
-      !opts.pinnedStyle &&
-      current.styleFamily &&
-      recent.slice(0, 3).filter((r) => r.styleFamily === current.styleFamily).length >= 2
-    )
-      warn(
-        'styleFamily',
-        'This broad art family repeats recent comics, even if the style name differs. Consider another visual treatment.',
       );
   }
   return out;
@@ -306,11 +311,9 @@ export function anchorProblems(s: ComicScript, evidenceText?: string): ScriptPro
   if (!terms.some((t) => visible.some((v) => v.includes(loose(t)))))
     bad(
       'anchor.terms',
-      `none of ${terms.map((t) => `"${t}"`).join(', ')} is lettered in the comic; add a label or sign so a reviewer can tie the picture to the PR`,
+      `none of ${terms.map((t) => `"${t}"`).join(', ')} is lettered in the comic; put one in the scene (a screen, a sign, a box stamp) or in someone's line so a reviewer can tie the picture to the PR`,
     );
-  const labels = s.panels.flatMap((p) =>
-    (p.dialogue ?? []).filter((d) => d.kind === 'label' || d.kind === 'sign'),
-  );
+  const labels = s.panels.flatMap((p) => p.dialogue ?? []);
   (mapping ?? []).forEach((m, i) => {
     if (!m?.visual || !m.technical) return;
     const v = loose(m.visual);
@@ -324,7 +327,7 @@ export function anchorProblems(s: ComicScript, evidenceText?: string): ScriptPro
     if (!labelled)
       warn(
         `anchor.mapping[${i}]`,
-        `"${m.visual}" stands for "${m.technical}" but has no label; readers may miss the connection`,
+        `"${m.visual}" stands for "${m.technical}" but no words in the scene or dialogue say so; readers may miss the connection`,
       );
   });
   if (evidenceText) {
@@ -348,15 +351,13 @@ export function transcript(script: ComicScript): string {
     script.panels
       .map((p, i) => {
         const lines = p.dialogue.map((d) =>
-          d.kind === 'label'
-            ? `[label${d.points ? ` → ${d.points}` : ''}: ${d.text}]`
+          d.kind === 'label' || d.kind === 'sign'
+            ? `[${d.points ? `on ${d.points}: ` : ''}${d.text}]`
             : d.speaker === 'caption' || d.kind === 'caption'
               ? `*${d.text}*`
               : d.kind === 'sfx'
                 ? `**${d.text}**`
-                : d.kind === 'sign'
-                  ? `[${d.text}]`
-                  : `**${d.speaker}:** ${d.text}`,
+                : `**${d.speaker}:** ${d.text}`,
         );
         return `${i + 1}. ${p.drawn ?? p.scene}${lines.length ? '\n   ' + lines.join('\n   ') : ''}`;
       })

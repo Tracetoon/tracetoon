@@ -1,0 +1,203 @@
+name: integration compatibility
+
+# Checks every new release of a Recommended agent against Tracetoon
+# (docs/agents/support-policy.md). Nothing here spends money:
+#
+# - Claude Code, Codex, OpenCode and Copilot CLI run for real against the
+#   scripted model in scripts/compat/fake-llm.ts. They get dummy keys, and the
+#   paid model APIs are blocked on the runner.
+# - Cursor can only use Cursor's own service. It runs one short session with
+#   CURSOR_API_KEY, a free-plan account's key, and only for a build that hasn't
+#   been verified yet. Without the secret, its runs are recorded as blocked.
+#
+# Results go to compat/verification.json through a pull request from the
+# compat/verification branch, which the support docs are generated from. A
+# failure opens or updates a `compat:<agent>` issue.
+#
+# Upstream outages and expired tokens are "blocked", not failures; this
+# workflow is separate from ci.yml, so neither holds up ordinary development.
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target or integration id (claude-cli, codex, ...); empty checks every Recommended agent'
+        required: false
+      version:
+        description: 'Upstream version; empty means the newest stable release'
+        required: false
+      force:
+        description: 'Run even if this version already has a result'
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [upstream-release]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-compat
+  cancel-in-progress: false
+
+env:
+  RESULTS_BRANCH: compat/verification
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.find.outputs.matrix }}
+      detected: ${{ steps.find.outputs.detected }}
+      count: ${{ steps.find.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Use results not yet merged
+        # Results wait in a pull request until someone merges them; count them
+        # too, so a verified release isn't checked again every six hours.
+        run: |
+          if git fetch -q --depth 1 origin "$RESULTS_BRANCH" 2>/dev/null; then
+            git show FETCH_HEAD:compat/verification.json > compat/verification.json
+          fi
+      - id: find
+        env:
+          TARGET: ${{ inputs.target || github.event.client_payload.target }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=()
+          [ -n "$TARGET" ] && args+=(--target "$TARGET")
+          [ -n "$VERSION" ] && args+=(--version "$VERSION")
+          [ "$FORCE" = "true" ] && args+=(--force)
+          out=$(bun scripts/compat/discover.ts "${args[@]}")
+          echo "matrix=$(jq -c '{include: .include}' <<<"$out")" >> "$GITHUB_OUTPUT"
+          echo "detected=$(jq -c .detected <<<"$out")" >> "$GITHUB_OUTPUT"
+          echo "count=$(jq '.include | length' <<<"$out")" >> "$GITHUB_OUTPUT"
+          jq -r '.include[] | "- \(.target) \(.version) on \(.os) (\(.evidence))"' <<<"$out" > to-verify.md
+          { echo "### Releases to verify"; cat to-verify.md; } >> "$GITHUB_STEP_SUMMARY"
+
+  verify:
+    needs: discover
+    if: needs.discover.outputs.count != '0'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      COMPAT_OS: ${{ matrix.os }}
+      # Only the free-plan key this entry names reaches the job; fake-model
+      # runs get no secret at all.
+      CURSOR_API_KEY: ${{ matrix.secret == 'CURSOR_API_KEY' && secrets.CURSOR_API_KEY || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The agent runs code; leave no token in the checkout for it to find.
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - run: bun run dependencies:prepare
+      - name: Block paid model APIs
+        # A recipe mistake must fail the run, never reach a real model.
+        shell: bash
+        run: |
+          hosts=/etc/hosts
+          [ "$RUNNER_OS" = "Windows" ] && hosts=/c/Windows/System32/drivers/etc/hosts
+          for h in api.openai.com api.anthropic.com chatgpt.com api.githubcopilot.com; do
+            if [ "$RUNNER_OS" = "Windows" ]; then echo "0.0.0.0 $h" >> "$hosts"; else echo "0.0.0.0 $h" | sudo tee -a "$hosts" > /dev/null; fi
+          done
+      - name: Verify ${{ matrix.target }} ${{ matrix.version }}
+        shell: bash
+        env:
+          INTEGRATION: ${{ matrix.target }}
+          VERSION: ${{ matrix.version }}
+        run: |
+          set +e
+          bun scripts/compat/verify.ts --integration "$INTEGRATION" --version "$VERSION" --install \
+            --out result/result.json --diagnostics diagnostics
+          code=$?
+          status=$(jq -r .status result/result.json 2>/dev/null || echo error)
+          echo "**${INTEGRATION} ${VERSION} on ${COMPAT_OS}: ${status}**" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.detail // empty' result/result.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null
+          # Blocked (3) is recorded, not a job failure; a failed check is.
+          [ "$code" = 3 ] && exit 0
+          exit $code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: result-${{ matrix.target }}-${{ matrix.os }}
+          path: result/result.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostics-${{ matrix.target }}-${{ matrix.os }}
+          path: diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish:
+    needs: [discover, verify]
+    if: always() && needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The only job that can write, and it never runs an agent.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run dependencies:prepare
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          path: results
+      - name: Start from results not yet merged
+        run: |
+          if git fetch -q origin "$RESULTS_BRANCH" 2>/dev/null; then
+            git show FETCH_HEAD:compat/verification.json > compat/verification.json
+          fi
+      - name: Record results and update issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DETECTED: ${{ needs.discover.outputs.detected }}
+        run: bun scripts/compat/publish.ts --results results --detected "$DETECTED" --issues >> "$GITHUB_STEP_SUMMARY"
+      - name: Regenerate the support docs
+        run: bun scripts/agent-surfaces.ts
+      - name: Open or update the results pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then echo "Nothing new to record."; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B "$RESULTS_BRANCH"
+          git add compat/verification.json docs/agents/support.md README.md llms-full.txt docs/agents/faq.md
+          git commit -qm "Record upstream verification results" -m "From ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          git push -f origin "$RESULTS_BRANCH"
+          if [ -z "$(gh pr list --head "$RESULTS_BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "$RESULTS_BRANCH" --base main \
+              --title "Record upstream verification results" \
+              --body "Results from the [integration compatibility workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/integration-compat.yml). Each run updates this pull request; merging it publishes the results in docs/agents/support.md. The step summary of each run lists what was checked."
+          fi

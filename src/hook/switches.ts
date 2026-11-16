@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { userConfigPath, repoConfigPath } from '../config.ts';
 import { git } from '../util/exec.ts';
+import { GIT_IDENTITY_ARGS } from '../git/pr.ts';
 
 export type Decider = 'env' | 'ci' | 'repo' | 'local' | 'user' | 'default';
 
@@ -34,8 +35,11 @@ function readEnabled(path: string): boolean | undefined {
 }
 
 export function repoRoot(cwd: string): string | undefined {
-  const r = git(cwd, ['rev-parse', '--show-toplevel']);
-  return r.ok ? r.stdout.trim() : undefined;
+  // The same question gitIdentity asks, so a hook event or command asks git once.
+  // Its first line is the top level even on an unborn branch, where the call as a
+  // whole fails; outside a work tree git stops before printing anything.
+  const top = git(cwd, GIT_IDENTITY_ARGS).stdout.split(/\r?\n/)[0]?.trim();
+  return top || undefined;
 }
 
 export function switchState(

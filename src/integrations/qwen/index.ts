@@ -23,6 +23,7 @@ export const integration: Integration = {
   id: 'qwen',
   label: 'Qwen Code',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI',
   traces: [qwenAdapter],
   hook: {

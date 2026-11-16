@@ -20,6 +20,14 @@ import { codexHookHash, codexTrust } from '../src/integrations/codex/trust.ts';
 import { decide, DENY_REASON } from '../src/hook/prHook.ts';
 import { hookTargets, installHooks, uninstallHooks } from '../src/hook/install.ts';
 import { tempDir } from './helpers.ts';
+import { WORKFLOWS } from '../src/integrations/workflows.ts';
+import {
+  readVerification,
+  summarize,
+  versionStatus,
+  type VerificationRun,
+} from '../scripts/compat/records.ts';
+import upstream from '../compat/upstream.json';
 
 const SRC = resolve(import.meta.dir, '../src');
 const HOSTS = resolve(SRC, 'integrations');
@@ -513,5 +521,129 @@ describe('Codex hook trust', () => {
     expect(codexTrust('/h/.codex/hooks.json', data, undefined, 'linux')).toEqual([
       'untrusted',
     ]);
+  });
+});
+
+describe('support tiers', () => {
+  test('the Recommended agents are exactly the ones the support policy names', () => {
+    const recommended = INTEGRATIONS.filter((i) => i.supportTier === 'recommended').map(
+      (i) => i.id,
+    );
+    expect(recommended.sort()).toEqual([
+      'claude',
+      'codex',
+      'copilot',
+      'cursor',
+      'opencode',
+    ]);
+  });
+
+  test('a legacy host is never Recommended', () => {
+    for (const i of INTEGRATIONS.filter((i) => i.status === 'legacy'))
+      expect(i.supportTier).toBe('community');
+  });
+
+  test('every Recommended agent has a verification route', () => {
+    const targets = Object.values(upstream.targets).map((t) => t.integration);
+    for (const i of INTEGRATIONS.filter((i) => i.supportTier === 'recommended'))
+      expect(targets).toContain(i.id);
+  });
+
+  test('every IDE workflow names an integration, and its target verifies that integration', () => {
+    const targets = upstream.targets as Record<
+      string,
+      { integration: string; os: string[] }
+    >;
+    for (const w of WORKFLOWS) {
+      expect(INTEGRATIONS.some((i) => i.id === w.agentIntegrationId)).toBe(true);
+      const target = targets[w.verificationTarget];
+      if (target) expect(target.integration).toBe(w.agentIntegrationId);
+    }
+  });
+
+  test('the support page calls nothing verified that has no passing run', () => {
+    const data = readVerification();
+    const support = readFileSync(resolve(SRC, '../docs/agents/support.md'), 'utf8');
+    for (const [key, t] of Object.entries(
+      upstream.targets as Record<string, { os: string[] }>,
+    ))
+      if (!summarize(data, key, t.os).lastVerified)
+        for (const line of support.split('\n').filter((l) => l.includes('✅ passed')))
+          expect(line).not.toContain(key);
+    if (!data.runs.length) expect(support).not.toContain('✅ passed');
+  });
+});
+
+describe('verification records', () => {
+  const run = (
+    os: string,
+    status: 'passed' | 'failed' | 'blocked',
+    version: string,
+    at: string,
+  ): VerificationRun => ({
+    target: 'claude-cli',
+    integration: 'claude',
+    surface: 'cli',
+    os,
+    upstreamVersion: version,
+    status,
+    evidence: 'fake-llm',
+    checks: {},
+    verifiedAt: at,
+    workflowUrl: `https://example.test/${version}/${os}`,
+    tracetoonRevision: 'abc',
+  });
+  const OS = ['ubuntu-latest', 'windows-latest'];
+
+  test('a version is verified only when every required platform passed', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {},
+      runs: [run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z')],
+    };
+    expect(summarize(data, 'claude-cli', OS).lastVerified).toBeUndefined();
+    data.runs.push(run('windows-latest', 'passed', '1.0.0', '2026-11-01T00:05:00Z'));
+    expect(summarize(data, 'claude-cli', OS).lastVerified?.version).toBe('1.0.0');
+  });
+
+  test('a newer release that fails keeps the older verified one visible', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {},
+      runs: [
+        run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z'),
+        run('windows-latest', 'passed', '1.0.0', '2026-11-01T00:00:00Z'),
+        run('ubuntu-latest', 'failed', '1.1.0', '2026-11-02T00:00:00Z'),
+        run('windows-latest', 'passed', '1.1.0', '2026-11-02T00:00:00Z'),
+      ],
+    };
+    const s = summarize(data, 'claude-cli', OS);
+    expect(s.lastVerified?.version).toBe('1.0.0');
+    expect(s.latest).toEqual({ version: '1.1.0', status: 'failed' });
+  });
+
+  test('a detected release with no run is pending; a blocked run never counts as passed', () => {
+    const data = {
+      schemaVersion: 1 as const,
+      detected: {
+        'claude-cli': { upstreamVersion: '1.2.0', detectedAt: '2026-11-03T00:00:00Z' },
+      },
+      runs: [
+        run('ubuntu-latest', 'passed', '1.1.0', '2026-11-02T00:00:00Z'),
+        run('windows-latest', 'blocked', '1.1.0', '2026-11-02T00:00:00Z'),
+      ],
+    };
+    const s = summarize(data, 'claude-cli', OS);
+    expect(s.lastVerified).toBeUndefined();
+    expect(s.latest).toEqual({ version: '1.2.0', status: 'pending' });
+    expect(versionStatus(data.runs, '1.1.0', OS)).toBe('blocked');
+  });
+
+  test('a rerun on the same platform replaces the earlier attempt', () => {
+    const runs = [
+      run('ubuntu-latest', 'blocked', '1.0.0', '2026-11-01T00:00:00Z'),
+      run('ubuntu-latest', 'passed', '1.0.0', '2026-11-01T01:00:00Z'),
+    ];
+    expect(versionStatus(runs, '1.0.0', ['ubuntu-latest'])).toBe('passed');
   });
 });

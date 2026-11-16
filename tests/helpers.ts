@@ -1,5 +1,6 @@
 import {
   closeSync,
+  cpSync,
   mkdirSync,
   mkdtempSync,
   openSync,
@@ -40,17 +41,23 @@ export function tempDir(prefix = 'tracetoon-test-'): string {
   return dir;
 }
 
-/** A git repo with one base commit on `main` and a `feature` branch checked out. */
-export function makeRepo(): {
-  root: string;
-  commit: (file: string, content: string, msg: string) => string;
-} {
-  const root = tempDir('tracetoon-repo-');
-  const g = (...args: string[]) => {
-    const r = git(root, args);
-    if (!r.ok) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
-    return r.stdout.trim();
-  };
+const gitOrThrow = (root: string, args: string[]) => {
+  const r = git(root, args);
+  if (!r.ok) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+  return r.stdout.trim();
+};
+
+/**
+ * The base repository, built once per test file and copied for each makeRepo().
+ * Building it takes seven git processes (about a second on a Windows runner);
+ * a copy is identical, including the base commit, which repos built within the
+ * same second already shared.
+ */
+let template: string | undefined;
+function baseRepo(): string {
+  if (template) return template;
+  const root = tempDir('tracetoon-template-');
+  const g = (...args: string[]) => gitOrThrow(root, args);
   g('init', '-q', '-b', 'main');
   g('config', 'user.email', 'dev@example.com');
   g('config', 'user.name', 'Dev');
@@ -59,6 +66,17 @@ export function makeRepo(): {
   g('add', '.');
   g('commit', '-q', '-m', 'base');
   g('checkout', '-q', '-b', 'feature');
+  return (template = root);
+}
+
+/** A git repo with one base commit on `main` and a `feature` branch checked out. */
+export function makeRepo(): {
+  root: string;
+  commit: (file: string, content: string, msg: string) => string;
+} {
+  const root = tempDir('tracetoon-repo-');
+  cpSync(baseRepo(), root, { recursive: true });
+  const g = (...args: string[]) => gitOrThrow(root, args);
   return {
     root,
     commit(file, content, msg) {

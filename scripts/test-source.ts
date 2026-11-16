@@ -2,8 +2,10 @@ import { resolve } from 'node:path';
 import { prepareDependencies } from './dependencies.ts';
 import {
   longestFirst,
+  parseShard,
   readTestTimes,
   runTestFiles,
+  shardFiles,
   sourceTestFiles,
   TEST_FILE_WORKERS,
   writeTestTimes,
@@ -11,11 +13,15 @@ import {
 const root = resolve(import.meta.dir, '..');
 prepareDependencies();
 const args = process.argv.slice(2);
-const results = await runTestFiles({
-  root,
-  files: longestFirst(root, sourceTestFiles(root), readTestTimes(root)),
-  args,
-});
+const times = readTestTimes(root);
+// CI splits the files across machines (TRACETOON_TEST_SHARD=i/n); unset runs them all.
+const shard = parseShard(process.env.TRACETOON_TEST_SHARD);
+const files = shard
+  ? shardFiles(root, sourceTestFiles(root), times, shard)
+  : longestFirst(root, sourceTestFiles(root), times);
+if (shard)
+  console.log(`Shard ${shard.index}/${shard.count}: ${files.length} test files.`);
+const results = await runTestFiles({ root, files, args });
 // A filtered run (extra bun arguments) does not represent a file's full time.
 if (!args.length) writeTestTimes(root, results);
 const failed = results.filter((r) => r.code !== 0);

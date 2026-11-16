@@ -52,7 +52,7 @@ export const COMIC_STORIES = [
     },
     [
       panel(
-        'An enormous immaculate machine is nearly submerged by water from one tiny forgotten open tap. A small closed-handle wrench rests beside it. The composition is one striking technical cartoon with a callout pointing at the tap.',
+        'An enormous immaculate machine is nearly submerged by water from one tiny forgotten open tap. A small closed-handle wrench rests beside it. The composition is one striking technical cartoon; the open tap handle is clearly visible.',
         'One tiny handle.',
       ),
     ],
@@ -292,7 +292,7 @@ export const COMIC_STORIES = [
 ];
 
 /**
- * What ties each synthetic story to its change: the anchor plus one label.
+ * What ties each synthetic story to its change: the anchor plus one sign in the scene.
  * The stories above stay as written so evaluation keeps them as unanchored
  * baselines; tests and candidates use `anchoredStory`.
  */
@@ -351,7 +351,7 @@ const ANCHORS: Record<
   },
 };
 
-/** A story's script with its anchor and label: what a current drafter writes. */
+/** A story's script with its anchor and in-scene sign: what a current drafter writes. */
 export function anchoredStory(id: string): ComicScript {
   const story = COMIC_STORIES.find((c) => c.id === id)!;
   const { anchor, label } = ANCHORS[id]!;
@@ -359,7 +359,7 @@ export function anchoredStory(id: string): ComicScript {
   s.anchor = structuredClone(anchor);
   s.panels[label.panel]!.dialogue.push({
     speaker: 'caption',
-    kind: 'label',
+    kind: 'sign',
     points: label.points,
     text: label.text,
   });

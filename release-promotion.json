@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.31",
-  "buildId": "d1e2b5ed5b78f2590db69902f86f6ba99e0cb22cd75d7e73c1e789731b619a94",
+  "version": "1.0.0-rc.32",
+  "buildId": "ad2f9936342d11271dbe5649d513d2a734b1267072605927ae83f2174a132fd3",
   "artifact": {
-    "runId": 43814093528,
-    "id": 14201519126,
-    "name": "tracetoon-candidate-1ea4f530877e0c690a2ea74e500e9cbaa2832b14-attempt-1",
-    "digest": "sha256:066f5f88464adbce0f1897f329838a0f9804fe8e897211442ebe7ffe7d33b8fb"
+    "runId": 43944549206,
+    "id": 14264093659,
+    "name": "tracetoon-candidate-daba49cdc3bb344f68e007bf2da642faf74730d5-attempt-1",
+    "digest": "sha256:eb2cb235e4a939543289deb82b445d081724dbfb3b86f5d16393098a23e2a473"
   },
   "expected": {
-    "manifestSha256": "c3f1252868a4d59179e891ac71eb0b2e6f262dfbb5c37211e6a7f0144ce91ade",
-    "checksumsSha256": "2787b606121ff353fd4653233e6e2b53dd1b85f2a9d72c357bd12962af55b551",
-    "windowsSha256": "d1fa32d3e08f571e66fcbf7421aaca2e1a7c4e711bc6e84cd743e2d081cf819c",
-    "bundleSha256": "25296f61a114ed70efb5a158fc0fbba25e92c02c6d99bce9c19989c2c6ec1783"
+    "manifestSha256": "05f971bbfc0cd018fea93a9232101c2abcce713aa17541868d717f91b004849c",
+    "checksumsSha256": "82322673fa1db49cca7e398dcacaf64c69310e33dfa0fc2d5b53b75801f48373",
+    "windowsSha256": "5ead502c76ce12af5453d22be3e5c9151c670779ca5bf780263d1ba1e8438bd8",
+    "bundleSha256": "4878b95d19a3eacde71b195a9fe0518153482c1d2c37c2ec3ab84c42854fec9a"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-16T06:20:50.000Z",
-    "reason": "The user asked to merge the Cline rule fix (#122) and release it, so that Cline in the VS Code and JetBrains extensions uses Tracetoon instead of retrying a blocked PR command. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-16T20:45:00.000Z",
+    "reason": "The user judged the comic overhaul (#133) an improvement, asked to merge it and to push a new release so users get the new comic styles, in-scene text and joke-first drafting. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

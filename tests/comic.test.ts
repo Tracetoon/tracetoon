@@ -175,7 +175,7 @@ describe('comic end to end', () => {
       'titleSha',
       'v',
     ]);
-    expect(meta.comic).toMatchObject({ panelCount: 2, styleFamily: 'flat-color' });
+    expect(meta.comic).toMatchObject({ panelCount: 2, styleFamily: 'newspaper' });
     expect(meta.style).toBe('sunday-strip');
     // No local preview: render freezes the body, and an author's own image stays as written.
     expect(existsSync(join(runDir, 'preview.html'))).toBe(false);
@@ -438,7 +438,7 @@ describe('comic end to end', () => {
       'Where is this file?',
     );
 
-    // Reroll: same story, a style idea not used lately, or any style given.
+    // Reroll: same story, another comic style, or any style given.
     const before = lines().length;
     expect(cli(repo.root, 'comic', 'reroll').code).toBe(0);
     const rerolled = JSON.parse(readFileSync(join(runDir, 'comic.json'), 'utf8'));

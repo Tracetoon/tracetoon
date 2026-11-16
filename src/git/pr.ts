@@ -90,19 +90,21 @@ export function worktreeRoots(cwd: string): string[] {
  * failing exit, exactly like `rev-parse --abbrev-ref HEAD` alone; `ok` keeps
  * that distinction for callers that require a commit.
  */
+export const GIT_IDENTITY_ARGS = [
+  'rev-parse',
+  '--show-toplevel',
+  '--absolute-git-dir',
+  'HEAD',
+  '--abbrev-ref',
+  'HEAD',
+];
+
 export function gitIdentity(
   cwd: string,
 ):
   | { toplevel: string; gitDir: string; branch: string; headSha?: string; ok: boolean }
   | undefined {
-  const r = git(cwd, [
-    'rev-parse',
-    '--show-toplevel',
-    '--absolute-git-dir',
-    'HEAD',
-    '--abbrev-ref',
-    'HEAD',
-  ]);
+  const r = git(cwd, GIT_IDENTITY_ARGS);
   const [toplevel, gitDir, headSha, branch] = r.stdout
     .split(/\r?\n/)
     .map((l) => l.trim());
