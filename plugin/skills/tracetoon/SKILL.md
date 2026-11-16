@@ -239,7 +239,11 @@ reviewer separate.
         - write the fix from the patch, not from the reviewer's `fix` text:
           never paste its wording unchecked (a pasted fix that misreads the
           code is a new error);
-        - add an omission only when the cited row or diff lines show it.
+        - add an omission only when the cited row or diff lines show it:
+          verify every number, value or behavior a reviewer adds against the
+          brief and an added (`+`) diff line before applying it; one backed
+          only by removed lines or a commit message is a suggestion, not a
+          fact.
         Then `render --check --json` (it notes flagged quotes still verbatim
         in the body). Recheck per the `Review recheck:` line: `once` → send
         the **same** reviewer(s) the changed lines, previous findings and your

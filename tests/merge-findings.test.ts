@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   mergedMarkdown,
   mergeFindings,
+  mergedLine,
   nearDuplicateQuote,
 } from '../src/contribution/mergeFindings.ts';
 import type { LeanFinding } from '../src/contribution/leanReview.ts';
@@ -86,5 +87,32 @@ describe('merged findings', () => {
     const md = mergedMarkdown('r1', list);
     expect(md).toContain('2 more dropped over the cap of 12');
     expect(md).toContain('1 already fixed');
+  });
+});
+
+describe('an omission only a commit message backs', () => {
+  test('is listed as a suggestion, not a fact', () => {
+    const base = {
+      kind: 'omission' as const,
+      verdict: 'missing' as const,
+      quote: 'x',
+      fix: 'add it',
+      passes: ['general'],
+    };
+    expect(mergedLine({ ...base, evidence: ['commit:abc123#2'] }, 0)).toContain(
+      'suggestion, not a fact',
+    );
+    expect(mergedLine({ ...base, evidence: ['diff:12'] }, 0)).not.toContain('suggestion');
+  });
+  test('the reviewer guides require an added diff line for an added fact', () => {
+    const { readFileSync } = require('node:fs');
+    const { resolve } = require('node:path');
+    for (const f of ['reviewer-lean.md', 'reviewer-lens-c.md', 'reviewer-lens-d.md'])
+      expect(
+        readFileSync(
+          resolve(import.meta.dir, '../plugin/skills/tracetoon/references', f),
+          'utf8',
+        ),
+      ).toMatch(/added \(`\+`\) diff line/);
   });
 });

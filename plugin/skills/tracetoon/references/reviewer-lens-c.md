@@ -17,6 +17,11 @@ Look for:
 - **unverified paths**: behavior no test or receipt covers, described as
   verified; a branching hunk whose behavior the body omits.
 
+An omission that adds a code fact (a value, a number, a behavior) must cite
+an added (`+`) diff line that shows it (`diff:N`); removed lines and commit
+messages are not the code. Without such a line it is a suggestion, not a
+fact: leave it out, or start its `fix` with "suggestion:" and state no value.
+
 Each omission is `kind: "omission"`, verdict `missing`, with the row ref or
 diff lines that show it. Skip the generated Validation section. **At most 6
 findings**, most consequential first.

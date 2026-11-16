@@ -48,6 +48,14 @@ symbol's callers). Do not read other run files, the brief query, or guides.
    failed because the environment lacked a tool or network could not run
    there; flag a body that calls it a failure of the code.
 
+4. **Added facts need added lines.** An omission (or a `fix`) that would
+   add a code fact (a value, a number, a limit, a behavior) must cite an
+   added (`+`) diff line that shows it as `diff:N`. Removed lines show the
+   old code and a commit message is not the code: an addition backed only
+   by those, or by nothing, is a suggestion, not a fact. Leave it out, or
+   start its `fix` with "suggestion:" and state no value. Open limits and
+   process rows are cited by their brief ref (`L2`), as above.
+
 Skip the generated Validation section (elided in the packet). Report only
 problems; a correct sentence needs no entry. At most 8 findings, most
 consequential first.

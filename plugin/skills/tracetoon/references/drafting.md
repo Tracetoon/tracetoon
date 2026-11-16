@@ -195,6 +195,10 @@ strips tags and lists untagged sentences and unknown refs.
   never invent a motive.
 - Keep the concrete values rows give (names, counts, versions, shapes) instead
   of a vaguer paraphrase.
+- A number, value or behavior a reviewer's finding adds is not evidence:
+  verify it against the brief rows and an added (`+`) diff line before
+  applying it. Removed lines show old code and a commit message is not the
+  diff; an addition backed only by those is a suggestion, not a fact.
 - Don't count tests or name test helpers.
 - Say each thing once: no recap, no second list of the same changes.
 - No meta text in the body: nothing about the brief, Tracetoon's rows, this
