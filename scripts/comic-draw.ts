@@ -62,6 +62,40 @@ export function plainPrompt(s: ComicScript): string {
     .join('\n');
 }
 
+/**
+ * Draw `script` into outDir (page.<ext>, comic.png with the footer). With
+ * `repair`, the image model edits `repair.ref` (a page image) instead of
+ * starting over: one targeted change.
+ */
+export async function draw(
+  script: ComicScript,
+  outDir: string,
+  opts: {
+    shape?: 'structured' | 'plain';
+    provider?: ProviderId;
+    repair?: { ref: string; instruction: string };
+  } = {},
+): Promise<string> {
+  let prompt = opts.shape === 'plain' ? plainPrompt(script) : pagePrompt(script);
+  const refs = [];
+  if (opts.repair) {
+    prompt += `\n\nRevise the attached comic page rather than drawing a new one. Change only this: ${opts.repair.instruction}. Keep every character, panel, layout, color and word that this change does not mention exactly as it is.`;
+    const data = new Uint8Array(readFileSync(opts.repair.ref));
+    refs.push({ mime: imageMime(data), data, label: 'the current comic page to revise' });
+  }
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, 'prompt.txt'), prompt);
+  writeFileSync(join(outDir, 'comic.json'), JSON.stringify(script, null, 2) + '\n');
+  const [img] = await generateImages(opts.provider ?? 'codex', [
+    { prompt, refs, aspect: pageAspect(script) },
+  ]);
+  const mime = imageMime(img!);
+  writeFileSync(join(outDir, `page.${mime.split('/')[1]}`), img!);
+  const svg = pageWithFooter({ mime, data: img! });
+  writeFileSync(join(outDir, 'comic.png'), await svgToPng(svg, 1600));
+  return join(outDir, 'comic.png');
+}
+
 if (import.meta.main) {
   const [scriptFile, outDir, ...rest] = process.argv.slice(2);
   const opt = (name: string, fallback: string) => {
@@ -75,17 +109,10 @@ if (import.meta.main) {
     process.exit(2);
   }
   const script: ComicScript = JSON.parse(readFileSync(scriptFile, 'utf8'));
-  const shape = opt('--shape', 'structured');
-  const provider = opt('--provider', 'codex') as ProviderId;
-  const prompt = shape === 'plain' ? plainPrompt(script) : pagePrompt(script);
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, 'prompt.txt'), prompt);
-  const [img] = await generateImages(provider, [
-    { prompt, refs: [], aspect: pageAspect(script) },
-  ]);
-  const mime = imageMime(img!);
-  writeFileSync(join(outDir, `page.${mime.split('/')[1]}`), img!);
-  const svg = pageWithFooter({ mime, data: img! });
-  writeFileSync(join(outDir, 'comic.png'), await svgToPng(svg, 1600));
-  console.log(join(outDir, 'comic.png'));
+  console.log(
+    await draw(script, outDir, {
+      shape: opt('--shape', 'structured') as 'structured' | 'plain',
+      provider: opt('--provider', 'codex') as ProviderId,
+    }),
+  );
 }

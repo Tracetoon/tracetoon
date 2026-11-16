@@ -66,6 +66,16 @@ import { loadConfig, setUserConfig } from '../config.ts';
 import { prTruth } from '../git/pr.ts';
 import { findRun, readJson, readText, writeJson, type Run } from '../run.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
+import {
+  archiveCandidate,
+  comicLoopCmd,
+  comicLoopImportCmd,
+  contractOk,
+  noteRender,
+  repairReference,
+  type ImportOpts,
+  type LoopOpts,
+} from './comicLoop.ts';
 
 const EXT_MIME: Record<string, PanelImage['mime']> = {
   png: 'image/png',
@@ -208,6 +218,8 @@ export interface ArtOpts extends OutOpts {
   force?: boolean;
   /** `model`: the image model letters the page (default); `overlay`: Tracetoon draws bubbles. */
   lettering?: 'model' | 'overlay';
+  /** Edit the current page with this one instruction instead of drawing from scratch. */
+  repair?: string;
 }
 
 /** Exit code when no approved image route can draw the comic. */
@@ -325,16 +337,29 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
     writeJson(run, 'art/manifest.json', { ...manifest, fingerprint });
   }
   const results: { panel: number; file: string; source: string }[] = [];
+  const repairRef = opts.repair ? repairReference(run) : undefined;
+  if (opts.repair && (lettering !== 'model' || !provider || !repairRef))
+    throw new UserError(
+      'A repair edits an archived whole page with the approved image route: render the comic first, and use model lettering.',
+    );
 
   // A page drawn whole, lettering included: by an image model, or already saved
   // by the host agent's own image tool. Overlay lettering uses panels instead.
   if (lettering === 'model') {
     const have = existingPage(run);
-    if (have && !opts.force) {
+    if (have && !opts.force && !opts.repair) {
       results.push({ panel: 0, file: have.path, source: 'existing' });
     } else if (provider) {
       try {
-        results.push(await makePage(run, script, provider));
+        noteRender(run);
+        results.push(
+          await makePage(
+            run,
+            script,
+            provider,
+            repairRef && { data: repairRef.data, instruction: opts.repair! },
+          ),
+        );
         clearPanels(run);
       } catch (e) {
         writeComicStatus(run, { state: 'failed', detail: (e as Error).message });
@@ -362,6 +387,7 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
   if (todo.length) {
     if (!provider) throw noArtist(root, run);
     try {
+      noteRender(run);
       await makePanels(run, script, provider, todo, results);
     } catch (e) {
       // Panels already drawn are kept; a retry draws only the missing ones.
@@ -429,11 +455,22 @@ async function makePage(
   run: Run,
   script: ComicScript,
   id: ProviderId,
+  repair?: { data: Uint8Array; instruction: string },
 ): Promise<{ panel: number; file: string; source: string }> {
   const aspect = pageAspect(script);
-  const [img] = await generateImages(id, [
-    { prompt: pagePrompt(script), refs: [], aspect },
-  ]);
+  const prompt = repair
+    ? `${pagePrompt(script)}\n\nRevise the attached comic page rather than drawing a new one. Change only this: ${repair.instruction}. Keep every character, panel, layout, color and word that this change does not mention exactly as it is.`
+    : pagePrompt(script);
+  const refs: Reference[] = repair
+    ? [
+        {
+          mime: imageMime(repair.data),
+          data: repair.data,
+          label: 'the current comic page to revise',
+        },
+      ]
+    : [];
+  const [img] = await generateImages(id, [{ prompt, refs, aspect }]);
   clearPage(run);
   const file = join(run.dir, 'art', `page.${extOf(img!)}`);
   writeFileSync(file, img!);
@@ -628,6 +665,9 @@ export async function comicRenderCmd(
     warning = `Could not make a PNG (${(e as Error).message}); the SVG will be used.`;
   }
   writeJson(run, 'out/manifest.json', { fingerprint, lettering });
+  const candidate = pngPath
+    ? archiveCandidate(run, script, contractOk(script))
+    : undefined;
   // The image model lettered the page: the agent checks every word against this list.
   const proofread = page ? pageText(script) : undefined;
   emit(
@@ -638,6 +678,8 @@ export async function comicRenderCmd(
       mode: page ? 'page' : 'panels',
       proofread,
       warning,
+      candidate: candidate ?? null,
+      next: candidate ? `tracetoon comic loop --run ${run.id}` : null,
     },
     () =>
       [
@@ -646,6 +688,9 @@ export async function comicRenderCmd(
           ? `Proofread: look at the image and check each of these is lettered exactly (if not, run \`tracetoon comic art --force\`; after two tries, \`--lettering overlay\`):\n${proofread.map((t) => `  - ${t}`).join('\n')}`
           : '',
         warning,
+        candidate
+          ? `Archived as ${candidate}. Next: tracetoon comic loop --run ${run.id} (fresh AI readers judge the image; the loop keeps the better version).`
+          : '',
       ]
         .filter(Boolean)
         .join('\n'),
@@ -782,4 +827,14 @@ export function renderedComic(
     if (existsSync(p)) return { path: p, mime, data: readFileSync(p) };
   }
   return undefined;
+}
+
+export async function comicLoopRunCmd(cwd: string, opts: LoopOpts): Promise<void> {
+  const { run } = load(cwd, opts.run);
+  await comicLoopCmd(run, opts);
+}
+
+export function comicLoopImportRunCmd(cwd: string, opts: ImportOpts): void {
+  const { run } = load(cwd, opts.run);
+  comicLoopImportCmd(run, opts);
 }
