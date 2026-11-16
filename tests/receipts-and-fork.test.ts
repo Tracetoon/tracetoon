@@ -236,7 +236,10 @@ describe('declared repository checks need a receipt or a recorded skip', () => {
     mkdirSync(dir, { recursive: true });
     const run = { id: 'r1', dir } as any;
     expect(checkReceiptGap(run, root)).toContain('no chained');
-    writeFileSync(join(dir, 'checks.json'), JSON.stringify([{ v: 1, outcome: 'not-run' }]));
+    writeFileSync(
+      join(dir, 'checks.json'),
+      JSON.stringify([{ v: 1, outcome: 'not-run' }]),
+    );
     expect(checkReceiptGap(run, root)).toBeUndefined();
   });
 });

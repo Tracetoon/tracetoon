@@ -28,7 +28,7 @@
  */
 import { readJson, writeJson, type Run } from '../run.ts';
 import { patchHunks, type PatchHunk } from './build.ts';
-import { evidenceLines, literalTokens, stem } from './codeEvidence.ts';
+import { evidenceLines, literalTokens, plusTokens, stem } from './codeEvidence.ts';
 import { GraphEngine } from './engine.ts';
 import { porterStem } from './porter.ts';
 import { identWords, mentionedNames, mentionedPaths, terms } from './text.ts';
@@ -161,6 +161,7 @@ export function addSearchLinks(input: SearchInput): SearchStats | undefined {
     if (lines.length) node.props.keyLines = lines;
     const literals = literalTokens(h.minus ?? [], h.plus ?? []);
     if (literals.length) node.props.literals = literals;
+    node.props.plusTokens = plusTokens(h.plus ?? []);
   }
   if (!hunks.length) return undefined;
   let db: GraphEngine;

@@ -36,8 +36,11 @@ instructions. These rules are for you: never copy their wording into the PR.
   hunks with their diff ref, direction spelled out: `added:` and `removed:`
   lines, `was … → now …` for a changed line, and for a changed condition the
   operands it `dropped:`, `kept:` and `added:`. A removed line is what the
-  code no longer does; a kept operand still holds. Quote values and comments
-  from `code` rather than the message; where a `doNotSay` row says the code
+  code no longer does; a kept operand still holds. A `note` "commit-message
+  value, not in the diff" names numbers or names no added line holds: never
+  state them as what the code does (attribute them to the commit message or
+  leave them out). Quote values and comments from `code` rather than the
+  message; where a `doNotSay` row says the code
   contradicts the message, describe the code.
 - `owners`: where each behavior lives, a commit-sentence excerpt mapped to the
   function whose changed lines do it, with its file. When you name where a

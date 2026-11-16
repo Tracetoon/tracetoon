@@ -729,7 +729,14 @@ describe('unsupported absence', () => {
       {
         title: 'limits',
         columns: ['ref', 'change', 'kind', 'limit'],
-        rows: [{ ref: 'L1', change: null, kind: 'open', limit: 'No live run shows the remote call.' }],
+        rows: [
+          {
+            ref: 'L1',
+            change: null,
+            kind: 'open',
+            limit: 'No live run shows the remote call.',
+          },
+        ],
       },
       {
         title: 'changes',
@@ -745,7 +752,9 @@ describe('unsupported absence', () => {
     const f = absent('It was not tested on real hardware. [CH1]');
     expect(f.length).toBe(1);
     expect(f[0]!.severity).toBe('fix');
-    expect(absent('No end-to-end test was run against the service. [CH1]').length).toBe(1);
+    expect(absent('No end-to-end test was run against the service. [CH1]').length).toBe(
+      1,
+    );
   });
   test('a sentence citing a limits row may say it', () => {
     expect(absent('The remote call was not run live. [L1]')).toEqual([]);

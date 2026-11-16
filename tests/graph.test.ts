@@ -1786,7 +1786,9 @@ describe('the brief states recorded process and behavior', () => {
     const bg = withGraph(earlier, (e) => briefParts(e)).sections.find(
       (x) => x.title === 'background',
     )!.rows;
-    expect(String(bg[0]!.kind)).toMatch(/^why this work started: the earliest request Tracetoon kept/);
+    expect(String(bg[0]!.kind)).toMatch(
+      /^why this work started: the earliest request Tracetoon kept/,
+    );
     expect(String(bg[0]!.kind)).not.toContain("session's first request");
     // Optional context: refs render accepts, never required for coverage.
     const r = applyBrief(

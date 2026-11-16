@@ -229,7 +229,7 @@ function briefLines(
     for (const r of commits) {
       const to = hunkLinks[String(r.ref)] ?? [];
       out.push(
-        `- ${show(r.ref)}: "${oneLine(r.text, 300)}"${(r.implementedBy as string[])?.length ? ` | implementedBy: ${oneLine(r.implementedBy)}` : ' | implementedBy: (none found)'}${to.length ? ` → ${to.join(' ')}` : ''}`,
+        `- ${show(r.ref)}: "${oneLine(r.text, 300)}"${(r.implementedBy as string[])?.length ? ` | implementedBy: ${oneLine(r.implementedBy)}` : ' | implementedBy: (none found)'}${to.length ? ` → ${to.join(' ')}` : ''}${r.note ? ` (${String(r.note)})` : ''}`,
       );
     }
   }

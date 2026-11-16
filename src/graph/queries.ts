@@ -19,6 +19,7 @@ import {
 import { fileRole as pathRole } from '../digest/build.ts';
 import { isNeighborhood, type BriefLayout } from './layout.ts';
 import { addSearchEvidence, fillSearchLinks } from './searchBrief.ts';
+import { markCommitValues } from './codeEvidence.ts';
 import {
   capLimits,
   entryRow,
@@ -1713,6 +1714,12 @@ export function briefParts(
   );
   // Key code lines under commit sentences, and commit-vs-code doNotSay rows.
   addSearchEvidence(g, sections, hunkLinks, { codeCells: !isNeighborhood(opts.layout) });
+  // A number or name only the commit message states (no added line holds it).
+  try {
+    markCommitValues(g, sections);
+  } catch {
+    // Evidence extras never break the brief.
+  }
   return {
     sections,
     unchecked: uniq(uncheckedAll).sort(),

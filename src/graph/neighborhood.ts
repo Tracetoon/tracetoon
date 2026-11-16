@@ -147,7 +147,7 @@ function blocksFor(sections: Section[], clip: number, compact: boolean): Line[] 
   const sentenceLine = (indent: string, r: Row, label: string) => {
     const to = pointsTo.get(str(r.ref)) ?? [];
     const impl = list(r.implementedBy);
-    return `${indent}${label} ${clipTo(str(r.text), clip)}${to.length ? ` → ${to.join(' ')}` : ''}${impl.length ? ` (implementedBy ${impl.join(' ')})` : ''}`;
+    return `${indent}${label} ${clipTo(str(r.text), clip)}${to.length ? ` → ${to.join(' ')}` : ''}${impl.length ? ` (implementedBy ${impl.join(' ')})` : ''}${r.note ? ` [${str(r.note)}]` : ''}`;
   };
   const commitLines = (
     id: string,
