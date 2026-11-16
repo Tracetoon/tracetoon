@@ -94,25 +94,26 @@ Comics: tracetoon config set comic off|allowed|always (now: allowed)
 ```
 
 <!-- hosts:start (generated from the integration registry) -->
-| Agent                                                    | Status                                                                  |
-| -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Claude Code (CLI, IDE extensions and desktop app)        | ✅ supported                                                             |
-| Codex (CLI and app)                                      | ✅ supported                                                             |
-| Antigravity (CLI and IDE)                                | ✅ supported                                                             |
-| Factory Droid (Droid CLI)                                | ✅ supported                                                             |
-| Copilot (CLI and VS Code agent mode)                     | ✅ supported                                                             |
-| Cursor (IDE and CLI)                                     | ✅ supported ([see notes](docs/agents/support.md#notes))                 |
-| OpenCode (CLI)                                           | ✅ supported                                                             |
-| Kilo CLI (CLI, and Kilo Code for VS Code, which runs it) | ✅ supported                                                             |
-| Kiro (IDE and CLI)                                       | ✅ supported                                                             |
-| Cline (CLI and VS Code extension)                        | ✅ supported ([see notes](docs/agents/support.md#notes))                 |
-| Junie (JetBrains CLI)                                    | ✅ supported                                                             |
-| Devin (CLI)                                              | ✅ supported (uses Claude Code's hook)                                   |
-| Goose (CLI and desktop app)                              | ✅ supported                                                             |
-| Qwen Code (CLI)                                          | ✅ supported                                                             |
-| Crush (CLI)                                              | ✅ supported                                                             |
-| Amp (CLI)                                                | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes)) |
-| Windsurf                                                 | 🗓️ planned                                                             |
+| Agent                                                                 | Status                                                                           |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Claude Code (CLI, IDE extensions and desktop app)                     | ✅ supported                                                                      |
+| Codex (CLI, app and IDE extensions)                                   | ✅ supported                                                                      |
+| Antigravity (CLI and IDE)                                             | ✅ supported                                                                      |
+| Factory Droid (Droid CLI)                                             | ✅ supported                                                                      |
+| Copilot (CLI, VS Code agent mode and JetBrains)                       | ✅ supported                                                                      |
+| Cursor (IDE and CLI)                                                  | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
+| OpenCode (CLI)                                                        | ✅ supported                                                                      |
+| Kilo CLI (CLI, and Kilo Code for VS Code and JetBrains, which run it) | ✅ supported                                                                      |
+| Kiro (IDE and CLI)                                                    | ✅ supported                                                                      |
+| Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
+| Junie (CLI and JetBrains IDE plugin)                                  | ✅ supported                                                                      |
+| Devin (CLI and Devin Desktop, formerly Windsurf)                      | ✅ supported (uses Claude Code's hook; [see notes](docs/agents/support.md#notes)) |
+| Goose (CLI and desktop app)                                           | ✅ supported                                                                      |
+| Qwen Code (CLI)                                                       | ✅ supported                                                                      |
+| Crush (CLI)                                                           | ✅ supported                                                                      |
+| Amp (CLI)                                                             | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes))          |
+| Zed (Zed Agent)                                                       | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
+| Warp (Warp agent)                                                     | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
 
 Hook files, skill folders and the notes: [supported agents](docs/agents/support.md).
 <!-- hosts:end -->
@@ -314,10 +315,16 @@ mascots and no recurring cast.
   the repo's rules (contributing guide, code of conduct, agent and AI policy
   files, the README's contributing section, and the policy docs they link to)
   and skips the comic where they forbid images in PRs, naming the file and
-  line. Your `comic always` overrides the repo; your `comic off` turns comics
-  off everywhere.
+  line, once per repo. Where a repo asks for comics, it says so. Your `comic
+  always` overrides the repo; your `comic off` turns comics off everywhere,
+  with nothing more said about them.
+- **Decided up front.** Tracetoon works out whether a PR should get a comic
+  before your agent writes it, and the agent draws it. A skip needs a reason
+  (`tracetoon comic skip --reason "…"`), shown after the PR is created.
 - **Never a blocker.** Without an approved image route, or if drawing fails,
   the PR is created without a comic, and the message after the PR says why.
+  A missing image route is mentioned once per machine, not on every PR
+  (`tracetoon images --dismiss` stops the setup offer too).
 
 ### Set up an image route
 
@@ -394,23 +401,24 @@ installing it with `TRACETOON_NO_HOOK=1`, or manage it with
 
 ### Turn it off at whichever level you need
 
-Any "off" wins:
+Any "off" wins, with one exception: your own `comic always` beats a repo's comic "off".
 
-| Scope                   | Off                                                                 | On again               |
-| ----------------------- | ------------------------------------------------------------------- | ---------------------- |
-| One command             | `TRACETOON=0 gh pr create ...`                                      | (just once)            |
-| You, everywhere         | `tracetoon off`                                                     | `tracetoon on`         |
-| This repo, for everyone | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`  |
-| This repo, just you     | `tracetoon off --local` (git config)                                | `tracetoon on --local` |
-| CI                      | off automatically when `CI=true`                                    | `TRACETOON=1`          |
+| Scope                          | Off                                                                 | On again                                           |
+| ------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------- |
+| One command                    | `TRACETOON=0 gh pr create ...`                                      | (just once)                                        |
+| You, everywhere                | `tracetoon off`                                                     | `tracetoon on`                                     |
+| This repo, for everyone        | `tracetoon off --repo` (writes `.github/tracetoon.json`; commit it) | `tracetoon on --repo`                              |
+| This repo, just you            | `tracetoon off --local` (git config)                                | `tracetoon on --local`                             |
+| CI                             | off automatically when `CI=true`                                    | `TRACETOON=1`                                      |
+| Comics, one PR                 | ask your agent to skip the comic                                    | (just once)                                        |
+| Comics, you everywhere         | `tracetoon config set comic off`                                    | `tracetoon config set comic allowed` (or `always`) |
+| Comics, this repo for everyone | `"comic": "off"` in `.github/tracetoon.json`; commit it             | remove it                                          |
 
 `tracetoon status` shows whether it's on here and which setting decided.
 
-Just the comics: your setting decides. `tracetoon config set comic off` means
-never and `always` means every PR. `allowed` (the default) follows each repo's
-rules: no comic where its contributing guide, code of conduct, README or a
-policy doc they link to forbids images in PRs. A repo can also set `"comic"`
-in `.github/tracetoon.json`. For a single PR, ask your agent to skip the comic.
+For comics, `allowed` (the default) follows each repo's rules: no comic where
+its `"comic"` setting, contributing guide, code of conduct, README or a policy
+doc they link to forbids images in PRs. `always` means every PR regardless.
 
 ---
 
@@ -624,14 +632,14 @@ trust the new hook entries in `/hooks`.
   skills folder:
 
   <!-- skill-folders:start (generated from the integration registry) -->
-  | Agent                                                                                      | Folder                              |
-  | ------------------------------------------------------------------------------------------ | ----------------------------------- |
-  | Claude Code                                                                                | `~/.claude/skills/tracetoon`        |
-  | Codex, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Cline, Devin, Goose, Crush, Amp | `~/.agents/skills/tracetoon`        |
-  | Antigravity                                                                                | `~/.gemini/config/skills/tracetoon` |
-  | Kiro                                                                                       | `~/.kiro/skills/tracetoon`          |
-  | Junie                                                                                      | `~/.junie/skills/tracetoon`         |
-  | Qwen Code                                                                                  | `~/.qwen/skills/tracetoon`          |
+  | Agent                                                                                                 | Folder                              |
+  | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
+  | Claude Code                                                                                           | `~/.claude/skills/tracetoon`        |
+  | Codex, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Cline, Devin, Goose, Crush, Amp, Zed, Warp | `~/.agents/skills/tracetoon`        |
+  | Antigravity                                                                                           | `~/.gemini/config/skills/tracetoon` |
+  | Kiro                                                                                                  | `~/.kiro/skills/tracetoon`          |
+  | Junie                                                                                                 | `~/.junie/skills/tracetoon`         |
+  | Qwen Code                                                                                             | `~/.qwen/skills/tracetoon`          |
   <!-- skill-folders:end -->
 
   Codex and Antigravity also read `.agents/skills/` inside a repo.

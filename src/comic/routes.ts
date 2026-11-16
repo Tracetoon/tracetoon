@@ -18,10 +18,11 @@ export interface RouteStatus {
   detail: string;
 }
 
-export function routeStatuses(root?: string): RouteStatus[] {
+/** `probe: false` skips asking each CLI whether it can draw (see providerInfo). */
+export function routeStatuses(root?: string, probe = true): RouteStatus[] {
   const approved = loadConfig(root).imageConsent;
   return PROVIDERS.map((id) => {
-    const i = providerInfo(id);
+    const i = providerInfo(id, probe);
     return {
       id,
       label: i.label,

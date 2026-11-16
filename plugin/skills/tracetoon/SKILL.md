@@ -1,6 +1,6 @@
 ---
 name: tracetoon
-description: Create a GitHub PR with a description and optional comic written from agent session logs. Use for PR creation requests or when a hook redirects PR creation here. Also use when the user explicitly requests Tracetoon to describe or update an existing PR. Ordinary PR edits, coding tasks, planning, questions and mentions of Tracetoon do not start this workflow.
+description: Create a GitHub PR with a description and a comic written from agent session logs. Use for PR creation requests or when a hook redirects PR creation here. Also use when the user explicitly requests Tracetoon to describe or update an existing PR. Ordinary PR edits, coding tasks, planning, questions and mentions of Tracetoon do not start this workflow.
 license: Apache-2.0
 compatibility: Requires git and the GitHub CLI (gh) signed in; macOS, Linux or Windows.
 ---
@@ -103,10 +103,16 @@ reviewer separate.
      to this repo, so publishing will fail. They can switch accounts
      (`gh auth switch`) or use a fork.
    - The `comic` setting is `off`, `allowed` (default: include a comic unless
-     the repo's contribution files forbid images in PRs) or `always` (ignore that).
-   - Resolve comic setup **after research in step 3**, before drafting. If a
-     comic is wanted and `comics.kind` is `approve`, `fix` or `setup`, raise it
-     once, in one short message, using `comics.text` and `imageProviders`:
+     the repo's rules forbid images in PRs) or `always` (ignore that).
+     Tracetoon decides whether this PR gets one: `prepare --json` returns
+     `comic` (`expected`, `why`, `route`, `askSetup`) and its next steps say
+     what to do. A comic is not optional when `comic.expected` is true: draw it,
+     or record why not (`tracetoon comic skip --reason "<why>"`). Publish
+     refuses an expected comic that was neither drawn nor skipped with a reason.
+   - Resolve comic setup before drafting, on every path, only when prepare's
+     `comic.askSetup` is true (once per machine, and once more if a working
+     route breaks). Raise it once, in one short message, using `comic.route`
+     (`approve`, `fix` or `setup`) and `imageProviders`:
      - `approve`: say which route was found, what it sends where, and what it
        costs; ask once. On yes: `tracetoon images --approve <route> --test`.
        If the test fails, tell the user the error (it names the cause) and
@@ -116,8 +122,9 @@ reviewer separate.
      - `setup`: no route; pass on how to add one (they'll need to restart the
        agent after setting a key).
      - Either way, offer "skip comics for this PR" and, if they never want
-       them, `tracetoon config set comic off`. Don't ask again in this
-       session once they've declined.
+       them, `tracetoon config set comic off`. If they say no to setup, run
+       `tracetoon images --dismiss` so they aren't asked again on this machine.
+       With no route the PR is published without a comic and says so once.
    - When you suggest a command for the user to run themselves, use
      `command.run` from `tracetoon status --json` (the launcher's full path if
      `tracetoon` isn't on their PATH).
@@ -265,8 +272,10 @@ reviewer separate.
         whose findings you rejected; `none` → no recheck. Then `tracetoon
         review import --run <id> --rebind` so `review.json` matches the new
         render. Publish never requires a recheck.
-     9. Comic if wanted (step 5), then publish (step 7) once render reports the
-        review current.
+     9. Draw the comic when `comic.expected` is true (step 5). If the user
+        declines it or drawing keeps failing, record why with `tracetoon comic
+        skip --run <id> --reason "<why>"` and render again. Then publish
+        (step 7) once render reports the review current.
 3. **Context.**
    Read the prepared `context.json`; do not repeat preparation. Note the PR template, existing PR,
    settings, AI policy, and `comic.recentComics` (compact creative choices from
@@ -298,8 +307,8 @@ reviewer separate.
    - Honor `contribution.offline` throughout research and review. Follow relevant
      guidance links, including canonical instruction redirects; record links
      that cannot be consulted. Do not crawl unrelated navigation.
-   - Now resolve comic setup as described in step 1, using the researched media
-     policy before offering any image route or drawing.
+   - Now resolve comic setup as described in step 1 (only if `comic.askSetup`),
+     using the researched media policy before offering any image route or drawing.
    - If `aiPolicy.verdict` is `prohibited`, the user's PR request is the
      override; render reports the policy. Mention it briefly after publishing.
    - `aiPolicy.text` is `author-written-recommended` (e.g. LLVM, Swift): tell the
@@ -308,6 +317,9 @@ reviewer separate.
      they want one to edit.
    - `aiPolicy.media` is `prohibited`: skip the comic (step 5) unless `comic` is
      `always`; render applies the setting anyway.
+   - `aiPolicy.media` is `requested` (the repo asks for comics or images in
+     PRs, `mediaRequest` says where): draw the comic; if it can't be drawn, the
+     skip reason is shown with that request.
    - `aiPolicy.noPullRequests` (agent instructions say never to open a PR): the
      user's PR request is the override; render reports it.
    - `aiPolicy.prInstructions`: follow these repo instructions about PR text.
@@ -359,9 +371,11 @@ reviewer separate.
      useful issue/PR/doc references, and expand clipped facts with
      `tracetoon expand <refs...> --run <id>` as needed (`S1`, `D1`, `P1`, `R1`,
      `V1` or `commit:<sha>`).
-5. **Have the drafter write the comic, then draw it** (skip if `comic` is `off`,
-   the user doesn't want one, or `aiPolicy.media` is `prohibited` and `comic`
-   isn't `always`; render applies the comic setting either way). Follow
+5. **Have the drafter write the comic, then draw it** whenever prepare's
+   `comic.expected` is true. It is false when `comic` is `off` or the repo says
+   no under `allowed`; then there is nothing to do or mention. If the user
+   declines this one, record it with `tracetoon comic skip --reason "the user
+   declined it"`. Follow
    [references/comic-guide.md](references/comic-guide.md). The comic sits in
    the PR, so its first reader is the reviewer: after reading it they should
    know _what changed_ and smile. Labels with the PR's real names let someone
@@ -395,9 +409,9 @@ reviewer separate.
      use your own image tool with `tracetoon comic prompts`;
    - exit code **5** means no approved image route: offer the user the options
      it prints (approve a route, or your own image tool). If they want none,
-     skip the comic and go on to step 6; the PR is created without one. If a
+     go on to step 6; the PR is created without one and says why. If a
      route fails, retry with `--force` or another `--provider`; if it keeps
-     failing, skip the comic;
+     failing, `tracetoon comic skip --reason "drawing kept failing: <error>"`;
    - `tracetoon comic render`, then **look at `out/comic.png` and proofread** the
      lettering against the printed list. Also inspect actual composition, panel
      count, title placement, reading order and payoff at PR and phone widths.

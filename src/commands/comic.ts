@@ -140,6 +140,34 @@ function load(cwd: string, runId?: string): Loaded {
   return { run, root: truth.toplevel, script };
 }
 
+/**
+ * Record why this PR has no comic, when one was expected: the user declined
+ * it, or drawing kept failing. Publish shows the reason instead of refusing
+ * an unexplained missing comic. Drawing one later clears it.
+ */
+export function comicSkipCmd(
+  cwd: string,
+  opts: OutOpts & { run?: string; reason?: string; mcp?: boolean },
+): void {
+  const reason = opts.reason?.trim();
+  if (!reason)
+    throw new UserError(
+      'Say why there is no comic, in the user\'s terms: --reason "the user declined it".',
+    );
+  const truth = prTruth(cwd, { noGh: true });
+  const run = findRun(truth.gitDir, opts.run);
+  writeComicStatus(run, {
+    state: 'skipped',
+    by: opts.mcp ? 'mcp' : 'user',
+    detail: reason,
+  });
+  emit(
+    opts,
+    { run: run.id, comic: 'skipped', reason },
+    () => `Recorded: no comic on this PR (${reason}). Render again, then publish.`,
+  );
+}
+
 export function comicCheckCmd(cwd: string, opts: OutOpts & { run?: string }): void {
   const truth = prTruth(cwd, { noGh: true });
   const run = findRun(truth.gitDir, opts.run);

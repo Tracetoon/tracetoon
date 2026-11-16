@@ -61,8 +61,9 @@ check → review → final render → publish. Write the description yourself, i
    finding, qualify the sentence rather than list every case; add each
    MISSING item as one clause. Then `tracetoon render --reviewed --json --run <id>`
    until it reports nothing left to fix.
-9. Draw a comic if one is wanted (SKILL step 5, without a separate reviewer),
-   then publish (SKILL step 7). Publish refuses a draft that was only checked, and one
+9. Draw the comic when prepare's `comic.expected` is true (SKILL step 5,
+   without a separate reviewer), or record why not with `tracetoon comic skip
+   --reason "<why>"`, then publish (SKILL step 7). Publish refuses a draft that was only checked, and one
    with sentences to fix or brief rows to cover. Only if the user's own
    message asks for the cheapest run (an unattended run is not that) may you
    skip steps 7–8 and publish with `--no-review`; `--accept-open` likewise

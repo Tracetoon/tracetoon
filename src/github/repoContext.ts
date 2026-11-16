@@ -176,6 +176,19 @@ const MEDIA_PROHIBIT = new RegExp(
 );
 const MEDIA_ANY =
   /\b(images?|graphics?|art(work)?|illustrations?|infographics?|comics?|cartoons?|diagrams?|gifs?|memes?|drawings?|pictures?|screenshots?|emoji art|visuals?)\b/i;
+/**
+ * A repo asking for pictures in PRs ("comics wanted", "we strongly encourage
+ * ... comic included"). Read with the same PR-context gate as a ban; a ban
+ * always wins over a request.
+ */
+const MEDIA_REQUEST =
+  /\b(encourag\w*|welcome[ds]?|wanted|appreciated|love to see|we('d| would) (love|like)|please (include|add|attach)|should (include|add|have)|(comics?|images?|pictures?|illustrations?) included)\b/i;
+/** Markup that isn't rule text: HTML tags (and their alt text), emphasis, blockquote marks. */
+const prose = (line: string) =>
+  line
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/^\s*>\s?/, '')
+    .trim();
 // Rules about issues (screenshots of a bug, say) say nothing about PRs.
 const ABOUT_PRS = /\b(contribut\w*|pull requests?|PR descriptions?)\b/i;
 const PR_TEXT = /\b(pull requests?|PRs?\b|commit messages?)/i;
@@ -199,14 +212,17 @@ export interface AiPolicy {
    *  - text: AI-written text prohibited, author-written text recommended
    *    (e.g. LLVM "strongly recommends"; not a requirement), or nothing special;
    *  - media: images in PRs prohibited, AI-generated or not (e.g. Ghostty), which
-   *    turns the comic off unless the comic setting is `always`;
+   *    turns the comic off unless the comic setting is `always`; or requested
+   *    ("comics wanted"), which Tracetoon cites when a comic is expected;
    *  - disclosure: the form the repo asks for, if it names one;
    *  - noPullRequests: an instruction to agents never to open PRs.
    */
   text?: 'prohibited' | 'author-written-recommended' | 'none';
-  media?: 'prohibited' | 'none';
+  media?: 'prohibited' | 'requested' | 'none';
   disclosure?: 'assisted-by' | 'tool-and-use' | 'unspecified';
   noPullRequests?: boolean;
+  /** Where the repo asks for comics or images in PRs, when `media` is requested. */
+  mediaRequest?: { file: string; line: number; text: string };
   /** The first line that forbids images in PRs, when `media` is prohibited. */
   mediaSource?: { file: string; line: number; text: string };
   /** Instructions about PR text or commit messages from agent files (AGENTS.md…). */
@@ -224,6 +240,7 @@ export function detectAiPolicy(root: string): AiPolicy {
   let disclose = false;
   let mediaBan = false;
   let mediaSource: AiPolicy['mediaSource'];
+  let mediaRequest: AiPolicy['mediaRequest'];
   let authorWritten = false;
   let assistedBy = false;
   let toolAndUse = false;
@@ -232,7 +249,7 @@ export function detectAiPolicy(root: string): AiPolicy {
     const agentFile = /AGENTS\.md|CLAUDE\.md|copilot-instructions/i.test(rel);
     const lines = content.split(/\r?\n/);
     lines.forEach((text, i) => {
-      const t = text.trim();
+      const t = prose(text);
       if (agentFile && PR_TEXT.test(t) && t.length > 10)
         prInstructions.push({ file: rel, line: i + 1, text: t.slice(0, 300) });
       if (NO_PR.test(plain(t))) noPullRequests = true;
@@ -253,6 +270,18 @@ export function detectAiPolicy(root: string): AiPolicy {
         if (!excerpts.some((e) => e.file === rel && e.line === i + 1))
           excerpts.push(here);
       }
+      // A request often wraps onto the next line ("…, so it ships with /
+      // receipts and a comic."), so read it with the rest of its sentence.
+      const next = prose(lines[i + 1] ?? '');
+      const window = next && !/^(#|[-*+]\s|\d+\.\s|\|)/.test(next) ? `${t} ${next}` : t;
+      if (
+        !mediaRequest &&
+        MEDIA_REQUEST.test(t) &&
+        MEDIA_ANY.test(window) &&
+        (PR_TEXT.test(window) || ABOUT_PRS.test(window)) &&
+        !(/\bissues?\b/i.test(window) && !PR_TEXT.test(window))
+      )
+        mediaRequest = here;
       if (!AI_TERMS.test(t) && !(agentFile && NO_PR.test(plain(t)))) return;
       if (!excerpts.some((e) => e.file === rel && e.line === i + 1)) excerpts.push(here);
       const bans = PROHIBIT.test(t);
@@ -283,8 +312,9 @@ export function detectAiPolicy(root: string): AiPolicy {
       : authorWritten
         ? 'author-written-recommended'
         : 'none',
-    media: mediaBan ? 'prohibited' : 'none',
+    media: mediaBan ? 'prohibited' : mediaRequest ? 'requested' : 'none',
     ...(mediaSource ? { mediaSource } : {}),
+    ...(!mediaBan && mediaRequest ? { mediaRequest } : {}),
     disclosure: assistedBy
       ? 'assisted-by'
       : toolAndUse
