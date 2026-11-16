@@ -38,6 +38,8 @@
     "qwen-code",
     "crush",
     "amp",
+    "zed",
+    "warp",
     "session-logs",
     "agent-trace",
     "provenance",

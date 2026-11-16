@@ -6,6 +6,18 @@ import { parseGooseMessages } from '../src/integrations/goose/trace.ts';
 import { commandOutput, parseQwenLines } from '../src/integrations/qwen/trace.ts';
 import { parseCrushMessages } from '../src/integrations/crush/trace.ts';
 import {
+  decodeThread,
+  lineChanges,
+  parseZedThread,
+  terminalResult,
+} from '../src/integrations/zed/trace.ts';
+import {
+  blockConversation,
+  parseWarp,
+  plain,
+  warpTime,
+} from '../src/integrations/warp/trace.ts';
+import {
   cleanUserContent,
   parseAntigravityLines,
   unwrapArg,
@@ -1756,5 +1768,224 @@ describe('Crush adapter', () => {
     });
     expect(s.records[4]).not.toHaveProperty('isError');
     expect(s.unknownTypes).toEqual({ image: 1 });
+  });
+});
+
+describe('Zed agent threads', () => {
+  // Shapes recorded from Zed 1.28 (threads.db, data_type "zstd").
+  const note =
+    'Note: this command ran WITHOUT an OS sandbox because one could not be created.';
+  const thread = {
+    title: 'Create GitHub Pull Request',
+    updated_at: '2026-11-16T00:38:17Z',
+    messages: [
+      { User: { id: 'u1', content: [{ Text: 'add a note and commit it' }] } },
+      {
+        Agent: {
+          content: [
+            { Text: 'Adding the note.' },
+            {
+              ToolUse: {
+                id: 't1',
+                name: 'terminal',
+                input: {
+                  type: 'json',
+                  value: { command: 'git commit -m "Add note"', cd: '/repo' },
+                },
+              },
+            },
+            {
+              ToolUse: {
+                id: 't2',
+                name: 'terminal',
+                input: { type: 'json', value: { command: 'missing-tool', cd: '/repo' } },
+              },
+            },
+            {
+              ToolUse: {
+                id: 'e1',
+                name: 'edit_file',
+                input: { type: 'json', value: { path: 'notes.md', mode: 'edit' } },
+              },
+            },
+            {
+              ToolUse: {
+                id: 'r1',
+                name: 'read_file',
+                input: { type: 'json', value: {} },
+              },
+            },
+            {
+              ToolUse: {
+                id: 'x1',
+                name: 'brand_new_tool',
+                input: { type: 'json', value: {} },
+              },
+            },
+          ],
+          tool_results: {
+            t1: {
+              tool_name: 'terminal',
+              is_error: false,
+              content: [
+                {
+                  Text: `${note}\n\n\`\`\`\n[feature abc1234] Add note\n 1 file changed\n\`\`\``,
+                },
+              ],
+            },
+            t2: {
+              tool_name: 'terminal',
+              is_error: false,
+              content: [
+                {
+                  Text: `${note}\n\nCommand "missing-tool" failed with exit code 127.\n\n\`\`\`\nbash: missing-tool: command not found\n\`\`\``,
+                },
+              ],
+            },
+            e1: {
+              tool_name: 'edit_file',
+              is_error: false,
+              output: {
+                original_path: '/repo/notes.md',
+                old_text: '# Notes\nold line\n',
+                new_text: '# Notes\nnew line\nanother\n',
+              },
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  test('reads prompts, terminal commands with exit codes, and whole-file edits', () => {
+    const s = session('z');
+    parseZedThread(thread, s, '/repo', '2026-11-15T23:13:01Z');
+    expect(s.records.map((r) => r.kind)).toEqual([
+      'prompt',
+      'assistant',
+      'command',
+      'command',
+      'edit',
+    ]);
+    expect(s.records[2]).toMatchObject({
+      cmd: 'git commit -m "Add note"',
+      cwd: '/repo',
+      output: '[feature abc1234] Add note\n 1 file changed',
+      ts: '2026-11-15T23:13:01Z',
+    });
+    expect(s.records[2]).not.toHaveProperty('isError');
+    // Zed reports a failed command with is_error false; the exit code says so.
+    expect(s.records[3]).toMatchObject({ cmd: 'missing-tool', isError: true });
+    expect(s.records[4]).toMatchObject({
+      kind: 'edit',
+      file: '/repo/notes.md',
+      added: ['new line', 'another'],
+      removed: ['old line'],
+    });
+    expect(s.toolCalls).toBe(5);
+    expect(s.unknownTools).toEqual({ brand_new_tool: 1 });
+  });
+
+  test('a terminal result without a fence or an exit code has no output', () => {
+    expect(terminalResult('Command ran.')).toEqual({ exit: undefined, output: '' });
+  });
+
+  test('line changes count repeated lines', () => {
+    expect(lineChanges('a\na\nb\n', 'a\nb\nb\n')).toEqual({
+      added: ['b'],
+      removed: ['a'],
+    });
+  });
+
+  test('decodes zstd thread data, and warns on data it cannot read', () => {
+    const warnings: string[] = [];
+    const data = Bun.zstdCompressSync(Buffer.from(JSON.stringify({ messages: [] })));
+    expect(decodeThread(data, 'zstd', warnings)).toEqual({ messages: [] });
+    expect(decodeThread(new Uint8Array([1, 2, 3]), 'zstd', warnings)).toBeUndefined();
+    expect(warnings).toHaveLength(1);
+  });
+});
+
+describe('Warp agent conversations', () => {
+  // Rows recorded from Warp 2026.11 (warp.sqlite): ai_queries and blocks.
+  const conv = 'b2e50ec4-5d14-429b-a993-8b90cf68bc1a';
+  const agentRun = (id: string) =>
+    JSON.stringify({ requested_command_action_id: id, conversation_id: conv });
+  const blocks = [
+    {
+      pwd: '/repo',
+      exit_code: 0,
+      start_ts: '2026-11-15 23:09:36.371708600',
+      ai_metadata: agentRun('call_1'),
+      agent_view_visibility: null,
+      stylized_command: new TextEncoder().encode(
+        '\x1b[32mgit commit -m "Add note"\x1b[0m',
+      ),
+      stylized_output: '[feature abc1234] Add note\r\n 1 file changed',
+    },
+    {
+      pwd: '/repo',
+      exit_code: 1,
+      start_ts: '2026-11-15 23:09:40.000000000',
+      ai_metadata: null,
+      agent_view_visibility: JSON.stringify({ Agent: { origin_conversation_id: conv } }),
+      stylized_command: 'npm test',
+      stylized_output: '',
+    },
+  ];
+
+  test('reads prompts and the commands the agent ran, in time order', () => {
+    const s = session('w');
+    parseWarp(
+      [
+        {
+          input: JSON.stringify([{ Query: { text: 'commit the note', context: [] } }]),
+          start_ts: '2026-11-15 23:09:22.048653900',
+          working_directory: '/repo',
+        },
+      ],
+      blocks,
+      s,
+    );
+    expect(s.records).toEqual([
+      {
+        kind: 'prompt',
+        text: 'commit the note',
+        ts: '2026-11-15T23:09:22.048Z',
+        cwd: '/repo',
+      },
+      {
+        kind: 'command',
+        cmd: 'git commit -m "Add note"',
+        ts: '2026-11-15T23:09:36.371Z',
+        cwd: '/repo',
+        output: '[feature abc1234] Add note\n 1 file changed',
+      },
+      {
+        kind: 'command',
+        cmd: 'npm test',
+        ts: '2026-11-15T23:09:40.000Z',
+        cwd: '/repo',
+        isError: true,
+      },
+    ]);
+    expect(s.toolCalls).toBe(2);
+  });
+
+  test('a block belongs to the conversation named in either column', () => {
+    expect(blocks.map(blockConversation)).toEqual([conv, conv]);
+    expect(
+      blockConversation({
+        ...blocks[0]!,
+        ai_metadata: null,
+        agent_view_visibility: null,
+      }),
+    ).toBeUndefined();
+  });
+
+  test('times and terminal styling', () => {
+    expect(warpTime('2026-11-15 23:01:14.564237800')).toBe('2026-11-15T23:01:14.564Z');
+    expect(warpTime('not a time')).toBeUndefined();
+    expect(plain('\x1b]0;title\x07\x1b[1mbold\x1b[0m\r\n')).toBe('bold');
   });
 });
