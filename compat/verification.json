@@ -1,5 +1,324 @@
 {
   "schemaVersion": 1,
-  "detected": {},
-  "runs": []
+  "detected": {
+    "claude-cli": {
+      "upstreamVersion": "2.1.325",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "codex-cli": {
+      "upstreamVersion": "0.169.0",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "opencode-cli": {
+      "upstreamVersion": "1.19.5",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "copilot-cli": {
+      "upstreamVersion": "1.0.112",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "cursor-cli": {
+      "upstreamVersion": "2026.11.13-eacade1",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "zed-claude": {
+      "upstreamVersion": "0.107.0",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    },
+    "zed-codex": {
+      "upstreamVersion": "2.6.0",
+      "detectedAt": "2026-11-16T06:47:25.360Z"
+    }
+  },
+  "runs": [
+    {
+      "target": "claude-cli",
+      "integration": "claude",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2.1.325",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:04.177Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "claude-cli",
+      "integration": "claude",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "2.1.325",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:39.375Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "codex-cli",
+      "integration": "codex",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "0.169.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:03.055Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "codex-cli",
+      "integration": "codex",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "0.169.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:40.642Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "1.0.112",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:53.758Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "1.0.112",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:49:39.303Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "cursor-cli",
+      "integration": "cursor",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2026.11.13-eacade1",
+      "status": "failed",
+      "evidence": "free-plan",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "fail",
+        "hooks": "skip",
+        "tracing": "skip",
+        "evidence": "skip"
+      },
+      "failureCategory": "hook-protocol",
+      "detail": "Tracetoon's hook ran 1 time(s) but never blocked the PR command",
+      "verifiedAt": "2026-11-16T07:49:09.426Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "cursor-cli",
+      "integration": "cursor",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2026.11.13-eacade1",
+      "status": "failed",
+      "evidence": "free-plan",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "fail",
+        "evidence": "skip"
+      },
+      "failureCategory": "trace",
+      "detail": "FAIL Cursor: 0 session(s), no edit to compat.txt",
+      "verifiedAt": "2026-11-16T08:51:48.083Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43834589004",
+      "tracetoonRevision": "9c8f06c4d265f9753878367214bd7b4f2547a32e"
+    },
+    {
+      "target": "cursor-cli",
+      "integration": "cursor",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2026.11.13-eacade1",
+      "status": "passed",
+      "evidence": "free-plan",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T18:59:31.350Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43934482912",
+      "tracetoonRevision": "b9b7696f8a0e9e581f1b33e828a89d01658d4321"
+    },
+    {
+      "target": "opencode-cli",
+      "integration": "opencode",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "1.19.5",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:48:34.020Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "opencode-cli",
+      "integration": "opencode",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "1.19.5",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:49:45.249Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "zed-claude",
+      "integration": "claude",
+      "surface": "zed-acp",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "0.107.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:49:15.255Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "zed-claude",
+      "integration": "claude",
+      "surface": "zed-acp",
+      "os": "windows-latest",
+      "upstreamVersion": "0.107.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:51:07.751Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "zed-codex",
+      "integration": "codex",
+      "surface": "zed-acp",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2.6.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:49:41.713Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    },
+    {
+      "target": "zed-codex",
+      "integration": "codex",
+      "surface": "zed-acp",
+      "os": "windows-latest",
+      "upstreamVersion": "2.6.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-16T07:50:55.533Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/43826275051",
+      "tracetoonRevision": "b31b350ab15af8a773d697e0cdc0723e86ddef44"
+    }
+  ]
 }
