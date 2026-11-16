@@ -41,7 +41,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { delimiter, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { spawn } from 'node:child_process';
 import { COMPAT_FILE, type FakeLlmEvent } from './fake-llm.ts';
@@ -200,6 +200,9 @@ function sandboxEnv(home: string, bin: string): NodeJS.ProcessEnv {
     TRACETOON_CONFIG: join(home, 'tracetoon-config.json'),
     TRACETOON_GH_SCRIPT: FAKE_GH,
     TRACETOON_NO_UPDATE_CHECK: '1',
+    // Tracetoon steps aside when CI is set (src/hook/switches.ts); the check
+    // stands in for a user's machine, so it opts back in.
+    TRACETOON: '1',
     FAKE_GH_LOG: join(home, 'fake-gh.log'),
     NO_COLOR: '1',
   });
@@ -816,7 +819,10 @@ async function main(): Promise<number> {
     tracetoonRevision: git(ROOT, 'rev-parse', 'HEAD'),
   };
   const json = JSON.stringify(run, null, 2);
-  if (opts.out) writeFileSync(opts.out, json + '\n');
+  if (opts.out) {
+    mkdirSync(dirname(resolve(opts.out)), { recursive: true });
+    writeFileSync(opts.out, json + '\n');
+  }
   console.log(json);
   // What a maintainer needs to see why a run failed. Everything in it is made up
   // by the check (the prompt, the fake token, the toy repo), never user data.
