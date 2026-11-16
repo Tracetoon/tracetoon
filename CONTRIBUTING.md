@@ -123,7 +123,11 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   file remain sequential. Once a full run has recorded each file's passing time
   (in `node_modules/.cache`), files start slowest first, so a long end-to-end
   file no longer starts last; without that history (a fresh checkout, CI) they
-  start largest first. `bun run typecheck && bun run test`
+  use the committed Windows CI times in `scripts/test-times.baseline.json`, then
+  size for files it doesn't list. Refresh that file from a CI log when the
+  slowest files change a lot; stale numbers only make the order and shards less
+  even. `TRACETOON_TEST_SHARD=i/n` runs the i-th of n balanced shares, so CI can
+  split the suite across machines. `bun run typecheck && bun run test`
   macOS scales with the machine: the pinned Bun version's subprocess-heavy suites
   fail intermittently when the box is oversubscribed, so a CI runner (3-4 cores)
   still runs one file at a time, while a Mac with 8 or more cores runs four, as

@@ -1,10 +1,12 @@
 import { expect, test } from 'bun:test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   longestFirst,
+  parseShard,
   readTestTimes,
   runTestFiles,
+  shardFiles,
   sourceTestFiles,
   workersFor,
   writeTestTimes,
@@ -185,4 +187,70 @@ test('runs report durations; only passing runs update the timing history', async
   expect(times['ok.test.ts']).toBe(results[0]!.ms);
   // The failed run keeps the earlier, representative time.
   expect(times['bad.test.ts']).toBe(4_000);
+});
+
+test('a checkout without history orders by the committed baseline; local history wins', () => {
+  const root = tempDir('tracetoon-baseline-times-');
+  mkdirSync(join(root, 'scripts'));
+  writeFileSync(
+    join(root, 'scripts', 'test-times.baseline.json'),
+    JSON.stringify({ 'slow.test.ts': 90_000, 'quick.test.ts': 50 }),
+  );
+  expect(readTestTimes(root)).toEqual({ 'slow.test.ts': 90_000, 'quick.test.ts': 50 });
+  writeTestTimes(root, [{ file: 'quick.test.ts', code: 0, ms: 120_000 }]);
+  expect(readTestTimes(root)).toEqual({
+    'slow.test.ts': 90_000,
+    'quick.test.ts': 120_000,
+  });
+  // Only measured times are written back; the baseline stays a separate fallback.
+  expect(
+    JSON.parse(
+      readFileSync(join(root, 'node_modules/.cache/tracetoon-test-times.json'), 'utf8'),
+    ),
+  ).toEqual({ 'quick.test.ts': 120_000 });
+});
+
+test('shards cover every file exactly once, agree on the split and balance the load', () => {
+  const root = tempDir('tracetoon-shards-');
+  const times: Record<string, number> = {
+    'a.test.ts': 220,
+    'b.test.ts': 180,
+    'c.test.ts': 160,
+    'd.test.ts': 120,
+    'e.test.ts': 110,
+    'f.test.ts': 60,
+    'g.test.ts': 50,
+    'h.test.ts': 40,
+  };
+  const files = [...Object.keys(times), 'unmeasured.test.ts'].reverse();
+  writeFileSync(join(root, 'unmeasured.test.ts'), 'x'.repeat(30));
+  const shards = [1, 2, 3].map((index) =>
+    shardFiles(root, files, times, { index, count: 3 }),
+  );
+  expect(shards.flat().sort()).toEqual([...files].sort());
+  // Each machine computes the split on its own, so it must not depend on input order.
+  expect(shardFiles(root, [...files].sort(), times, { index: 2, count: 3 })).toEqual(
+    shards[1]!,
+  );
+  const cost = (s: string[]) => s.reduce((t, f) => t + (times[f] ?? 30), 0);
+  const loads = shards.map(cost);
+  // Greedy longest-first: no shard exceeds an even share by more than the longest file.
+  expect(Math.max(...loads)).toBeLessThanOrEqual(cost(files) / 3 + 220);
+  // 220+60+50 | 180+110+30 | 160+120+40
+  expect(loads).toEqual([330, 320, 320]);
+  // Within a shard the slowest file still starts first.
+  for (const s of shards) expect(s).toEqual([...s].sort((x, y) => cost([y]) - cost([x])));
+  // One shard is the whole list in longest-first order.
+  expect(shardFiles(root, files, times, { index: 1, count: 1 })).toEqual(
+    longestFirst(root, files, times),
+  );
+});
+
+test('the shard setting is i/n or unset; anything else stops the run', () => {
+  expect(parseShard(undefined)).toBeUndefined();
+  expect(parseShard('')).toBeUndefined();
+  expect(parseShard('2/3')).toEqual({ index: 2, count: 3 });
+  expect(parseShard(' 1 / 1 ')).toEqual({ index: 1, count: 1 });
+  for (const bad of ['0/3', '4/3', '3', 'a/b', '1/0'])
+    expect(() => parseShard(bad)).toThrow('TRACETOON_TEST_SHARD');
 });

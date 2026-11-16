@@ -39,23 +39,39 @@ export function workersFor(
 export const TEST_FILE_WORKERS = workersFor(process.platform, availableParallelism());
 
 const TIMES_FILE = 'node_modules/.cache/tracetoon-test-times.json';
+/**
+ * Committed per-file times from a Windows CI run, for checkouts without local
+ * history (every CI run). Only ordering and shard balance depend on it; when it
+ * goes stale, shards are less even, never wrong.
+ */
+const BASELINE_TIMES_FILE = 'scripts/test-times.baseline.json';
 export type TestTimes = Record<string, number>;
 
-/** How long each test file took on its last passing source run (untracked). */
-export function readTestTimes(root: string): TestTimes {
+function readTimes(path: string): TestTimes {
   try {
-    const value = JSON.parse(readFileSync(join(root, TIMES_FILE), 'utf8'));
+    const value = JSON.parse(readFileSync(path, 'utf8'));
     return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   } catch {
     return {};
   }
 }
 
+/**
+ * How long each test file took on its last passing source run here (untracked),
+ * falling back to the committed baseline for files this checkout never ran.
+ */
+export function readTestTimes(root: string): TestTimes {
+  return {
+    ...readTimes(join(root, BASELINE_TIMES_FILE)),
+    ...readTimes(join(root, TIMES_FILE)),
+  };
+}
+
 export function writeTestTimes(
   root: string,
   results: { file: string; ms: number; code: number }[],
 ): void {
-  const times = readTestTimes(root);
+  const times = readTimes(join(root, TIMES_FILE));
   // A failed or interrupted file's time is not representative; keep the old one.
   for (const r of results) if (r.code === 0) times[r.file] = r.ms;
   try {
@@ -72,6 +88,10 @@ export function writeTestTimes(
  * the other workers idle. Unmeasured files fall back to their size.
  */
 export function longestFirst(root: string, files: string[], times: TestTimes): string[] {
+  return byCost(root, files, times).map((f) => f.file);
+}
+
+function byCost(root: string, files: string[], times: TestTimes) {
   const cost = (file: string) => {
     if (typeof times[file] === 'number') return times[file]!;
     try {
@@ -83,8 +103,41 @@ export function longestFirst(root: string, files: string[], times: TestTimes): s
   };
   return [...files]
     .map((file) => ({ file, cost: cost(file) }))
-    .sort((a, b) => b.cost - a.cost || a.file.localeCompare(b.file))
-    .map((f) => f.file);
+    .sort((a, b) => b.cost - a.cost || a.file.localeCompare(b.file));
+}
+
+/** `TRACETOON_TEST_SHARD=i/n`: this machine runs the i-th of n shares (1-based). */
+export function parseShard(
+  value: string | undefined,
+): { index: number; count: number } | undefined {
+  if (!value?.trim()) return undefined;
+  const m = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(value);
+  const index = Number(m?.[1]);
+  const count = Number(m?.[2]);
+  if (!m || count < 1 || index < 1 || index > count)
+    throw new Error(`TRACETOON_TEST_SHARD must be i/n with 1 <= i <= n, not "${value}"`);
+  return { index, count };
+}
+
+/**
+ * One shard's files, longest first. Every file goes, longest first, to the
+ * shard with the least total so far, so CI machines finish at about the same
+ * time and every shard computes the same split from the same inputs.
+ */
+export function shardFiles(
+  root: string,
+  files: string[],
+  times: TestTimes,
+  shard: { index: number; count: number },
+): string[] {
+  const totals = Array.from({ length: shard.count }, () => 0);
+  const mine: string[] = [];
+  for (const { file, cost } of byCost(root, files, times)) {
+    const least = totals.indexOf(Math.min(...totals));
+    totals[least]! += cost;
+    if (least === shard.index - 1) mine.push(file);
+  }
+  return mine;
 }
 
 export function sourceTestFiles(root: string): string[] {
