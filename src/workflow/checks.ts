@@ -127,10 +127,45 @@ const SETUP_ERROR = [
 ];
 
 /**
+ * A module or package the runtime could not load, by name: a bare package
+ * name (`zod`, `@scope/pkg`, a Python module) is a dependency this environment
+ * lacks; a relative or absolute path is the code's own import and a real
+ * failure.
+ */
+const MISSING_MODULE = [
+  /\bcannot find (?:module|package) ['"`]([^'"`]+)['"`]/i,
+  /\bModuleNotFoundError: No module named ['"`]([^'"`]+)['"`]/,
+  /\bModule not found: (?:Error: )?Can't resolve ['"`]([^'"`]+)['"`]/i,
+  /\bCould not resolve ['"`]([^'"`]+)['"`]/,
+];
+const bareModule = (name: string) =>
+  !/^(?:\.{1,2}[/\\]|[/\\~]|<repo>|[A-Za-z]:[/\\])/.test(name);
+/** A line saying a dependency is missing here (see `MISSING_MODULE`). */
+const missingDependency = (line: string) =>
+  MISSING_MODULE.some((re) => {
+    const m = re.exec(line);
+    return !!m?.[1] && bareModule(m[1]);
+  });
+/**
+ * Output that says the environment failed even though a runner printed its
+ * results: a dependency that could not load, a tool not found, or a host
+ * name that could not be looked up (the network is blocked). A refused
+ * connection alone is not here: a test may be checking exactly that.
+ */
+const ENVIRONMENT_ERROR = [
+  /\bcommand not found\b/i,
+  /^\S+:\s*(?:(?:line\s+)?\d+:\s*)?[\w.+-]+:\s*not found$/i,
+  /\b(?:ENOTFOUND|EAI_AGAIN|ENETUNREACH)\b/,
+  /\bgetaddrinfo\b|\bnetwork is unreachable\b|\btemporary failure in name resolution\b/i,
+];
+
+/**
  * Why a failed check could not run in this environment, in a short phrase,
- * when it exited before any runner result line and its output (or the spawn
- * error) says the tool, a dependency or the network was unavailable.
- * Undefined for a check that ran and failed.
+ * when its output (or the spawn error) says the tool, a dependency or the
+ * network was unavailable: before any runner result line, any `SETUP_ERROR`;
+ * after result lines, only a missing dependency or an `ENVIRONMENT_ERROR`
+ * (tests that could not load say nothing about the code). Undefined for a
+ * check that ran and failed.
  */
 export function setupFailure(
   stdout: string,
@@ -139,14 +174,15 @@ export function setupFailure(
   error?: Error,
   scrub: (text: string) => string = (t) => t,
 ): string | undefined {
-  if (checkSummary(stdout, stderr).length) return undefined;
+  const ran = checkSummary(stdout, stderr).length > 0;
   const code = (error as NodeJS.ErrnoException | undefined)?.code;
   if (code === 'ENOENT') return 'the command was not found';
   const text = scrub(`${stderr}\n${stdout}`).replace(/\x1b\[[0-9;]*m/g, '');
-  const line = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .find((l) => SETUP_ERROR.some((re) => re.test(l)));
+  const lines = text.split(/\r?\n/).map((l) => l.trim());
+  const line =
+    lines.find(missingDependency) ??
+    lines.find((l) => (ran ? ENVIRONMENT_ERROR : SETUP_ERROR).some((re) => re.test(l)));
+  if (ran && !line) return undefined;
   if (line)
     return line
       .replace(/^(?:error|fatal|warning)(?:\[[^\]]*\])?:\s*/i, '')
@@ -377,6 +413,16 @@ function prepareCheck(
     cwd,
     finish: (result) => {
       const after = inputFingerprint(root, opts.input ?? []);
+      const couldNotRun =
+        !opts.skip && after === fingerprint && (result?.status !== 0 || result.error)
+          ? setupFailure(
+              result?.stdout ?? '',
+              result?.stderr ?? '',
+              result?.status ?? null,
+              result?.error,
+              (t) => makeScrubber([root]).text(t),
+            )
+          : undefined;
       const receipt: CheckReceipt = {
         v: 1,
         name: safeName,
@@ -400,19 +446,14 @@ function prepareCheck(
                 ? 'The command changed validation inputs; run checks after finalizing those changes.'
                 : (result?.error?.message ?? '')),
           ) || undefined,
-        summary: checkSummary(result?.stdout ?? '', result?.stderr ?? '', (t) =>
-          makeScrubber([root]).text(t),
-        ),
-        couldNotRun:
-          !opts.skip && after === fingerprint && (result?.status !== 0 || result.error)
-            ? setupFailure(
-                result?.stdout ?? '',
-                result?.stderr ?? '',
-                result?.status ?? null,
-                result?.error,
-                (t) => makeScrubber([root]).text(t),
-              )
-            : undefined,
+        // A check the environment stopped keeps no pass/fail counts: they
+        // say nothing about the code.
+        summary: couldNotRun
+          ? []
+          : checkSummary(result?.stdout ?? '', result?.stderr ?? '', (t) =>
+              makeScrubber([root]).text(t),
+            ),
+        couldNotRun,
         startedAt,
         durationMs: Math.round(performance.now() - start),
         reuse: {

@@ -163,9 +163,10 @@ strips tags and lists untagged sentences and unknown refs.
   limit is about the same thing. Give mechanism claims their conditions
   (flags, fallbacks), not "any", "always" or "every".
 - A check that failed because the environment lacked something (a tool not
-  installed, `command not found`, no network, a missing toolchain) could not
-  run here: say so in those words ("`cargo test` could not run here: …"),
-  never that the code or its tests failed.
+  installed, `command not found`, a module or package that could not be
+  found, no network, a missing toolchain) could not run in this environment:
+  say so in those words ("`cargo test` could not run in this environment: …"),
+  with no pass or fail counts, never that the code or its tests failed.
 - Line matching (matched %, unmatched lines, commits made in sessions) is not
   authorship: no who-wrote-what percentages or counts. Counts of runs or
   failures from `process` are fine as provenance.

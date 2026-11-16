@@ -101,11 +101,10 @@ export async function checkCmd(
         );
     },
   });
-  emit(
-    opts,
-    receipt,
-    () =>
-      `${receipt.name}: ${receipt.outcome}${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms${receipt.reason ? `; ${receipt.reason}` : ''}`,
+  emit(opts, receipt, () =>
+    receipt.outcome === 'failed' && receipt.couldNotRun
+      ? `${receipt.name}: could not run in this environment (${receipt.couldNotRun}); this says nothing about the code${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms`
+      : `${receipt.name}: ${receipt.outcome}${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms${receipt.reason ? `; ${receipt.reason}` : ''}`,
   );
   if (receipt.outcome === 'failed')
     process.exitCode = receipt.exitCode && receipt.exitCode > 0 ? receipt.exitCode : 1;

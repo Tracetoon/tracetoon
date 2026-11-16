@@ -137,9 +137,10 @@ export function validationSection(b: BriefParts): string {
     // not fail on the submitted content: it says why, and nothing more.
     const unrun = plain(r.result).startsWith(COULD_NOT_RUN);
     if (unrun) {
+      const why = plain(r.result).slice(COULD_NOT_RUN.length).trim();
       shown.push({
         kind: String(r.kind),
-        line: `- \`${cmd}\`: ${plain(r.result)} (\`tracetoon check\`).`,
+        line: `- \`${cmd}\`: could not run in this environment${why ? ` (${why})` : ''}; \`tracetoon check\` got no result on the code.`,
         when: 'fresh',
         current: true,
       });
@@ -183,7 +184,7 @@ export function validationSection(b: BriefParts): string {
         (x) =>
           x.current &&
           x.line.startsWith(`- \`${cmd}\`:`) &&
-          !x.line.startsWith(`- \`${cmd}\`: ${COULD_NOT_RUN}`),
+          !x.line.startsWith(`- \`${cmd}\`: could not run in this environment`),
       )
     )
       continue;

@@ -82,6 +82,33 @@ describe('several suites and setup failures', () => {
     expect(setupFailure('', 'src/a.ts(3,1): error TS2304\n', 2)).toBeUndefined();
   });
 
+  test('tests that could not load a dependency could not run here, whatever counts they printed', () => {
+    expect(
+      setupFailure(
+        ' 0 pass\n 3 fail\nRan 3 tests across 3 files.\n',
+        "error: Cannot find module 'zod' from '<repo>/src/a.ts'\n",
+        1,
+      ),
+    ).toBe("Cannot find module 'zod' from '<repo>/src/a.ts'");
+    expect(
+      setupFailure(
+        '180 passed, 52 failed\n',
+        "ModuleNotFoundError: No module named 'requests'\n",
+        1,
+      ),
+    ).toBe("ModuleNotFoundError: No module named 'requests'");
+    expect(
+      setupFailure(' 4 pass\n 1 fail\n', 'getaddrinfo ENOTFOUND registry.npmjs.org\n', 1),
+    ).toBe('getaddrinfo ENOTFOUND registry.npmjs.org');
+    // The code's own import (a relative path) failing is a real failure.
+    expect(
+      setupFailure(' 0 pass\n 1 fail\n', "error: Cannot find module './gone.ts'\n", 1),
+    ).toBeUndefined();
+    expect(setupFailure('', "Cannot find package '@scope/pkg'\n", 1)).toBe(
+      "Cannot find package '@scope/pkg'",
+    );
+  });
+
   test('render says it could not run here, and leaves its kind to the session logs', () => {
     const section = validationSection({
       unchecked: [],
@@ -114,7 +141,7 @@ describe('several suites and setup failures', () => {
     });
     const lines = section.split('\n').filter((l) => l.startsWith('- '));
     expect(lines[0]).toBe(
-      '- `cargo test`: could not run here: sh: 1: cargo: not found (`tracetoon check`).',
+      '- `cargo test`: could not run in this environment (sh: 1: cargo: not found); `tracetoon check` got no result on the code.',
     );
     expect(section).not.toContain('on the submitted content.');
     expect(lines[1]).toBe(
