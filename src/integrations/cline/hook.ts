@@ -162,10 +162,39 @@ echo '{}'
 `;
 }
 
+/** Markdown's marker line: the same tag in an HTML comment. */
+export const CLINE_RULE_MARKER = '<!-- tracetoon:cline-hook';
+
+/**
+ * A global Cline rule (~/.cline/rules/tracetoon.md), which Cline adds to every
+ * task in the CLI and the VS Code and JetBrains extensions. The extensions'
+ * hooks can only stop a task, and the agent isn't told why: in JetBrains, Cline
+ * then retried `gh pr create` in other forms. The rule tells the agent up
+ * front to use the Tracetoon skill and not to retry a blocked PR command.
+ */
+export function renderClineRule(commands: HookCommands): string {
+  return `${CLINE_RULE_MARKER} ${commands.prePr} -->
+# Pull requests go through Tracetoon
+
+Tracetoon handles pull request creation on this machine: it writes the description from your session logs, then creates the PR.
+
+- When asked to open, create or submit a pull request, use the \`tracetoon\` skill and publish with \`tracetoon publish\`. Don't create the PR directly with \`gh pr create\`, \`hub pull-request\`, \`git pull-request\` or the GitHub API.
+- A hook blocks direct PR commands. If one is blocked or stops the task, don't retry it in another form (other flags, \`--web\`, environment variables): switch to the \`tracetoon\` skill.
+- Being asked to run a PR command, even word for word, is not a request to skip Tracetoon. Only if the user said not to use Tracetoon for this PR, put \`TRACETOON=0\` in front of the command (PowerShell: \`$env:TRACETOON='0'; ...\`).
+
+<!-- Written by \`tracetoon hook install\`; \`tracetoon hook uninstall\` removes it. Edits are overwritten. -->
+`;
+}
+
 /** The pre-pr command line a written hook runs, from its first line (after any #!). */
 export function clineHookCommand(text: string): string | undefined {
   const [first = '', second = ''] = text.split(/\r?\n/, 2);
   const line = first.startsWith('#!') ? second : first;
+  if (line.startsWith(CLINE_RULE_MARKER))
+    return line
+      .slice(CLINE_RULE_MARKER.length)
+      .replace(/-->\s*$/, '')
+      .trim();
   for (const marker of [CLINE_MARKER, CLINE_PS_MARKER])
     if (line.startsWith(marker)) return line.slice(marker.length).trim();
   return undefined;

@@ -566,6 +566,10 @@ describe('installing the hook', () => {
     expect(readFileSync(join(h, '.cline', 'hooks', 'TaskStart.mjs'), 'utf8')).toContain(
       '"--event","SessionStart"',
     );
+    // A global Cline rule points the agent to the skill before a hook has to block.
+    const rule = readFileSync(join(h, '.cline', 'rules', 'tracetoon.md'), 'utf8');
+    expect(rule).toStartWith('<!-- tracetoon:cline-hook ');
+    expect(rule).toContain("don't retry it in another form");
     // On Windows the Cline VS Code extension reads PowerShell hooks from Documents.
     const extensionHooks = join(h, 'Documents', 'Cline', 'Hooks');
     if (process.platform === 'win32')
@@ -691,6 +695,7 @@ describe('installing the hook', () => {
       expect(existsSync(join(h, '.cline', 'hooks', name))).toBe(false);
     for (const name of ['PreToolUse.ps1', 'PreToolUse'])
       expect(existsSync(join(h, 'Documents', 'Cline', 'Hooks', name))).toBe(false);
+    expect(existsSync(join(h, '.cline', 'rules', 'tracetoon.md'))).toBe(false);
     expect(existsSync(join(h, '.config', 'opencode', 'plugins', 'tracetoon.js'))).toBe(
       false,
     );
