@@ -160,6 +160,13 @@ export const ERROR_CODES: ErrorCode[] = [
     humanRequired: true,
   },
   {
+    code: 'COMIC_UNEXPLAINED',
+    exit: 1,
+    meaning:
+      'A comic was expected and an image route could draw it, but none was drawn or skipped with a reason',
+    fix: 'Draw it (SKILL step 5), or `tracetoon comic skip --reason "<why>"`, then render again',
+  },
+  {
     code: 'UPDATES_DISABLED',
     exit: 1,
     meaning: '`TRACETOON_DISABLE_UPDATES=1` is set here',
