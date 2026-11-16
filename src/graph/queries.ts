@@ -1594,6 +1594,15 @@ export function briefParts(
     .filter(([, r]) => r === 'generated')
     .map(([f]) => f)
     .sort();
+  // An added file identical to a file already in the base: a copy, not new content.
+  for (const r of g
+    .run('MATCH (f:File) WHERE f.copyOf IS NOT NULL RETURN f.id AS file, f.copyOf AS of')
+    .rows.sort((a, b) => String(a.file).localeCompare(String(b.file))))
+    housekeeping.push({
+      ref: `HK${housekeeping.length + 1}`,
+      what: `copy of ${String(r.of)}, not new content (byte-identical to the base file)`,
+      files: [String(r.file)],
+    });
   if (generated.length)
     housekeeping.push({
       ref: `HK${housekeeping.length + 1}`,

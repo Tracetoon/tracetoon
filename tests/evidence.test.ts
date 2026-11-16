@@ -307,3 +307,18 @@ test('receipt commands keep their shell quoting', () => {
   );
   expect(shellJoin(['echo', "it's"])).toBe("echo 'it'\\''s'");
 });
+
+describe('an added file identical to a base file', () => {
+  test('is found as a copy of that file, not new content', () => {
+    const { makeRepo } = require('./helpers.ts');
+    const { prTruth } = require('../src/git/pr.ts');
+    const { submission } = require('../src/contribution/guidance.ts');
+    const { copiedFiles } = require('../src/graph/evidence.ts');
+    const repo = makeRepo();
+    repo.commit('docs/README.md', '# demo\n', 'docs: copy the readme');
+    repo.commit('src/new.ts', 'export const fresh = 1;\n', 'feat: new');
+    const truth = prTruth(repo.root, { base: 'main', noGh: true });
+    const copies = copiedFiles(truth, submission(truth).patch);
+    expect([...copies]).toEqual([['docs/README.md', 'README.md']]);
+  });
+});

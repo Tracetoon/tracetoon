@@ -1600,6 +1600,25 @@ describe('the brief states recorded process and behavior', () => {
   const b = withGraph(graph, (g) => briefParts(g));
   const sec = (title: string) => b.sections.find((s) => s.title === title)!.rows;
 
+  test('an added file copying a base file is a housekeeping row, not new content', () => {
+    const copied = {
+      ...graph,
+      nodes: graph.nodes.map((n: any) =>
+        n.label === 'File' && n.id === 'src/b.ts'
+          ? { ...n, props: { ...n.props, copyOf: 'lib/b.ts' } }
+          : n,
+      ),
+    };
+    const hk = withGraph(copied, (g) => briefParts(g)).sections.find(
+      (x) => x.title === 'housekeeping',
+    )!.rows;
+    expect(hk).toContainEqual({
+      ref: expect.stringMatching(/^HK\d+$/),
+      what: 'copy of lib/b.ts, not new content (byte-identical to the base file)',
+      files: ['src/b.ts'],
+    });
+  });
+
   test('no avoid rules and no instructions: only open limits, and none claiming a change was unrequested', () => {
     expect(b.sections.map((s) => s.title)).toEqual([
       'limits',
