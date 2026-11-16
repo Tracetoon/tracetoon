@@ -747,6 +747,28 @@ describe('source-backed composition', () => {
     expect(stale.issues.join(' ')).toContain('research again');
   });
 
+  test('a researched request for comics is an encouragement: recommended strength, and a ban wins', () => {
+    const f = fixture();
+    f.rule.strength = 'recommended';
+    f.rule.rendering = 'media-requested';
+    f.save();
+    const loaded = f.load();
+    expect(loaded.status).toBe('current');
+    const policy = contributionPolicy({ verdict: 'none', excerpts: [] }, loaded).policy;
+    expect(policy.media).toBe('requested');
+    expect(policy.mediaRequest?.file).toBeDefined();
+    f.guidance.requirements.push({
+      ...f.rule,
+      id: 'no-media',
+      strength: 'prohibited',
+      rendering: 'media-prohibited',
+    });
+    f.save();
+    const both = contributionPolicy({ verdict: 'none', excerpts: [] }, f.load()).policy;
+    expect(both.media).toBe('prohibited');
+    expect(both.mediaRequest).toBeUndefined();
+  });
+
   test('opposing attribution policies produce different composition controls', () => {
     const f = fixture();
     f.rule.rendering = 'disclosure-required';
