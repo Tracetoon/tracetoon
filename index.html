@@ -182,7 +182,7 @@
       <a href="#install">Install</a>
       <a href="#why" class="opt">Why</a>
       <a href="#talk" class="opt">Talk</a>
-      <a href="evidence-graph.html">Results</a>
+      <a href="evidence-graph-61.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -224,11 +224,11 @@
         </div>
 
         <div class="proof">
-          <div><b>18–1</b><span>head-to-head wins over Tracetoon without the graph (Claude)</span></div>
-          <div><b>0</b><span>factual errors in 25 Codex-written PRs</span></div>
-          <div><b>−41%</b><span>cost per PR: $0.41 vs $0.69</span></div>
+          <div><b>64–38</b><span>judges' picks for the graph PR over Tracetoon without the graph (Codex, 61 real PRs)</span></div>
+          <div><b>82%</b><span>of key facts conveyed, vs 72% without the graph (Codex)</span></div>
+          <div><b>−39%</b><span>cost per PR on Codex: $0.27 vs $0.45</span></div>
         </div>
-        <a class="more" href="evidence-graph.html">Read the full results →</a>
+        <a class="more" href="evidence-graph-61.html">Read the full results →</a>
       </div>
       <div class="hero-art">
         <img src="img/hero.webp" width="1400" height="837" fetchpriority="high"
@@ -249,13 +249,13 @@
         <span class="kicker">Better PRs</span>
         <h2 class="big display">Judged blind. Picked almost every time.</h2>
         <p>AI-written PRs are usually vague and padded, and they sound sure about tests nobody saw pass. Tracetoon writes from the session logs that Claude Code, Codex, Copilot, Cursor and 11 other agents already keep. The PR says <strong>why</strong> the change was made, <strong>what</strong> changed, and <strong>what actually ran</strong>.</p>
-        <p>Here is one real PR, written three ways and scored 0–100 by the same judges:</p>
+        <p>Here is one real PR from our first test, written three ways and scored 0–100 by the same judges:</p>
         <ul class="score" aria-label="Composite quality score, 0 to 100">
           <li>Agent writes it alone <span class="bar"><i style="width:47.3%"></i></span><b>47</b></li>
           <li>Tracetoon, old workflow <span class="bar"><i style="width:65.3%"></i></span><b>65</b></li>
           <li>Tracetoon + graph <span class="bar"><i class="win" style="width:80.4%"></i></span><b>80</b></li>
         </ul>
-        <div class="stat"><b>18–1 · 12–1</b><span>Head-to-head wins over Tracetoon's own no-graph workflow, on Claude and Codex. A win only counts when two judges each read both orders and all four readings agree.</span></div>
+        <div class="stat"><b>64–38</b><span>Head-to-head picks for the graph PR over Tracetoon's own no-graph workflow on Codex, across 61 real PRs. A pick only counts when two judges each read both orders and agree. On Claude Code, quality was even at lower cost.</span></div>
       </div>
     </div>
   </section>
@@ -326,12 +326,12 @@
           <li><strong>One edit pass.</strong> The reviewers' findings merge into a single list. There are no repeat review rounds and no forked subagents.</li>
         </ul>
         <ul class="score" aria-label="Cost per PR in US dollars">
-          <li>Claude, no graph <span class="bar"><i style="width:100%"></i></span><b>$0.69</b></li>
-          <li>Claude + graph <span class="bar"><i class="win" style="width:59%"></i></span><b>$0.41</b></li>
-          <li>Codex, no graph <span class="bar"><i style="width:46.4%"></i></span><b>$0.32</b></li>
-          <li>Codex + graph <span class="bar"><i class="win" style="width:30%"></i></span><b>$0.21</b></li>
+          <li>Claude, no graph <span class="bar"><i style="width:100%"></i></span><b>$0.65</b></li>
+          <li>Claude + graph <span class="bar"><i class="win" style="width:65.4%"></i></span><b>$0.43</b></li>
+          <li>Codex, no graph <span class="bar"><i style="width:68.3%"></i></span><b>$0.45</b></li>
+          <li>Codex + graph <span class="bar"><i class="win" style="width:40.5%"></i></span><b>$0.27</b></li>
         </ul>
-        <div class="stat"><b>−41% · −35%</b><span>cost per PR on Claude and Codex, while quality went <em>up</em>. <a href="evidence-graph.html#cost">See the token math →</a></span></div>
+        <div class="stat"><b>−28% · −39%</b><span>cost per PR on Claude Code and Codex, with quality even on Claude Code and <em>higher</em> on Codex. <a href="evidence-graph-61.html#cost">See the cost data →</a></span></div>
       </div>
     </div>
   </section>
@@ -412,24 +412,24 @@
     <div class="wrap">
       <details>
         <summary>How we measured (and what's not perfect yet)</summary>
-        <p>The numbers come from <strong>prbench</strong>: 5 real PRs from Tracetoon's own development, each with its original agent session logs, and 5 drafts per PR for each setup. For each PR, a person wrote a fact sheet from the diff and the sessions. AI judges scored every draft against that fact sheet with a 10-item reviewer rubric. Claude runs used Opus 5.5 and Sonnet 5.5 as judges; Codex runs used Sol 6.1 and Terra 6.1. A head-to-head win counts only when both judges, each reading the pair in both orders, pick the same draft. Each comparison uses the same model with the graph and without it. All figures are from the shipped build (round 23).</p>
+        <p>The numbers come from <strong>prbench</strong>: 61 real PRs from 12 repositories, each with its original agent session logs, and 3 drafts per PR for each setup. Each PR has a fact sheet drafted from the diff and the sessions and reviewed by a six-model expert panel. Two AI judges per provider scored every draft against that fact sheet with a 10-item reviewer rubric: Opus 5.5 and Sonnet 5.5 for Claude Code, Sol 6.1 and Terra 6.1 for Codex. A head-to-head pick counts only when both judges, each reading the pair in both orders, pick the same draft. Every factual error a judge flagged was checked against the evidence by two more models. Each comparison uses the same model with the graph and without it.</p>
         <div class="tablewrap">
           <table>
-            <thead><tr><th></th><th>Claude · Sonnet 5.5</th><th>Codex · Terra 6.1</th></tr></thead>
+            <thead><tr><th></th><th>Claude Code · Sonnet 5.5</th><th>Codex · Terra 6.1</th></tr></thead>
             <tbody>
-              <tr><td>Head-to-head (wins–losses)</td><td>18–1, 6 ties</td><td>12–1, 12 ties</td></tr>
-              <tr><td>Composite quality (0–100), graph vs no graph</td><td>78.9 vs 73.7 (+5.2)</td><td>86.6 vs 83.2 (+3.5)</td></tr>
-              <tr><td>Context covered</td><td>0.45 vs 0.38</td><td>0.44 vs 0.39</td></tr>
-              <tr><td>Cost per PR</td><td>$0.407 vs $0.690 (−41%)</td><td>$0.207 vs $0.320 (−35%)</td></tr>
+              <tr><td>Head-to-head picks (graph–no graph)</td><td>54–46 (even)</td><td>64–38</td></tr>
+              <tr><td>Key facts conveyed</td><td>76% vs 76%</td><td>82% vs 72%</td></tr>
+              <tr><td>Confirmed factual errors per PR</td><td>0.58 vs 0.78</td><td>0.18 vs 0.23</td></tr>
+              <tr><td>Cost per PR</td><td>$0.428 vs $0.654 (−28%)</td><td>$0.265 vs $0.447 (−39%)</td></tr>
             </tbody>
           </table>
         </div>
         <ul>
-          <li>Scores vary by about ±3 composite points from run to run. A second Codex run of the same build scored +5.2.</li>
-          <li>Not perfect yet: on Claude, the graph drafts flag fewer open questions; on Codex, they're wordier than a very terse baseline.</li>
-          <li>The graph doesn't turn a small model into a mid-size one: Haiku as the writer still lost. The win comes from a strong writer plus cheap checkers.</li>
+          <li>The same 61 PRs were used to tune Tracetoon and to evaluate it; there is no separate held-out set.</li>
+          <li>Not perfect yet: on Claude Code, graph drafts respect fewer of the open questions in the evidence (53% vs 67%), and take about 1.8× as long to write.</li>
+          <li>On Codex the graph made fewer confirmed errors, but not by enough to pass our own strict non-inferiority margin. The full write-up lists every criterion.</li>
         </ul>
-        <p><a href="evidence-graph.html">Read the full write-up, with every chart, the case study and the Cypher →</a></p>
+        <p><a href="evidence-graph-61.html">Read the full write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
       </details>
     </div>
   </section>
@@ -466,7 +466,7 @@
   <div class="wrap">
     <span>Tracetoon is open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
-    <a href="evidence-graph.html">Evidence graph results</a>
+    <a href="evidence-graph-61.html">Evidence graph results</a>
     <a href="https://github.com/relatedb/relate">Built on Relate</a>
   </div>
 </footer>
