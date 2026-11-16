@@ -107,7 +107,9 @@ function byCost(root: string, files: string[], times: TestTimes) {
 }
 
 /** `TRACETOON_TEST_SHARD=i/n`: this machine runs the i-th of n shares (1-based). */
-export function parseShard(value: string | undefined): { index: number; count: number } | undefined {
+export function parseShard(
+  value: string | undefined,
+): { index: number; count: number } | undefined {
   if (!value?.trim()) return undefined;
   const m = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(value);
   const index = Number(m?.[1]);

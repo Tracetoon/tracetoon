@@ -198,7 +198,10 @@ test('a checkout without history orders by the committed baseline; local history
   );
   expect(readTestTimes(root)).toEqual({ 'slow.test.ts': 90_000, 'quick.test.ts': 50 });
   writeTestTimes(root, [{ file: 'quick.test.ts', code: 0, ms: 120_000 }]);
-  expect(readTestTimes(root)).toEqual({ 'slow.test.ts': 90_000, 'quick.test.ts': 120_000 });
+  expect(readTestTimes(root)).toEqual({
+    'slow.test.ts': 90_000,
+    'quick.test.ts': 120_000,
+  });
   // Only measured times are written back; the baseline stays a separate fallback.
   expect(
     JSON.parse(
