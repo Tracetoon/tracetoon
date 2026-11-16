@@ -769,6 +769,23 @@ describe('source-backed composition', () => {
     expect(both.mediaRequest).toBeUndefined();
   });
 
+  test("a researched request never overrides a ban the repo's files already showed", () => {
+    const f = fixture();
+    f.rule.strength = 'recommended';
+    f.rule.rendering = 'media-requested';
+    f.save();
+    const detected = {
+      verdict: 'none' as const,
+      excerpts: [],
+      media: 'prohibited' as const,
+      mediaSource: { file: 'CONTRIBUTING.md', line: 3, text: 'no images in PRs' },
+    };
+    const policy = contributionPolicy(detected, f.load()).policy;
+    expect(policy.media).toBe('prohibited');
+    expect(policy.mediaSource?.file).toBe('CONTRIBUTING.md');
+    expect(policy.mediaRequest).toBeUndefined();
+  });
+
   test('opposing attribution policies produce different composition controls', () => {
     const f = fixture();
     f.rule.rendering = 'disclosure-required';

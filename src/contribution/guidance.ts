@@ -456,7 +456,8 @@ export function contributionPolicy(
     }
     // A ban wins over any request.
     delete next.mediaRequest;
-  } else if (has('media-requested')) {
+  } else if (has('media-requested') && next.media !== 'prohibited') {
+    // A ban the line check found still wins over a researched request.
     next.media = 'requested';
     if (!next.mediaRequest) {
       const rule = rules.find((r) => r.rendering === 'media-requested')!;
