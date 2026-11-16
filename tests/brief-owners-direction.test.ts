@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { clausesOf, functionProfiles, ownerRows } from '../src/graph/briefExtras.ts';
-import { patchHunks } from '../src/graph/build.ts';
+import { patchHunks, thinBody } from '../src/graph/build.ts';
 import {
   addCodeCells,
   directional,
@@ -52,6 +52,48 @@ describe('fnWords: changed lines split by the function they sit in', () => {
     expect(fw.get('narrowRange')).not.toContain('stale');
     expect(fw.get('skipStaleItems')).toContain('cutoff');
     expect(fw.get('skipStaleItems')).not.toContain('hour');
+  });
+});
+
+describe('thin bodies: one assignment or one call-through', () => {
+  test('setters and callbacks are thin; real functions are not', () => {
+    expect(thinBody('setLimit', ['setLimit(v: number) {', '  this.limit = v;'])).toBe(
+      true,
+    );
+    expect(thinBody('onDone', ['const onDone = (r) => finish(r);'])).toBe(true);
+    expect(thinBody('relay', ['function relay(x) {', '  return send(x, true);'])).toBe(
+      true,
+    );
+    expect(
+      thinBody('narrow', [
+        'function narrow(x) {',
+        '  if (!x) return 0;',
+        '  return x * 2;',
+      ]),
+    ).toBe(false);
+    expect(
+      thinBody('pick', ['function pick(xs) {', '  const a = xs[0];', '  return a;']),
+    ).toBe(false);
+    // Only part of the body is shown (the definition did not change): unknown.
+    expect(thinBody('big', ['  this.limit = v;'])).toBe(false);
+  });
+  test('patchHunks marks a whole new setter thin', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,0 +1,9 @@',
+      '+export function setLimit(v: number) {',
+      '+  state.limit = v;',
+      '+}',
+      '+export function applyLimit(xs: number[]) {',
+      '+  const out = xs.filter((x) => x < state.limit);',
+      '+  if (!out.length) return xs;',
+      '+  return out;',
+      '+}',
+      '+',
+    ].join('\n');
+    expect(patchHunks(patch)[0]!.thin).toEqual(['setLimit']);
   });
 });
 

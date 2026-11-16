@@ -83,6 +83,11 @@ export interface PatchHunk {
    */
   fnLines?: string[];
   /**
+   * Functions this hunk adds whose whole body is one assignment or one call
+   * through (a setter, a callback): never where a reviewer starts.
+   */
+  thin?: string[];
+  /**
    * Names this hunk shows defined as types (class, interface, enum, type alias,
    * struct, trait…) rather than functions: never where a reviewer starts.
    */
@@ -393,6 +398,8 @@ export function patchHunks(patch: string): PatchHunk[] {
       h.owns.push(fn);
       h.fnLines.push(`${fn}: ${kept}`);
       if (readsOnly(code)) h.readers.push(fn);
+      if (h.symbols.includes(fn) && !h.dropped.includes(fn) && thinBody(fn, code))
+        (h.thin ??= []).push(fn);
     }
     h.pairs = valuePairs(kept.minus, kept.plus);
     h.conds = PROSE_FILE.test(h.file)
@@ -533,6 +540,35 @@ export function readsOnly(code: string[]): boolean {
     m[1]!.split('.').pop()!,
   );
   return calls.every((c) => CONVERSION.test(c));
+}
+
+const ONE_ASSIGNMENT =
+  /^\s*(?:(?:const|let|var|self\.|this\.)\s*)?[\w$.[\]'"]+\s*(?:[-+*/%|&^]|\?\?|\|\||&&)?=(?![=>])[^;]*;?\s*$/;
+const ONE_CALL =
+  /^\s*(?:(?:return|await|void)\s+)*[\w$.]+\s*\((?:[^()]|\([^()]*\))*\)\s*;?\s*$/;
+/**
+ * A new function whose whole body is one statement that assigns a value or
+ * calls through to another function (`setX(v) { this.x = v; }`,
+ * `const onDone = (r) => finish(r);`). `code` is its changed code lines, the
+ * definition line among them.
+ */
+export function thinBody(fn: string, code: string[]): boolean {
+  const defAt = code.findIndex((l) => definedSymbol(l) === fn);
+  if (defAt < 0) return false;
+  const body = code
+    .filter((_, i) => i !== defAt)
+    .map((l) => l.trim())
+    .filter((l) => !/^[{}()[\];,\s]*$/.test(l));
+  const def = code[defAt]!;
+  // A one-line definition: the body follows `=>` or `{` on the same line.
+  const inline =
+    /=>\s*(.+?)\s*;?\s*$/.exec(def)?.[1] ?? /\{\s*(.+?)\s*\}\s*;?\s*$/.exec(def)?.[1];
+  const stmts =
+    inline && !/^\{?\s*$/.test(inline) ? [inline.replace(/^\{\s*/, ''), ...body] : body;
+  if (stmts.length !== 1) return false;
+  const one = stmts[0]!.replace(/^\s*return\s+(?=[\w$.]+\s*\()/, '');
+  if (/\b(?:if|for|while|switch|try|catch|else|throw)\b/.test(one)) return false;
+  return ONE_ASSIGNMENT.test(one) || ONE_CALL.test(one);
 }
 
 /**
@@ -966,6 +1002,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       owns: h.owns ?? [],
       readers: h.readers ?? [],
       fnLines: h.fnLines ?? [],
+      thin: h.thin ?? [],
       types: h.types ?? [],
       fnWords: h.fnWords,
       words: h.words,

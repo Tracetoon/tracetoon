@@ -352,6 +352,17 @@ describe('the entry point', () => {
     expect(row?.fact).toBe('Start at `providerInfo` in src/comic/providers.ts.');
   });
 
+  test('a setter or callback is never the entry', () => {
+    // The calling hunk's function is a call-through the patch adds whole.
+    const thin = hunks.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, thin: ['chooseProvider'] } } : h,
+    );
+    const row = withGraph(graphOf([...files, ...thin, ...changes, headRef], rels), (g) =>
+      entryRow(g),
+    );
+    expect(String(row?.fact ?? '')).not.toContain('chooseProvider');
+  });
+
   test('a most-referenced helper that owns little of the added code is no entry', () => {
     const lone = hunks.filter((h) => h.id !== 'H2');
     // The helper's hunk is small beside another source hunk it doesn't own.

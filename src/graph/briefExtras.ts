@@ -652,12 +652,31 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
        RETURN c.id AS change, h.id AS id, h.file AS file, f.role AS role, h.scope AS scope,
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
               h.diff AS diff, h.branches AS branches, h.added AS added,
-              h.owns AS owns, h.readers AS readers, h.fnLines AS fnLines, h.types AS types`,
+              h.owns AS owns, h.readers AS readers, h.fnLines AS fnLines, h.types AS types,
+              h.thin AS thin`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
   if (!hunks.length) return undefined;
   const { owning, ownsIn } = changeOwners(hunks);
+  // Setters and callbacks (a whole body of one assignment or call-through)
+  // are never the entry, nor named beside it.
+  const thinFn = new Set(hunks.flatMap((h) => ((h.thin as string[]) ?? []).map(String)));
+  const linesOfFn = new Map<string, number>();
+  for (const h of hunks)
+    for (const [n, k] of linesIn(h)) linesOfFn.set(n, (linesOfFn.get(n) ?? 0) + k);
+  /** The owners rows' thin-helper rule: few changed lines next to an entry with several times as many. */
+  const thinBeside = (name: string, entry: string) => {
+    if (thinFn.has(name)) return true;
+    const mine = linesOfFn.get(name);
+    const theirs = linesOfFn.get(entry);
+    return (
+      mine != null &&
+      theirs != null &&
+      mine <= THIN_LINES &&
+      theirs >= THIN_RATIO * Math.max(mine, 1)
+    );
+  };
   // A start point is a function defined in the file the row names: never a
   // type, an interface or a name the file only imports.
   const typed = hunks.some((h) => Array.isArray(h.types));
@@ -714,6 +733,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
         .filter(
           (x) =>
             NAME.test(x) &&
+            !thinFn.has(x) &&
             (!ownsIn(h) || ownsIn(h)!.includes(x)) &&
             fnLike(x, String(h.file)),
         ),
@@ -762,6 +782,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
     for (const r of related) {
       // Only functions that own changed code are named (see `changeOwners`).
       if (!owning(r.name) || anyType.has(r.name)) continue;
+      if (thinBeside(r.name, entry)) continue;
       const what = ownedBy(profiles.get(r.name), 48);
       // A callee the lead already names adds something only with what is tied to it.
       if (r.how === 'called' && !what) continue;
@@ -856,7 +877,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   // A type, or a name the file doesn't define: the function there that owns
   // the most added lines instead, else the file alone.
   const term =
-    definedHere(named, file) && fnLike(named, file)
+    definedHere(named, file) && fnLike(named, file) && !thinFn.has(named)
       ? named
       : uniqStr(
           hunks
@@ -868,7 +889,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
             ])
             .map((x) => (x == null ? '' : String(x))),
         )
-          .filter((n) => NAME.test(n) && owning(n) && fnLike(n, file))
+          .filter((n) => NAME.test(n) && owning(n) && fnLike(n, file) && !thinFn.has(n))
           .map((n) => ({ n, share: ownedShare(hunks, n, file) }))
           .filter((x) => x.share >= MIN_ENTRY_SHARE)
           .sort((a, b) => b.share - a.share || a.n.localeCompare(b.n))[0]?.n;
