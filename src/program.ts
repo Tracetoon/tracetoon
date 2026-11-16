@@ -139,6 +139,7 @@ export function buildProgram(cwd: string = process.cwd()): {
         id: i.id,
         label: i.label,
         status: i.status,
+        supportTier: i.supportTier,
         variants: i.variants ?? null,
         logs: i.traces.map((t) => t.id),
         hook: !!i.hook,
@@ -150,7 +151,7 @@ export function buildProgram(cwd: string = process.cwd()): {
         rows
           .map(
             (r) =>
-              `${r.label.padEnd(14)} ${r.status.padEnd(10)} logs: ${r.logs.join(', ') || 'none'}; hook: ${r.hook ? 'yes' : r.hookVia ? `via ${r.hookVia}` : 'no'}${r.skill ? `; skill: ${r.skill.dir}${r.skill.present ? '' : ' (agent not found)'}` : ''}${r.limits.map((l) => `\n${' '.repeat(26)}note: ${l}`).join('')}`,
+              `${r.label.padEnd(14)} ${r.supportTier.padEnd(12)} ${r.status.padEnd(10)} logs: ${r.logs.join(', ') || 'none'}; hook: ${r.hook ? 'yes' : r.hookVia ? `via ${r.hookVia}` : 'no'}${r.skill ? `; skill: ${r.skill.dir}${r.skill.present ? '' : ' (agent not found)'}` : ''}${r.limits.map((l) => `\n${' '.repeat(39)}note: ${l}`).join('')}`,
           )
           .join('\n'),
       );

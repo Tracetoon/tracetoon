@@ -43,6 +43,7 @@ export const integration: Integration = {
   id: 'junie',
   label: 'Junie',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI and JetBrains IDE plugin',
   traces: [junieAdapter],
   hook: {

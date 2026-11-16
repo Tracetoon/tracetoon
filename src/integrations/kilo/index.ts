@@ -30,6 +30,7 @@ export const integration: Integration = {
   id: 'kilo',
   label: 'Kilo CLI',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI, and Kilo Code for VS Code and JetBrains, which run it',
   traces: [opencodeStoreAdapter('kilo', 'Kilo CLI', () => dbPath())],
   hook: {

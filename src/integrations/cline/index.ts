@@ -69,6 +69,7 @@ export const integration: Integration = {
   id: 'cline',
   label: 'Cline',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI, VS Code and JetBrains extensions',
   limits: [
     'PRs opened through GitHub connector or MCP tools are not redirected; `gh` and other shell commands are.',

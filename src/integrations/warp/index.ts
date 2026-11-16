@@ -17,6 +17,7 @@ export const integration: Integration = {
   id: 'warp',
   label: 'Warp',
   status: 'partial',
+  supportTier: 'community',
   variants: 'Warp agent',
   limits: [
     "Warp keeps its agent's replies and file edits on its servers; Tracetoon reads the prompts and the commands the agent ran, from Warp's local database.",

@@ -1,0 +1,46 @@
+{
+  "$comment": "Verification targets for Recommended integrations and workflows. source says how the newest stable upstream version is found; evidence says how the live session runs (fake-llm: scripted local model, no credits; free-plan: a free account token, only for a new version). Read by scripts/compat/*.ts and scripts/agent-surfaces.ts.",
+  "targets": {
+    "claude-cli": {
+      "integration": "claude",
+      "surface": "cli",
+      "source": { "type": "npm", "package": "@anthropic-ai/claude-code" },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "codex-cli": {
+      "integration": "codex",
+      "surface": "cli",
+      "source": { "type": "npm", "package": "@openai/codex" },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "opencode-cli": {
+      "integration": "opencode",
+      "surface": "cli",
+      "source": { "type": "npm", "package": "opencode-ai" },
+      "evidence": "fake-llm",
+      "os": ["ubuntu-latest", "windows-latest"]
+    },
+    "copilot-cli": {
+      "integration": "copilot",
+      "surface": "cli",
+      "source": { "type": "npm", "package": "@github/copilot" },
+      "evidence": "free-plan",
+      "secret": "COPILOT_GITHUB_TOKEN",
+      "os": ["ubuntu-latest"]
+    },
+    "cursor-cli": {
+      "integration": "cursor",
+      "surface": "cli",
+      "source": {
+        "type": "installer",
+        "url": "https://cursor.com/install",
+        "binary": "cursor-agent"
+      },
+      "evidence": "free-plan",
+      "secret": "CURSOR_API_KEY",
+      "os": ["ubuntu-latest"]
+    }
+  }
+}

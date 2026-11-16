@@ -94,15 +94,28 @@ Comics: tracetoon config set comic off|allowed|always (now: allowed)
 ```
 
 <!-- hosts:start (generated from the integration registry) -->
+Tracetoon works across a broad range of coding agents and IDEs. Recommended integrations are actively maintained and continuously compatibility-tested. Community Supported integrations are available on a best-effort basis.
+
+**Recommended:** retested on every new release of the agent.
+
+| Agent                                             | Status                                                  |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| Claude Code (CLI, IDE extensions and desktop app) | ✅ supported                                             |
+| Codex (CLI, app and IDE extensions)               | ✅ supported                                             |
+| Copilot (CLI, VS Code agent mode and JetBrains)   | ✅ supported                                             |
+| Cursor (IDE and CLI)                              | ✅ supported ([see notes](docs/agents/support.md#notes)) |
+| OpenCode (CLI)                                    | ✅ supported                                             |
+
+**IDE workflows:** VS Code and Zed with specific recommended agents; each says
+"verified" only once its own test passes ([IDE workflows](docs/agents/support.md#ide-workflows)).
+
+**Community Supported:** available and tested with every Tracetoon change, fixed
+on a best-effort basis.
+
 | Agent                                                                 | Status                                                                           |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Claude Code (CLI, IDE extensions and desktop app)                     | ✅ supported                                                                      |
-| Codex (CLI, app and IDE extensions)                                   | ✅ supported                                                                      |
 | Antigravity (CLI and IDE)                                             | ✅ supported                                                                      |
 | Factory Droid (Droid CLI)                                             | ✅ supported                                                                      |
-| Copilot (CLI, VS Code agent mode and JetBrains)                       | ✅ supported                                                                      |
-| Cursor (IDE and CLI)                                                  | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
-| OpenCode (CLI)                                                        | ✅ supported                                                                      |
 | Kilo CLI (CLI, and Kilo Code for VS Code and JetBrains, which run it) | ✅ supported                                                                      |
 | Kiro (IDE and CLI)                                                    | ✅ supported                                                                      |
 | Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
@@ -115,7 +128,8 @@ Comics: tracetoon config set comic off|allowed|always (now: allowed)
 | Zed (Zed Agent)                                                       | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
 | Warp (Warp agent)                                                     | 🟡 partial ([see notes](docs/agents/support.md#notes))                           |
 
-Hook files, skill folders and the notes: [supported agents](docs/agents/support.md).
+Hook files, skill folders, verification results and the notes:
+[supported agents](docs/agents/support.md).
 <!-- hosts:end -->
 
 > [!TIP]
