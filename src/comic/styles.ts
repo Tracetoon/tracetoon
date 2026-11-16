@@ -220,60 +220,71 @@ const LEGACY_STYLES: Style[] = [
     'mecha-anime',
     'mecha anime style, detailed robots and cockpits, holographic HUD panels, cinematic lighting',
     'HUD labels and readouts on screens, condensed sci-fi headline',
+    ['full-color', 'bw-accent'],
   ],
   [
     'rubber-hose',
     '1930s rubber-hose cartoon, bendy limbs, pie-cut eyes, white gloves, sepia film grain, bouncy motion',
     'vintage title card lettering, bouncy balloons',
+    ['limited', 'duotone'],
   ],
   [
     'storybook-watercolor',
     "children's storybook watercolor illustration, soft washes, pencil linework, gentle light",
     'handwritten storybook captions, whimsical headline',
+    ['full-color'],
   ],
   [
     'claymation',
     'stop-motion claymation diorama, plasticine characters with fingerprints, miniature set, soft studio lighting',
     'cut-paper signs and labels in the set, chunky headline',
+    ['full-color'],
   ],
   [
     'risograph',
     'risograph-printed zine, two overprinted ink colors, grainy texture, slight misregistration, bold shapes',
     'chunky grotesque type, stamped labels',
+    ['duotone'],
   ],
   [
     'pulp-scifi',
     '1950s pulp science fiction magazine art, ray guns, rocket fins, painted gouache, dramatic sky',
     'pulp magazine cover headline, starburst blurbs',
+    ['full-color', 'limited'],
   ],
   [
     'ukiyo-e',
     'Japanese ukiyo-e woodblock print, flat color areas, carved outlines, stylized waves and clouds, washi paper texture',
     'vertical cartouche labels, brush headline',
+    ['limited'],
   ],
   [
     'atomic-flat',
     'mid-century modern illustration, atomic-age shapes, flat geometric characters, starbursts, cream background',
     'retro display type, small caption labels',
+    ['limited', 'full-color'],
   ],
   [
     'blueprint',
     'technical blueprint, white linework on cyan blueprint paper, callouts, dimension lines, exploded views',
     'drafting stencil labels and callouts, title block headline',
+    ['duotone'],
   ],
   [
     'vaporwave',
     'vaporwave aesthetic, neon pink and cyan, synthwave sun, chrome text, grid horizon, retro computer windows',
     'chrome and neon headline, window-title labels',
+    ['full-color'],
   ],
-].map(([id, prompt, lettering]) => ({
-  id: id!,
-  name: id!,
+].map(([id, prompt, lettering, palettes]) => ({
+  id: id as string,
+  name: id as string,
   family: 'custom' as StyleFamily,
-  prompt: prompt!,
-  palettes: ['full-color'] as Palette[],
+  prompt: prompt as string,
+  // The palettes each preset had, so old scripts keep their default palette.
+  palettes: palettes as Palette[],
   moods: [],
-  lettering: lettering!,
+  lettering: lettering as string,
 }));
 
 export const styleById = (id: string | undefined) =>
@@ -301,14 +312,16 @@ export function styleLettering(style: string): string {
   );
 }
 
+const NON_COMIC_MEDIUM =
+  /\b(3d|cgi|render(ed)?|clay|claymation|plasticine|diorama|plush|toy|figurine|watercolou?r|gouache|oil paint|painted|picture[- ]book|storybook|photo(graph|real)?|stop[- ]motion|papercraft|paper[- ]cut)/i;
+
 /**
- * Whether the style itself asks for a non-comic medium (3D, clay, painting).
- * Then the "must look like an inked comic" guard is left out of the prompt.
+ * Whether the style, or the user's explicit request, asks for a non-comic
+ * medium (3D, clay, painting). Then the "must look like an inked comic" guard
+ * is left out of the prompt, so it never contradicts what was asked for.
  */
-export function wantsNonComicMedium(style: string): boolean {
-  return /\b(3d|cgi|render(ed)?|clay|claymation|plasticine|diorama|plush|toy|figurine|watercolou?r|gouache|oil paint|painted|picture[- ]book|storybook|photo(graph|real)?|stop[- ]motion|papercraft|paper[- ]cut)/i.test(
-    styleText(style),
-  );
+export function wantsNonComicMedium(style: string, request?: string): boolean {
+  return NON_COMIC_MEDIUM.test(styleText(style)) || NON_COMIC_MEDIUM.test(request ?? '');
 }
 
 /** How a palette reads in a prompt. */

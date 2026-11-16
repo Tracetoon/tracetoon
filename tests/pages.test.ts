@@ -127,8 +127,16 @@ describe('comic look and user requests', () => {
     expect(
       pagePrompt(pageScript({ style: 'stop-motion claymation diorama' })),
     ).not.toContain('It must look like a drawn comic');
-    // Old presets still expand to their tested prompt.
+    // A user's request for another medium lifts the guard too.
+    expect(
+      pagePrompt(pageScript({ request: 'make it a claymation diorama' })),
+    ).not.toContain('It must look like a drawn comic');
+    // Old presets still expand to their tested prompt and keep their palettes.
     expect(pagePrompt(pageScript({ style: 'claymation' }))).toContain('plasticine');
+    expect(styleById('risograph')!.palettes).toEqual(['duotone']);
+    expect(pagePrompt(pageScript({ style: 'risograph', palette: undefined }))).toContain(
+      'two-color print',
+    );
     for (const s of STYLES) expect(s.family).not.toBe('custom');
   });
 

@@ -209,7 +209,7 @@ export function pagePrompt(script: ComicScript): string {
     `A finished comic page, ${SHAPE[aspect]} image.`,
     `Art style: ${scriptStyle(script)}.`,
     requestLine(script),
-    wantsNonComicMedium(script.style) ? '' : COMIC_MEDIUM,
+    wantsNonComicMedium(script.style, script.request) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'
       ? `Format: ${format.name}. ${format.layout}.`
       : '',
