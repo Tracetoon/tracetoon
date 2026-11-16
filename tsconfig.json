@@ -25,5 +25,5 @@
       ]
     }
   },
-  "include": ["src", "tests", "evals", "packages/*/src"]
+  "include": ["src", "tests", "evals", "packages/*/src", "scripts/compat"]
 }

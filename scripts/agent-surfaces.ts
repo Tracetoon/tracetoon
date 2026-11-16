@@ -167,10 +167,10 @@ export function supportMd(): string {
   ]);
   const workflows = WORKFLOWS.map((w) => {
     const agent = INTEGRATIONS.find((i) => i.id === w.agentIntegrationId);
-    const [last, status] =
-      w.state === 'verified'
-        ? verificationCells(w.verificationTarget)
-        : ['not yet verified', 'candidate'];
+    // A workflow with no automated route is a candidate, whatever anyone tried by hand.
+    const [last, status] = upstreamTargets()[w.verificationTarget]
+      ? verificationCells(w.verificationTarget)
+      : ['not yet verified', 'candidate'];
     return [
       `${w.editor} + ${agent?.label ?? w.agentIntegrationId}`,
       w.scope,
