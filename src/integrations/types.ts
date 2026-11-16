@@ -9,6 +9,7 @@
 import type { TraceAdapter } from '../trace/types.ts';
 
 export type Json = Record<string, any>;
+export type SupportTier = 'recommended' | 'community';
 export type Env = NodeJS.ProcessEnv;
 
 /** A host's hook payload, reduced to what Tracetoon needs. */
@@ -112,6 +113,14 @@ export interface Integration {
    * out of every published list.
    */
   status: 'supported' | 'partial' | 'skill-only' | 'legacy';
+  /**
+   * The project's maintenance commitment, separate from what the integration
+   * can do (`status`). recommended: every new upstream release is verified by
+   * .github/workflows/integration-compat.yml. community: covered by ordinary CI
+   * only, fixed on a best-effort basis. New hosts start as community; promotion
+   * is a decision recorded in docs/agents/support-policy.md.
+   */
+  supportTier: SupportTier;
   /** The forms of the host this covers, for the support table ("CLI and VS Code"). */
   variants?: string;
   /** User-facing gaps, one short sentence each; shown in the support table and `integrations`. */

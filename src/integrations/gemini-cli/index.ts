@@ -11,6 +11,7 @@ export const integration: Integration = {
   id: 'gemini-cli',
   label: 'Gemini CLI',
   status: 'legacy',
+  supportTier: 'community',
   traces: [],
   skill: (h, env) => ({
     present: !!onPath('gemini', env),

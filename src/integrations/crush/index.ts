@@ -35,6 +35,7 @@ export const integration: Integration = {
   id: 'crush',
   label: 'Crush',
   status: 'supported',
+  supportTier: 'community',
   variants: 'CLI',
   traces: [crushAdapter],
   hook: {

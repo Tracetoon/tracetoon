@@ -36,6 +36,7 @@ export const integration: Integration = {
   id: 'kiro',
   label: 'Kiro',
   status: 'supported',
+  supportTier: 'community',
   variants: 'IDE and CLI',
   traces: [kiroAdapter],
   hook: {

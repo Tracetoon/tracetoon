@@ -85,7 +85,10 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
    `PAYLOADS` in `tests/integrations.test.ts` (the hook contract requires one),
    parser tests in `tests/adapters.test.ts`, and an end-to-end test in
    `tests/flow.test.ts` with an isolated home directory.
-5. Set the integration's `variants`, and `limits` for anything a user would
+5. Set `supportTier: 'community'`. Every new agent starts there. Promotion to
+   `recommended` is a separate decision that needs a working verification route
+   ([support policy](docs/agents/support-policy.md#promotion-and-demotion)).
+   Set the integration's `variants`, and `limits` for anything a user would
    miss (no session logs, PR tools the hook can't see), then run
    `bun scripts/agent-surfaces.ts`. It rewrites the README's agent lists,
    `docs/agents/support.md` and every catalog description from the registry.

@@ -17,6 +17,7 @@ export const integration: Integration = {
   id: 'zed',
   label: 'Zed',
   status: 'partial',
+  supportTier: 'community',
   variants: 'Zed Agent',
   limits: [
     "Zed has no hook before its agent's tools, so a PR command run by the Zed Agent isn't redirected; the agent can still use the Tracetoon skill.",

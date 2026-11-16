@@ -18,6 +18,7 @@ export const integration: Integration = {
   id: 'codex',
   label: 'Codex',
   status: 'supported',
+  supportTier: 'recommended',
   variants: 'CLI, app and IDE extensions',
   traces: [codexAdapter],
   hook: {
