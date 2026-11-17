@@ -10,7 +10,7 @@ import {
 } from '../src/workflow/checks.ts';
 import { makeRepo, tempDir } from './helpers.ts';
 
-test('CLI streams check progress while the receipt and lock still indicate running', async () => {
+test('CLI streams check progress with --progress while the receipt and lock still indicate running', async () => {
   const repo = makeRepo(),
     { run } = beginTask(repo.root);
   const release = join(tempDir(), 'release');
@@ -27,6 +27,7 @@ test('CLI streams check progress while the receipt and lock still indicate runni
       run.id,
       '--name',
       'progress',
+      '--progress',
       '--',
       process.execPath,
       '-e',
@@ -72,6 +73,55 @@ test('CLI streams check progress while the receipt and lock still indicate runni
     expect(saved).not.toHaveProperty('stderr');
   } finally {
     clearTimeout(timer);
+    writeFileSync(release, 'finish');
+    if (proc.exitCode === null) proc.kill();
+  }
+}, 25000);
+
+test('CLI check is quiet until done: no stderr, one summary on stdout, live output in running.log', async () => {
+  const repo = makeRepo(),
+    { run } = beginTask(repo.root);
+  const release = join(tempDir(), 'release');
+  const live = join(run.dir, 'check-logs', 'running.log');
+  const cli = process.env.TRACETOON_TEST_CLI ?? resolve(import.meta.dir, '../src/cli.ts');
+  const command = `console.log('QUIET_LINE'); const timer=setInterval(()=>{if(require('node:fs').existsSync(${JSON.stringify(release)})){clearInterval(timer);console.log('1 pass');}},20);`;
+  const env = { ...process.env };
+  delete env.TRACETOON_CHECK_PROGRESS;
+  const proc = Bun.spawn(
+    [
+      ...(process.env.TRACETOON_TEST_BINARY
+        ? [process.env.TRACETOON_TEST_BINARY]
+        : [process.execPath, cli]),
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'quiet',
+      '--',
+      process.execPath,
+      '-e',
+      command,
+    ],
+    { cwd: repo.root, env, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' },
+  );
+  const stdout = new Response(proc.stdout).text();
+  const stderr = new Response(proc.stderr).text();
+  try {
+    const until = Date.now() + 15000;
+    while (
+      !(existsSync(live) && readFileSync(live, 'utf8').includes('QUIET_LINE')) &&
+      Date.now() < until
+    )
+      await new Promise((r) => setTimeout(r, 20));
+    expect(readFileSync(live, 'utf8')).toContain('QUIET_LINE');
+    writeFileSync(release, 'finish');
+    expect(await proc.exited).toBe(0);
+    expect(await stderr).toBe('');
+    const out = await stdout;
+    expect(out).toContain('quiet: passed');
+    expect(out).not.toContain('QUIET_LINE');
+    expect(existsSync(live)).toBe(false);
+  } finally {
     writeFileSync(release, 'finish');
     if (proc.exitCode === null) proc.kill();
   }

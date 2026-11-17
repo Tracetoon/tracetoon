@@ -92,6 +92,12 @@ import { comicSummary } from '../comic/composition.ts';
 import { comicObservationInput } from '../contribution/comicReview.ts';
 import { readTask, saveTask, workFingerprint } from '../workflow/state.ts';
 import { fileHash, publishProblem } from '../workflow/readiness.ts';
+import {
+  currentBody,
+  rebindProblem,
+  rebindReview,
+  reviewOutOfDate,
+} from '../workflow/rebind.ts';
 import { checkReceiptGap, passOnSubmittedContent, receipts } from '../workflow/checks.ts';
 import { publicationLock, recordTiming } from '../workflow/publication.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
@@ -263,6 +269,12 @@ export interface RenderOpts extends OutOpts {
    * slim reviewer whose corrections were applied (notes in reviewer-notes.md).
    */
   reviewed?: boolean;
+  /** Print nothing (publish's own re-render, finish's compact summary). */
+  quiet?: boolean;
+  /** Receives the brief check's text and counts (finish prints its own compact summary). */
+  report?: (r: { brief: string; open: number; uncovered: number; tags: number }) => void;
+  /** Text mode: also print the advisory detail (optional notes, evidence-graph leads). */
+  verbose?: boolean;
 }
 
 /** One line a writer can't miss, printed first: what is left to fix. */
@@ -665,7 +677,15 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
       ? `Review plan (${planSummary(plan)}) still needs:\n${planNeeds.map((m) => `  - ${m}`).join('\n')}`
       : `Review plan (${planSummary(plan)}): met.`
     : '';
-  emit(
+  opts.report?.({
+    brief: [briefCheckHeadline(briefCheck), briefCheckLines(briefCheck)]
+      .filter(Boolean)
+      .join('\n'),
+    open: openProblems(briefCheck),
+    uncovered: briefCheck.uncovered.length,
+    tags: briefCheck.tags,
+  });
+  (opts.quiet ? () => {} : emit)(
     opts,
     {
       // First, so a writer reading only the head of the output still sees it.
@@ -984,10 +1004,43 @@ export function publishCmd(cwd: string, opts: PublishOpts): void {
 
 function publishImpl(cwd: string, opts: PublishOpts): void {
   const { run, truth } = loadRun(cwd, opts.run);
-  const approval = readJson<Approval>(run, 'approval.json');
+  let approval = readJson<Approval>(run, 'approval.json');
   const bodyPath = join(run.dir, 'final-body.md');
   if (!approval || !existsSync(bodyPath))
     throw new UserError('Nothing rendered yet. Run `tracetoon render` first.');
+  // Review recheck: none: bind the review to the final render here instead of
+  // refusing it as stale (src/workflow/rebind.ts says when that is safe).
+  if (reviewOutOfDate(run)) {
+    const why = rebindProblem(run, truth.toplevel, currentBody(run), approval.sourceSha);
+    if (why) {
+      const input = readJson<{ fingerprint?: string }>(run, 'review-input.json');
+      const review = readJson<{ inputFingerprint?: string }>(run, 'review.json');
+      if (input?.fingerprint !== review?.inputFingerprint)
+        throw new UserError(
+          `The review is bound to an earlier render and publish can't rebind it itself (${why}). ${recheckStep(run.id, loadReviewPlan(run))}, then tracetoon render --run ${run.id} and publish.`,
+        );
+    } else {
+      const again = (a: Approval) =>
+        renderCmd(cwd, {
+          run: run.id,
+          quiet: true,
+          allowFindings: a.allowFindings,
+          noComic: a.comicStatus?.state === 'skipped',
+          retitle: readText(run, 'title.txt')?.trim() === a.title,
+        });
+      for (let round = 0; round < 2 && reviewOutOfDate(run); round++) {
+        const input = readJson<{ fingerprint?: string }>(run, 'review-input.json');
+        const review = readJson<{ inputFingerprint?: string }>(run, 'review.json');
+        if (input?.fingerprint !== review?.inputFingerprint)
+          rebindReview(run, truth.toplevel);
+        approval = again(approval);
+      }
+      if (!opts.json)
+        process.stdout.write(
+          'Bound the review to the final render (Review recheck: none) and rendered again.\n',
+        );
+    }
+  }
   const problem = snapshotProblem(truth.toplevel, approval.submission);
   if (problem)
     throw new UserError(

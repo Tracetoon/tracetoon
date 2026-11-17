@@ -2,11 +2,13 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  appendFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -315,6 +317,13 @@ interface CheckOptions {
   input?: string[];
   /** Stop the command after this long (default CHECK_TIMEOUT_MS). */
   timeoutMs?: number;
+  /**
+   * Echo the first output lines on stderr while the check runs. Off by
+   * default: an agent's exec tool (Codex) returns at its yield time either
+   * way, and streamed lines only cost tokens on every poll. The live output
+   * always goes to `check-logs/running.log` until the receipt is written.
+   */
+  progress?: boolean;
 }
 export function executeCheck(
   root: string,
@@ -337,8 +346,8 @@ export function executeCheck(
             timeout: opts.timeoutMs ?? checkTimeoutMs(),
             killSignal: 'SIGKILL',
           });
-      if (result?.stdout) process.stderr.write(result.stdout);
-      if (result?.stderr) process.stderr.write(result.stderr);
+      if (opts.progress && result?.stdout) process.stderr.write(result.stdout);
+      if (opts.progress && result?.stderr) process.stderr.write(result.stderr);
       const timedOut =
         !!result &&
         result.status === null &&
@@ -375,22 +384,47 @@ export function executeCheckLive(
     async () => {
       const prepared = prepareCheck(root, run, opts);
       if ('cached' in prepared) return prepared.cached;
+      const live = opts.skip ? undefined : liveLog(run);
       const result = opts.skip
         ? undefined
         : await streamCheck(
             opts.command,
             prepared.cwd,
             opts.timeoutMs ?? checkTimeoutMs(),
+            !!opts.progress,
+            live,
           );
+      if (live) rmQuiet(live);
       return prepared.finish(result);
     },
     'checks.lock',
   );
 }
+/** Where a running check's raw output goes until its scrubbed log is saved. */
+function liveLog(run: Run): string | undefined {
+  try {
+    const dir = join(run.dir, 'check-logs');
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, 'running.log');
+    writeFileSync(file, '');
+    return file;
+  } catch {
+    return undefined;
+  }
+}
+function rmQuiet(file: string): void {
+  try {
+    unlinkSync(file);
+  } catch {
+    /* already gone */
+  }
+}
 function streamCheck(
   command: string[],
   cwd: string,
   timeoutMs = CHECK_TIMEOUT_MS,
+  echo = false,
+  live?: string,
 ): Promise<CheckResult> {
   return new Promise((resolveResult) => {
     const child = spawn(command[0]!, command.slice(1), {
@@ -422,8 +456,14 @@ function streamCheck(
     process.once('SIGINT', onInterrupt);
     process.once('SIGTERM', onTerminate);
     const capture = (text: string, isError: boolean) => {
-      // The first lines show progress; the rest goes to the saved log only.
-      if (echoed < ECHO_LINES) {
+      if (live)
+        try {
+          appendFileSync(live, text);
+        } catch {
+          /* the saved log still gets the output */
+        }
+      // With --progress, the first lines show on stderr; the rest goes to the log only.
+      if (echo && echoed < ECHO_LINES) {
         const lines = text.split('\n');
         const room = ECHO_LINES - echoed;
         process.stderr.write(lines.slice(0, room).join('\n'));

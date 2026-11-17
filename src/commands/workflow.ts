@@ -121,6 +121,7 @@ export async function checkCmd(
     force?: boolean;
     input?: string[];
     timeout?: string;
+    progress?: boolean;
   },
 ) {
   const repo = repository(cwd);
@@ -128,14 +129,19 @@ export async function checkCmd(
   const task = readTask(run);
   if (task && (task.branch !== repo.branch || task.root !== repo.root))
     throw new UserError('Run checks in this task worktree and branch.');
+  // Quiet until done (one summary at the end) unless --progress or a terminal:
+  // an agent's exec tool returns at its own yield time, and streamed lines
+  // only cost tokens on every poll. The live output is in check-logs/running.log.
+  const progress = opts.progress ?? (!!process.stderr.isTTY || process.env.TRACETOON_CHECK_PROGRESS === '1');
   const attempt = () =>
     executeCheckLive(repo.root, run, {
       ...opts,
+      progress,
       name: opts.name ?? command.join(' '),
       command,
       timeoutMs: checkTimeoutMs(opts.timeout),
       onStart: (receipt) => {
-        if (receipt.outcome === 'running' && !opts.skip)
+        if (progress && receipt.outcome === 'running' && !opts.skip)
           process.stderr.write(
             `${receipt.name}: running in the foreground; wait for it (stops after ${Math.round(checkTimeoutMs(opts.timeout) / 60_000)} min). The first output lines follow on stderr, the full log is saved in the run folder.\n`,
           );

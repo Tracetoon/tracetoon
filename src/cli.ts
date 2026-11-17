@@ -25,6 +25,7 @@ import { emit, exitCodeOf, UserError } from './commands/output.ts';
 import { publishCmd, renderCmd } from './commands/publish.ts';
 import { reviewImportCmd, reviewMergeCmd, reviewPacketCmd } from './commands/review.ts';
 import { reviewRunCmd } from './commands/reviewRun.ts';
+import { finishCmd } from './commands/finish.ts';
 import {
   comicArtCmd,
   comicRerollCmd,
@@ -110,6 +111,10 @@ program
   .option(
     '--timeout <minutes>',
     'stop the check after this long (default 15); a timeout is reported as incomplete, never as failed',
+  )
+  .option(
+    '--progress',
+    'echo the first output lines on stderr while it runs (default: quiet until the one-line summary, unless stderr is a terminal; live output is in check-logs/running.log)',
   )
   .option(
     '--input <path>',
@@ -285,6 +290,15 @@ program
     o.noComic = o.comic === false;
     renderCmd(cwd, { ...g(), ...o });
   });
+
+program
+  .command('finish')
+  .description(
+    'after drafting: render (with the brief check), write the review packets or bind the review to the final render, and print the one next step',
+  )
+  .option('--run <id>', 'run id (default: latest)')
+  .option('--verbose', "also print render's full report")
+  .action((o) => finishCmd(cwd, { ...g(), ...o }));
 
 program
   .command('review-packet')

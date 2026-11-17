@@ -8,6 +8,7 @@
  * hunks the body cites, every branching hunk and the test assertion lines).
  */
 import { createHash } from 'node:crypto';
+import { git } from '../util/exec.ts';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { fileRole } from '../digest/build.ts';
@@ -564,10 +565,21 @@ function incompleteReasons(run: Run, root: string, input: ReviewInput): string[]
 export const PASSES_FILE = 'review-passes.json';
 export interface StoredPass extends ReviewPass {
   raw: LeanFindings;
+  /** The code tree and diff the reviewer saw, so publish can rebind on the same code. */
+  treeSha?: string;
+  diffSha256?: string;
+  /** The rendered body the reviewer saw (kept local; not copied into review.json). */
+  reviewedBody?: string;
 }
 export const loadPasses = (run: Run): StoredPass[] =>
   readJson<{ passes?: StoredPass[] }>(run, PASSES_FILE)?.passes ?? [];
-const passSummary = ({ raw: _raw, ...pass }: StoredPass): ReviewPass => pass;
+const passSummary = ({ raw: _raw, reviewedBody: _body, ...pass }: StoredPass): ReviewPass =>
+  pass;
+/** The tree of a commit, so a branch with the same content counts as the same code. */
+export function treeOf(root: string, sha: string): string | undefined {
+  const r = git(root, ['rev-parse', '--verify', '--quiet', `${sha}^{tree}`]);
+  return r.ok ? r.stdout.trim() || undefined : undefined;
+}
 const bodyHash = (s: string) => createHash('sha256').update(s).digest('hex');
 
 /**
@@ -618,7 +630,10 @@ export interface ImportOptions {
   >;
 }
 
-function readFindingsFile(file: string): ReturnType<typeof parseFindings> {
+function readFindingsFile(
+  file: string,
+  agentId?: string,
+): ReturnType<typeof parseFindings> {
   if (!existsSync(file))
     throw new UserError(
       `No findings file at ${file}. The reviewer writes ${file.split(/[\\/]/).pop()}.`,
@@ -632,7 +647,7 @@ function readFindingsFile(file: string): ReturnType<typeof parseFindings> {
     );
   }
   try {
-    return parseFindings(raw);
+    return parseFindings(raw, { agentId });
   } catch (e) {
     throw new UserError((e as Error).message);
   }
@@ -692,7 +707,7 @@ export function importLeanReview(
         ? opts.findings
         : resolve(opts.findings)
       : join(run.dir, lensFindingsFile(lens));
-    const parsed = readFindingsFile(file);
+    const parsed = readFindingsFile(file, opts.agentId);
     warnings.push(...parsed.warnings);
     const agentId = (opts.agentId ?? parsed.findings.reviewer.agentId).trim();
     if (placeholderAgentId(agentId))
@@ -742,6 +757,9 @@ export function importLeanReview(
       // The body this reviewer saw, so render can tell a correction round happened.
       bodySha256: bodyHash(input.body),
       ...(opts.provenance ?? {}),
+      ...((t) => (t ? { treeSha: t } : {}))(treeOf(root, input.headSha)),
+      diffSha256: input.diffSha256,
+      reviewedBody: input.body,
       raw: parsed.findings,
     };
   }
