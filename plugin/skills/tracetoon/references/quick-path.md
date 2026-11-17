@@ -1,7 +1,7 @@
 # Quick brief path
 
 Only when the user's own message asks for the cheapest or quickest PR. Draft →
-check → review → final render → publish. Write the description yourself, inline, from the brief, then have one fresh reviewer check it. Skip the researcher, `guidance.json`, the delegated drafter and the full independent review (SKILL steps 3, 4 and 6); still apply SKILL step 3's AI-policy bullets from `context.json`. Read every command's whole output: never pipe `prepare`, `query` or `render` through `head` or `tail` (the rules and open points come first, and render's first line says what is left to fix).
+check → review → final render → publish. Write the description yourself, inline, from the brief, then have one fresh reviewer check it. Skip the researcher, `guidance.json`, the delegated drafter and the full independent review ([full-path.md](full-path.md) steps 3, 4 and 6); still apply the AI-policy bullets (SKILL step 2b.1) from `context.json`. Read every command's whole output: never pipe `prepare`, `query` or `render` through `head` or `tail` (the rules and open points come first, and render's first line says what is left to fix).
 
 1. Read the `brief` (in the prepare output; also `tracetoon query brief --run <id>`)
    and the diff refs it cites (`changes.patch`). Its `limits` rows are open points
@@ -61,7 +61,7 @@ check → review → final render → publish. Write the description yourself, i
    finding, qualify the sentence rather than list every case; add each
    MISSING item as one clause. Then `tracetoon render --reviewed --json --run <id>`
    until it reports nothing left to fix.
-9. Draw a comic if one is wanted (SKILL step 5, without a separate reviewer),
+9. Draw a comic if one is wanted ([full-path.md](full-path.md) step 5, without a separate reviewer),
    then publish (SKILL step 7). Publish refuses a draft that was only checked, and one
    with sentences to fix or brief rows to cover. Only if the user's own
    message asks for the cheapest run (an unattended run is not that) may you

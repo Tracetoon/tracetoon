@@ -902,8 +902,8 @@ export function recheckNext(
   plan: ReviewPlan | undefined,
   findings: number,
 ): string {
-  const render = `tracetoon render --check --json --run ${run.id}`;
-  if (!findings) return `${render}; publish when the review is current`;
+  const render = `tracetoon finish --run ${run.id}`;
+  if (!findings) return `${render} (it says when to publish)`;
   return `apply ${MERGED_FILE} in ONE edit pass of body.md (check each finding against the lines it cites; fix or reject every flagged claim), ${render}, then ${recheckStep(run.id, plan)}`;
 }
 
@@ -935,19 +935,36 @@ export function reviewMergeCmd(cwd: string, opts: OutOpts & { run?: string }): v
   );
 }
 
+/**
+ * Warnings import prints by default: the ones that need an action (a plan
+ * requirement, a refused publish, an unknown id). Notes such as "omission
+ * cites no diff line" are counted; --verbose lists them all.
+ */
+export function compactWarnings(warnings: string[], verbose?: boolean): string[] {
+  if (verbose) return warnings.map((w) => `  warning: ${w}`);
+  const act = warnings.filter((w) => /refuse|plan|import again|agent id|start a fresh/i.test(w));
+  const rest = warnings.length - act.length;
+  return [
+    ...act.map((w) => `  warning: ${w}`),
+    rest ? `  ${rest} note(s) on evidence anchoring (--verbose lists them).` : '',
+  ].filter(Boolean);
+}
+
 export function reviewImportCmd(
   cwd: string,
-  opts: OutOpts & ImportOptions & { run?: string },
+  opts: OutOpts & ImportOptions & { run?: string; verbose?: boolean },
 ): void {
   const { run, root } = openRun(cwd, opts.run);
   const result = importLeanReview(run, root, opts);
-  const next = `tracetoon render --json --run ${run.id}`;
+  const next = result.planMissing.length
+    ? `import the remaining pass(es), then tracetoon finish --run ${run.id}`
+    : `tracetoon finish --run ${run.id} (renders and prints the merged list or the next step)`;
   const plan = loadReviewPlan(run);
   emit(opts, { ...result, next }, () =>
     [
       `Wrote ${result.path}${result.pass ? ` (pass ${result.pass.pass}${result.pass.lens ? `, lens ${result.pass.lens}` : ''}; ${result.passes.length} pass(es) recorded)` : ` (rebuilt from ${result.passes.length} pass(es))`}.`,
       `Reviewer model: ${result.reviewerModel ?? 'not recorded (pass --reviewer-model <name> when SKILL.md names one)'}.`,
-      ...result.warnings.map((w) => `  warning: ${w}`),
+      ...compactWarnings(result.warnings, opts.verbose),
       result.incomplete.length
         ? `Render will report the review incomplete (publishing still allowed): ${result.incomplete.join('; ')}.`
         : '',

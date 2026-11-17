@@ -146,6 +146,7 @@ program
   .description('check git, gh and which agent logs are on this machine')
   .option('--probe', 'also list record types the log readers do not recognize')
   .option('--strict', 'with --probe: exit 5 if any are found')
+  .option('--verbose', 'the full report (agents, installs, hooks, image routes)')
   .action((o) => doctor(cwd, { ...g(), ...o }));
 
 program
@@ -286,6 +287,7 @@ program
     '--reviewed',
     'reviewed brief path: drafted inline from the evidence brief, then checked by one slim reviewer (reviewer-notes.md)',
   )
+  .option('--verbose', 'text mode: also print optional author notes and evidence-graph leads')
   .action((o) => {
     o.noComic = o.comic === false;
     renderCmd(cwd, { ...g(), ...o });
@@ -384,6 +386,7 @@ review
     '--rebind',
     'rebuild review.json for the current render from the passes already imported (claims whose quote is gone count as fixed)',
   )
+  .option('--verbose', 'list every warning, not only those that need an action')
   .action((o) => reviewImportCmd(cwd, { ...g(), ...o }));
 
 program

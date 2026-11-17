@@ -734,7 +734,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         titleNote ? `Note: ${titleNote}` : '',
         titleLine(titleFindings),
         claimLine(claims),
-        graphLine(graphLeads),
+        opts.verbose ? graphLine(graphLeads) : '',
         graphHint ? `Evidence graph: ${graphHint}` : '',
         briefCheckLines(briefCheck),
         changeMapFindings.length
@@ -744,7 +744,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         stillFlagged.length
           ? `Note (soft): reviewer flags whose quoted text is still verbatim after the correction round. Fix each (narrow, attribute or remove it) or reject it with the diff line that supports the original; don't leave it unanswered${planRecheck(plan) === 'contested' ? ` (Review recheck: contested: recheck the rejected ones with ${tracetoonRuns(plan) ? `tracetoon review run --all --recheck --run ${run.id}` : 'the reviewer that raised them'})` : planRecheck(plan) === 'none' ? ' (Review recheck: none: no reviewer recheck needed)' : ''}:\n${stillFlagged.map((f) => `  - pass ${f.pass}${f.lens ? ` (lens ${f.lens})` : ''}, ${f.verdict} (${f.evidence}): "${f.quote}"`).join('\n')}`
           : '',
-        notes.length
+        notes.length && opts.verbose
           ? `Optional notes for the author (skippable; offer them, don't ask before drafting):\n${notes.map((n) => `  - ${n.text}`).join('\n')}`
           : '',
         policyLines(ctx.aiPolicy, mediaBanned),
