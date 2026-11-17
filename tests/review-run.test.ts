@@ -242,7 +242,7 @@ describe('review run helpers', () => {
       reviewerModel: 'luna',
       recheck: 'none',
     });
-    expect(agentLens).toContain('IN PARALLEL (all in one message)');
+    expect(agentLens).toContain('IN PARALLEL (all in one message; Claude Code: foreground Agent calls, never run_in_background');
     expect(agentLens).toContain('`tracetoon review merge --run r1`');
     expect(agentLens).not.toContain('SendMessage');
   });

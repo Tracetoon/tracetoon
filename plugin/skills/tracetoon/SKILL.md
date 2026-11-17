@@ -205,12 +205,16 @@ reviewer separate.
         [references/reviewer-lean.md](references/reviewer-lean.md), so it needn't
         read files.
         - **Claude Code:** one `Agent` call (subagent type general-purpose) with
-          that prompt; ask it to finish within about 4 turns.
+          that prompt, in the **foreground**: never `run_in_background`, never
+          end your turn, sleep or schedule a wakeup while a reviewer runs. The
+          call returns the reviewer's result; ask it to finish within about 4
+          turns. A session that ends while a reviewer runs loses the review.
         - **Codex:** `spawn_agent` with `fork_turns: "none"` and the packet and
           reviewer-lean.md in the message.
         - **Lenses.** When `Review lenses:` lists lenses, start one fresh
-          reviewer per lens **in parallel** (Claude Code: several `Agent`
-          calls in one message; Codex: several `spawn_agent` calls before
+          reviewer per lens **in parallel** (Claude Code: several foreground `Agent`
+          calls in one message, which run in parallel and all return before you
+          continue; Codex: several `spawn_agent` calls before
           waiting), each with its `review-packet-<x>.md` followed by
           [references/reviewer-lens-<x>.md](references/reviewer-lens-a.md)
           instead of reviewer-lean.md; it writes `review-findings-<x>.json`.
