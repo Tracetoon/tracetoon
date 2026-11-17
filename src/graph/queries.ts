@@ -409,6 +409,10 @@ const settingName = (n: string) =>
 const ASSIGNED = new RegExp(
   String.raw`^(?:export\s+)?(?:(?:const|let|var|static|readonly|private|public|protected|final|val)\s+)*(?:this\.|self\.)?([A-Za-z_$][\w$]*)\s*(?::\s*[\w<>[\]|]+\s*)?(?:=(?![=>])|:)\s*(${LITERAL})\s*[;,]?$`,
 );
+const INLINE_SETTING = new RegExp(
+  String.raw`(?:^|[({,]\s*)([A-Za-z_$][\w$]*)\s*(?:=(?![=>])|:)\s*(${LITERAL})\s*(?=[,)}]|;?\s*$)`,
+  'g',
+);
 /**
  * Clean facts the added lines define behavior with: new CLI flags (with the
  * default a literal assigns that flag on its own line), named constants and
@@ -462,8 +466,6 @@ export function detailsOf(
           add(`${kv[1]}: ${kv[2]!.trim()}`);
         continue;
       }
-      // Loops and conditions hold locals and comparisons, not settings.
-      if (/^(?:for|while|if|else|switch|case|return)\b/.test(l)) continue;
       const flags = [...l.matchAll(/(?<![\w-])--[a-z][\w-]+/g)].map((m) => m[0]);
       // A flag's default only when its own definition assigns one literal:
       // `.option('--x <v>', 'text', 'medium')`, `{ flag: '--x', default: 5 }`.
@@ -474,17 +476,22 @@ export function detailsOf(
             new RegExp(String.raw`\bdefault\w*\s*:\s*(${LITERAL})\s*[,})]`).exec(l)?.[1])
           : undefined;
       for (const f of flags) add(def ? `${f} (default ${def})` : f);
-      if (flags.length) continue;
-      const a = ASSIGNED.exec(l);
-      if (
-        a &&
-        settingName(a[1]!) &&
-        !/^-?[01]$/.test(a[2]!) &&
+      // Loops and conditions hold locals and comparisons, not settings.
+      if (flags.length || /^(?:for|while|if|else|switch|case|return)\b/.test(l)) continue;
+      const keep = (name: string, value: string) =>
+        settingName(name) &&
+        !/^-?[01]$/.test(value) &&
         // A version, build id or hash is no behavior.
-        !/version|build_?id|hash|sha\d*$|checksum|integrity/i.test(a[1]!) &&
-        !/^['"`]v?\d+\.\d+/.test(a[2]!)
-      )
-        add(`${a[1]} = ${a[2]}`);
+        !/version|build_?id|hash|sha\d*$|checksum|integrity/i.test(name) &&
+        !/^['"`]v?\d+\.\d+/.test(value);
+      const a = ASSIGNED.exec(l);
+      if (a) {
+        if (keep(a[1]!, a[2]!)) add(`${a[1]} = ${a[2]}`);
+        continue;
+      }
+      // A setting passed by name inside a call or object: `{ timeoutMs: 30_000 }`,
+      // `configure(timeout_ms=30000)`; never one a fallback or operator follows.
+      for (const m of l.matchAll(INLINE_SETTING)) if (keep(m[1]!, m[2]!)) add(`${m[1]} = ${m[2]}`);
     }
   }
   return out.slice(0, MAX_DETAILS);

@@ -1237,6 +1237,7 @@ describe('details: only clean facts', () => {
             '+ let height = 4;',
             '+ const exitCode = 127;',
             "+ const label = title ?? 'Running verification';",
+            '+ spawn(cmd, { timeoutMs: opts.timeoutMs ?? 45 * 60_000, retryLimit: 2 + extra });',
             '+ const diff = 120;',
             '+ const limit = 40;',
             '+ for (let i = 0, step = 3; i < n; i++) {}',
@@ -1282,6 +1283,18 @@ describe('details: only clean facts', () => {
       'retryTimeoutMs = 30_000',
       'maxRetries = 3',
     ]);
+    // A setting passed by name in a call; a flag a condition tests.
+    expect(
+      detailsOf(
+        [
+          {
+            file: 'src/run.ts',
+            code: ['+ run(cmd, { cwd, timeoutMs: 15_000, height: 4 });', "+ if (argv.includes('--verbose')) log();"],
+          },
+        ],
+        () => 'behavior',
+      ),
+    ).toEqual(['timeoutMs = 15_000', '--verbose']);
   });
 });
 
