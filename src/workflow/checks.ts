@@ -1,7 +1,14 @@
-/** Explicit verification receipts; raw output and environment values are never persisted. */
+/** Explicit verification receipts. Receipts keep no raw output or environment values; the scrubbed output of a run is saved in the local run folder (`check-logs/`) for the agent to read. */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { contentFingerprint, readTask } from './state.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
@@ -35,6 +42,63 @@ export interface CheckReceipt {
   commandSha256?: string;
   inputs?: string[];
   reuse?: { state: 'executed' | 'reused'; reason: string; matchedName?: string };
+  /** The full output, saved in the run folder (`check-logs/`). */
+  log?: string;
+  /** Failing test names the output shows (at most a few). */
+  failing?: string[];
+  /** It was stopped after the timeout. */
+  timedOut?: boolean;
+}
+
+/** Default limit on one check's run time; `--timeout` or TRACETOON_CHECK_TIMEOUT_MIN overrides it. */
+export const CHECK_TIMEOUT_MS = 10 * 60_000;
+export function checkTimeoutMs(minutes?: string | number): number {
+  const m = Number(minutes ?? process.env.TRACETOON_CHECK_TIMEOUT_MIN ?? '');
+  return Number.isFinite(m) && m > 0 ? Math.round(m * 60_000) : CHECK_TIMEOUT_MS;
+}
+/** Lines of a check's output echoed live; the rest is in the saved log. */
+const ECHO_LINES = 40;
+
+/** Failing test names in a check's output: bun, jest/vitest, pytest, go, cargo, mocha. */
+export function failingTests(output: string, max = 8): string[] {
+  const out: string[] = [];
+  const add = (x: string | undefined) => {
+    const t = x
+      ?.replace(/\x1b\[[0-9;]*m/g, '')
+      .replace(/\s*\[[\d.]+m?s\]\s*$/, '')
+      .trim();
+    if (t && !out.includes(t) && out.length < max)
+      out.push(t.length > 160 ? `${t.slice(0, 159)}…` : t);
+  };
+  for (const raw of output.split('\n')) {
+    const l = raw.replace(/\x1b\[[0-9;]*m/g, '');
+    let m: RegExpExecArray | null;
+    if ((m = /^\s*\(fail\)\s+(.+)$/.exec(l))) add(m[1]);
+    else if ((m = /^\s*(?:✗|✕|×)\s+(.+)$/.exec(l))) add(m[1]);
+    else if ((m = /^\s*FAIL\s+(\S.+)$/.exec(l))) add(m[1]);
+    else if ((m = /^FAILED\s+(\S+)/.exec(l))) add(m[1]);
+    else if ((m = /^\s*--- FAIL:\s+(\S+)/.exec(l))) add(m[1]);
+    else if ((m = /^test\s+(\S+)\s+\.\.\.\s+FAILED/.exec(l))) add(m[1]);
+  }
+  return out;
+}
+
+/** The few lines `tracetoon check` prints: outcome, counts, failing tests, the log. */
+export function compactCheckText(r: CheckReceipt & { reused?: boolean }): string {
+  const head =
+    r.outcome === 'failed' && r.couldNotRun
+      ? `${r.name}: could not run in this environment (${r.couldNotRun}); this says nothing about the code${r.reused ? ' (reused unchanged inputs)' : ''}; ${r.durationMs}ms`
+      : `${r.name}: ${r.outcome}${r.reused ? ' (reused unchanged inputs)' : ''}; ${r.durationMs}ms${r.reason ? `; ${r.reason}` : ''}`;
+  return [
+    head,
+    ...r.summary.slice(0, 4).map((x) => `  ${x}`),
+    ...(r.failing?.length
+      ? ['  failing:', ...r.failing.slice(0, 10).map((x) => `  - ${x}`)]
+      : []),
+    ...(r.log ? [`  full log: ${r.log}`] : []),
+  ]
+    .slice(0, 20)
+    .join('\n');
 }
 export const receipts = (run: Run): CheckReceipt[] =>
   readLocal<CheckReceipt[]>(join(run.dir, 'checks.json')) ?? [];
@@ -233,6 +297,8 @@ interface CheckOptions {
   force?: boolean;
   onStart?: (receipt: CheckReceipt) => void;
   input?: string[];
+  /** Stop the command after this long (default CHECK_TIMEOUT_MS). */
+  timeoutMs?: number;
 }
 export function executeCheck(
   root: string,
@@ -252,10 +318,26 @@ export function executeCheck(
             encoding: 'utf8',
             maxBuffer: 64 * 1024 * 1024,
             windowsHide: true,
+            timeout: opts.timeoutMs ?? checkTimeoutMs(),
+            killSignal: 'SIGKILL',
           });
       if (result?.stdout) process.stderr.write(result.stdout);
       if (result?.stderr) process.stderr.write(result.stderr);
-      return prepared.finish(result);
+      const timedOut =
+        !!result &&
+        result.status === null &&
+        (result.error as NodeJS.ErrnoException | undefined)?.code === 'ETIMEDOUT';
+      return prepared.finish(
+        result && timedOut
+          ? {
+              ...result,
+              error: new Error(
+                `Timed out after ${Math.round((opts.timeoutMs ?? checkTimeoutMs()) / 60_000)} min (pass --timeout <minutes> to allow longer).`,
+              ),
+              timedOut,
+            }
+          : result,
+      );
     },
     'checks.lock',
   );
@@ -265,6 +347,7 @@ interface CheckResult {
   error?: Error;
   stdout: string;
   stderr: string;
+  timedOut?: boolean;
 }
 export function executeCheckLive(
   root: string,
@@ -278,13 +361,21 @@ export function executeCheckLive(
       if ('cached' in prepared) return prepared.cached;
       const result = opts.skip
         ? undefined
-        : await streamCheck(opts.command, prepared.cwd);
+        : await streamCheck(
+            opts.command,
+            prepared.cwd,
+            opts.timeoutMs ?? checkTimeoutMs(),
+          );
       return prepared.finish(result);
     },
     'checks.lock',
   );
 }
-function streamCheck(command: string[], cwd: string): Promise<CheckResult> {
+function streamCheck(
+  command: string[],
+  cwd: string,
+  timeoutMs = CHECK_TIMEOUT_MS,
+): Promise<CheckResult> {
   return new Promise((resolveResult) => {
     const child = spawn(command[0]!, command.slice(1), {
       cwd,
@@ -300,12 +391,30 @@ function streamCheck(command: string[], cwd: string): Promise<CheckResult> {
       error ??= new Error(`Validation interrupted by ${signal}.`);
       child.kill(signal);
     };
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      error ??= new Error(
+        `Timed out after ${Math.round(timeoutMs / 60_000)} min (pass --timeout <minutes> to allow longer).`,
+      );
+      child.kill('SIGTERM');
+      setTimeout(() => child.kill('SIGKILL'), 5_000).unref();
+    }, timeoutMs);
+    let echoed = 0;
     const onInterrupt = () => interrupt('SIGINT');
     const onTerminate = () => interrupt('SIGTERM');
     process.once('SIGINT', onInterrupt);
     process.once('SIGTERM', onTerminate);
     const capture = (text: string, isError: boolean) => {
-      process.stderr.write(text);
+      // The first lines show progress; the rest goes to the saved log only.
+      if (echoed < ECHO_LINES) {
+        const lines = text.split('\n');
+        const room = ECHO_LINES - echoed;
+        process.stderr.write(lines.slice(0, room).join('\n'));
+        echoed += lines.length - 1;
+        if (echoed >= ECHO_LINES)
+          process.stderr.write('\n… (output continues in the saved log)\n');
+      }
       bytes += Buffer.byteLength(text);
       if (bytes > 64 * 1024 * 1024) {
         error ??= new Error('Validation output exceeded the 64 MiB capture limit.');
@@ -323,9 +432,10 @@ function streamCheck(command: string[], cwd: string): Promise<CheckResult> {
       error ??= failure;
     });
     child.once('close', (status) => {
+      clearTimeout(timer);
       process.off('SIGINT', onInterrupt);
       process.off('SIGTERM', onTerminate);
-      resolveResult({ status, error, stdout, stderr });
+      resolveResult({ status, error, stdout, stderr, timedOut });
     });
   });
 }
@@ -479,6 +589,24 @@ function prepareCheck(
             : 'No passing receipt matches the current command, inputs, directory and environment.',
         },
       };
+      if (result) {
+        const output = makeScrubber([root]).text(`${result.stdout}\n${result.stderr}`);
+        const failing = receipt.outcome === 'failed' ? failingTests(output) : [];
+        if (failing.length) receipt.failing = failing;
+        if (result.timedOut) receipt.timedOut = true;
+        try {
+          const dir = join(run.dir, 'check-logs');
+          mkdirSync(dir, { recursive: true });
+          const file = join(
+            dir,
+            `${safeName.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'check'}.log`,
+          );
+          writeFileSync(file, output);
+          receipt.log = file;
+        } catch {
+          // No saved log; the receipt is whole.
+        }
+      }
       writeLocal(join(run.dir, 'checks.json'), [
         ...previous.filter((c) => c.name !== safeName),
         receipt,

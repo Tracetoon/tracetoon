@@ -1,7 +1,12 @@
 import { defaultBase } from '../git/pr.ts';
 import { findRun } from '../run.ts';
 import { beginTask, readTask, repository, saveTask } from '../workflow/state.ts';
-import { executeCheckLive, receipts } from '../workflow/checks.ts';
+import {
+  checkTimeoutMs,
+  compactCheckText,
+  executeCheckLive,
+  receipts,
+} from '../workflow/checks.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
 import { readHost, rememberRepository } from '../workflow/hostSession.ts';
 
@@ -83,6 +88,7 @@ export async function checkCmd(
     skip?: string;
     force?: boolean;
     input?: string[];
+    timeout?: string;
   },
 ) {
   const repo = repository(cwd);
@@ -94,18 +100,16 @@ export async function checkCmd(
     ...opts,
     name: opts.name ?? command.join(' '),
     command,
+    timeoutMs: checkTimeoutMs(opts.timeout),
     onStart: (receipt) => {
       if (receipt.outcome === 'running' && !opts.skip)
         process.stderr.write(
-          `${receipt.name}: running; command output follows on stderr.\n`,
+          `${receipt.name}: running (stops after ${Math.round(checkTimeoutMs(opts.timeout) / 60_000)} min); the first output lines follow on stderr, the full log is saved in the run folder.\n`,
         );
     },
   });
-  emit(opts, receipt, () =>
-    receipt.outcome === 'failed' && receipt.couldNotRun
-      ? `${receipt.name}: could not run in this environment (${receipt.couldNotRun}); this says nothing about the code${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms`
-      : `${receipt.name}: ${receipt.outcome}${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms${receipt.reason ? `; ${receipt.reason}` : ''}`,
-  );
+  // A compact summary (outcome, counts, failing tests, the log path), not the output.
+  emit(opts, receipt, () => compactCheckText(receipt));
   if (receipt.outcome === 'failed')
     process.exitCode = receipt.exitCode && receipt.exitCode > 0 ? receipt.exitCode : 1;
 }

@@ -2,7 +2,12 @@ import { expect, test } from 'bun:test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { beginTask } from '../src/workflow/state.ts';
-import { executeCheckLive, receipts } from '../src/workflow/checks.ts';
+import {
+  compactCheckText,
+  executeCheckLive,
+  failingTests,
+  receipts,
+} from '../src/workflow/checks.ts';
 import { makeRepo, tempDir } from './helpers.ts';
 
 test('CLI streams check progress while the receipt and lock still indicate running', async () => {
@@ -94,3 +99,48 @@ test('live checks preserve failure exits and reuse only a completed matching pas
   expect(missing.reason).toBeTruthy();
   expect(existsSync(join(run.dir, 'checks.lock'))).toBe(false);
 }, 25000);
+
+test('a check stops at its timeout, saves its log and names failing tests', async () => {
+  const repo = makeRepo(),
+    { run } = beginTask(repo.root);
+  const slow = await executeCheckLive(repo.root, run, {
+    name: 'slow suite',
+    command: [
+      process.execPath,
+      '-e',
+      'console.log("start"); setTimeout(() => {}, 60000)',
+    ],
+    timeoutMs: 300,
+  });
+  expect(slow.outcome).toBe('failed');
+  expect(slow.timedOut).toBe(true);
+  expect(slow.reason).toMatch(/^Timed out after/);
+  const failing = await executeCheckLive(repo.root, run, {
+    name: 'unit',
+    command: [
+      process.execPath,
+      '-e',
+      'console.log("(pass) cache > hits");console.log("(fail) cache > evicts oldest [1.20ms]");console.log("1 pass\\n1 fail");process.exit(1)',
+    ],
+  });
+  expect(failing.failing).toEqual(['cache > evicts oldest']);
+  expect(readFileSync(failing.log!, 'utf8')).toContain('(pass) cache > hits');
+  const text = compactCheckText(failing);
+  expect(text.split('\n').length).toBeLessThanOrEqual(20);
+  expect(text).toContain('  - cache > evicts oldest');
+  expect(text).toContain(`full log: ${failing.log}`);
+  expect(
+    failingTests('--- FAIL: TestParse (0.00s)\nFAILED tests/test_a.py::test_b'),
+  ).toEqual(['TestParse', 'tests/test_a.py::test_b']);
+}, 25000);
+
+test("prepare's next step carries the drafting rules and the foreground-check rule", async () => {
+  const { graphNext } = await import('../src/commands/digest.ts');
+  const next = graphNext('r1');
+  expect(next).toContain('Drafting rules');
+  expect(next).toContain('"Previously …"');
+  expect(next).toContain('in the FOREGROUND');
+  expect(next).toContain('never start it in the background and poll');
+  expect(next).toContain('Always render and publish before any optional waiting');
+  expect(next).not.toContain('a later request in the session asked');
+});

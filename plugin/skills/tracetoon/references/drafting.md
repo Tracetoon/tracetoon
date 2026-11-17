@@ -14,8 +14,12 @@ instructions. These rules are for you: never copy their wording into the PR.
 - `changes`: change units with `where` (files and symbols), `newSymbols`, `was`
   (old values; "moved or reflowed, text unchanged" means only moved: never
   describe those lines as removed, changed or a new rule), `added`/`removed`
-  lines, and a `behavior` line saying what the unit now does. Read the diff
-  refs a unit cites before describing it.
+  lines, `behavior` lines saying what the unit now does (each with the
+  condition that guards it: keep that condition in your sentence), `before`
+  (key lines of the enclosing function in the base tree, when no removed line
+  shows what the code did), `said` (the commit sentences that describe the
+  unit) and `checkedBy` (test titles that name it). Read the diff refs a unit
+  cites before describing it.
 - `requests`: the user's asks scoped to this PR's turns; one is marked goal.
   Each `kind` gives its order: the first request of the session (no earlier
   user prompt anywhere in the session log), the earliest request Tracetoon
@@ -76,20 +80,23 @@ one that spans several areas (roughly 60 more words per further change unit,
 up to about 600). Never pad a small PR to reach a count. Reviewers mark a
 section-per-topic template down as "inventory-like".
 
-- **Lead with what the PR does and why**, in one short paragraph: the goal
-  request (the user's motive, in their terms) and the result. Frame the title
-  around that goal too. Give old → new behavior only where the removed lines or
-  `changes.was` show the old value (quote it: 30 minutes → 5 minutes). When a
-  `background` row or a change's `why` row exists, one clause on the motive or
-  trigger, attributed to the session ("a later request asked…", "an earlier
-  plan…"); "the session began/started with/from…" only for a row marked
+- **Lead with the problem and why, then the design, then its consequences**,
+  in one short paragraph: the motive stated as the PR's purpose (quote or
+  paraphrase the request or plan that gives it, in the user's terms) and the
+  result. Frame the title around that goal too. When a change row has `was` or
+  `before`, include one "Previously …" sentence saying what the code did
+  (quote the value: 30 minutes → 5 minutes); otherwise give no old behavior.
+  When a `background` row or a change's `why` row exists, one clause on the
+  motive, as the PR's purpose ("Installs failed on immutable Linux because
+  …", "The plan was to …"), never "a later request in the session asked…";
+  "the session began/started with/from…" only for a row marked
   "the first request of the session", never for "the earliest request
   Tracetoon kept". Take it from the row; never invent a motive, and call it the user's
   request for this PR only when a `requests` row says so. Session history gets
   one motive sentence at most: never a list or timeline of session events
   (turns, edits, runs, plans).
 - **The changes**, as connected prose or a few bullets grouped by behavior
-  (not file by file), covering every commit-message sentence. Name a file for
+  (never a file-by-file inventory), covering every commit-message sentence. Name a file for
   a sentence only from its `implementedBy`; where that is empty, describe the
   behavior without a file. Docs, config and version changes get one clause
   together, unless one changes behavior. Skill, prompt, template or
@@ -171,13 +178,14 @@ strips tags and lists untagged sentences and unknown refs.
   a command the Validation section shows: a limit about an earlier run of it
   is not an open point then. A limit that says a run's exit status was hidden
   by a pipe says just that, not that the run had no result.
-- No blanket negatives ("no X was run", "nothing tests Y"). In open points
-  never say no hardware, real-device, live-service or test run was recorded,
-  run or tested unless a `limits` row says that absence, and then in its
-  words: Tracetoon reads only the attributed turns, and such runs often sit
-  elsewhere in the logs. Phrase a limit as what the evidence shows ("the
-  recorded tests use a fake runtime", "the logs show unit tests only of the
-  parser"). Give mechanism claims their conditions
+- No session-wide blanket negatives ("nothing was run", "no test was
+  recorded"): Tracetoon reads only the attributed turns, and such runs often
+  sit elsewhere in the logs. Scoped uncertainties are wanted: state each open
+  `limits` row (another OS, faked network or install steps, a terminal path,
+  CI on the final head) and any environment-scope point a test, request, run
+  or commit row supports, with its tag, as what the evidence shows ("the
+  recorded tests use a fake runtime", "no recorded run on Windows"). Don't
+  drop an uncertainty to avoid an absence. Give mechanism claims their conditions
   (flags, fallbacks), not "any", "always" or "every".
 - A check that failed because the environment lacked something (a tool not
   installed, `command not found`, a module or package that could not be

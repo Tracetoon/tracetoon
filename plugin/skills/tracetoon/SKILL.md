@@ -68,8 +68,12 @@ reviewer separate.
      way to record checks the user or repository already requires. Reuse existing
      logs/receipts with their revision limits; do not rerun validation just to
      fill evidence gaps. Missing checks are reported as unknown, not as passes.
-     Serialize `tracetoon check` attempts for the same run; wait for each
-     command to finish before starting the next. A check already run on the
+     Run each `tracetoon check` in the FOREGROUND and wait for it; never start
+     one in the background and poll it. It stops after 10 minutes
+     (`--timeout <minutes>` allows longer) and prints a short summary (counts,
+     failing tests, the path of the full log in the run folder): read the log
+     only when the summary isn't enough. Serialize `tracetoon check` attempts
+     for the same run. A check already run on the
      same tracked code returns its receipt without rerunning (`reused`); run
      each check once, each as its own `tracetoon check` (no chained
      `bash -c '… && …'`), and pass `--force` only to rerun a flaky one.
@@ -159,10 +163,13 @@ reviewer separate.
      3. Run each required check that has no current receipt once with
         `tracetoon check --run <id> --name <check> -- <command>`: one
         `tracetoon check` per repository check, never several chained in one
-        `bash -c '… && …'` (its result can't be told apart per check). A check
+        `bash -c '… && …'` (its result can't be told apart per check), each in
+        the foreground (never backgrounded and polled). A check
         that can't run here gets `--skip "<reason>"`; when the repository
         declares test/check/typecheck scripts, publish requires a receipt or a
         recorded skip on this path.
+        Render and publish before any optional waiting (CI, a slow rerun):
+        a finished, rendered PR first, extras after.
      4. `tracetoon render --check --json --run <id>`: fix every sentence it lists
         and cover every listed row, up to three rounds.
      5. `tracetoon render --json --run <id>`, then

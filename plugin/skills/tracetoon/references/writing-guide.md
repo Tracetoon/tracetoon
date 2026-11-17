@@ -270,8 +270,10 @@ result to its source without guessing a command or dropping a material outcome.
   chose…" without a recorded decision or the user's own words.
 - **Where the change came from is context only the trace has.** The user's
   report or request ("a Codex test showed the PR link couldn't be
-  clicked") tells a reviewer why the change exists; put it in a sentence,
-  paraphrased per `promptQuoting`. Expand and read that exact prompt first.
+  clicked") tells a reviewer why the change exists; state it as the PR's
+  purpose (problem, then design, then consequences), paraphrased per
+  `promptQuoting`, never as session history ("a later request in the
+  session asked…"). Expand and read that exact prompt first.
   Use the specific reported problem, not a broad evaluation or setup request
   from another part of the conversation. Retain a verified overall request for
   this submission at the level it supports, and establish the cause of each
