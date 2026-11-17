@@ -97,3 +97,79 @@ export function shellSegments(cmd: string): ShellSegment[] {
 export function splitCommands(cmd: string): string[] {
   return shellSegments(cmd).map((part) => part.command);
 }
+
+/** A quoted shell word at the start of `s`: its text with quotes and escapes undone, and its length. */
+function quotedWord(s: string): { text: string; length: number } | undefined {
+  const q = s[0];
+  if (q === "'") {
+    const end = s.indexOf("'", 1);
+    return end < 0 ? undefined : { text: s.slice(1, end), length: end + 1 };
+  }
+  if (q === '"') {
+    let text = '';
+    for (let i = 1; i < s.length; i++) {
+      const ch = s[i]!;
+      if (ch === '\\' && i + 1 < s.length && /["\\$`\n]/.test(s[i + 1]!)) {
+        text += s[++i];
+        continue;
+      }
+      if (ch === '"') return { text, length: i + 1 };
+      text += ch;
+    }
+    return undefined;
+  }
+  const m = /^[^\s;&|]+/.exec(s);
+  return m ? { text: m[0], length: m[0].length } : undefined;
+}
+
+/**
+ * The command a wrapper runs, when a segment is one: `docker run … -c '<cmd>'`
+ * (also podman, `docker exec`, `docker compose run`), `sh -c '<cmd>'` (bash,
+ * zsh, dash, with flags such as `-lc`, `-xc`), `xvfb-run [-a] <cmd>`,
+ * `timeout <duration> <cmd>`. Undefined for any other segment.
+ */
+export function wrappedCommand(segment: string): string | undefined {
+  const seg = segment.trim();
+  const container = /^(?:docker|podman)\s+(?:run|exec|compose\s+run)\b/.test(seg);
+  if (container || /^(?:\/(?:usr\/)?bin\/)?(?:ba|z|da)?sh\s/.test(seg)) {
+    // The script after the shell's `-c` (or a flag group ending in it).
+    const m = /\s-[A-Za-z]*c\s+(?=['"]|[^\s-])/.exec(seg);
+    if (!m) return undefined;
+    // For a shell itself, `-c` must belong to it, not to a later program.
+    if (
+      !container &&
+      !/^(?:\/(?:usr\/)?bin\/)?(?:ba|z|da)?sh(?:\s+-[A-Za-z]+)*\s+-[A-Za-z]*c\s/.test(seg)
+    )
+      return undefined;
+    const w = quotedWord(seg.slice(m.index + m[0].length));
+    return w?.text.trim() || undefined;
+  }
+  const xvfb =
+    /^xvfb-run\s+((?:(?:-a|--auto-servernum|-f\s+\S+|-n\s+\d+|-s\s+(?:'[^']*'|"[^"]*"|\S+)|--[\w-]+=(?:'[^']*'|"[^"]*"|\S+))\s+)*)(.+)$/s.exec(
+      seg,
+    );
+  if (xvfb) return xvfb[2]!.trim();
+  const timeout =
+    /^timeout\s+(?:-[\w-]+(?:=\S+)?\s+|-[ks]\s+\S+\s+)*\d+[smhd]?\s+(.+)$/s.exec(seg);
+  if (timeout) return timeout[1]!.trim();
+  return undefined;
+}
+
+/**
+ * Shell segments with wrappers opened: a wrapper's segment is replaced by the
+ * segments of the command it runs (recursively), the first of them taking the
+ * wrapper's separator. Each keeps the command text it was split from.
+ */
+export function openSegments(
+  cmd: string,
+  depth = 0,
+): (ShellSegment & { from: string })[] {
+  return shellSegments(cmd).flatMap((s) => {
+    const inner = depth < 4 ? wrappedCommand(s.command) : undefined;
+    if (!inner) return [{ ...s, from: cmd }];
+    const parts = openSegments(inner, depth + 1);
+    if (!parts.length) return [{ ...s, from: cmd }];
+    parts[0] = { ...parts[0]!, before: s.before };
+    return parts;
+  });
+}

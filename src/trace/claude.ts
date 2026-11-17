@@ -442,7 +442,16 @@ export const claudeAdapter: TraceAdapter = {
     const { sinceMs } = query;
     const out: SessionRef[] = [];
     const index = discoveryIndex(query, 'claude-code');
-    for (const t of claude.findTranscripts()) {
+    const transcripts = claude.findTranscripts();
+    const paths = new Set(transcripts.map((t) => resolve(t.path)));
+    for (const t of transcripts) {
+      // A subagent's log is read with the session that spawned it (see read):
+      // listed on its own too, its work would count twice.
+      if (
+        /[\\/]subagents[\\/][^\\/]+\.jsonl$/.test(t.path) &&
+        paths.has(resolve(dirname(dirname(t.path)) + '.jsonl'))
+      )
+        continue;
       const files = [t.path, ...subagentFiles(t.path)];
       const info = files.map((p) => index.inspect(p)).filter((p) => p !== undefined);
       const active =

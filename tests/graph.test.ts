@@ -655,7 +655,7 @@ describe('evidence graph', () => {
     expect(v.split('\n').filter((l) => l.startsWith('- '))).toEqual([
       // Its own result lines; a typecheck pass known only from an exit status is left out.
       '- `bun test`: passed (96 pass, 0 fail) in the session logs.',
-      "- Tracetoon can't tell whether these runs saw the final commit.",
+      "- The session logs don't show whether these runs saw the final commit.",
     ]);
   });
 
@@ -806,7 +806,7 @@ describe('evidence graph', () => {
       ],
     } as any);
     expect(v).toContain(
-      '- `bun test`: passed (96 pass, 0 fail), run by `tracetoon check` on the submitted content.',
+      '- `bun test`: passed (96 pass, 0 fail), run on the submitted content.',
     );
     expect(v).not.toContain('tsc');
     expect(v).not.toContain("can't tell whether");
@@ -848,10 +848,10 @@ describe('evidence graph', () => {
     // Passing receipts collapse into one line naming each.
     const lines = v.split('\n').filter((l) => l.startsWith('- '));
     expect(lines).toEqual([
-      '- 3 checks passed, run by `tracetoon check` on the submitted content: `bun x tsc --noEmit`, `bun run bundle`, `bun x prettier --check .`.',
-      '- `bun test`: passed (96 pass, 0 fail), run by `tracetoon check` on the submitted content.',
+      '- 3 checks passed, run on the submitted content: `bun x tsc --noEmit`, `bun run bundle`, `bun x prettier --check .`.',
+      '- `bun test`: passed (96 pass, 0 fail), run on the submitted content.',
     ]);
-    expect(v).toContain('from `tracetoon check` runs on the submitted content.</sub>');
+    expect(v).toContain('<sub>From runs on the submitted content.</sub>');
     expect(v).not.toContain('tests/a.test.ts');
   });
 
@@ -1764,7 +1764,7 @@ describe('the brief states recorded process and behavior', () => {
     ]);
     // Validation says what Tracetoon could read and lists the later commands.
     const also =
-      '- After the last captured edit the session also ran `make smoke-local`, which Tracetoon does not classify as checks.';
+      '- After the last captured edit the session also ran `make smoke-local`, which are not classified as checks.';
     // An earlier failure, before the edit, is shown; the later command follows it.
     expect(validationSection(p)).toContain('- `bun test`: failed (2 pass, 1 fail)');
     expect(validationSection(p)).toContain(also);

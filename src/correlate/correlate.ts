@@ -19,6 +19,8 @@ import {
   confirmsHead,
   followsSuccess,
   gitOperations,
+  headLogCount,
+  heredocSubject,
   oneGitDirectory,
 } from './gitEvidence.ts';
 import type { TraceRecord, TraceSession } from '../trace/types.ts';
@@ -323,11 +325,25 @@ export function commitMoments(
         heads.length === 1 &&
         (c.sha.toLowerCase().startsWith(heads[0]!) ||
           heads[0]!.startsWith(c.sha.toLowerCase()));
+      // `git commit … && git log --oneline -N`: the log's first line is the
+      // commit just made, when the output holds no more SHA lines than N.
+      const shown =
+        producer && oneDirectory ? headLogCount(r.cmd, operations, producer) : undefined;
+      const byLog =
+        !!shown &&
+        heads.length > 0 &&
+        heads.length <= shown &&
+        (c.sha.toLowerCase().startsWith(heads[0]!) ||
+          heads[0]!.startsWith(c.sha.toLowerCase()));
       const bySubject =
         !r.isError &&
         !!subject &&
-        eligible.some((op) => normalizeText(commitMessage(op) ?? '') === subject);
-      if (byOutput || byPush || byHead || bySubject) {
+        eligible.some(
+          (op) =>
+            normalizeText(commitMessage(op) ?? heredocSubject(r.cmd, op) ?? '') ===
+            subject,
+        );
+      if (byOutput || byPush || byHead || byLog || bySubject) {
         found.set(c.sha, r.ts);
         break;
       }

@@ -135,6 +135,63 @@ export function commitMessage(operation: GitOperation): string | undefined {
   }
 }
 
+/**
+ * The subject of a commit whose message comes from a heredoc on stdin
+ * (`git commit -F - <<'EOF'` … `EOF`): the heredoc body's first non-blank line.
+ */
+export function heredocSubject(
+  command: string,
+  operation: GitOperation,
+): string | undefined {
+  if (operation.verb !== 'commit') return;
+  const args = operation.args;
+  const stdin = args.some(
+    (a, i) =>
+      ((a === '-F' || a === '--file') && args[i + 1] === '-') ||
+      a === '--file=-' ||
+      a === '-F-',
+  );
+  if (!stdin) return;
+  const marker = args.map((a) => /^<<-?(\w+)$/.exec(a)?.[1]).find(Boolean);
+  if (!marker) return;
+  const at = command.search(new RegExp(`<<-?\\s*['"]?${marker}['"]?`));
+  if (at < 0) return;
+  const nl = command.indexOf('\n', at);
+  if (nl < 0) return;
+  for (const line of command.slice(nl + 1).split(/\r?\n/)) {
+    if (line.trim() === marker) return;
+    if (line.trim()) return line.trim();
+  }
+}
+
+/**
+ * How many commits a `git log --oneline -N` read after one commit prints,
+ * newest first, when it reads nothing but HEAD's history and follows the commit
+ * through successful && steps: its first line is the commit just made.
+ */
+export function headLogCount(
+  command: string,
+  operations: GitOperation[],
+  producer: GitOperation,
+): number | undefined {
+  for (const op of operations) {
+    if (op.index <= producer.index || op.verb !== 'log') continue;
+    if (!op.args.includes('--oneline')) continue;
+    let n: number | undefined;
+    let ok = true;
+    for (let i = 0; i < op.args.length; i++) {
+      const a = op.args[i]!;
+      if (a === '--oneline' || a === 'HEAD') continue;
+      const m = /^-(\d+)$|^--max-count=(\d+)$/.exec(a);
+      if (m) n = Number(m[1] ?? m[2]);
+      else if (a === '-n' && /^\d+$/.test(op.args[i + 1] ?? '')) n = Number(op.args[++i]);
+      else ok = false;
+    }
+    if (ok && n && followsSuccess(command, producer, op)) return n;
+  }
+  return undefined;
+}
+
 /** Aggregated output can be assigned only when every Git operation uses one cwd. */
 export function oneGitDirectory(operations: GitOperation[]): boolean {
   return (

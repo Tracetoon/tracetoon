@@ -160,7 +160,7 @@ export function validationSection(b: BriefParts): string {
       const why = plain(r.result).slice(COULD_NOT_RUN.length).trim();
       shown.push({
         kind: String(r.kind),
-        line: `- \`${cmd}\`: could not run in this environment${why ? ` (${why})` : ''}; \`tracetoon check\` got no result on the code.`,
+        line: `- \`${cmd}\`: could not run in this environment${why ? ` (${why})` : ''}; it got no result on the code.`,
         when: 'fresh',
         current: true,
       });
@@ -205,7 +205,7 @@ export function validationSection(b: BriefParts): string {
               .filter(Boolean)
               .join(', ')})`
           : ''
-      }, run by \`tracetoon check\` on the submitted content.${notes.length ? ` ${notes.join(' ')}` : ''}`,
+      }, run on the submitted content.${notes.length ? ` ${notes.join(' ')}` : ''}`,
       when: 'fresh',
       current: true,
     });
@@ -217,7 +217,7 @@ export function validationSection(b: BriefParts): string {
   for (const p of counted.reverse())
     shown.unshift({
       kind: 'receipts',
-      line: `- \`${p.cmd}\`: passed (${p.result}), run by \`tracetoon check\` on the submitted content.`,
+      line: `- \`${p.cmd}\`: passed (${p.result}), run on the submitted content.`,
       when: 'fresh',
       current: true,
     });
@@ -226,8 +226,8 @@ export function validationSection(b: BriefParts): string {
       kind: 'receipts',
       line:
         bare.length === 1
-          ? `- \`${bare[0]!.cmd}\`: passed, run by \`tracetoon check\` on the submitted content.`
-          : `- ${bare.length} checks passed, run by \`tracetoon check\` on the submitted content: ${bare
+          ? `- \`${bare[0]!.cmd}\`: passed, run on the submitted content.`
+          : `- ${bare.length} checks passed, run on the submitted content: ${bare
               .map((p) => `\`${p.cmd}\``)
               .join(', ')}.`,
       when: 'fresh',
@@ -321,26 +321,26 @@ export function validationSection(b: BriefParts): string {
   // was restated by writers as "no checks ran" (round 2, 24 judged errors).
   if (others.length && stale)
     lines.push(
-      `- After the last captured edit the session also ran ${others.map((c) => `\`${c}\``).join(', ')}, which Tracetoon does not classify as checks.`,
+      `- After the last captured edit the session also ran ${others.map((c) => `\`${c}\``).join(', ')}, which are not classified as checks.`,
     );
   // Said once, and only when a shown run is dated by the logs' last edit rather
   // than checked against the submitted content.
   const predates = shown.some((x) => x.when.startsWith('after the last edit'));
   const fresh = shown.some((x) => /submitted content|fresh/i.test(x.when));
   if (predates && !fresh)
-    lines.push("- Tracetoon can't tell whether these runs saw the final commit.");
+    lines.push("- The session logs don't show whether these runs saw the final commit.");
   if (!lines.length) return '';
   const fromReceipts = shown.some((x) => x.current);
   const fromLogs = shown.some((x) => !x.current);
   return [
     '## Validation',
     '',
-    `<sub>Written by Tracetoon from ${
+    `<sub>From ${
       fromReceipts && fromLogs
-        ? '`tracetoon check` runs on the submitted content and the checks recorded in the session logs'
+        ? 'runs on the submitted content and, on separate lines, the checks recorded in the session logs while the change was made'
         : fromReceipts
-          ? '`tracetoon check` runs on the submitted content'
-          : 'the checks recorded in the session logs'
+          ? 'runs on the submitted content'
+          : 'the checks recorded in the session logs while the change was made'
     }.</sub>`,
     '',
     ...lines,

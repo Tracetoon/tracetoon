@@ -32,6 +32,7 @@ import {
   environmentRows,
   finalHeadRow,
   ciResultsSeen,
+  ciPlatformRuns,
   sessionCommands,
   liveEvidence,
   functionProfiles,
@@ -510,6 +511,40 @@ export function clipClause(text: string, n: number): string {
   return `${(cut > n * 0.6 ? head.slice(0, cut) : head.replace(/\s+\S*$/, '')).trim()}…`;
 }
 
+/** A design a plan names: per-unit state, isolation, persistence, sharing, concurrency, caching. */
+const PLAN_DESIGN =
+  /\b(?:per[- ][a-z]+|(?:one|a|its own|a separate)\s+(?:\w+\s+){0,2}(?:per|for each|for every)\s+[a-z]+|persistent|isolated|separate|shared|in parallel|concurrent(?:ly)?|cached|lazily|incremental(?:ly)?)\b/i;
+
+/**
+ * The plan a request carries out is not the code: a sentence of it that
+ * names a design (one workspace per book, isolated runs, a shared cache) is
+ * shown with "describe what the code does", since writers retold the plan
+ * where the code did otherwise. At most two, from background plan rows.
+ */
+export function planDesignRows(sections: Section[]): Record<string, unknown>[] {
+  const plans = (sections.find((x) => x.title === 'background')?.rows ?? []).filter(
+    (r) => /^P\d/.test(String(r.ref)) && /plan/.test(String(r.kind)),
+  );
+  const out: Record<string, unknown>[] = [];
+  for (const p of plans) {
+    const sentences = String(p.text ?? '')
+      .replace(/^#.*?(?=##|$)/s, '')
+      .split(/(?<=[.!?])\s+|\s+-\s+|\s*##+\s*[^-]*?(?=\s-\s)/)
+      .map((x) => x.replace(/^[-*]\s*/, '').trim())
+      .filter((x) => x.length >= 20 && PLAN_DESIGN.test(x) && !x.endsWith('…'));
+    for (const x of sentences.slice(0, 2 - out.length)) {
+      const t = x.length > 140 ? `${x.slice(0, 139)}…` : x;
+      out.push({
+        kind: 'plan, not code',
+        text: `the plan said "${t}"; describe what the code does, from the change rows, not the plan.`,
+        cites: [String(p.ref)],
+      });
+    }
+    if (out.length >= 2) break;
+  }
+  return out;
+}
+
 /** A short prompt that only says to carry out a plan made before it. */
 export const IMPLEMENTS_PLAN =
   /^\s*(?:please\s+)?(?:(?:ok(?:ay)?|yes|great|good|sounds good)[,.!]?\s+)?(?:go ahead and\s+|now\s+|let's\s+|please\s+)?(?:implement|execute|carry out|proceed with|go (?:ahead )?with|do|follow|start(?: on)?|build|apply|make)\b[^.!?\n]{0,60}\bplan\b/i;
@@ -961,7 +996,54 @@ export function backgroundRows(
           .slice(0, room)
           .sort(byTime)
       : [];
-  return [...goalRows, ...factRows].map(({ ref, kind, text }) => ({ ref, kind, text }));
+  // The user turns that led to a plan this PR carries out: they carry the why
+  // the plan's own text leaves out. Prompts after the previous plan (or the
+  // session's start) up to the plan, not shown elsewhere, at most two.
+  const shown = new Set([...goalRows, ...factRows].map((x) => String(x.ref)));
+  const leadRows: Record<string, unknown>[] = [];
+  for (const plan of factRows.filter((x) => (x as { carried?: boolean }).carried)) {
+    const row = all.find((x) => String(x.id) === String(plan.ref));
+    if (!row?.t) continue;
+    const prior = all
+      .filter(
+        (x) =>
+          x.label === 'Plan' &&
+          String(x.session) === String(row.session) &&
+          !!x.t &&
+          String(x.t) < String(row.t),
+      )
+      .map((x) => String(x.t))
+      .sort()
+      .at(-1);
+    const lead = prompts
+      .filter(
+        (p) =>
+          String(p.session) === String(row.session) &&
+          !!p.t &&
+          String(p.t) <= String(row.t) &&
+          (!prior || String(p.t) > prior) &&
+          !exclude.has(String(p.id)) &&
+          !shown.has(String(p.id)) &&
+          substantive(p.text) &&
+          !implementsPlan(p.text),
+      )
+      .sort(byTime)
+      .slice(-2);
+    for (const p of lead) {
+      shown.add(String(p.id));
+      leadRows.push({
+        ref: String(p.id),
+        kind: `user turn that led to ${String(plan.ref)} (why the plan was made)`,
+        text: requestText(p.text),
+        t: p.t,
+      });
+    }
+  }
+  return [...goalRows, ...leadRows, ...factRows].map(({ ref, kind, text }) => ({
+    ref,
+    kind,
+    text,
+  }));
 }
 
 /**
@@ -1045,7 +1127,13 @@ function processRows(
       ...(made.get(String(r.session)) ?? []),
       String(r.commit),
     ]);
-  if (!sessions.length) add('session', 'No agent session was matched to this PR.');
+  // No session log: nothing about how the work went is known, so the only
+  // process fact is where the description's content comes from (an "unknown"
+  // was turned into claims judges called false).
+  if (!sessions.length) {
+    add('sources', 'The description draws on the diff and commit messages.');
+    return out;
+  }
   for (const s of sessions.slice(0, 6)) {
     const id = String(s.id);
     const commits = (made.get(id) ?? []).sort();
@@ -1381,6 +1469,18 @@ export function briefParts(
             collect(DISTINCT {id: m.id, text: m.text, result: m.assertsResult}) AS claims`,
   ).rows;
 
+  // New scripts' interfaces (File.cli).
+  const scriptCli = new Map(
+    g
+      .run('MATCH (f:File {inPr: true}) WHERE f.cli IS NOT NULL RETURN f.id AS id, f.cli AS cli')
+      .rows.map((r) => [String(r.id), ((r.cli as string[]) ?? []).map(String)]),
+  );
+  // Commits whose own lines touch only comments, docs or tests.
+  const noBehavior = new Set(
+    g
+      .run('MATCH (k:Commit) WHERE k.noBehavior = true RETURN k.id AS id')
+      .rows.map((r) => String(r.id)),
+  );
   const changeRows = changes.map((c) => {
     const hs = hunkRows
       .filter((h) => h.change === c.id)
@@ -1416,8 +1516,13 @@ export function briefParts(
         !['tests', 'generated'].includes(fileRole.get(String(h.file)) ?? '')
       )
         movedIn.set(String(h.file), (movedIn.get(String(h.file)) ?? 0) + Number(h.moved));
+    // Hunks only comment/test-only commits made say nothing of old behavior.
+    const told = hs.filter((h) => {
+      const ks = (h.commits as string[]) ?? [];
+      return !ks.length || !ks.every((k) => noBehavior.has(k));
+    });
     const was = uniq([
-      ...hs
+      ...told
         .flatMap((h) =>
           ((h.pairs as string[]) ?? []).map((p) => `${String(h.file)}: ${p}`),
         )
@@ -1428,7 +1533,7 @@ export function briefParts(
     ]).slice(0, 5);
     // What the enclosing function did at the base, when no removed line shows it.
     // (A moved docs line or a test's old value says nothing about the code.)
-    const codeWas = hs.some(
+    const codeWas = told.some(
       (h) =>
         !['tests', 'docs', 'generated'].includes(fileRole.get(String(h.file)) ?? '') &&
         ((h.pairs as string[]) ?? []).length > 0,
@@ -1436,7 +1541,7 @@ export function briefParts(
     const before = codeWas
       ? []
       : uniq(
-          hs
+          told
             .filter((h) => ((h.before as string[]) ?? []).length)
             .flatMap((h) =>
               ((h.before as string[]) ?? []).map(
@@ -1470,7 +1575,12 @@ export function briefParts(
       was,
       ...(before.length ? { before } : {}),
       behavior,
-      details: detailsOf(hs, (f) => fileRole.get(f) ?? pathRole(f)),
+      // A new script's whole interface first (every flag, its default, what
+      // passes or fails), then the other details.
+      details: uniq([
+        ...files.flatMap((f) => scriptCli.get(f) ?? []),
+        ...detailsOf(hs, (f) => fileRole.get(f) ?? pathRole(f)),
+      ]).slice(0, Math.max(MAX_DETAILS, files.flatMap((f) => scriptCli.get(f) ?? []).length)),
       added: c.added,
       removed: c.removed,
       diff: refs(
@@ -1809,15 +1919,11 @@ export function briefParts(
   // With no session matched there are no session runs to recognize: one row
   // says so instead of a "no passing run" row per change (which writers read
   // as "nothing passed" where the session's runs did).
+  // With no session at all, no row: the process row says the description
+  // draws on the diff and commit messages (an "unknown" limit was restated as
+  // claims about what ran).
   const matchedSession =
     g.run(`MATCH (s:Session {band: 'included'}) RETURN s.id AS id`).rows.length > 0;
-  if (!matchedSession)
-    limits.push({
-      change: null,
-      kind: 'open',
-      limit:
-        "No agent session was matched to this PR, so the brief shows no session runs: which checks ran while it was made is unknown, not absent; don't say nothing was run.",
-    });
   for (const c of changes) {
     const hs = hunkRows.filter((h) => h.change === c.id);
     const behavior = ((c.files as string[]) ?? []).filter((f) =>
@@ -1946,7 +2052,18 @@ export function briefParts(
       // Environment rows first: what no recorded run could reach (another OS,
       // faked steps, a terminal, CI on the final head), above check recognition.
       [
-        ...environmentRows(hunkRows, fileRole, undefined, sessionCommands(g), ciResultsSeen(g)),
+        ...(() => {
+          const { ci, lastEdit } = ciPlatformRuns(g);
+          return environmentRows(
+            hunkRows,
+            fileRole,
+            undefined,
+            sessionCommands(g),
+            ciResultsSeen(g),
+            ci,
+            lastEdit,
+          );
+        })(),
         ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
         ...limits,
       ],
@@ -2189,7 +2306,17 @@ export function briefParts(
   sections.splice(
     1,
     0,
-    section('doNotSay', DO_NOT_SAY_COLUMNS, doNotSayRows(sections, uniq(branchy).sort())),
+    section('doNotSay', DO_NOT_SAY_COLUMNS, [
+      ...doNotSayRows(sections, uniq(branchy).sort()),
+      // A commit whose own lines are only comments, docs or tests: writers
+      // gave it a behavior change ("now returns rows in order").
+      ...planDesignRows(sections),
+      ...[...noBehavior].sort().map((sha) => ({
+        kind: 'no behavior change',
+        text: `commit ${sha} only adds comments/tests; it doesn't change behavior.`,
+        cites: [sha],
+      })),
+    ]),
   );
   // Key code lines under commit sentences, and commit-vs-code doNotSay rows.
   addSearchEvidence(g, sections, hunkLinks, { codeCells: !isNeighborhood(opts.layout) });

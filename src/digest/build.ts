@@ -17,7 +17,7 @@ import { ORPHAN_COMMAND, type TraceRecord, type Usage } from '../trace/types.ts'
 import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
-import { shellSegments, splitCommands } from '../util/shell.ts';
+import { openSegments, splitCommands } from '../util/shell.ts';
 import { provablyInRepo, runsInRepo } from '../trace/pathMatch.ts';
 
 export interface DigestSession {
@@ -73,7 +73,7 @@ export interface DigestSession {
       ownWords?: boolean;
     }[];
   }[];
-  commands: { cmd: string; count: number; failures: number; isTest: boolean }[];
+  commands: { cmd: string; count: number; failures: number; isTest: boolean; isCheck?: boolean }[];
   /**
    * Commands that reach the remote in this repository: a push or a PR made
    * (`publish`), or a look at CI (`ci`: `gh run …`, `gh pr checks`), in order,
@@ -88,6 +88,8 @@ export interface DigestSession {
     results?: true;
     /** Commit shas (12 characters) that output names, when it shows results. */
     heads?: string[];
+    /** Runner platforms (`Windows`, `macOS`, `Linux`, `arm64`) of jobs the output shows passing. */
+    os?: string[];
   }[];
   /** Individual verification runs (tests, builds, linters, type checks, evals). */
   runs: Run[];
@@ -351,8 +353,8 @@ function prWordsOf(prSets: Map<string, Set<string>>): Set<string> {
 
 /** The part of a chained command that runs tests, if any. */
 export function testSegment(cmd: string): string | undefined {
-  return splitCommands(cmd)
-    .map((s) => s.replace(ENV_PREFIX, ''))
+  return openSegments(cmd)
+    .map((s) => s.command.replace(ENV_PREFIX, ''))
     .find(isTestRunner);
 }
 
@@ -438,7 +440,7 @@ export function verificationSegment(
 ): { seg: string; kind: Run['kind'] } | undefined {
   const test = testSegment(cmd);
   if (test) return { seg: test, kind: 'test' };
-  for (const s of splitCommands(cmd).map((x) => x.replace(ENV_PREFIX, ''))) {
+  for (const s of openSegments(cmd).map((x) => x.command.replace(ENV_PREFIX, ''))) {
     const kind = verifyKind(s);
     if (kind) return { seg: s, kind };
   }
@@ -479,9 +481,18 @@ export function commandRuns(
   cmd: string,
   isError: boolean | undefined,
   output: string | undefined,
+  /**
+   * Whether a script path (as the command names it) is one this PR adds or
+   * changes: running it runs the PR's own check or harness.
+   */
+  prScript?: (path: string) => boolean,
 ): Omit<Run, 'id' | 't' | 'revision'>[] {
-  const parsed = shellSegments(cmd);
+  // Wrappers opened: `docker run … sh -c '…'`, `xvfb-run`, `bash -c`, `timeout`.
+  const parsed = openSegments(cmd);
   const segments = parsed.map((x) => x.command.replace(ENV_PREFIX, ''));
+  // The command text a segment was split from (a wrapper's script), for
+  // finding what follows it.
+  const fromOf = (seg: string) => parsed[segments.indexOf(seg)]?.from ?? cmd;
   // A segment that sends its stdout to a file leaves no result in the log unless
   // a later segment reads that file back (`> out.log; grep pass out.log`); the
   // output captured then belongs to the other segments.
@@ -503,9 +514,16 @@ export function commandRuns(
   if (viaScript) testSegments.push(viaScript);
   const logged = testSegments.filter((s) => !toFile(s));
   const tests = logged.length ? logged : testSegments;
-  const found: { seg: string; kind: Run['kind']; unlogged?: boolean }[] = [];
+  const found: { seg: string; kind: Run['kind']; unlogged?: boolean; script?: true }[] = [];
   let testAdded = false;
   for (const seg of segments) {
+    // A script this PR adds or changes, run by an interpreter or its path: the
+    // PR's own harness or check, whatever its name says.
+    const script = prScript && !isTestRunner(seg) && !verifyKind(seg) ? scriptPath(seg) : undefined;
+    if (script && prScript!(script)) {
+      found.push({ seg, kind: scriptKind(script), script: true });
+      continue;
+    }
     if (isTestRunner(seg) || seg === viaScript) {
       if (!tests.includes(seg)) {
         // Its results went to a file; record that it ran, not what it showed.
@@ -527,16 +545,26 @@ export function commandRuns(
   const shared =
     several || !!viaScript || segments.filter((s) => !SETUP_SEGMENT.test(s)).length > 1;
   const results = found.map(
-    ({ seg, kind, unlogged }): Omit<Run, 'id' | 't' | 'revision'> => {
+    ({ seg, kind, unlogged, script }): Omit<Run, 'id' | 't' | 'revision'> => {
       if (unlogged)
         return { cmd: seg, kind, outcome: 'unknown', basis: 'none', summary: [] };
+      if (script) {
+        const masked = statusMask(fromOf(seg), seg);
+        return {
+          cmd: seg,
+          kind,
+          ...scriptOutcome(several ? undefined : isError, output, masked),
+          ...(masked ? { masked } : {}),
+          ...(several ? {} : { sole: true as const }),
+        };
+      }
       const own = shared
         ? (output ?? '')
             .split(/\r?\n/)
             .filter((l) => KIND_LINE[kind]?.test(l) ?? false)
             .join('\n')
         : output;
-      const result = runOutcome(cmd, seg, isError, own, kind, output);
+      const result = runOutcome(fromOf(seg), seg, isError, own, kind, output);
       if (several && result.basis === 'exit status' && result.outcome === 'failed')
         Object.assign(result, { outcome: 'unknown', basis: 'none' });
       // Several test commands' results are mixed in one output, so no count can
@@ -563,7 +591,9 @@ export function commandRuns(
       }
       // An echoed status (`; echo "exit=$?"`) is the check's own: not masked.
       const masked =
-        echoedStatus(cmd, seg, output) === undefined ? statusMask(cmd, seg) : undefined;
+        echoedStatus(fromOf(seg), seg, output) === undefined
+          ? statusMask(fromOf(seg), seg)
+          : undefined;
       return {
         cmd: seg,
         kind,
@@ -588,6 +618,64 @@ export function commandRuns(
             .every((p) => p.before === '&&' || p.before === '|'),
       ),
   );
+}
+
+/** The script file a segment runs (`bun scripts/x.ts`, `./ci/gate.sh`, `python3 tools/y.py`), as written. */
+export function scriptPath(seg: string): string | undefined {
+  const s = checkForm(seg);
+  const path = SCRIPT.exec(s)?.[1];
+  if (!path || !SCRIPT_FILE.test(path) || /^[-~$]/.test(path)) return undefined;
+  const rel = path.replace(/^\.\//, '');
+  // A script: in a scripts/tools folder, or a shell script. The app's own
+  // entry point (`bun src/cli.ts update`) is the program, not a check.
+  return /(?:^|\/)(?:scripts?|bin|tools?|ci|dev|hack)\//.test(rel) ||
+    /\.(?:sh|bash|zsh|ps1)$/.test(rel)
+    ? rel
+    : undefined;
+}
+
+/** A PR script's check kind by its name: a build or bundle script builds; anything else is a test run. */
+function scriptKind(path: string): Run['kind'] {
+  const stem = path.split('/').pop()!.replace(/\.[^.]+$/, '');
+  if (/(?:^|[-_.])(?:build|bundle|compile|package)(?:[-_.]|$)/i.test(stem)) return 'build';
+  if (/(?:^|[-_.])(?:lint|check-format)(?:[-_.]|$)/i.test(stem)) return 'lint';
+  return 'test';
+}
+
+/** A script's own tally: `163/163 steps, 2/2 smokes`, `12 passed, 0 failed`, `N/M checks passed`. */
+const SCRIPT_TALLY =
+  /\b\d+\s*\/\s*\d+\s+[A-Za-z][\w-]*|\b\d+\s+(?:pass(?:ed|es)?|fail(?:ed|ures?|s)?|ok|errors?)\b|\b(?:all|every)\s+\d+\s+\w+\s+passed\b/i;
+
+/**
+ * What a run of the PR's own script shows: its exit status when known (and
+ * not masked), else its tally lines (every `N/M` complete and no failures:
+ * passed; an incomplete `N/M` or a failure count: failed). The summary keeps
+ * its last tally lines.
+ */
+export function scriptOutcome(
+  isError: boolean | undefined,
+  output: string | undefined,
+  masked?: Run['masked'],
+): Pick<Run, 'outcome' | 'basis' | 'summary'> {
+  const summary = (output ?? '')
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => SCRIPT_TALLY.test(l) && !OUTPUT_HEADER.test(l))
+    .slice(-2)
+    .map((l) => l.slice(0, 160));
+  if (isError !== undefined && !masked)
+    return { outcome: isError ? 'failed' : 'passed', basis: 'exit status', summary };
+  if (!summary.length) return { outcome: 'unknown', basis: 'none', summary };
+  const last = summary.at(-1)!;
+  const fractions = [...last.matchAll(/\b(\d+)\s*\/\s*(\d+)\s+[A-Za-z]/g)];
+  const incomplete = fractions.some((m) => Number(m[1]) < Number(m[2]));
+  const failures = /\b[1-9]\d*\s+(?:fail(?:ed|ures?|s)?|errors?)\b/i.test(last);
+  return {
+    outcome: incomplete || failures ? 'failed' : 'passed',
+    basis: 'output',
+    summary,
+  };
 }
 
 /** A summary that is only an exit status, not a line the check printed. */
@@ -871,10 +959,50 @@ const CI_RESULT =
  * Whether a CI look's output shows results, and the commit shas it names
  * (12 characters), for `results`/`heads` of a remote entry.
  */
-export function ciResults(output: string | undefined): { results?: true; heads?: string[] } {
+export function ciResults(output: string | undefined): {
+  results?: true;
+  heads?: string[];
+  os?: string[];
+} {
   if (!output || !CI_RESULT.test(output)) return {};
   const heads = [...new Set([...output.matchAll(/\b[0-9a-f]{40}\b/g)].map((m) => m[0].slice(0, 12)))];
-  return { results: true, ...(heads.length ? { heads: heads.slice(0, 12) } : {}) };
+  const os = passingRunnerOs(output);
+  return {
+    results: true,
+    ...(heads.length ? { heads: heads.slice(0, 12) } : {}),
+    ...(os.length ? { os } : {}),
+  };
+}
+
+/** A runner label a job runs on (`windows-latest`, `macos-14`, `ubuntu-24.04-arm`). */
+const RUNNER_LABEL = /\b(windows|macos|ubuntu)-(?:latest|\d[\w.]*)(-arm(?:64)?)?\b/gi;
+/** A job line that passed: `✓ build (windows-latest) in 1m`, `name\tpass\t…`, a success conclusion. */
+const JOB_PASSED = /^\s*[✓✔]|\tpass(?:ed)?\t|\bsuccess(?:ful)?\b/i;
+const JOB_FAILED = /^\s*[✗✘X*]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)?\b|\bcancell?ed\b|\bpending\b/i;
+
+/**
+ * Runner platforms of the jobs a CI look shows passing, from runner labels in
+ * job lines (`CI/check (windows-latest)`), when every line naming that
+ * platform passed. Names follow the brief's platform names.
+ */
+export function passingRunnerOs(output: string): string[] {
+  const passed = new Set<string>();
+  const failed = new Set<string>();
+  // The last refresh of a watched look is what counts: later lines replace earlier ones.
+  const lines = output.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').split(/\r?\n|\r/);
+  const last = new Map<string, boolean>();
+  for (const line of lines) {
+    const labels = [...line.matchAll(RUNNER_LABEL)];
+    if (!labels.length) continue;
+    const ok = JOB_PASSED.test(line) && !JOB_FAILED.test(line.replace(/\bfail(?:ing|ed)?,/g, ''));
+    for (const m of labels) {
+      const name = m[1]!.toLowerCase() === 'windows' ? 'Windows' : m[1]!.toLowerCase() === 'macos' ? 'macOS' : 'Linux';
+      last.set(`${line.split(m[0])[0]!.replace(/^\s*\S\s+/, '').trim()}|${name}`, ok);
+      if (m[2]) last.set(`${line.split(m[0])[0]!.trim()}|arm64`, ok);
+    }
+  }
+  for (const [k, ok] of last) (ok ? passed : failed).add(k.split('|').pop()!);
+  return [...passed].filter((x) => !failed.has(x)).sort();
 }
 
 /**
@@ -982,8 +1110,12 @@ function sessionDigest(
   const decisions: DigestSession['decisions'] = [];
   const cmdGroups = new Map<
     string,
-    { count: number; failures: number; isTest: boolean }
+    { count: number; failures: number; isTest: boolean; isCheck?: boolean }
   >();
+  // A script this PR adds or changes, as a command names it.
+  const prPaths = truth.files.map((f) => f.path);
+  const prScript = (path: string) =>
+    prPaths.some((f) => f === path || f.endsWith(`/${path}`) || path.endsWith(`/${f}`));
   const milestones: string[] = [];
   const runs: Run[] = [];
   /** Invocations past the first 60: the last 20 are kept. */
@@ -1115,7 +1247,8 @@ function sessionDigest(
         }
         // Proof the run is this repository's, not just no proof it isn't.
         const provable = here && provablyInRepo(r.cmd, r.cwd, m.roots);
-        for (const run of here ? commandRuns(r.cmd, r.isError, r.output) : []) {
+        const cmdRuns = here ? commandRuns(r.cmd, r.isError, r.output, prScript) : [];
+        for (const run of cmdRuns) {
           const fact: Run = {
             t: r.ts,
             ...run,
@@ -1173,6 +1306,8 @@ function sessionDigest(
         const key = clip(scrub.text(commandKey(seg ?? r.cmd)), 60);
         const failed = r.isError === true || (test && testOutputFailed(r.output));
         const g = cmdGroups.get(key) ?? { count: 0, failures: 0, isTest: test };
+        // A command that ran a recognized check is a check run, not a failed command.
+        if (cmdRuns.some((x) => x.kind !== 'other')) g.isCheck = true;
         g.count++;
         if (failed) g.failures++;
         cmdGroups.set(key, g);

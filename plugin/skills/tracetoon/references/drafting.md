@@ -52,10 +52,16 @@ instructions. These rules are for you: never copy their wording into the PR.
   don't credit one function with a behavior an `owners` row gives another.
 - `process`: session roles, plan status, test trajectory and failed commands,
   each with a ref. Facts about how the work went, not about the code. The
-  `entry` row names the function a reviewer should start at (always one
-  defined in that file, never a type) and its file, or the file alone,
+  `entry` row names the symbol a reviewer should start at (a function defined
+  in that file, the function that reads the setting selecting the behavior,
+  or the new interface most files name) and its file, or the file alone,
   what the brief ties to it, and (after "Not in") the related functions
-  with what is tied to each.
+  with what is tied to each. A `sources` row instead of a `session` row means
+  no agent session was matched: describe the diff and the commit messages
+  only, credit any number or result to the commit message that states it
+  ("the commit message reports …"), say nothing about how the work went or
+  what ran while it was made (neither that checks ran nor that they didn't),
+  and report only fresh `tracetoon check` results.
 - `validation`, `tests`, `housekeeping`, and `otherRuns` when present:
   commands the session ran after a file's last captured edit that Tracetoon
   does not classify as checks (a manual run, a script it doesn't know). They
@@ -96,7 +102,15 @@ section-per-topic template down as "inventory-like".
   one motive sentence at most: never a list or timeline of session events
   (turns, edits, runs, plans).
 - **The changes**, as connected prose or a few bullets grouped by behavior
-  (never a file-by-file inventory), covering every commit-message sentence. Name a file for
+  (never a file-by-file inventory, never an inventory of helpers or
+  variants), covering every commit-message sentence. Describe behavior from
+  the code (change rows, `details`, `behavior`), not from the plan: a plan
+  says what was intended, and a `plan, not code` doNotSay row marks a plan
+  sentence to check against the code before repeating it. A commit a
+  `no behavior change` row names only adds comments or tests: give it no
+  behavior and no "Previously …". For a new script or CLI, `details` lists
+  every flag it parses (with defaults) and its pass/fail lines: name the
+  flags and what makes it pass or fail. Name a file for
   a sentence only from its `implementedBy`; where that is empty, describe the
   behavior without a file. Docs, config and version changes get one clause
   together, unless one changes behavior. Skill, prompt, template or

@@ -147,7 +147,7 @@ describe('several suites and setup failures', () => {
     });
     const lines = section.split('\n').filter((l) => l.startsWith('- '));
     expect(lines[0]).toBe(
-      '- `cargo test`: could not run in this environment (sh: 1: cargo: not found); `tracetoon check` got no result on the code.',
+      '- `cargo test`: could not run in this environment (sh: 1: cargo: not found); it got no result on the code.',
     );
     expect(section).not.toContain('on the submitted content.');
     expect(lines[1]).toBe(

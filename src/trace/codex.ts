@@ -20,7 +20,12 @@ import {
   splitLines,
 } from './diffLines.ts';
 import { mentionsAnyRoot } from './pathMatch.ts';
-import type { SessionRef, TraceAdapter, TraceSession } from './types.ts';
+import type {
+  DecisionQuestion,
+  SessionRef,
+  TraceAdapter,
+  TraceSession,
+} from './types.ts';
 import { discoveryIndex } from './discovery.ts';
 
 type Obj = Record<string, unknown>;
@@ -348,6 +353,21 @@ export function parseCodexLines(content: string, into: TraceSession): void {
           });
           continue;
         }
+        // An answered question (`request_user_input`): each question with the
+        // option labels offered and the answer(s) chosen, as a decision.
+        if (call.name === 'request_user_input') {
+          const questions = userInputQuestions(args, out);
+          if (questions.length)
+            into.records.push({
+              kind: 'decision',
+              text: questions
+                .map((q) => `${q.question} → ${q.answer ?? '(no answer)'}`)
+                .join('\n'),
+              questions,
+              ...where(call.ts),
+            });
+          continue;
+        }
         if (call.name === 'exec_command') {
           const cmd = isObj(args) ? commandText(args.cmd ?? args.command) : undefined;
           if (!cmd) continue;
@@ -383,6 +403,37 @@ export function parseCodexLines(content: string, into: TraceSession): void {
       }
     }
   }
+}
+
+/**
+ * The questions of a `request_user_input` call and the answers its output
+ * gives (`{"answers": {"<id>": {"answers": ["<label>"]}}}`), by question id.
+ */
+export function userInputQuestions(args: unknown, output: string): DecisionQuestion[] {
+  const qs = isObj(args) && Array.isArray(args.questions) ? args.questions : [];
+  const parsed = parseJson(output);
+  const answers = isObj(parsed) && isObj(parsed.answers) ? parsed.answers : {};
+  return qs.flatMap((q): DecisionQuestion[] => {
+    if (!isObj(q)) return [];
+    const question = str(q.question);
+    if (!question) return [];
+    const options = (Array.isArray(q.options) ? q.options : [])
+      .map((o) => (isObj(o) ? str(o.label) : str(o)))
+      .filter((l): l is string => !!l);
+    const a = answers[str(q.id) ?? ''] ?? answers[question];
+    const list =
+      isObj(a) && Array.isArray(a.answers) ? a.answers : Array.isArray(a) ? a : [a];
+    const chosen = list.map((x) => str(x)).filter((x): x is string => !!x);
+    const answer = chosen.length ? chosen.join(', ') : undefined;
+    return [
+      {
+        question,
+        options,
+        answer,
+        ownWords: answer ? !chosen.every((c) => options.includes(c)) : undefined,
+      },
+    ];
+  });
 }
 
 /** Thread titles from `session_index.jsonl` ({ id, thread_name }). */

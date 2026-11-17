@@ -885,6 +885,96 @@ const unitWords = (hs: PatchHunk[]) =>
     ]),
   );
 
+/** A literal or short expression a flag falls back to: `?? "bin/x"`, `|| 5`, `default: 3`, `default=3`. */
+const FLAG_DEFAULT =
+  /(?:\?\?|\|\||\bdefault\s*[:=])\s*((?:join|resolve|path\.join)?\(?\s*(?:"[^"]*"|'[^']*'|`[^`]*`|-?\d[\d_.]*|true|false|null|None)(?:\s*,\s*(?:"[^"]*"|'[^']*'|`[^`]*`|-?\d[\d_.]*))*\s*\)?)/;
+
+/** The fallback after a flag's read: `?? <expr>` / `|| <expr>` up to its closing bracket, or `default: <literal>`. */
+function flagDefault(rest: string): string | undefined {
+  const m = /^\s*\)?\s*(?:\?\?|\|\|)\s*/.exec(rest);
+  if (!m) return FLAG_DEFAULT.exec(rest)?.[1]?.trim();
+  let depth = 0;
+  let out = '';
+  for (const ch of rest.slice(m[0].length)) {
+    if ('([{'.includes(ch)) depth++;
+    if (')]}'.includes(ch)) {
+      if (depth === 0) break;
+      depth--;
+    }
+    if ((ch === ';' || ch === ',') && depth === 0) break;
+    out += ch;
+  }
+  const v = out.trim();
+  return v && /["'`\d]|true|false/.test(v) ? v : undefined;
+}
+
+/**
+ * A new script's interface from its added lines: each flag it parses (a
+ * quoted `--flag` on a line that reads arguments), with its default when the
+ * line gives one, then the lines that decide pass or fail (an exit status, a
+ * PASS/FAIL message). Clipped and capped.
+ */
+export function scriptInterface(plus: string[]): string[] {
+  const flags = new Map<string, string | undefined>();
+  const outcomes: string[] = [];
+  for (const raw of plus) {
+    const l = raw.trim();
+    if (!l || /^(?:\/\/|#(?!!)|\/\*|\*)/.test(l)) continue;
+    const parsesArgs =
+      /\b(?:args?|argv|argument|options?|opts|flags?|value|has|includes|getopt\w*|parse\w*|add_argument|case)\b/i.test(
+        l,
+      );
+    if (parsesArgs)
+      for (const m of l.matchAll(/(['"`])(--[a-z][\w-]*)(?:[= ][^'"`]*)?\1/g)) {
+        const name = m[2]!;
+        const def = flagDefault(l.slice(m.index! + m[0].length));
+        if (!flags.has(name) || (def && !flags.get(name)))
+          flags.set(
+            name,
+            def ? (def.length > 60 ? `${def.slice(0, 59)}…` : def) : undefined,
+          );
+      }
+    if (
+      /\b(?:process\.exit|sys\.exit|os\.exit|Deno\.exit)\s*\(|^\s*exit\s+\d|\bprocess\.exitCode\s*=(?!=)/.test(
+        l,
+      ) ||
+      /(['"`])[^'"`]*\b(?:PASS|FAIL)\b/.test(l)
+    ) {
+      const t = l.replace(/\s+/g, ' ');
+      outcomes.push(t.length > 110 ? `${t.slice(0, 109)}…` : t);
+    }
+  }
+  return [
+    ...[...flags].map(([f, d]) => (d ? `${f} (default ${d})` : f)),
+    ...[...new Set(outcomes)].slice(0, 4).map((o) => `pass/fail: ${o}`),
+  ].slice(0, 16);
+}
+
+/** A comment line in source code (normalized, possibly `-` for a removed line). */
+export function isCommentLine(line: string, path: string): boolean {
+  const l = line.replace(/^-/, '').trim();
+  if (!l) return true;
+  if (/^(\/\/|\/\*|\*\/?|<!--|-->)/.test(l)) return true;
+  // `#` comments: shell, Python, Ruby, YAML, TOML, Makefiles, not C's #include.
+  if (l.startsWith('#') && !/\.(c|cc|cpp|cxx|h|hpp|m|mm|cs)$/i.test(path)) return true;
+  if (/^--(\s|$)/.test(l) && /\.(sql|lua|hs|elm)$/i.test(path)) return true;
+  return false;
+}
+
+/**
+ * Whether a commit's own lines (file -> normalized lines, removed ones with a
+ * leading `-`) touch only comments, docs or test files.
+ */
+export function commentOrTestOnly(files: Map<string, string[]>): boolean {
+  if (!files.size) return false;
+  for (const [path, lines] of files) {
+    const role = fileRole(path);
+    if (role === 'tests' || role === 'docs') continue;
+    if (!lines.every((l) => isCommentLine(l, path))) return false;
+  }
+  return true;
+}
+
 /**
  * One commit or request can hold a source change and an unrelated script
  * change (an eval harness pinned in the same commit). When a unit's source and
@@ -981,6 +1071,22 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
 
   // Hunks of the submitted patch.
   const hunks = patchHunks(input.patch).filter((h) => prFiles.has(h.file));
+  // A new script's interface: the flags it parses (with defaults) and what it
+  // prints or exits on to pass or fail, from its added lines.
+  {
+    const byFile = new Map<string, PatchHunk[]>();
+    for (const h of hunks) byFile.set(h.file, [...(byFile.get(h.file) ?? []), h]);
+    for (const [file, hs] of byFile) {
+      const isNew = hs.every((h) => h.removed === 0) && hs.some((h) => h.start === 1);
+      const script =
+        /\.(?:[cm]?[jt]s|py|rb|sh|bash|ps1)$/i.test(file) &&
+        (/(^|\/)(?:scripts?|bin|tools?|ci|dev)\//.test(file) ||
+          hs.some((h) => h.shebang));
+      if (!isNew || !script || fileRole(file) === 'tests') continue;
+      const cli = scriptInterface(hs.flatMap((h) => h.plus ?? []));
+      if (cli.length) node('File', file, { cli });
+    }
+  }
   const hunksByFile = new Map<string, PatchHunk[]>();
   for (const h of hunks) {
     hunksByFile.set(h.file, [...(hunksByFile.get(h.file) ?? []), h]);
@@ -1051,7 +1157,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
         .map((r) => clip(commandKey(testSegment(r.cmd) ?? r.cmd), 60)),
     );
     const failing = s.commands.filter(
-      (c) => c.failures > 0 && !c.isTest && !checkKeys.has(c.cmd),
+      (c) => c.failures > 0 && !c.isTest && !c.isCheck && !checkKeys.has(c.cmd),
     );
     node('Session', s.ref, {
       agent: s.agent,
@@ -1083,6 +1189,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       remoteResults: (s.remote ?? []).map((x) =>
         x.results ? ['results', ...(x.heads ?? [])].join(' ') : '',
       ),
+      // Same position: runner platforms of jobs the CI look shows passing.
+      remoteOs: (s.remote ?? []).map((x) => (x.os ?? []).join(' ')),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)
@@ -1168,11 +1276,14 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
     [...(m?.entries() ?? [])].find(([k]) => k.startsWith(sha.slice(0, 12)))?.[1];
   for (const c of full.pr.commits) {
     const sha = c.sha.slice(0, 12);
+    const own = lookup(input.commitLines, c.sha);
     node('Commit', sha, {
       subject: clip(c.subject, 120),
       // The message body often holds the motivation; keep it queryable.
       body: c.body ? clip(c.body, 4000) : null,
       t: c.time ?? null,
+      // Only comments, docs or tests changed: the commit changes no behavior.
+      noBehavior: own ? commentOrTestOnly(own) : false,
     });
     for (const path of lookup(input.commitFiles, c.sha) ?? [])
       if (prFiles.has(path)) rel('TOUCHES', ['Commit', sha], ['File', path]);

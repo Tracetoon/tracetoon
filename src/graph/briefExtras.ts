@@ -486,6 +486,13 @@ export function environmentRows(
   },
   ran?: string[],
   ciSeen = false,
+  /**
+   * Remote CI runs that passed on a runner platform (`gh run watch`, `gh pr
+   * checks`, …), with when they were looked at, and each file's last captured
+   * edit: a platform passed in CI after a unit's last edit is a run there.
+   */
+  ci: { os: string[]; t: string }[] = [],
+  lastEdit: Map<string, string> = new Map(),
 ): Row[] {
   const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
   const code = (f: string) =>
@@ -521,7 +528,18 @@ export function environmentRows(
     u.line ??= line;
     units.set(key, u);
   }
-  for (const [change, u] of [...units].slice(0, 3)) {
+  for (const [change, u] of [...units]
+    .map(([k, u]): [string, typeof u] => {
+      const edited = [...u.files]
+        .map((f) => lastEdit.get(f) ?? '')
+        .sort()
+        .at(-1);
+      const ranInCi = (n: string) =>
+        ci.some((x) => x.os.includes(n) && (!edited || x.t >= edited));
+      return [k, { ...u, names: new Set([...u.names].filter((n) => !ranInCi(n))) }];
+    })
+    .filter(([, u]) => u.names.size > 0)
+    .slice(0, 3)) {
     const names = PLATFORMS.map((p) => p.name).filter((n) => u.names.has(n));
     const files = [...u.files].sort();
     out.push({
@@ -682,6 +700,39 @@ export function sessionCommands(g: GraphEngine): string[] | undefined {
       )
       .rows.map((r) => String(r.cmd ?? '')),
   ];
+}
+
+/**
+ * CI looks of the included sessions that showed jobs passing on a runner
+ * platform, with when; and each PR file's last captured edit.
+ */
+export function ciPlatformRuns(g: GraphEngine): {
+  ci: { os: string[]; t: string }[];
+  lastEdit: Map<string, string>;
+} {
+  const ci = g
+    .run(
+      `MATCH (s:Session {band: 'included'})
+       RETURN s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed, s.remoteOs AS os`,
+    )
+    .rows.flatMap((r) =>
+      ((r.kinds as string[]) ?? []).flatMap((k, i) => {
+        const os = String(((r.os as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
+        const t = String(((r.ts as string[]) ?? [])[i] ?? '');
+        return k === 'ci' && os.length && t && ((r.failed as string[]) ?? [])[i] !== 'failed'
+          ? [{ os, t }]
+          : [];
+      }),
+    );
+  const lastEdit = new Map<string, string>();
+  for (const r of g.run(
+    `MATCH (e:Edit)-[:IN_SESSION]->(:Session {band: 'included'}) RETURN e.file AS file, e.t AS t`,
+  ).rows) {
+    const f = String(r.file ?? '');
+    const t = String(r.t ?? '');
+    if (f && t && t > (lastEdit.get(f) ?? '')) lastEdit.set(f, t);
+  }
+  return { ci, lastEdit };
 }
 
 /** Pushes, PRs made and CI looks of the included sessions, oldest first. */
@@ -1003,6 +1054,9 @@ const ENTRY_CHARS = 300;
  * file and its changed callers, each with what is tied to it, so a writer
  * doesn't pin a caller's or callee's behavior on the entry.
  */
+/** A function's changed-line words that read the environment or the command line. */
+const SELECTOR_WORDS = /\bprocess env\b|\bos environ\b|\bgetenv\b|\bdeno env\b|\bargv\b|\bparse ?args\b/;
+
 export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const hunks = g
     .run(
@@ -1011,7 +1065,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
               h.diff AS diff, h.branches AS branches, h.added AS added,
               h.owns AS owns, h.readers AS readers, h.fnLines AS fnLines, h.types AS types,
-              h.thin AS thin`,
+              h.thin AS thin, h.fnWords AS fnWords`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
@@ -1176,6 +1230,60 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
         a.file.localeCompare(b.file) ||
         a.name.localeCompare(b.name),
     );
+  // Preferred over the owner with most calls: a new function that reads the
+  // environment variable or flag selecting the behavior (its changed lines
+  // read `process.env`, `os.environ`, `getenv`, argv), else the new interface
+  // most other files name.
+  const fresh = new Set(hunks.flatMap((h) => ((h.fresh as string[]) ?? []).map(String)));
+  const selectors = uniqStr(
+    hunks.flatMap((h) =>
+      ((h.fnWords as string[]) ?? [])
+        .map(String)
+        .filter((w) => SELECTOR_WORDS.test(w.slice(w.indexOf(':') + 1)))
+        .map((w) => w.slice(0, w.indexOf(':')))
+        .filter(
+          (n) =>
+            fresh.has(n) &&
+            NAME.test(n) &&
+            // A getter or one-line reader is still where the setting is read.
+            fnLike(n, String(h.file)) &&
+            definedHere(n, String(h.file)),
+        )
+        .map((n) => `${String(h.file)}#${n}`),
+    ),
+  ).sort(
+    (a, b) =>
+      refFiles(b.split('#')[1]!) - refFiles(a.split('#')[1]!) || a.localeCompare(b),
+  );
+  if (selectors.length) {
+    const [file, name] = [selectors[0]!.split('#')[0]!, selectors[0]!.split('#')[1]!];
+    const h = hunks.find((x) => String(x.file) === file);
+    const related = callersOf(name).map((o) => ({ name: o.name, how: `calls \`${name}\`` }));
+    const { text, cites } = compose(name, file, ' (reads the setting that selects the behavior)', related);
+    return {
+      kind: 'entry',
+      fact: text,
+      cites: uniqStr([...(h ? [String(h.change), String(h.diff)] : []), ...cites]),
+    };
+  }
+  const iface = [...refsOf.values()].find((r) => r.kind === 'most referenced');
+  const ifaceName = iface ? String(iface.term) : '';
+  const ifaceFile = iface ? ((iface.definedIn as string[]) ?? []).map(String)[0] : undefined;
+  if (
+    iface &&
+    ifaceFile &&
+    fresh.has(ifaceName) &&
+    refFiles(ifaceName) >= 3 &&
+    (!ranked[0] || refFiles(ranked[0].name) < refFiles(ifaceName)) &&
+    unitRole(ifaceFile, pathRole(ifaceFile)) === 'src'
+  ) {
+    const h = hunks.find((x) => String(x.file) === ifaceFile);
+    return {
+      kind: 'entry',
+      fact: `Start at \`${ifaceName}\` in ${ifaceFile}: the new interface ${refFiles(ifaceName)} other files name.`,
+      cites: h ? [String(h.change), String(h.diff)] : [],
+    };
+  }
   const best = ranked[0];
   if (best) {
     // The next owner in the same file, often the one choosing between paths.
