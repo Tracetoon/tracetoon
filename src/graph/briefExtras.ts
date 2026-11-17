@@ -397,6 +397,8 @@ const WORKFLOW_FILE = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-c
 const WINDOWS_SCRIPT = /\.(?:ps1|psm1|bat|cmd)$/i;
 /** A script a shell or interpreter runs directly. */
 const SCRIPT_FILE = /\.(?:sh|bash|zsh|ps1|psm1|bat|cmd)$/i;
+/** A code file a package.json script can run. */
+const CODE_SCRIPT = /\.(?:[cm]?[jt]sx?|py|rb|sh|ps1)$/i;
 
 const addedLines = (h: Row) =>
   ((h.code as string[]) ?? [])
@@ -545,11 +547,22 @@ export function environmentRows(
       .map(hunkText)
       .join('\n')
       .toLowerCase();
+    // A package.json script (`"name": "<runner> … path"`) that runs the file.
+    const pkgRuns = (f: string) =>
+      pkgText
+        .split('\n')
+        .some(
+          (l) =>
+            /^[+-]?\s*["'][\w:.-]+["']\s*:\s*["']/.test(l) &&
+            new RegExp(
+              String.raw`\b(?:bun|node|tsx|ts-node|deno|python3?|sh|bash|pwsh|npx|bunx)\b[^"']*?(?:^|[\s/"'.])${f.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\b`,
+            ).test(l),
+        );
     const stem = (f: string) => base(f).replace(/\.[^.]+$/, '');
     const entry = (h: Row, f: string) =>
       SCRIPT_FILE.test(f) ||
       h.shebang === true ||
-      (!!pkgText && (pkgText.includes(f.toLowerCase()) || pkgText.includes(base(f))));
+      (CODE_SCRIPT.test(f) && pkgRuns(f));
     const entries = new Set(hunks.filter((h) => entry(h, String(h.file))).map((h) => String(h.file)));
     for (const h of hunks) {
       const f = String(h.file);

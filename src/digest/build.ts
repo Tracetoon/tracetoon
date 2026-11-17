@@ -895,7 +895,9 @@ export function remoteCommands(
         : undefined;
     if (!kind) continue;
     const words = seg.split(/\s+/).filter((w) => !w.startsWith('-'));
-    out.push({ cmd: seg.startsWith('git') ? 'git push' : words.slice(0, 3).join(' '), kind });
+    // `gh api` names its endpoint next: an owner, a repo, run ids. Never kept.
+    const n = words[1] === 'api' ? 2 : 3;
+    out.push({ cmd: seg.startsWith('git') ? 'git push' : words.slice(0, n).join(' '), kind });
   }
   return out;
 }

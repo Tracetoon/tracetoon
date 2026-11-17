@@ -339,7 +339,10 @@ describe('platform, script and fake rows', () => {
         // Entry points: a shebang, a package.json script target.
         { ...h('CH3', 'bin/release', ['+ #!/usr/bin/env bash', '+ set -e']), shebang: true },
         h('CH3', 'tools/gen.ts', ['+ main();']),
-        h('CH4', 'package.json', ['+ "gen": "bun tools/gen.ts",']),
+        h('CH4', 'package.json', ['+ "gen": "bun tools/gen.ts",', '+ "files": ["LICENSE", "tools/pack.ts"],']),
+        // Listed in package.json, never run by a script there.
+        h('CH4', 'LICENSE', ['+ Copyright']),
+        h('CH4', 'tools/pack.ts', ['+ pack();']),
       ],
       new Map([
         ...roles,
@@ -349,6 +352,8 @@ describe('platform, script and fake rows', () => {
         ['bin/release', 'scripts'],
         ['tools/gen.ts', 'scripts'],
         ['package.json', 'config'],
+        ['LICENSE', 'docs'],
+        ['tools/pack.ts', 'scripts'],
       ]),
       host,
       ['bun test'],
@@ -1158,6 +1163,10 @@ describe('remote commands and change details', () => {
       { cmd: 'gh run view', kind: 'ci' },
     ]);
     expect(remoteCommands('git status && gh pr view 3')).toEqual([]);
+    // An API call's endpoint (owner, repo, ids) is never kept.
+    expect(remoteCommands('gh api repos/o/r/actions/jobs/1/logs', '##[error]boom')).toEqual([
+      { cmd: 'gh api', kind: 'ci' },
+    ]);
     // A PR view whose output shows check results is a look at CI.
     expect(remoteCommands('gh pr view 3 --json statusCheckRollup', '[{"conclusion":"SUCCESS"}]')).toEqual([
       { cmd: 'gh pr view', kind: 'ci' },
@@ -1231,6 +1240,7 @@ describe('details: only clean facts', () => {
             '+ const diff = 120;',
             '+ const limit = 40;',
             '+ for (let i = 0, step = 3; i < n; i++) {}',
+            "+ const EMBEDDED_PACK_VERSION = '2.0.1';",
           ],
         },
         {

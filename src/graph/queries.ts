@@ -476,7 +476,15 @@ export function detailsOf(
       for (const f of flags) add(def ? `${f} (default ${def})` : f);
       if (flags.length) continue;
       const a = ASSIGNED.exec(l);
-      if (a && settingName(a[1]!) && !/^-?[01]$/.test(a[2]!)) add(`${a[1]} = ${a[2]}`);
+      if (
+        a &&
+        settingName(a[1]!) &&
+        !/^-?[01]$/.test(a[2]!) &&
+        // A version, build id or hash is no behavior.
+        !/version|build_?id|hash|sha\d*$|checksum|integrity/i.test(a[1]!) &&
+        !/^['"`]v?\d+\.\d+/.test(a[2]!)
+      )
+        add(`${a[1]} = ${a[2]}`);
     }
   }
   return out.slice(0, MAX_DETAILS);
