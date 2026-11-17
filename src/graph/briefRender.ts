@@ -210,14 +210,25 @@ export function validationSection(b: BriefParts): string {
       current: true,
     });
   }
-  if (passing.length)
+  // Passes with counts keep their own line (the claim check matches a line's
+  // counts to its one command); the rest collapse into one line.
+  const counted = passing.filter((p) => p.result);
+  const bare = passing.filter((p) => !p.result);
+  for (const p of counted.reverse())
+    shown.unshift({
+      kind: 'receipts',
+      line: `- \`${p.cmd}\`: passed (${p.result}), run by \`tracetoon check\` on the submitted content.`,
+      when: 'fresh',
+      current: true,
+    });
+  if (bare.length)
     shown.unshift({
       kind: 'receipts',
       line:
-        passing.length === 1
-          ? `- \`${passing[0]!.cmd}\`: passed${passing[0]!.result ? ` (${passing[0]!.result})` : ''}, run by \`tracetoon check\` on the submitted content.`
-          : `- ${passing.length} checks passed, run by \`tracetoon check\` on the submitted content: ${passing
-              .map((p) => `\`${p.cmd}\`${p.result ? ` (${p.result})` : ''}`)
+        bare.length === 1
+          ? `- \`${bare[0]!.cmd}\`: passed, run by \`tracetoon check\` on the submitted content.`
+          : `- ${bare.length} checks passed, run by \`tracetoon check\` on the submitted content: ${bare
+              .map((p) => `\`${p.cmd}\``)
               .join(', ')}.`,
       when: 'fresh',
       current: true,

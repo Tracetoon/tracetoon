@@ -869,6 +869,14 @@ export function behaviorOf(hunks: Record<string, unknown>[]): string[] {
       .map((x) => x.text),
   ).slice(0, MAX_BEHAVIOR);
 }
+const CHECKSUM_FILE =
+  /(?:^|\/)(?:[\w.-]*SUMS?|checksums?(?:\.txt)?)$|\.(?:sha(?:1|256|512)|md5|sum)$/i;
+const BINARY_FILE =
+  /\.(?:png|jpe?g|gif|ico|webp|wasm|zip|tar|tgz|gz|bz2|xz|7z|jar|bin|exe|dll|so|dylib|pdf|woff2?|ttf|otf|mp[34]|mov)$/i;
+/** Owning symbols shown per file of a change unit, most changed lines first. */
+const MAX_WHERE_SYMBOLS = 8;
+/** New symbols shown per change unit. */
+const MAX_NEW_SYMBOLS = 12;
 /** Conditions quoted per change unit. */
 const MAX_BEHAVIOR = 6;
 
@@ -1212,7 +1220,7 @@ export function briefParts(
      OPTIONAL MATCH (h)<-[:INTRODUCED]-(k:Commit)
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
-            h.conds AS conds, h.code AS code, h.before AS before, h.context AS context,
+            h.conds AS conds, h.code AS code, h.added AS added, h.removed AS removed, h.before AS before, h.context AS context,
             h.tests AS tests, h.words AS words, h.moved AS moved, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
@@ -1252,10 +1260,19 @@ export function briefParts(
       .filter((h) => h.change === c.id)
       .sort((a, b) => byDiff(String(a.diff), String(b.diff)));
     const files = (c.files as string[]) ?? [];
+    // Symbols by the changed lines in them, not by first appearance.
     const where = files.map((f) => {
-      const syms = uniq(
-        hs.filter((h) => h.file === f).flatMap((h) => (h.symbols as string[]) ?? []),
-      ).slice(0, 6);
+      const weight = new Map<string, number>();
+      for (const h of hs.filter((h) => h.file === f))
+        for (const sym of (h.symbols as string[]) ?? [])
+          weight.set(
+            sym,
+            (weight.get(sym) ?? 0) + Number(h.added ?? 0) + Number(h.removed ?? 0),
+          );
+      const syms = [...weight]
+        .sort((a, b) => b[1] - a[1])
+        .map(([sym]) => sym)
+        .slice(0, MAX_WHERE_SYMBOLS);
       return syms.length ? `${f} (${syms.join(', ')})` : f;
     });
     // New code, not test helpers: a fixture's `reply` or `calls` is noise to a reviewer.
@@ -1263,7 +1280,7 @@ export function briefParts(
       hs
         .filter((h) => fileRole.get(String(h.file)) !== 'tests')
         .flatMap((h) => (h.fresh as string[]) ?? []),
-    ).slice(0, 8);
+    ).slice(0, MAX_NEW_SYMBOLS);
     // Each pair with its file, to quote as a code change, not to retell.
     // Lines only moved or reflowed are said as such, never as a changed value.
     const movedIn = new Map<string, number>();
@@ -1896,6 +1913,19 @@ export function briefParts(
     .filter(([, r]) => r === 'generated')
     .map(([f]) => f)
     .sort();
+  // Binary artifacts and checksum files: no hand-written lines to describe,
+  // but a reviewer should hear they changed.
+  const artifacts = [...fileRole.keys()]
+    .filter(
+      (f) => !generated.includes(f) && (CHECKSUM_FILE.test(f) || BINARY_FILE.test(f)),
+    )
+    .sort();
+  if (artifacts.length)
+    housekeeping.push({
+      ref: `HK${housekeeping.length + 1}`,
+      what: 'binary artifacts or checksum files changed (no reviewable lines)',
+      files: refs(artifacts, 6),
+    });
   // An added file identical to a file already in the base: a copy, not new content.
   for (const r of g
     .run('MATCH (f:File) WHERE f.copyOf IS NOT NULL RETURN f.id AS file, f.copyOf AS of')

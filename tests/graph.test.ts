@@ -848,7 +848,8 @@ describe('evidence graph', () => {
     // Passing receipts collapse into one line naming each.
     const lines = v.split('\n').filter((l) => l.startsWith('- '));
     expect(lines).toEqual([
-      '- 4 checks passed, run by `tracetoon check` on the submitted content: `bun x tsc --noEmit`, `bun test` (96 pass, 0 fail), `bun run bundle`, `bun x prettier --check .`.',
+      '- 3 checks passed, run by `tracetoon check` on the submitted content: `bun x tsc --noEmit`, `bun run bundle`, `bun x prettier --check .`.',
+      '- `bun test`: passed (96 pass, 0 fail), run by `tracetoon check` on the submitted content.',
     ]);
     expect(v).toContain('from `tracetoon check` runs on the submitted content.</sub>');
     expect(v).not.toContain('tests/a.test.ts');
@@ -1986,6 +1987,18 @@ describe('the brief states recorded process and behavior', () => {
     expect(lim(pushed)).toContain(
       'The session ends at a push; CI results for the final head are not in the logs Tracetoon read.',
     );
+  });
+
+  test('housekeeping: binary artifacts and checksum files get a row', () => {
+    const bin: EvidenceGraph = structuredClone(graph);
+    bin.nodes.push(
+      N('File', 'release/SHA256SUMS', { role: 'config', inPr: true }),
+      N('File', 'assets/logo.png', { role: 'config', inPr: true }),
+    );
+    const hk = withGraph(bin, (g) => briefParts(g))
+      .sections.find((s) => s.title === 'housekeeping')!
+      .rows.find((r) => /binary artifacts/.test(String(r.what)));
+    expect(hk?.files).toEqual(['assets/logo.png', 'release/SHA256SUMS']);
   });
 
   test('requestText drops task boilerplate and keeps the reason when clipping', () => {
