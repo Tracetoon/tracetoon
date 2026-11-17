@@ -541,6 +541,10 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--repair <instruction>',
       'edit the current page with this one change instead of redrawing it (from comic loop)',
     )
+    .option(
+      '--reflow',
+      'same script, a layout whose panels are wide enough to read on a phone; then redraw',
+    )
     .action((o) => comicArtCmd(cwd, { ...g(), ...o }));
   comic
     .command('reroll')
@@ -569,6 +573,10 @@ export function buildProgram(cwd: string = process.cwd()): {
       'judge the rendered comic with fresh AI readers and say what to do next: judge, repair one thing, or stop (keeps the better version)',
     )
     .option('--run <id>', 'run id (default: latest)')
+    .option(
+      '--creative',
+      'experimental: also rewrite a flat joke or weak script automatically (off by default)',
+    )
     .action((o) => comicLoopRunCmd(cwd, { ...g(), ...o }));
   comic
     .command('loop-import')

@@ -28,7 +28,9 @@
  * Results are AI-assessed: they are not measured reader laughter.
  */
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
+  appendFileSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -59,11 +61,17 @@ import {
   observerPrompt,
   PAIR_SCHEMA,
   pairProblems,
+  PHONE_SCHEMA,
+  phoneGate,
+  phonePrompt,
+  phoneProblems,
   RUBRIC,
   type Check,
   type Observation,
   type PairJudgment,
+  type PhoneRead,
 } from '../src/comic/judging.ts';
+import { pageText } from '../src/comic/script.ts';
 import { maskRegion, stampText, writeRenditions } from '../src/comic/renditions.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 import { git } from '../src/util/exec.ts';
@@ -76,6 +84,21 @@ export interface Pr {
   title: string;
   body: string;
 }
+/**
+ * Every model call is appended here (stage, model, rubric, prompt and image
+ * hashes, result or error, cost), including repeats and failures, so judge
+ * variability stays visible. Set with setCallLog.
+ */
+let callLog: string | undefined;
+export function setCallLog(path: string) {
+  callLog = path;
+}
+function logCall(entry: Record<string, unknown>) {
+  if (callLog)
+    appendFileSync(callLog, JSON.stringify({ at: new Date().toISOString(), ...entry }) + '\n');
+}
+const sha256 = (data: string | Uint8Array) =>
+  createHash('sha256').update(data).digest('hex');
 /** Every model call is accounted for, including the ones that failed. */
 export const ledger = { calls: 0, failed: 0, cost: 0 };
 
@@ -86,8 +109,10 @@ export async function ask<T>(
   images: string[],
   schema: object,
   validate: (v: any) => string[],
-  opts: { renditions?: boolean } = {},
+  opts: { renditions?: boolean; stage?: string } = {},
 ): Promise<T> {
+  const started = Date.now();
+  const imageShas = images.map((p) => (existsSync(p) ? sha256(readFileSync(p)) : 'missing'));
   // Neutral file names in an empty folder, so names and repo context can't bias the judge.
   const dir = mkdtempSync(join(tmpdir(), 'comic-judge-'));
   try {
@@ -112,6 +137,17 @@ export async function ask<T>(
       ' Read every file with the Read tool before answering. If you cannot see an image, say so: use unknown states, never reconstruct it. Answer only with the structured result.';
     ledger.calls++;
     let out: string;
+    const log = (result: unknown, cost: number, error?: string) =>
+      logCall({
+        stage: opts.stage ?? 'ask',
+        model: JUDGE_MODEL,
+        rubricVersion: RUBRIC.rubricVersion,
+        promptSha256: sha256(full),
+        imageShas,
+        ms: Date.now() - started,
+        cost,
+        ...(error ? { error } : { result }),
+      });
     try {
       out = await run(
         CLAUDE,
@@ -133,15 +169,19 @@ export async function ask<T>(
       );
     } catch (e) {
       ledger.failed++;
+      log(undefined, 0, String(e).slice(0, 300));
       throw e;
     }
     const json = JSON.parse(out);
-    ledger.cost += Number(json.total_cost_usd ?? 0);
+    const cost = Number(json.total_cost_usd ?? 0);
+    ledger.cost += cost;
     const problems = json.structured_output ? validate(json.structured_output) : ['no output'];
     if (json.is_error || problems.length) {
       ledger.failed++;
+      log(json.structured_output, cost, `unusable: ${problems.join('; ') || json.result}`);
       throw new Error(`judge output unusable: ${problems.join('; ') || json.result}`);
     }
+    log(json.structured_output, cost);
     return json.structured_output as T;
   } finally {
     // Windows can hold the folder briefly after the CLI exits; a leftover temp folder is harmless.
@@ -214,7 +254,24 @@ function run(bin: string, args: string[], cwd: string): Promise<string> {
 export function observe(image: string) {
   return ask<Observation>(observerPrompt(), [image], OBSERVATION_SCHEMA, observationProblems, {
     renditions: true,
+    stage: 'observe',
   });
+}
+
+/** A fresh reader given only the 360px phone rendition: no larger image, no intended text. */
+export async function phoneRead(image: string): Promise<PhoneRead> {
+  const dir = mkdtempSync(join(tmpdir(), 'comic-phone-'));
+  try {
+    copyFileSync(image, join(dir, 'src.png'));
+    const [, phone] = await writeRenditions(join(dir, 'src.png'), dir, 'P');
+    return await ask<PhoneRead>(phonePrompt(), [phone!], PHONE_SCHEMA, phoneProblems, {
+      stage: 'phone',
+    });
+  } finally {
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+    } catch {}
+  }
 }
 
 function factsText(o: Observation, pr?: Pr, script?: ComicScript) {
@@ -228,17 +285,22 @@ function factsText(o: Observation, pr?: Pr, script?: ComicScript) {
 }
 
 export function check(image: string, o: Observation, pr?: Pr, script?: ComicScript) {
-  return ask<Check>(checkerPrompt(factsText(o, pr, script)), [image], CHECK_SCHEMA, checkProblems);
+  return ask<Check>(checkerPrompt(factsText(o, pr, script)), [image], CHECK_SCHEMA, checkProblems, {
+    stage: 'check',
+  });
 }
 
 export async function assess(image: string, pr?: Pr, script?: ComicScript) {
-  const observation = await observe(image);
+  const [observation, phone] = await Promise.all([observe(image), phoneRead(image)]);
   const c = await check(image, observation, pr, script);
+  const phoneResult = phoneGate(phone, script ? pageText(script) : []);
   return {
     observation,
+    phone,
+    phoneGate: phoneResult,
     check: c,
     index: displayIndex({ ...observation.scores, prMeaning: c.prMeaning }),
-    eligible: eligible(c),
+    eligible: eligible(c) && (script ? phoneResult.state === 'pass' : true),
     creativeGoalMet: creativeGoalMet(observation),
   };
 }
@@ -246,7 +308,9 @@ export type Assessment = Awaited<ReturnType<typeof assess>>;
 
 export async function pairOnce(a: string, b: string): Promise<PairJudgment> {
   try {
-    return await ask<PairJudgment>(comparatorPrompt(), [a, b], PAIR_SCHEMA, pairProblems);
+    return await ask<PairJudgment>(comparatorPrompt(), [a, b], PAIR_SCHEMA, pairProblems, {
+      stage: 'compare',
+    });
   } catch (e) {
     return { preference: 'evaluation-error', reason: String(e).slice(0, 200) };
   }
@@ -577,6 +641,49 @@ async function controls(oldCount: number) {
   console.log(JSON.stringify(out, null, 2));
 }
 
+/**
+ * Uncached phone-reading diagnostic: each image read `repeat` times at 360px,
+ * the gate computed against its script each time, every call logged.
+ */
+async function phoneDiag(listFile: string, repeat: number) {
+  const items: { id: string; image: string; script: string }[] = JSON.parse(
+    readFileSync(listFile, 'utf8'),
+  );
+  const dir = evalDir('judge', 'phone-diag');
+  setCallLog(join(dir, 'calls.jsonl'));
+  const rows = await pool(items, 3, async (it) => {
+    const script = readScript(resolve(listFile, '..', it.script))!;
+    const required = pageText(script);
+    const reads = await Promise.all(
+      Array.from({ length: repeat }, () =>
+        phoneRead(resolve(listFile, '..', it.image)).catch((e) => String(e)),
+      ),
+    );
+    const gates = reads.map((r) =>
+      typeof r === 'string' ? { state: 'error', missing: [] } : phoneGate(r, required),
+    );
+    const states = gates.map((g) => g.state);
+    console.error(`${it.id}: ${states.join(' ')}`);
+    return {
+      id: it.id,
+      states,
+      flips: new Set(states).size > 1,
+      missing: gates.map((g) => g.missing),
+    };
+  });
+  const out = {
+    rubricVersion: RUBRIC.rubricVersion,
+    model: JUDGE_MODEL,
+    repeat,
+    uncached: true,
+    flipRate: `${rows.filter((r) => r.flips).length}/${rows.length}`,
+    rows,
+    calls: { ...ledger, cost: Number(ledger.cost.toFixed(2)) },
+  };
+  writeFileSync(join(dir, 'phone-diag.json'), JSON.stringify(out, null, 2) + '\n');
+  console.log(JSON.stringify(out, null, 2));
+}
+
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
@@ -600,6 +707,8 @@ if (import.meta.main) {
   else if (cmd === 'pair')
     console.log(JSON.stringify({ ...(await pair(positional[0]!, positional[1]!, confirm)), calls: ledger }, null, 2));
   else if (cmd === 'controls') await controls(Number(flag(args, '--old') ?? 3));
+  else if (cmd === 'phone-diag')
+    await phoneDiag(positional[0]!, Number(flag(args, '--repeat') ?? 3));
   else if (cmd === 'round') await round(positional[0]!, positional[1]!, confirm);
   else {
     console.error(

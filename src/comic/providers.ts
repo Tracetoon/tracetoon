@@ -230,7 +230,7 @@ export function pagePrompt(script: ComicScript): string {
             .filter((part) => !/headline|title/i.test(part))
             .join(',') || 'clear comic lettering suited to this art'
         : styleLettering(script.style)
-    }. Letter every quoted text exactly as written, spelled correctly, large enough to read on a phone. Words on screens, signs and objects are part of the drawing, never floating tags or arrows. No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
+    }. Letter every quoted text exactly as written, spelled correctly. It must stay readable when the whole page is shown only 360 pixels wide on a phone: balloon and caption letters at least 1/30 of the page width tall, signs and labels in the scene just as large (draw the object bigger rather than the words smaller), short lines, no tiny print anywhere. Words on screens, signs and objects are part of the drawing, never floating tags or arrows. No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
     `Strictly: ${negativeFor(script)}.`,
   ]
     .filter(Boolean)

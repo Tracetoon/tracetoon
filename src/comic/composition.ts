@@ -394,3 +394,87 @@ export function compositionProblems(
   });
   return out;
 }
+
+// ------------------------------------------------------ phone-width fit
+
+/** The narrowest display the comic must read on: a phone, 360 CSS px wide. */
+export const PHONE_WIDTH = 360;
+
+/**
+ * The frames a page will have: its composition, or for a model-lettered
+ * format page without one, the layout its format describes.
+ */
+function plannedFrames(script: ComicScript): PanelFrame[] | undefined {
+  const resolved = resolveComposition(script);
+  if (resolved) return resolved.frames;
+  const implied =
+    script.format === 'strip' || script.format === 'before-after'
+      ? 'sequence'
+      : undefined;
+  if (!implied) return undefined;
+  return resolveComposition({
+    ...script,
+    composition: { family: implied, title: { mode: 'heading' } },
+  })?.frames;
+}
+
+/**
+ * Estimate whether each panel's lettering fits its frame at phone width
+ * without shrinking below a readable size (about 11 CSS px letters, ~6 px a
+ * character, ~15 px a line, half the frame for balloons; signs count 1.5x;
+ * no text in frames under 120 px). An estimate for
+ * planning; the rendered image is checked by the phone reader.
+ */
+export function phoneFit(script: ComicScript) {
+  const frames = plannedFrames(script);
+  if (!frames) return [];
+  const pageH = PHONE_WIDTH / aspectRatio(pageAspect(script));
+  return frames.map((f, i) => {
+    const widthPx = Math.round(f.w * PHONE_WIDTH);
+    const heightPx = f.h * pageH;
+    const perLine = Math.max(1, Math.floor((widthPx * 0.85) / 6.2));
+    const lines = Math.max(1, Math.floor((heightPx * 0.5) / 15));
+    // Signs and labels are drawn into the art, usually smaller than balloons.
+    const chars = Math.round(
+      (script.panels[i]?.dialogue ?? []).reduce(
+        (n, d) => n + d.text.length * (d.kind === 'sign' || d.kind === 'label' ? 1.5 : 1),
+        0,
+      ),
+    );
+    const capacity = perLine * lines;
+    // A frame under ~120 px can't carry readable text on a phone at all.
+    const fits = chars <= capacity && !(widthPx < 120 && chars > 0);
+    return { panel: i + 1, widthPx, chars, capacity, fits };
+  });
+}
+
+/**
+ * Reflow instead of shrinking: when a panel's text can't fit at phone width,
+ * the same script with a layout whose frames are wide enough. Only geometry
+ * changes (composition, aspect); wording, cast and style stay. Undefined when
+ * the current layout already fits (or can't be estimated).
+ */
+export function phoneLayout(script: ComicScript): ComicScript | undefined {
+  const fit = phoneFit(script);
+  if (!fit.length || fit.every((f) => f.fits)) return undefined;
+  const n = script.panels.length;
+  const order: Composition['family'][] =
+    n >= 4 ? ['asymmetric', 'vertical'] : ['vertical', 'asymmetric'];
+  let fallback: ComicScript | undefined;
+  for (const family of order) {
+    if (family === script.composition?.family) continue;
+    const next: ComicScript = {
+      ...script,
+      composition: {
+        family,
+        title: { mode: script.composition?.title.mode ?? 'heading' },
+      },
+      aspect: family === 'vertical' ? '3:4' : '4:3',
+    };
+    delete next.layout;
+    if (compositionProblems(next).length) continue;
+    fallback ??= next;
+    if (phoneFit(next).every((f) => f.fits)) return next;
+  }
+  return fallback;
+}

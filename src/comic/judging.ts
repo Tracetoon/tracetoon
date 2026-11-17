@@ -8,6 +8,7 @@
  * person to rate or break a tie: uncertainty keeps the incumbent or stops.
  */
 import rubricJson from './rubric.json';
+import type { ComicScript } from './types.ts';
 
 export const RUBRIC = rubricJson as {
   rubricVersion: string;
@@ -22,7 +23,7 @@ export const RUBRIC = rubricJson as {
   gates: { id: GateId; description: string }[];
   creativeGoal: { dimension: 'amusement'; minimum: number };
   prompts: Record<
-    'observer' | 'contextualReviewer' | 'comparator' | 'healthCheck',
+    'observer' | 'phoneReader' | 'contextualReviewer' | 'comparator' | 'healthCheck',
     string
   >;
 };
@@ -38,11 +39,11 @@ export const DIMENSIONS = [
 ] as const;
 export type DimensionId = (typeof DIMENSIONS)[number];
 export const BLIND_DIMENSIONS = DIMENSIONS.filter((d) => d !== 'prMeaning');
+/** Gates the contextual checker judges. Phone legibility is a host gate (phoneGate). */
 export const GATES = [
   'factualIntegrity',
   'criticalCommunication',
   'essentialText',
-  'viewportLegibility',
 ] as const;
 export type GateId = (typeof GATES)[number];
 export const ISSUE_TARGETS = [
@@ -89,6 +90,11 @@ export interface Check {
   gates: Record<GateId, { state: 'pass' | 'fail' | 'unknown'; reason: string }>;
   prMeaning: Score;
   issues: Issue[];
+}
+/** A fresh reader given only the 360px phone rendition: what it can actually read. */
+export interface PhoneRead {
+  items: { panel: number | null; words: string; legible: 'yes' | 'partly' | 'no' }[];
+  unreadable: { panel: number | null; what: string }[];
 }
 export type RawPreference =
   'A' | 'B' | 'tie' | 'neither' | 'uncertain' | 'evaluation-error';
@@ -154,6 +160,19 @@ export function checkProblems(c: any): string[] {
   return p;
 }
 
+export function phoneProblems(r: any): string[] {
+  const p: string[] = [];
+  if (!Array.isArray(r?.items))
+    p.push('items must be an array (empty when nothing is readable)');
+  else
+    r.items.forEach((i: any, n: number) => {
+      if (typeof i?.words !== 'string' || !['yes', 'partly', 'no'].includes(i?.legible))
+        p.push(`items[${n}] must be {panel, words, legible: yes|partly|no}`);
+    });
+  if (!Array.isArray(r?.unreadable)) p.push('unreadable must be an array');
+  return p;
+}
+
 export function pairProblems(j: any): string[] {
   return ['A', 'B', 'tie', 'neither', 'uncertain', 'evaluation-error'].includes(
     j?.preference,
@@ -177,9 +196,86 @@ export function displayIndex(scores: Partial<Record<DimensionId, Score>>): numbe
   return Math.round(total);
 }
 
-/** Every gate must pass; unknown is not a pass. */
+/** Every checker gate must pass; unknown is not a pass. */
 export function eligible(check: Check | undefined): boolean {
   return !!check && GATES.every((g) => check.gates[g]?.state === 'pass');
+}
+
+const tokens = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9.~/_-]+/g, ' ')
+    .split(/\s+/)
+    .map((w) => w.replace(/^[.\-_/]+|[.\-_/]+$/g, ''))
+    .filter(Boolean);
+
+/**
+ * The phone gate, computed by the host: every required lettering item must be
+ * found (at least 80% of its words) in what a reader transcribed from the
+ * 360px rendition alone, counting only text it marked readable or partly so.
+ */
+export function phoneGate(
+  read: PhoneRead | undefined,
+  required: string[],
+): { state: 'pass' | 'fail' | 'unknown'; missing: string[] } {
+  if (!read) return { state: 'unknown', missing: [] };
+  const seen = new Map<string, number>();
+  for (const i of read.items)
+    if (i.legible !== 'no')
+      for (const t of tokens(i.words)) seen.set(t, (seen.get(t) ?? 0) + 1);
+  const missing = required.filter((item) => {
+    const want = tokens(item);
+    if (!want.length) return false;
+    const pool = new Map(seen);
+    let hit = 0;
+    for (const t of want)
+      if ((pool.get(t) ?? 0) > 0) {
+        hit++;
+        pool.set(t, pool.get(t)! - 1);
+      }
+    return hit / want.length < 0.8;
+  });
+  return { state: missing.length ? 'fail' : 'pass', missing };
+}
+
+/**
+ * What a concrete (technical) repair changed that it must not: the joke is
+ * frozen. Geometry (composition, format, aspect, layout) and balloon order
+ * within a panel may change; scene text only for an art repair.
+ */
+export function frozenProblems(
+  parent: ComicScript,
+  child: ComicScript,
+  target?: IssueTarget,
+): string[] {
+  const p: string[] = [];
+  const same = (a: unknown, b: unknown) =>
+    JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  for (const k of [
+    'title',
+    'request',
+    'anchor',
+    'characters',
+    'style',
+    'palette',
+  ] as const)
+    if (!same((parent as any)[k], (child as any)[k])) p.push(`${k} changed`);
+  if (parent.panels.length !== child.panels.length) p.push('panel count changed');
+  else
+    parent.panels.forEach((pp, i) => {
+      const cp = child.panels[i]!;
+      const key = (d: any) =>
+        JSON.stringify([d.speaker, d.kind ?? null, d.text, d.points ?? null]);
+      const a = (pp.dialogue ?? []).map(key).sort();
+      const b = (cp.dialogue ?? []).map(key).sort();
+      if (!same(a, b)) p.push(`panel ${i + 1} wording changed`);
+      if (target !== 'art' && !same(pp.scene, cp.scene))
+        p.push(`panel ${i + 1} scene changed`);
+      if (!same(pp.characters, cp.characters)) p.push(`panel ${i + 1} cast changed`);
+    });
+  return p;
 }
 
 /** Known amusement at or above the target; null when amusement is unknown. */
@@ -219,8 +315,8 @@ export function canonicalPair(
 // ------------------------------------------------------------- the controller
 
 export const DEFAULT_BUDGET = { renders: 3, judgeCalls: 14 };
-/** Judge calls one more revision needs: observe, check and both comparison orders. */
-const ROUND_CALLS = 4;
+/** Judge calls one more revision needs: observe, phone, check and both comparison orders. */
+const ROUND_CALLS = 5;
 
 export interface Candidate {
   id: string;
@@ -230,9 +326,16 @@ export interface Candidate {
   target?: IssueTarget;
   imageSha256: string;
   observation?: Observation;
+  phone?: PhoneRead;
   check?: Check;
+  /** Lettering the page must show (pageText of its script), set by the host. */
+  required: string[];
   /** Host check of the script and output constraints (checkScript errors). */
   contractOk: boolean;
+  /** For a concrete repair: what it changed that it must not (frozenProblems). */
+  frozen?: string[];
+  /** The layout family a geometry-only reflow would use (host, phoneLayout), if any. */
+  reflow?: string | null;
 }
 export interface Comparison {
   a: string;
@@ -243,19 +346,23 @@ export interface Comparison {
 export interface LoopState {
   v: 1;
   rubricVersion: string;
+  /** Rewrite jokes automatically (experimental). Off: repairs keep the joke. */
+  creative: boolean;
   budget: { renders: number; judgeCalls: number };
   used: { renders: number; judgeCalls: number };
   candidates: Candidate[];
   comparisons: Comparison[];
   incumbent: string | null;
-  /** Candidates already decided (accepted or rejected). */
+  /** Eligible, but the baseline was funnier: selected only if nothing better comes. */
+  fallback?: string | null;
+  /** Candidates already decided (accepted, rejected or kept as baseline). */
   decided: string[];
   rejectedInARow: number;
   log: { candidate: string; decision: string; reason: string }[];
 }
 
 export type Next =
-  | { action: 'observe' | 'check'; candidate: string }
+  | { action: 'observe' | 'phone' | 'check'; candidate: string }
   | { action: 'compare'; a: string; b: string; order: 1 | 2 }
   | {
       action: 'revise';
@@ -270,24 +377,36 @@ export type Next =
       selected: string | null;
       eligible: boolean;
       creativeGoalMet: boolean | null;
+      humorRegressed: boolean;
+      unresolved: string[];
     };
 
-export function newLoop(budget = DEFAULT_BUDGET): LoopState {
+export function newLoop(budget = DEFAULT_BUDGET, creative = false): LoopState {
   return {
     v: 1,
     rubricVersion: RUBRIC.rubricVersion,
+    creative,
     budget: { ...budget },
     used: { renders: 0, judgeCalls: 0 },
     candidates: [],
     comparisons: [],
     incumbent: null,
+    fallback: null,
     decided: [],
     rejectedInARow: 0,
     log: [],
   };
 }
 
-const usable = (c: Candidate) => eligible(c.check) && c.contractOk;
+/** Eligible: checker gates, the phone gate, the output contract and a frozen joke. */
+export function usable(c: Candidate): boolean {
+  return (
+    eligible(c.check) &&
+    phoneGate(c.phone, c.required).state === 'pass' &&
+    c.contractOk &&
+    !c.frozen?.length
+  );
+}
 const amusement = (c: Candidate) =>
   c.observation?.scores.amusement.state === 'assessed'
     ? (c.observation.scores.amusement.score ?? 0)
@@ -296,6 +415,8 @@ const amusement = (c: Candidate) =>
 function comparison(s: LoopState, a: string, b: string) {
   return s.comparisons.find((c) => c.a === a && c.b === b);
 }
+const byId = (s: LoopState, id: string | null | undefined) =>
+  s.candidates.find((c) => c.id === id);
 
 /**
  * The next step of the loop. Mutates `s` to record decisions about finished
@@ -304,39 +425,49 @@ function comparison(s: LoopState, a: string, b: string) {
 export function nextStep(s: LoopState): Next {
   const latest = s.candidates.at(-1);
   if (!latest) throw new Error('No candidate yet: render the comic first.');
-  const callsLeft = s.budget.judgeCalls - s.used.judgeCalls;
+  const callsLeft = () => s.budget.judgeCalls - s.used.judgeCalls;
 
   if (!s.decided.includes(latest.id)) {
-    if (!latest.observation)
-      return callsLeft > 0
-        ? { action: 'observe', candidate: latest.id }
-        : stop(s, 'judge budget exhausted before the image was read');
-    if (!latest.check)
-      return callsLeft > 0
-        ? { action: 'check', candidate: latest.id }
-        : stop(s, 'judge budget exhausted before the facts were checked');
-    decide(s, latest);
-    if (!s.decided.includes(latest.id)) {
-      // decide() asked for a blind comparison with the incumbent.
-      const inc = s.incumbent!;
-      const cmp = comparison(s, inc, latest.id) ?? { a: inc, b: latest.id };
-      if (!comparison(s, inc, latest.id)) s.comparisons.push(cmp);
-      if (callsLeft < (cmp.first ? 1 : 2)) {
+    // A repair that changed the joke is rejected before any judge call is spent.
+    if (!latest.frozen?.length)
+      for (const stage of ['observation', 'phone', 'check'] as const)
+        if (!latest[stage])
+          return callsLeft() > 0
+            ? {
+                action: stage === 'observation' ? 'observe' : stage,
+                candidate: latest.id,
+              }
+            : stop(s, `judge budget exhausted before the ${stage} step`);
+    const against = decide(s, latest);
+    if (against) {
+      let cmp = comparison(s, against, latest.id);
+      if (!cmp) s.comparisons.push((cmp = { a: against, b: latest.id }));
+      if (callsLeft() < (cmp.first ? 1 : 2))
         reject(s, latest, 'not enough judge budget to compare; incumbent kept');
-      } else return { action: 'compare', a: inc, b: latest.id, order: cmp.first ? 2 : 1 };
+      else
+        return { action: 'compare', a: against, b: latest.id, order: cmp.first ? 2 : 1 };
     }
   }
 
-  const inc = s.candidates.find((c) => c.id === s.incumbent);
-  const base = inc ?? latest;
-  const goal = creativeGoalMet(base.observation);
-  if (inc && goal && !inc.check!.issues.some((i) => i.severity !== 'minor'))
-    return stop(s, 'creative goal met with no material issue left');
-  if (s.rejectedInARow >= 2) return stop(s, 'two revisions in a row did not improve it');
+  const inc = byId(s, s.incumbent);
+  const base = inc ?? byId(s, baselineOf(s)) ?? latest;
+  if (
+    inc &&
+    !actionable(s, inc).length &&
+    !(s.creative && creativeGoalMet(inc.observation) === false)
+  )
+    return stop(s, 'eligible; no repair left to make');
+  if (s.rejectedInARow >= 2) return stop(s, 'two repairs in a row did not improve it');
   if (s.used.renders >= s.budget.renders) return stop(s, 'render budget exhausted');
-  if (callsLeft < ROUND_CALLS) return stop(s, 'judge budget too low for another round');
-  const issue = pickIssue(base);
-  if (!issue) return stop(s, 'no actionable issue; nothing left to repair');
+  if (callsLeft() < ROUND_CALLS) return stop(s, 'judge budget too low for another round');
+  const issue = pickIssue(s, base);
+  if (!issue)
+    return stop(
+      s,
+      s.creative
+        ? 'no actionable issue; nothing left to repair'
+        : 'no technical repair left (the joke itself is never rewritten automatically)',
+    );
   return {
     action: 'revise',
     target: issue.target,
@@ -346,69 +477,118 @@ export function nextStep(s: LoopState): Next {
   };
 }
 
-/** Gate failures first, then a flat joke, then the most severe remaining issue. */
-function pickIssue(c: Candidate): Issue | undefined {
-  const issues = [...(c.check?.issues ?? [])];
-  const rank = { blocker: 0, major: 1, minor: 2 } as const;
-  issues.sort((a, b) => rank[a.severity] - rank[b.severity]);
-  const flat = creativeGoalMet(c.observation) === false;
-  const creative = issues.find((i) => i.target === 'premise' || i.target === 'script');
-  if (!eligible(c.check)) return issues[0] ?? creative;
-  if (flat)
-    return (
-      creative ?? {
-        severity: 'major',
-        target: 'premise',
-        observed: `predicted amusement ${amusement(c)}: ${c.observation!.scores.amusement.reason}`,
-        instruction:
-          'The joke reads flat. Rewrite the premise or punchline (comic-guide: joke first, surprise in the last panel); keep the PR facts.',
-        preserve: [],
-      }
-    );
-  return issues.find((i) => i.severity !== 'minor');
+/** The newest not-eligible candidate kept as the repair baseline. */
+function baselineOf(s: LoopState): string | null {
+  return [...s.log].reverse().find((l) => l.decision === 'baseline')?.candidate ?? null;
 }
 
-function decide(s: LoopState, c: Candidate) {
-  const inc = s.candidates.find((x) => x.id === s.incumbent);
-  if (!inc) {
-    if (usable(c)) return accept(s, c, 'first eligible image');
-    // Not eligible: keep it as the repair baseline without calling it eligible.
-    s.decided.push(c.id);
-    s.log.push({
-      candidate: c.id,
-      decision: 'baseline',
-      reason: 'not eligible yet; repair baseline',
-    });
-    return;
-  }
-  // An incumbent is always eligible: only eligible candidates are accepted.
-  if (!usable(c)) return reject(s, c, 'new gate or contract failure');
-  if (c.kind === 'concrete') {
-    const fixed = !c.check!.issues.some(
-      (i) => i.target === c.target && i.severity !== 'minor',
+const CREATIVE: IssueTarget[] = ['premise', 'script', 'facts'];
+
+/** Material issues, phone failures first; creative ones only in creative mode. */
+function actionable(s: LoopState, c: Candidate): Issue[] {
+  const rank = { blocker: 0, major: 1, minor: 2 } as const;
+  const issues = (c.check?.issues ?? []).filter((i) => i.severity !== 'minor');
+  const phone = phoneGate(c.phone, c.required);
+  if (phone.state === 'fail') {
+    const observed = `unreadable on a phone: ${phone.missing.join(' | ')}`;
+    issues.unshift(
+      c.reflow
+        ? {
+            severity: 'blocker',
+            target: 'composition',
+            observed,
+            instruction: `Reflow the layout to ${c.reflow} so every panel's text has room at 360px; keep the style, wording and joke`,
+            preserve: ['wording', 'characters', 'joke'],
+          }
+        : {
+            severity: 'blocker',
+            target: 'lettering',
+            observed,
+            instruction: `Letter these much larger, readable when the page is 360px wide: ${phone.missing.map((m) => `"${m}"`).join(', ')}`,
+            preserve: ['wording', 'layout', 'joke'],
+          },
     );
-    if (!fixed) return reject(s, c, `${c.target} defect not fixed`);
-    const a = amusement(c);
-    const b = amusement(inc);
-    // A verified repair with no sign of a humor regression skips the tournament.
-    if (a !== null && b !== null && a >= b)
-      return accept(s, c, `${c.target} repair verified; amusement held (${a} vs ${b})`);
   }
-  // Creative change, or a repair whose humor may have regressed: compare blind.
-  const cmp = comparison(s, inc.id, c.id);
-  if (!cmp?.first || !cmp.second) return; // ask for the comparison
-  const r = canonicalPair(inc.id, c.id, cmp.first, cmp.second);
+  issues.sort((a, b) => rank[a.severity] - rank[b.severity]);
+  return s.creative ? issues : issues.filter((i) => !CREATIVE.includes(i.target));
+}
+
+function pickIssue(s: LoopState, c: Candidate): Issue | undefined {
+  const issues = actionable(s, c);
+  if (issues.length) return issues[0];
+  if (s.creative && creativeGoalMet(c.observation) === false)
+    return {
+      severity: 'major',
+      target: 'premise',
+      observed: `predicted amusement ${amusement(c)}: ${c.observation!.scores.amusement.reason}`,
+      instruction:
+        'The joke reads flat. Rewrite the premise or punchline (comic-guide: joke first, surprise in the last panel); keep the PR facts.',
+      preserve: [],
+    };
+  return undefined;
+}
+
+/**
+ * Decide on a judged candidate. Returns the id it must first be compared
+ * with (blind, both orders) while that comparison is missing.
+ */
+function decide(s: LoopState, c: Candidate): string | undefined {
+  if (c.frozen?.length) {
+    reject(s, c, `technical repair changed the joke: ${c.frozen.join('; ')}`);
+    return undefined;
+  }
+  const inc = byId(s, s.incumbent);
+  if (!usable(c)) {
+    if (inc) reject(s, c, 'new gate or contract failure');
+    else {
+      s.decided.push(c.id);
+      s.log.push({
+        candidate: c.id,
+        decision: 'baseline',
+        reason: 'not eligible yet; repair baseline',
+      });
+    }
+    return undefined;
+  }
+  const against = inc ?? byId(s, baselineOf(s));
+  if (!against) {
+    accept(s, c, 'first eligible image');
+    return undefined;
+  }
+  if (c.kind === 'concrete') {
+    const a = amusement(c);
+    const b = amusement(against);
+    // A verified repair with no sign of a humor regression skips the tournament.
+    if (a !== null && b !== null && a >= b) {
+      accept(s, c, `${c.target} repair verified; amusement held (${a} vs ${b})`);
+      return undefined;
+    }
+  }
+  // A creative change, or a repair whose humor may have regressed: compare blind.
+  const cmp = comparison(s, against.id, c.id);
+  if (!cmp?.first || !cmp.second) return against.id;
+  const r = canonicalPair(against.id, c.id, cmp.first, cmp.second);
   if (r.outcome === 'stable-win' && r.winner === c.id)
-    return accept(s, c, 'stable blind preference in both orders');
-  if (c.kind === 'concrete' && r.outcome === 'stable-tie')
-    return accept(s, c, 'concrete repair; humor tie');
-  reject(
-    s,
-    c,
-    r.outcome === 'stable-win'
-      ? 'the incumbent won the blind comparison in both orders'
-      : `comparison ${r.outcome}; incumbent kept`,
-  );
+    accept(s, c, 'stable blind preference in both orders');
+  else if (c.kind === 'concrete' && r.outcome === 'stable-tie')
+    accept(s, c, `${c.target} repair verified; humor tie`);
+  else if (!inc) {
+    // Eligible, but the not-eligible baseline was funnier or it is unresolved.
+    s.fallback ??= c.id;
+    reject(
+      s,
+      c,
+      `eligible, but humor ${r.outcome === 'stable-win' ? 'regressed against the baseline' : r.outcome}; kept as fallback`,
+    );
+  } else
+    reject(
+      s,
+      c,
+      r.outcome === 'stable-win'
+        ? 'the incumbent won the blind comparison in both orders'
+        : `comparison ${r.outcome}; incumbent kept`,
+    );
+  return undefined;
 }
 
 function accept(s: LoopState, c: Candidate, reason: string) {
@@ -423,13 +603,25 @@ function reject(s: LoopState, c: Candidate, reason: string) {
   s.log.push({ candidate: c.id, decision: 'rejected', reason });
 }
 function stop(s: LoopState, reason: string): Next {
-  const inc = s.candidates.find((c) => c.id === s.incumbent) ?? null;
+  const inc = byId(s, s.incumbent) ?? byId(s, s.fallback) ?? null;
+  const unresolved = inc
+    ? [
+        ...(creativeGoalMet(inc.observation) === false
+          ? ['the AI reader finds the joke flat (not rewritten automatically)']
+          : []),
+        ...(inc.check?.issues ?? [])
+          .filter((i) => i.severity !== 'minor' && CREATIVE.includes(i.target))
+          .map((i) => `${i.target}: ${i.observed}`),
+      ]
+    : ['no image passed every gate'];
   return {
     action: 'stop',
     reason,
     selected: inc?.id ?? null,
     eligible: inc ? usable(inc) : false,
     creativeGoalMet: inc ? creativeGoalMet(inc.observation) : null,
+    humorRegressed: !!inc && !s.incumbent && inc.id === s.fallback,
+    unresolved,
   };
 }
 
@@ -462,11 +654,54 @@ Return JSON with:
 - scores: {${BLIND_DIMENSIONS.join(', ')}}, each {state: assessed|unknown, score: 1-5 or null, reason}.`;
 }
 
+export function phonePrompt(): string {
+  return `${RUBRIC.prompts.phoneReader}
+
+Return JSON with:
+- items: every piece of text you can see, in reading order, as {panel, words, legible: yes|partly|no}. Copy only what you can actually read; mark text you can see but not read as legible "no" with your best partial reading;
+- unreadable: [{panel, what}] for text-bearing places you cannot read at this size.`;
+}
+
+export const PHONE_SCHEMA = {
+  type: 'object',
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          panel: { type: ['integer', 'null'] },
+          words: { type: 'string' },
+          legible: { type: 'string', enum: ['yes', 'partly', 'no'] },
+        },
+        required: ['panel', 'words', 'legible'],
+        additionalProperties: false,
+      },
+    },
+    unreadable: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { panel: { type: ['integer', 'null'] }, what: { type: 'string' } },
+        required: ['panel', 'what'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['items', 'unreadable'],
+  additionalProperties: false,
+};
+
 export function checkerPrompt(facts: string): string {
   return `${RUBRIC.prompts.contextualReviewer}
 
 Gates (pass, fail or unknown, each with a short reason):
-${RUBRIC.gates.map((g) => `- ${g.id}: ${g.description}`).join('\n')}
+${RUBRIC.gates
+  .filter((g) => (GATES as readonly string[]).includes(g.id))
+  .map((g) => `- ${g.id}: ${g.description}`)
+  .join('\n')}
+
+Phone-width legibility is checked separately by another reader; do not judge it here.
 
 Also score prMeaning:
 ${anchorsText(['prMeaning'])}

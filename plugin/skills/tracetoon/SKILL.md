@@ -417,25 +417,31 @@ reviewer separate.
    - `tracetoon comic render`, then **look at `out/comic.png` and proofread** the
      lettering against the printed list. Render archives each image as a
      candidate (`candidates/cN/`), so a later drawing never loses it.
-   - **Quality loop (every path, after render):** run `tracetoon comic loop
-     --json` and do exactly what it says, repeating until it says `stop`:
-     - `observe`, `check` or `compare`: start ONE fresh subagent (not a fork,
-       no PR or drafting context; Claude Code: `Agent`, general-purpose, same
-       model class as you, since it must see images) whose whole instruction is
-       the printed `packet` file. When it has written the result, run
-       `tracetoon comic loop-import --task <task> --agent-id <its real id>`.
-       The observer and comparator see only images; never add the script,
-       the intended joke or earlier scores to their prompt.
-     - `revise`: make that one change (`how` names the command: `comic art
-       --repair "<instruction>"` for art or lettering, or edit `comic.json`
-       and `comic art --force` for a weak premise or script), then `comic
-       render` and `comic loop` again. Keep what `preserve` lists.
+   - **Quality loop (every path, after render):** the finished image is
+     always reviewed, technical defects are repaired within a budget, and the
+     joke is never rewritten automatically. Run `tracetoon comic loop --json`
+     and do exactly what it says, repeating until it says `stop`:
+     - `observe`, `phone`, `check` or `compare`: start ONE fresh subagent (not
+       a fork, no PR or drafting context; Claude Code: `Agent`, general-purpose,
+       same model class as you, since it must see images) whose whole
+       instruction is the printed `packet` file. When it has written the
+       result, run `tracetoon comic loop-import --task <task> --agent-id <its
+       real id>`. The observer, the phone reader and the comparator see only
+       images; never add the script, the intended joke or earlier scores to
+       their prompt.
+     - `revise`: make that one technical repair, as `how` says: `comic art
+       --reflow` (a layout whose panels are readable on a phone), `comic art
+       --repair "<instruction>"` (art or lettering), or reordering balloons in
+       `comic.json`. Keep every word, character and the joke; a repair that
+       changes them is rejected. Then `comic render` and `comic loop` again.
      - `stop`: the loop has restored the selected image to `out/comic.png`.
-       If it reports the joke still flat (`creativeGoalMet: false`) or no
-       eligible image, say so plainly; never call it a success.
+       Report what it lists as `unresolved` (for example a joke the AI reader
+       finds flat) and any `humorRegressed`; never call those a success.
      The loop is bounded (3 image requests, 14 judge calls), keeps the
      incumbent on ties or uncertainty, and never asks the user to rate a comic.
-     Offer `tracetoon comic reroll` only if the user wants a different look.
+     Rewriting the joke is experimental (`comic loop --creative`); use it only
+     when the user asks. Offer `tracetoon comic reroll` only if the user wants
+     a different look.
 6. **Render and independent review.** `tracetoon render --json` composes the full
    PR and writes `review-input.json`. Launch a fresh reviewer, distinct from the
    researcher and drafter. When the render includes a comic, give it ONLY

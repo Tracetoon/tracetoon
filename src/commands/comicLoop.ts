@@ -23,6 +23,7 @@ import {
   checkProblems,
   comparatorPrompt,
   CONCRETE_TARGETS,
+  frozenProblems,
   newLoop,
   nextStep,
   OBSERVATION_SCHEMA,
@@ -30,13 +31,18 @@ import {
   observerPrompt,
   PAIR_SCHEMA,
   pairProblems,
+  PHONE_SCHEMA,
+  phoneGate,
+  phonePrompt,
+  phoneProblems,
   type Candidate,
   type IssueTarget,
   type LoopState,
   type Next,
 } from '../comic/judging.ts';
 import { writeRenditions } from '../comic/renditions.ts';
-import { checkScript } from '../comic/script.ts';
+import { phoneLayout } from '../comic/composition.ts';
+import { checkScript, pageText } from '../comic/script.ts';
 import type { ComicScript } from '../comic/types.ts';
 import { readJson, readText, writeJson, type Run } from '../run.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
@@ -89,13 +95,26 @@ export function archiveCandidate(
   if (page) copyFileSync(page, join(dir, `page${page.slice(page.lastIndexOf('.'))}`));
   if (!s.used.renders) s.used.renders = 1; // art drawn before the loop started counting
   const pending = s.pendingRevision;
+  const parent = s.incumbent ?? s.candidates.at(-1)?.id ?? null;
+  const kind = pending?.kind ?? 'initial';
+  let frozen: string[] | undefined;
+  if (kind === 'concrete' && parent) {
+    // A technical repair must keep the joke: compare with the script it repaired.
+    const before = JSON.parse(
+      readFileSync(join(run.dir, 'candidates', parent, 'comic.json'), 'utf8'),
+    ) as ComicScript;
+    frozen = frozenProblems(before, script, pending?.target);
+  }
   s.candidates.push({
     id,
-    parent: s.incumbent ?? s.candidates.at(-1)?.id ?? null,
-    kind: pending?.kind ?? 'initial',
+    parent,
+    kind,
     ...(pending ? { target: pending.target } : {}),
     imageSha256,
+    required: pageText(script),
     contractOk,
+    ...(frozen ? { frozen } : {}),
+    reflow: phoneLayout(script)?.composition?.family ?? null,
   });
   delete s.pendingRevision;
   saveLoop(run, s);
@@ -137,6 +156,24 @@ ${JSON.stringify(schema)}
 }
 
 async function packetFor(run: Run, s: State, n: Next) {
+  if (n.action === 'phone') {
+    const task = `phone:${n.candidate}`;
+    const dir = packetDir(run, task);
+    // Only the phone rendition: no larger image, no intended text.
+    const tmp = join(dir, 'source');
+    mkdirSync(tmp, { recursive: true });
+    copyFileSync(imageOf(run, n.candidate), join(tmp, 'A.png'));
+    await writeRenditions(join(tmp, 'A.png'), dir, 'A');
+    const { rmSync } = await import('node:fs');
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(join(dir, 'A-760.png'), { force: true });
+    const result = join(dir, 'result.json');
+    writeFileSync(
+      join(dir, 'instructions.md'),
+      instructions(phonePrompt(), PHONE_SCHEMA, result, [join(dir, 'A-360.png')]),
+    );
+    return { task, packet: join(dir, 'instructions.md'), result, blind: true };
+  }
   if (n.action === 'observe') {
     const task = `observe:${n.candidate}`;
     const dir = packetDir(run, task);
@@ -205,7 +242,7 @@ const REVISE_HOW: Record<IssueTarget, string> = {
     'fix the words in comic.json if they are wrong, then `tracetoon comic art --repair "<instruction>"` (edits the current page), or `--lettering overlay` if model lettering keeps failing',
   art: '`tracetoon comic art --repair "<instruction>"` (edits the current page)',
   composition:
-    'change the panel order, sizes or reveal in comic.json, then `tracetoon comic art --force`',
+    '`tracetoon comic art --reflow` (same script, a layout whose panels are wide enough on a phone); for balloon order, reorder the dialogue within the panel in comic.json, then `tracetoon comic art --force`. Keep every word, character and the joke',
   script:
     'rewrite the dialogue or beats in comic.json (keep the PR facts), then `tracetoon comic art --force`',
   premise:
@@ -218,6 +255,8 @@ const REVISE_HOW: Record<IssueTarget, string> = {
 
 export interface LoopOpts extends OutOpts {
   run?: string;
+  /** Experimental: also rewrite a flat joke or weak script automatically. */
+  creative?: boolean;
 }
 
 /** `tracetoon comic loop`: the next step, with its packet when a judge is needed. */
@@ -225,6 +264,7 @@ export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
   const s = loadLoop(run);
   if (!s?.candidates.length)
     throw new UserError('No rendered comic to judge: run tracetoon comic render first.');
+  if (opts.creative) s.creative = true;
   const n = nextStep(s);
   let extra: Record<string, unknown> = {};
   if (n.action === 'revise') {
@@ -240,11 +280,18 @@ export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
     if (n.selected) restore(run, n.selected);
     extra = {
       restored: n.selected ? join(run.dir, 'out', 'comic.png') : null,
-      note: n.selected
-        ? n.creativeGoalMet === false
-          ? 'Kept the best eligible image, but the AI judge still finds the joke flat (creative goal unmet). Say so; do not call it a success.'
-          : 'Kept the best eligible image.'
-        : 'No candidate passed every gate. Tell the user the comic has unresolved problems, or skip it.',
+      note: !n.selected
+        ? 'No candidate passed every gate. Tell the user the comic has unresolved problems, or skip it.'
+        : [
+            n.humorRegressed
+              ? 'Kept the only eligible image, but the AI reader found the unreadable original funnier.'
+              : 'Kept the best eligible image.',
+            n.unresolved.length
+              ? `Unresolved (not rewritten automatically): ${n.unresolved.join('; ')}. Say so; do not call it a success.`
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' '),
     };
   } else {
     const p = await packetFor(run, s, n);
@@ -291,9 +338,11 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
   const problems =
     stage === 'observe'
       ? observationProblems(v)
-      : stage === 'check'
-        ? checkProblems(v)
-        : pairProblems(v);
+      : stage === 'phone'
+        ? phoneProblems(v)
+        : stage === 'check'
+          ? checkProblems(v)
+          : pairProblems(v);
   // The call was spent whether or not its answer is usable.
   s.used.judgeCalls++;
   (s.agents ??= {})[opts.task] = opts.agentId;
@@ -303,10 +352,11 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
       `The judge answer needs fixing:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
     );
   }
-  if (stage === 'observe' || stage === 'check') {
+  if (stage === 'observe' || stage === 'phone' || stage === 'check') {
     const c = s.candidates.find((x) => x.id === a);
     if (!c) throw new UserError(`Unknown candidate ${a}.`);
     if (stage === 'observe') c.observation = v;
+    else if (stage === 'phone') c.phone = v;
     else c.check = v;
   } else if (stage === 'compare') {
     let cmp = s.comparisons.find((x) => x.a === a && x.b === b);
