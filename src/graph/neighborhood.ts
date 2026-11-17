@@ -195,6 +195,18 @@ function blocksFor(sections: Section[], clip: number, compact: boolean): Line[] 
             .map((w) => clipTo(w, clip))
             .join(' | ')}`
         : '',
+      list(c.said).length
+        ? `commit says: ${list(c.said)
+            .slice(0, compact ? 1 : 2)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
+      list(c.checkedBy).length
+        ? `checked by: ${list(c.checkedBy)
+            .slice(0, compact ? 1 : 3)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
       list(c.before).length
         ? `before (base code): ${list(c.before)
             .slice(0, compact ? 1 : 3)

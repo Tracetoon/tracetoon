@@ -20,6 +20,7 @@ import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import {
   behaviorOf,
   briefParts,
+  addedFact,
   planText,
   requestText,
   describedHunks,
@@ -1961,6 +1962,25 @@ describe('the brief states recorded process and behavior', () => {
     expect(out).toContain('…');
     // Short requests are quoted whole.
     expect(requestText('Make it faster.')).toBe('Make it faster.');
+  });
+
+  test('addedFact picks the telling added line: an option, a default, a step', () => {
+    expect(
+      addedFact([
+        {
+          code: [
+            '+ // helper',
+            "+ import { x } from 'y';",
+            '+ const total = sum(items);',
+            "+ program.option('--dry-run', 'print only');",
+          ],
+        },
+      ]),
+    ).toBe("program.option('--dry-run', 'print only');");
+    expect(addedFact([{ code: ['+       - name: Upload release assets'] }])).toBe(
+      '- name: Upload release assets',
+    );
+    expect(addedFact([{ code: ['+ }'] }])).toBeUndefined();
   });
 
   test('planText quotes the why-sections of a plan before its steps', () => {

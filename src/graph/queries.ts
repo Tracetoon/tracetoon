@@ -49,6 +49,7 @@ export interface NamedQuery {
 }
 
 const CHECK_KINDS = ['test', 'build', 'typecheck', 'lint', 'eval'];
+const list = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
 const uniq = <T>(xs: T[]) => [...new Set(xs)];
 const byDiff = (a: string, b: string) =>
   Number(/\d+/.exec(a)?.[0] ?? 0) - Number(/\d+/.exec(b)?.[0] ?? 0);
@@ -352,6 +353,35 @@ export function planText(s: unknown, n = PLAN_CLIP): string {
     ...rest.filter((p) => !PLAN_FIRST.test(heading(p))),
   ];
   return clipText(ordered.map((p) => p.replace(/\s+/g, ' ').trim()).join(' '), n);
+}
+
+/** Added lines that name something a reader needs: options, defaults, steps, keys. */
+const TELLING = [
+  /--[a-z][\w-]+/,
+  /\bdefault\b|\bfallback\b/i,
+  /^\s*-?\s*(?:name|run|uses|with|on|if):\s*\S/,
+  /\.option\(|\.command\(|\bflag\b|argparse|add_argument/i,
+  /^\s*["']?[\w.-]+["']?\s*[:=]\s*["'\d\w[{]/,
+];
+/** The most telling added line of a file's hunks (no comment, no brace). */
+export function addedFact(hs: Record<string, unknown>[]): string | undefined {
+  const lines = hs
+    .flatMap((h) => ((h.code as string[]) ?? []).map(String))
+    .map((l) => (l.includes('⇒') ? l.split('⇒').pop()!.trim() : l))
+    .filter((l) => l.startsWith('+ '))
+    .map((l) => l.slice(2).trim())
+    .filter(
+      (l) =>
+        l.length > 6 &&
+        !/^(?:\/\/|#(?!#)|\/\*|\*|<!--)/.test(l) &&
+        !/^[{}()[\];,]+$/.test(l) &&
+        !/^(?:import|from|use|require)\b/.test(l),
+    );
+  for (const re of TELLING) {
+    const hit = lines.find((l) => re.test(l));
+    if (hit) return hit;
+  }
+  return lines[0];
 }
 
 /** A short prompt that only says to carry out a plan made before it. */
@@ -837,8 +867,10 @@ export function behaviorOf(hunks: Record<string, unknown>[]): string[] {
       .map((x, i) => ({ ...x, i }))
       .sort((a, b) => a.rank - b.rank || a.i - b.i)
       .map((x) => x.text),
-  ).slice(0, 4);
+  ).slice(0, MAX_BEHAVIOR);
 }
+/** Conditions quoted per change unit. */
+const MAX_BEHAVIOR = 6;
 
 /**
  * How the work was done, as recorded: each session's part, whether a plan or
@@ -1270,6 +1302,17 @@ export function briefParts(
           !['tests', 'docs', 'generated'].includes(fileRole.get(String(h.file)) ?? ''),
       ),
     );
+    // Every changed non-test file says something concrete: a file with no
+    // condition gets its most telling added line (an option or flag, a
+    // default, a workflow step, a config key).
+    for (const f of files) {
+      const role = fileRole.get(f) ?? '';
+      if (['tests', 'generated', 'version'].includes(role)) continue;
+      const base = f.split('/').pop()!;
+      if (behavior.some((b) => b.startsWith(`${base}: `))) continue;
+      const line = addedFact(hs.filter((h) => h.file === f));
+      if (line) behavior.push(clipText(`${base}: + ${line}`, 160));
+    }
     return {
       change: c.id,
       groupedBy: String(c.key).split(':')[0],
@@ -1611,6 +1654,18 @@ export function briefParts(
     ...new Set(late.filter((x) => x.t > t).map((x) => x.cmd)),
   ];
   const otherRuns: Record<string, unknown>[] = [];
+  // With no session matched there are no session runs to recognize: one row
+  // says so instead of a "no passing run" row per change (which writers read
+  // as "nothing passed" where the session's runs did).
+  const matchedSession =
+    g.run(`MATCH (s:Session {band: 'included'}) RETURN s.id AS id`).rows.length > 0;
+  if (!matchedSession)
+    limits.push({
+      change: null,
+      kind: 'open',
+      limit:
+        "No agent session was matched to this PR, so the brief shows no session runs: which checks ran while it was made is unknown, not absent; don't say nothing was run.",
+    });
   for (const c of changes) {
     const hs = hunkRows.filter((h) => h.change === c.id);
     const behavior = ((c.files as string[]) ?? []).filter((f) =>
@@ -1638,7 +1693,7 @@ export function briefParts(
     // A passing receipt (run on the submitted content) or a passing row that
     // saw every captured edit covers the files: saying no pass came after
     // their last edit sat next to that pass and read as a contradiction.
-    if (unchecked.length && !receiptPassed && !passOnFinal)
+    if (unchecked.length && !receiptPassed && !passOnFinal && matchedSession)
       limits.push({
         change: c.id,
         kind: 'open',
@@ -1760,6 +1815,59 @@ export function briefParts(
     // Titles in full: a "+N more" marker was read as a count of tests (smoke15).
     tests.push({ ref: `T${tests.length + 1}`, file, titles: titles.slice(0, 8) });
 
+  // Facts a commit sentence or a test title holds, next to the change they
+  // describe: a writer reads the change rows, and facts left only in
+  // commitMessages or tests went unsaid.
+  const hunkChange = new Map(hunkRows.map((h) => [String(h.hunk), String(h.change)]));
+  for (const r of changeRows as Record<string, unknown>[]) {
+    const mine = new Set(
+      hunkRows.filter((h) => h.change === r.change).map((h) => String(h.hunk)),
+    );
+    const said = commitText
+      .filter((m) => /#\d+$/.test(String(m.ref)))
+      .filter((m) => (hunkLinks[String(m.ref)] ?? []).some((h) => mine.has(h)))
+      .filter(
+        (m) =>
+          // Said of this change more than of any other.
+          (hunkLinks[String(m.ref)] ?? []).filter((h) => mine.has(h)).length * 2 >=
+          (hunkLinks[String(m.ref)] ?? []).filter((h) => hunkChange.has(h)).length,
+      )
+      .slice(0, 2)
+      .map((m) => `${String(m.ref)}: ${clipText(String(m.text ?? ''), 160)}`);
+    if (said.length) r.said = said;
+    // Test titles that name this change's symbols or files.
+    const names = uniq(
+      hunkRows
+        .filter((h) => h.change === r.change && fileRole.get(String(h.file)) !== 'tests')
+        .flatMap((h) => [
+          ...((h.symbols as string[]) ?? []),
+          String(h.file)
+            .split('/')
+            .pop()!
+            .replace(/\.[^.]+$/, ''),
+        ])
+        .map((n) => n.toLowerCase())
+        .filter((n) => n.length >= 4),
+    );
+    const words = new Set(
+      list(r.behavior)
+        .join(' ')
+        .toLowerCase()
+        .match(/[a-z][a-z0-9]{4,}/g) ?? [],
+    );
+    const checked = tests.flatMap((t) =>
+      ((t.titles as string[]) ?? [])
+        .filter((title) => {
+          const low = title.toLowerCase();
+          if (names.some((n) => low.includes(n))) return true;
+          const ws = (low.match(/[a-z][a-z0-9]{4,}/g) ?? []).filter((w) => words.has(w));
+          return ws.length >= 2;
+        })
+        .map((title) => `${String(t.ref)}: ${clipText(title, 120)}`),
+    );
+    if (checked.length) r.checkedBy = checked.slice(0, 3);
+  }
+
   // Version bumps and generated files: one sentence covers them.
   const housekeeping: Record<string, unknown>[] = [];
   const versionFiles = uniq(
@@ -1843,6 +1951,8 @@ export function briefParts(
         'was',
         'before',
         'behavior',
+        'said',
+        'checkedBy',
         'added',
         'removed',
         'diff',
@@ -1901,7 +2011,6 @@ export function briefParts(
     ...(otherRuns.length ? [section('otherRuns', ['cmd', 'after'], otherRuns)] : []),
   ];
   // The head tree: stale mentions of removed names, and callers of changed ones.
-  const hunkChange = new Map(hunkRows.map((h) => [String(h.hunk), String(h.change)]));
   const scan = headScanRows(g, hunkChange);
   // The entry row is the place to start; the head scan's top row is a count.
   if (entry)
