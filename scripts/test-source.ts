@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { prepareDependencies } from './dependencies.ts';
 import {
   longestFirst,
+  parsePreload,
   parseShard,
   readTestTimes,
   runTestFiles,
@@ -17,7 +18,13 @@ const times = readTestTimes(root);
 // CI splits the files across machines (TRACETOON_TEST_SHARD=i/n); unset runs them all.
 const shard = parseShard(process.env.TRACETOON_TEST_SHARD);
 const files = shard
-  ? shardFiles(root, sourceTestFiles(root), times, shard)
+  ? shardFiles(
+      root,
+      sourceTestFiles(root),
+      times,
+      shard,
+      parsePreload(process.env.TRACETOON_TEST_SHARD_PRELOAD),
+    )
   : longestFirst(root, sourceTestFiles(root), times);
 if (shard)
   console.log(`Shard ${shard.index}/${shard.count}: ${files.length} test files.`);

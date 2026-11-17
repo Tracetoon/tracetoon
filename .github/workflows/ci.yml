@@ -22,7 +22,9 @@ jobs:
       matrix:
         # Windows takes about three times as long as the others, so its source
         # tests are split across machines (TRACETOON_TEST_SHARD, balanced by
-        # scripts/test-times.baseline.json). Shard 1 also runs the other steps.
+        # scripts/test-times.baseline.json). Shard 1 also runs the other steps
+        # (about 131s), so it starts the split with 262000 ms of test-file time
+        # already counted: two files run at once, so 2 x 131s.
         include:
           - os: ubuntu-latest
           - os: macos-latest
@@ -35,6 +37,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       TRACETOON_TEST_SHARD: ${{ matrix.shard }}
+      TRACETOON_TEST_SHARD_PRELOAD: '262000'
     # A hung step must fail in minutes, not hold a runner for hours (the default is 6h).
     timeout-minutes: 45
     steps:
