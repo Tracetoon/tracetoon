@@ -15,6 +15,7 @@ import { evidenceLine } from '../correlate/correlate.ts';
 import type { Run as DigestRun } from '../digest/build.ts';
 import { buildEvidenceGraph } from './build.ts';
 import { addHeadScan } from './headScan.ts';
+import { addBaseContext } from './baseContext.ts';
 import { addSearchLinks, type GraphSearch } from './search.ts';
 import { annotateDigest, deriveFromGraphJson, type GraphDerived } from './derive.ts';
 import type { EvidenceGraph } from './model.ts';
@@ -165,6 +166,14 @@ export function graphEnricher(
           if (n.label === 'File' && copies.has(n.id)) n.props.copyOf = copies.get(n.id)!;
       } catch {
         // No copy marks; the graph is otherwise whole.
+      }
+      // What adding-only hunks' functions did at the base (`before`).
+      try {
+        measured('graph.baseContext', () =>
+          addBaseContext(graph, truth.toplevel, truth.mergeBase, patch),
+        );
+      } catch {
+        // No `before` lines; the graph is otherwise whole.
       }
       // Key lines per hunk, and search links from commit text, requests and plans.
       measured('graph.search', () =>

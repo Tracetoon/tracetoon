@@ -1,0 +1,86 @@
+import { describe, expect, test } from 'bun:test';
+import {
+  addBaseContext,
+  enclosingKeyLines,
+  oldStarts,
+} from '../src/graph/baseContext.ts';
+import type { EvidenceGraph } from '../src/graph/model.ts';
+import { git } from '../src/util/exec.ts';
+import { makeRepo } from './helpers.ts';
+
+const BASE = `export function pick(items: Item[]): Item | undefined {
+  const sorted = items.sort((a, b) => a.rank - b.rank);
+  if (!sorted.length) return undefined;
+  return sorted[0];
+}
+
+export function other() {
+  return 1;
+}
+`;
+const HEAD = `export function pick(items: Item[]): Item | undefined {
+  const sorted = items.sort((a, b) => a.rank - b.rank);
+  if (!sorted.length) return undefined;
+  const pinned = sorted.find((x) => x.pinned);
+  if (pinned) return pinned;
+  return sorted[0];
+}
+
+export function other() {
+  return 1;
+}
+`;
+
+describe('base code of adding-only hunks (`before`)', () => {
+  test('the enclosing function key lines, from the hunk context', () => {
+    const lines = enclosingKeyLines(
+      BASE.split('\n'),
+      'export function pick(items: Item[]): Item | undefined {',
+      3,
+    );
+    expect(lines).toEqual([
+      'const sorted = items.sort((a, b) => a.rank - b.rank);',
+      'if (!sorted.length) return undefined;',
+      'return sorted[0];',
+    ]);
+  });
+
+  test('old starts per file and new start', () => {
+    const patch =
+      'diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -3,2 +3,4 @@ export function pick\n';
+    expect(oldStarts(patch).get('src/a.ts\u00003')).toBe(3);
+  });
+
+  test('addBaseContext reads the base tree at the merge base', () => {
+    const repo = makeRepo();
+    git(repo.root, ['checkout', '-q', 'main']);
+    const base = repo.commit('src/pick.ts', BASE, 'base pick');
+    git(repo.root, ['checkout', '-q', '-B', 'feature']);
+    repo.commit('src/pick.ts', HEAD, 'prefer pinned');
+    const patch = git(repo.root, ['diff', base, 'HEAD']).stdout;
+    const hunk = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@ ?(.*)/.exec(patch)!;
+    const graph = {
+      nodes: [
+        {
+          label: 'Hunk',
+          id: 'H1',
+          props: {
+            file: 'src/pick.ts',
+            start: Number(hunk[2]),
+            added: 2,
+            removed: 0,
+            context: hunk[3]!.trim(),
+          },
+        },
+      ],
+      rels: [],
+    } as unknown as EvidenceGraph;
+    addBaseContext(graph, repo.root, base, patch);
+    expect(graph.nodes[0]!.props.before).toContain('return sorted[0];');
+    // No merge base, no `before`.
+    const none = structuredClone(graph);
+    delete none.nodes[0]!.props.before;
+    addBaseContext(none, repo.root, undefined, patch);
+    expect(none.nodes[0]!.props.before).toBeUndefined();
+  });
+});

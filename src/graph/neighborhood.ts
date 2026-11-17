@@ -195,6 +195,12 @@ function blocksFor(sections: Section[], clip: number, compact: boolean): Line[] 
             .map((w) => clipTo(w, clip))
             .join(' | ')}`
         : '',
+      list(c.before).length
+        ? `before (base code): ${list(c.before)
+            .slice(0, compact ? 1 : 3)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
     ].filter(Boolean);
     if (extra.length) blocks.push(fixed(`  ${extra.join(' · ')}`));
     for (const q of list(c.requests)) {

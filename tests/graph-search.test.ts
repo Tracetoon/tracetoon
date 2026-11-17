@@ -12,6 +12,7 @@ import {
   numberConflict,
   plusTokens,
   orderConflict,
+  orderAgrees,
   stateConflict,
 } from '../src/graph/codeEvidence.ts';
 import { withGraph } from '../src/graph/engine.ts';
@@ -276,6 +277,12 @@ describe('commit vs code conflicts', () => {
     expect(orderConflict(s, '# rc.10 sorts after rc.2')).toBe(false);
     expect(orderConflict(s, '# rc.11 lands before rc.3')).toBe(false);
     expect(orderConflict(s, '# pick the newest by date')).toBe(false);
+  });
+  test('a test title or added line stating the same order supports the message', () => {
+    const s = 'Pick rc.10 after rc.2 when choosing the newest release.';
+    expect(orderAgrees(s, 'picks rc.2 before rc.10')).toBe(true);
+    expect(orderAgrees(s, 'rc.10 sorts after rc.2')).toBe(true);
+    expect(orderAgrees(s, 'rc.10 lands before rc.2')).toBe(false);
   });
   test('a state the code gives the opposite way', () => {
     expect(

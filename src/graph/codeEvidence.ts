@@ -578,6 +578,19 @@ export function orderTriples(text: string): Triple[] {
 }
 
 /** The sentence and the code say opposite things about the same two anchors. */
+/** The code or a test title states the sentence's order the same way. */
+export function orderAgrees(sentence: string, code: string): boolean {
+  const s = orderTriples(sentence);
+  const c = orderTriples(code);
+  return s.some((x) =>
+    c.some(
+      (y) =>
+        (sameAnchor(x.a, y.a) && sameAnchor(x.b, y.b) && x.rel === y.rel) ||
+        (sameAnchor(x.a, y.b) && sameAnchor(x.b, y.a) && OPPOSITE[x.rel] === y.rel),
+    ),
+  );
+}
+
 export function orderConflict(sentence: string, code: string): boolean {
   const s = orderTriples(sentence);
   const c = orderTriples(code);
@@ -677,6 +690,9 @@ export function conflictRows(
 ): Record<string, unknown>[] {
   const commits = sections.find((s) => s.title === 'commitMessages')?.rows ?? [];
   const info = hunkInfo(g);
+  const titles = (sections.find((s) => s.title === 'tests')?.rows ?? []).flatMap((r) =>
+    ((r.titles as string[]) ?? []).map(String),
+  );
   const out: Record<string, unknown>[] = [];
   for (const r of commits) {
     const text = String(r.text ?? '');
@@ -709,6 +725,33 @@ export function conflictRows(
       if (found) break;
     }
     if (!found) continue;
+    // Supported elsewhere: another added line or a test title states the
+    // sentence's order, or carries every version or number it names. Then
+    // the message is right and the conflicting line is a detail, not a
+    // contradiction.
+    const addedLines = (hunkLinks[String(r.ref)] ?? []).flatMap((id) =>
+      (info.get(id)?.keyLines ?? [])
+        .filter((l) => !l.startsWith('- ') && !l.startsWith('± '))
+        .map((l) =>
+          l
+            .replace(/^[-+]\s/, '')
+            .split(/\s⇒\s+\+ /)
+            .pop()!,
+        ),
+    );
+    const others = [...addedLines.filter((l) => l !== found!.line), ...titles];
+    const values = tokensOf(text).filter((t) => VERSION.test(t) || /^\d{2,}$/.test(t));
+    const literals = new Set(
+      (hunkLinks[String(r.ref)] ?? []).flatMap((id) => info.get(id)?.literals ?? []),
+    );
+    if (
+      others.some((l) => orderAgrees(text, l)) ||
+      (values.length > 0 &&
+        values.every(
+          (v) => literals.has(v) || titles.some((t) => tokensOf(t).includes(v)),
+        ))
+    )
+      continue;
     out.push({
       kind: 'commit vs code',
       text: `The commit message says "${clip(text, 110)}"; the code${found.comment ? ' comment' : ''} says "${clip(found.line.replace(/^\s*(\/\/+|#+|\/\*+|\*+|--)\s*/, ''), 120)}" (${found.diff}): describe the code, not the message.`,

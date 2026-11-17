@@ -208,7 +208,7 @@ function briefLines(
     out.push('changes (where = file (owning symbols); new = symbols not in the base):');
     for (const r of changes)
       out.push(
-        `- ${show(r.change)} where: ${oneLine(r.where)}${(r.newSymbols as string[])?.length ? ` | new: ${oneLine(r.newSymbols)}` : ''}${(r.was as string[])?.length ? ` | was: ${oneLine(r.was)}` : ''}${(r.diff as string[])?.length ? ` | ${oneLine(r.diff)}` : ''}`,
+        `- ${show(r.change)} where: ${oneLine(r.where)}${(r.newSymbols as string[])?.length ? ` | new: ${oneLine(r.newSymbols)}` : ''}${(r.was as string[])?.length ? ` | was: ${oneLine(r.was)}` : ''}${(r.before as string[])?.length ? ` | before (base): ${oneLine(r.before)}` : ''}${(r.diff as string[])?.length ? ` | ${oneLine(r.diff)}` : ''}`,
       );
   }
   const owners = rows('owners');
