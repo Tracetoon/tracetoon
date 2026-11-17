@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pkg from '../package.json';
 import { unzip } from '../src/update/apply.ts';
-import { pitch } from '../scripts/agent-surfaces.ts';
+import { PROBLEMS, pitch } from '../scripts/agent-surfaces.ts';
 import { AI_AGENTS, PAGES, writeSiteKit, zip } from '../scripts/site-kit.ts';
 
 const work = mkdtempSync(join(tmpdir(), 'tracetoon-site-kit-test-'));
@@ -106,6 +106,20 @@ describe('site kit', () => {
     expect(robots).toContain('https://tracetoon.ai/llms.txt');
     for (const p of Object.values(PAGES))
       expect(read('sitemap-agents.xml')).toContain(`<loc>${SITE}${p}</loc>`);
+  });
+
+  test('faq-jsonld.json is a FAQPage of the use-cases questions, also in head.html', () => {
+    const ld = JSON.parse(read('faq-jsonld.json'));
+    expect(ld['@type']).toBe('FAQPage');
+    expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(
+      PROBLEMS.map((p) => p.q),
+    );
+    for (const q of ld.mainEntity) {
+      expect(q.acceptedAnswer.text.length).toBeGreaterThan(0);
+      expect(q.acceptedAnswer.text).not.toContain('`');
+      expect(read('docs/agents/use-cases.md')).toContain(`## ${q.name}`);
+    }
+    expect(read('head.html')).toContain('"FAQPage"');
   });
 
   test('jsonld.json is a SoftwareApplication for this release', () => {

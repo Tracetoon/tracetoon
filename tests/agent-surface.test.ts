@@ -96,6 +96,7 @@ describe('agent surfaces', () => {
       'AGENTS.md',
       'docs/agents/install.md',
       'docs/agents/faq.md',
+      'docs/agents/use-cases.md',
       'docs/agents/errors.md',
       'docs/agents/cli.md',
     ];
