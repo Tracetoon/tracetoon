@@ -841,15 +841,25 @@ function decisionAnswers(
   d: TraceDigest['sessions'][number]['decisions'][number],
 ): string | null {
   if (!d.questions?.length) return null;
+  // A question with no recorded answer decided nothing: left out.
+  const answered = d.questions.filter((q) => q.answer !== undefined && q.answer.trim() !== '');
+  if (!answered.length) return null;
   return clip(
-    d.questions
+    answered
       .map(
         (q) =>
-          `${clip(q.question.replace(/\s+/g, ' '), 200)} = ${q.answer === undefined ? '(no answer recorded)' : `"${clip(q.answer.replace(/\s+/g, ' '), 300)}"`}${q.ownWords ? ' (own words)' : ''}`,
+          `${clip(q.question.replace(/\s+/g, ' '), 200)} = "${clip(q.answer!.replace(/\s+/g, ' '), 300)}"${q.ownWords ? ' (own words)' : ''}`,
       )
       .join(' / '),
     1200,
   );
+}
+
+/** A decision made only of questions, none with a recorded answer: nothing was decided. */
+export function unansweredDecision(
+  d: TraceDigest['sessions'][number]['decisions'][number],
+): boolean {
+  return !!d.questions?.length && decisionAnswers(d) === null;
 }
 
 const dirOf = (p: string) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '.');
@@ -1022,6 +1032,68 @@ export function splitScriptUnits(
     );
   }
 }
+/** A CI workflow file. */
+const WORKFLOW_UNIT_FILE =
+  /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)azure-pipelines\.ya?ml$/;
+/** Changed lines from which a workflow file is its own change unit. */
+const WORKFLOW_UNIT_LINES = 12;
+
+/**
+ * Each substantially changed CI workflow file (WORKFLOW_UNIT_LINES changed
+ * lines or more) that shares a unit with other files becomes a unit of its
+ * own, so its jobs are described apart from the code and docs beside it.
+ * Deterministic: the new unit's key is the old key plus `|workflow:<file>`.
+ */
+export function splitWorkflowUnits(groups: Map<string, PatchHunk[]>): void {
+  for (const [key, hs] of [...groups]) {
+    const files = [...new Set(hs.map((h) => h.file))];
+    if (files.length < 2) continue;
+    const big = files.filter(
+      (f) =>
+        WORKFLOW_UNIT_FILE.test(f) &&
+        hs.filter((h) => h.file === f).reduce((n, h) => n + h.added + h.removed, 0) >=
+          WORKFLOW_UNIT_LINES,
+    );
+    if (!big.length) continue;
+    const rest = hs.filter((h) => !big.includes(h.file));
+    if (rest.length) groups.set(key, rest);
+    else groups.delete(key);
+    for (const f of big.sort())
+      groups.set(
+        `${key}|workflow:${f}`,
+        hs.filter((h) => h.file === f),
+      );
+  }
+}
+
+/**
+ * A unit that is one changed line (one added and/or one removed line) in
+ * files another unit also changes joins the unit holding most of that file's
+ * changed lines: a stray line is no change of its own.
+ */
+export function foldStrayLines(groups: Map<string, PatchHunk[]>): void {
+  for (const [key, hs] of [...groups].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (!groups.has(key)) continue;
+    const files = [...new Set(hs.map((h) => h.file))];
+    if (files.length !== 1) continue;
+    const added = hs.reduce((n, h) => n + h.added, 0);
+    const removed = hs.reduce((n, h) => n + h.removed, 0);
+    if (added > 1 || removed > 1) continue;
+    const f = files[0]!;
+    const host = [...groups]
+      .filter(([k]) => k !== key)
+      .map(([k, xs]) => ({
+        k,
+        n: xs.filter((h) => h.file === f).reduce((a, h) => a + h.added + h.removed, 0),
+      }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n || a.k.localeCompare(b.k))[0];
+    if (!host) continue;
+    groups.set(host.k, [...groups.get(host.k)!, ...hs]);
+    groups.delete(key);
+  }
+}
+
 const RUN_WHEN: Record<string, string> = {
   'no later edits seen':
     'after the last edit the logs captured (edits outside the logs are not ruled out)',
@@ -1149,6 +1221,12 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       return [t.ref, [...m].slice(-12)];
     }),
   );
+  // Decisions whose every question went unanswered: no node, no relation.
+  const droppedDecisions = new Set(
+    full.sessions.flatMap((s) =>
+      s.decisions.filter((d) => d.id && unansweredDecision(d)).map((d) => d.id!),
+    ),
+  );
   for (const s of full.sessions) {
     // Failed commands other than checks (checks are Run nodes with outcomes).
     const checkKeys = new Set(
@@ -1191,6 +1269,10 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       ),
       // Same position: runner platforms of jobs the CI look shows passing.
       remoteOs: (s.remote ?? []).map((x) => (x.os ?? []).join(' ')),
+      // Same position: platforms of jobs shown finished (passed or failed).
+      remoteRanOs: (s.remote ?? []).map((x) => (x.ranOs ?? x.os ?? []).join(' ')),
+      // Same position: workflow files the CI command ran or watched.
+      remoteWorkflows: (s.remote ?? []).map((x) => (x.workflows ?? []).join(' ')),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)
@@ -1203,7 +1285,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           session: s.ref,
         });
     for (const d of s.decisions)
-      if (d.id)
+      if (d.id && !unansweredDecision(d))
         node('Decision', d.id, {
           t: d.t ?? null,
           text: clip(d.text.replace(/\s+/g, ' '), 600),
@@ -1249,7 +1331,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
               ? s.plans
               : s.runs;
       for (const f of facts)
-        if (f.id) rel('IN_SESSION', [label, f.id], ['Session', s.ref]);
+        if (f.id && !(label === 'Decision' && droppedDecisions.has(f.id)))
+          rel('IN_SESSION', [label, f.id], ['Session', s.ref]);
     }
     for (const sha of s.commitsMade) {
       const c = full.pr.commits.find(
@@ -1353,6 +1436,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       if (e.kind !== 'edit') {
         const id = e.fact.id;
         if (!id) continue;
+        if (e.kind === 'decision' && droppedDecisions.has(id)) continue;
         const label =
           e.kind === 'decision' ? 'Decision' : e.kind === 'plan' ? 'Plan' : 'Run';
         if (turn) rel('IN_TURN', [label, id], ['Prompt', turn]);
@@ -1450,6 +1534,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
     }
   }
   splitScriptUnits(groups, roleOf);
+  splitWorkflowUnits(groups);
+  foldStrayLines(groups);
   const weight = (hs: PatchHunk[]) =>
     hs
       .filter((h) => roleOf(h.file) === 'behavior')

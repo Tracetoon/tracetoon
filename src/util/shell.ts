@@ -173,3 +173,28 @@ export function openSegments(
     return parts;
   });
 }
+
+/** A `gh` command's `--repo`/`-R` target: `owner/name`. */
+const GH_REPO_ARG = /\s(?:--repo|-R)(?:=|\s+)['"]?([\w.-]+)\/([\w.-]+?)(?:\.git)?['"]?(?=\s|$)/;
+
+/** This repository's names, lowercased: the remote's name and each root's folder name. */
+export function repoNames(remote: string | undefined, roots: string[]): Set<string> {
+  return new Set(
+    [remote, ...roots.map((r) => r.replace(/[\\/]+$/, '').split(/[\\/]/).pop())]
+      .filter((x): x is string => !!x)
+      .map((x) => x.toLowerCase()),
+  );
+}
+
+/**
+ * Whether a `gh` command names this repository with `--repo owner/name`: its
+ * name is one of `names` (see `repoNames`). A CI look run from another folder
+ * (a scratch clone) still looks at this repository's CI.
+ */
+export function ghTargetsRepo(cmd: string, names: Set<string>): boolean {
+  return splitCommands(cmd).some((seg) => {
+    const t = seg.trim();
+    const m = GH_REPO_ARG.exec(t);
+    return !!m && /^gh\s+(?:run|pr|workflow)\s/.test(t) && names.has(m[2]!.toLowerCase());
+  });
+}

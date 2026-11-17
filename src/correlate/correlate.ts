@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import { isPathUnder, pathKey } from '@showtail/agent-traces/paths/pathUtil';
 import type { PrTruth } from '../git/pr.ts';
 import { leadingCd, mentionsAnyRoot, rootOf, underAnyRoot } from '../trace/pathMatch.ts';
-import { splitCommands } from '../util/shell.ts';
+import { ghTargetsRepo, repoNames, splitCommands } from '../util/shell.ts';
 import {
   commitMessage,
   confirmsHead,
@@ -119,6 +119,9 @@ function belongs(r: TraceRecord, truth: PrTruth, w: TimeWindow): boolean {
   if (!inWindow(r.ts, w)) return false;
   if (r.kind === 'edit') return underAnyRoot(r.file, truth.roots);
   if (r.kind === 'command') {
+    // A CI look at this repository (`gh run watch … --repo owner/<name>`) from
+    // another folder: the digest keeps only its CI part.
+    if (ghTargetsRepo(r.cmd, repoNames(truth.remote?.name, truth.roots))) return true;
     const operations = gitOperations(r.cmd, r.cwd);
     if (operations.length)
       return operations.some((op) => underAnyRoot(op.cwd, truth.roots));

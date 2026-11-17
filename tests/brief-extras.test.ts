@@ -660,7 +660,7 @@ describe('the entry point', () => {
       .find((x) => x.title === 'changes')!
       .rows.flatMap((r) => (r.was as string[]) ?? []);
     expect(was).toEqual([
-      'src/commands/comic.ts: 3 line(s) moved or reflowed, text unchanged',
+      'src/commands/comic.ts: 3 lines moved or reflowed, text unchanged',
     ]);
   });
 

@@ -16,6 +16,7 @@ import type { Run as DigestRun } from '../digest/build.ts';
 import { buildEvidenceGraph } from './build.ts';
 import { addHeadScan } from './headScan.ts';
 import { addBaseContext } from './baseContext.ts';
+import { addWorkflowJobs } from './workflowJobs.ts';
 import { addSearchLinks, type GraphSearch } from './search.ts';
 import { annotateDigest, deriveFromGraphJson, type GraphDerived } from './derive.ts';
 import type { EvidenceGraph } from './model.ts';
@@ -174,6 +175,19 @@ export function graphEnricher(
         );
       } catch {
         // No `before` lines; the graph is otherwise whole.
+      }
+      // Changed CI workflows, job by job (added/removed/changed, runner, needs, if, shipping steps).
+      try {
+        measured('graph.workflowJobs', () =>
+          addWorkflowJobs(
+            graph,
+            truth.toplevel,
+            truth.mergeBase,
+            truth.usedWorkingTree ? undefined : (truth.headSha ?? truth.commits.at(-1)?.sha),
+          ),
+        );
+      } catch {
+        // No job summaries; the graph is otherwise whole.
       }
       // Key lines per hunk, and search links from commit text, requests and plans.
       measured('graph.search', () =>

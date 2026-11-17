@@ -17,7 +17,7 @@ import { ORPHAN_COMMAND, type TraceRecord, type Usage } from '../trace/types.ts'
 import { clip, makeScrubber, type Scrubber } from './sanitize.ts';
 import { TOOL_VERSION } from '../version.ts';
 import { detectInterop, type Interop } from '../git/interop.ts';
-import { openSegments, splitCommands } from '../util/shell.ts';
+import { ghTargetsRepo, openSegments, repoNames, splitCommands } from '../util/shell.ts';
 import { provablyInRepo, runsInRepo } from '../trace/pathMatch.ts';
 
 export interface DigestSession {
@@ -90,6 +90,14 @@ export interface DigestSession {
     heads?: string[];
     /** Runner platforms (`Windows`, `macOS`, `Linux`, `arm64`) of jobs the output shows passing. */
     os?: string[];
+    /** Runner platforms of jobs the output shows finished (passed or failed). */
+    ranOs?: string[];
+    /**
+     * Workflow files the CI command ran or looked at: named by it
+     * (`gh workflow run release.yml`, `--workflow ci.yml`) or by the run id it
+     * watches, when an earlier command's output tied that id to a workflow.
+     */
+    workflows?: string[];
   }[];
   /** Individual verification runs (tests, builds, linters, type checks, evals). */
   runs: Run[];
@@ -967,12 +975,59 @@ export function ciResults(output: string | undefined): {
   if (!output || !CI_RESULT.test(output)) return {};
   const heads = [...new Set([...output.matchAll(/\b[0-9a-f]{40}\b/g)].map((m) => m[0].slice(0, 12)))];
   const os = passingRunnerOs(output);
+  const ranOs = finishedRunnerOs(output);
   return {
     results: true,
     ...(heads.length ? { heads: heads.slice(0, 12) } : {}),
     ...(os.length ? { os } : {}),
+    ...(ranOs.length && ranOs.join() !== os.join() ? { ranOs } : {}),
   };
 }
+
+/**
+ * Runner platforms of the jobs a CI look shows finished, passed or failed
+ * (a pending or queued job did not run yet).
+ */
+export function finishedRunnerOs(output: string): string[] {
+  const out = new Set<string>();
+  const lines = output.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').split(/\r?\n|\r/);
+  for (const line of lines) {
+    const labels = [...line.matchAll(RUNNER_LABEL)];
+    if (!labels.length) continue;
+    const done = JOB_PASSED.test(line) || /^\s*[✗✘X]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)\b/i.test(line);
+    if (!done || /\bpending\b|\bqueued\b|\bin_progress\b/i.test(line)) continue;
+    for (const m of labels) {
+      const k = m[1]!.toLowerCase();
+      out.add(k === 'windows' ? 'Windows' : k === 'macos' ? 'macOS' : 'Linux');
+      if (m[2]) out.add('arm64');
+    }
+  }
+  return [...out].sort();
+}
+
+/** A workflow file a CI command names: `gh workflow run <file>`, `--workflow <file>`, `-w <file>`. */
+const WORKFLOW_ARG =
+  /^gh\s+workflow\s+run\s+(?:-\S+\s+\S+\s+)*([\w.-]+\.ya?ml)\b|\s(?:--workflow|-w)(?:=|\s+)['"]?([\w.-]+\.ya?ml)\b/;
+/** A run id a CI command names: `gh run watch|view|rerun|download <id>`. */
+const RUN_ID_ARG = /^gh\s+run\s+(?:watch|view|rerun|download|cancel)\s+(?:-\S+\s+)*(\d{5,})\b/;
+/** Run ids an output names: `"databaseId":N`, `.../actions/runs/N`. */
+const RUN_ID_OUT = /"databaseId"\s*:\s*(\d{5,})|\/actions\/runs\/(\d{5,})/g;
+
+/** The workflow file and run id one command segment names, if any. */
+export function ciTargetOf(seg: string): { workflow?: string; run?: string } {
+  const w = WORKFLOW_ARG.exec(seg);
+  const r = RUN_ID_ARG.exec(seg);
+  return {
+    ...(w ? { workflow: (w[1] ?? w[2])! } : {}),
+    ...(r ? { run: r[1]! } : {}),
+  };
+}
+
+/** Run ids an output names. */
+export function runIdsIn(output: string | undefined): string[] {
+  return [...new Set([...(output ?? '').matchAll(RUN_ID_OUT)].map((m) => (m[1] ?? m[2])!))];
+}
+
 
 /** A runner label a job runs on (`windows-latest`, `macos-14`, `ubuntu-24.04-arm`). */
 const RUNNER_LABEL = /\b(windows|macos|ubuntu)-(?:latest|\d[\w.]*)(-arm(?:64)?)?\b/gi;
@@ -1123,6 +1178,42 @@ function sessionDigest(
   const files = new Set<string>();
   let testFailedEarlier = false;
   const remote: NonNullable<DigestSession['remote']> = [];
+  // This repository's names, for `gh … --repo owner/name` run elsewhere.
+  const names = repoNames(truth.remote?.name, m.roots);
+  /** Run id → the workflow file a command that started or listed it named. */
+  const runWorkflow = new Map<string, string>();
+  /**
+   * A command's pushes, PRs made and CI looks (`remote`). `here` false: run
+   * from another folder but naming this repository (`--repo owner/<name>`),
+   * so only its CI looks count (a push there pushed that clone's branch).
+   */
+  const recordRemote = (
+    r: { cmd: string; ts?: string; output?: string; isError?: boolean },
+    here: boolean,
+  ) => {
+    // Workflows the command names, and run ids its output ties to them.
+    const targets = splitCommands(r.cmd).map((x) =>
+      ciTargetOf(x.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim()),
+    );
+    const named = [...new Set(targets.flatMap((x) => (x.workflow ? [x.workflow] : [])))];
+    if (named.length === 1)
+      for (const id of runIdsIn(r.output)) if (!runWorkflow.has(id)) runWorkflow.set(id, named[0]!);
+    const watched = targets.flatMap((x) =>
+      x.run && runWorkflow.has(x.run) ? [runWorkflow.get(x.run)!] : [],
+    );
+    const workflows = [...new Set([...named, ...watched])];
+    for (const x of remoteCommands(r.cmd, r.output))
+      // From another folder only the CI look is this repository's (a
+      // push there pushed that clone's branch).
+      if (remote.length < 20 && (here || x.kind === 'ci'))
+        remote.push({
+          ...x,
+          ...(r.ts ? { t: r.ts } : {}),
+          failed: r.isError === true,
+          ...(x.kind === 'ci' ? ciResults(r.output) : {}),
+          ...(x.kind === 'ci' && workflows.length ? { workflows } : {}),
+        });
+  };
   let current: { ledToEdits: boolean } | undefined;
   // Files a shell command's own diff (Claude Code's `bashEditDiff`) already records.
   const shellDiffed = new Set(
@@ -1239,6 +1330,15 @@ function sessionDigest(
         }
         // Another repository's checks (`cd ../other && bun test`) say nothing of this PR.
         const here = runsInRepo(r.cmd, r.cwd, m.roots);
+        // A CI look at this repository from another folder (a scratch clone,
+        // the folder above the checkout): its CI part only.
+        if (
+          (!here || (!!r.cwd && !provablyInRepo(r.cmd, r.cwd, m.roots))) &&
+          ghTargetsRepo(r.cmd, names)
+        ) {
+          recordRemote(r, false);
+          break;
+        }
         for (const x of invocationsOf(r.cmd, r.output, prWordsOf(prSets), scrub)) {
           const inv = { t: r.ts, ...x, ...(here ? {} : { elsewhere: true as const }) };
           if (invocations.length < 60) invocations.push(inv);
@@ -1292,15 +1392,7 @@ function sessionDigest(
               inferred: true,
             });
           }
-        if (here)
-          for (const x of remoteCommands(r.cmd, r.output))
-            if (remote.length < 20)
-              remote.push({
-                ...x,
-                ...(r.ts ? { t: r.ts } : {}),
-                failed: r.isError === true,
-                ...(x.kind === 'ci' ? ciResults(r.output) : {}),
-              });
+        if (here) recordRemote(r, true);
         const seg = testSegment(r.cmd);
         const test = seg !== undefined;
         const key = clip(scrub.text(commandKey(seg ?? r.cmd)), 60);

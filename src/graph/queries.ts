@@ -545,6 +545,44 @@ export function planDesignRows(sections: Section[]): Record<string, unknown>[] {
   return out;
 }
 
+/**
+ * A body moved into a new helper: a hunk of `file` with moved lines, a new
+ * function the unit defines (`fresh`), and a changed function whose added
+ * code calls it. Said as "extracted into `helper`; `caller` now calls it"
+ * rather than a count of moved lines. Undefined when no such pair shows.
+ */
+export function extractionOf(hs: Record<string, unknown>[], file: string): string | undefined {
+  // The helper and its caller in the file the lines moved within.
+  const mine = hs.filter((h) => String(h.file) === file);
+  if (!mine.some((h) => Number(h.moved) > 0)) return undefined;
+  const fresh = uniq(
+    mine.flatMap((h) => ((h.fresh as string[]) ?? []).map(String)),
+  ).filter((n) => /^[a-z_$][\w$]{2,}$/.test(n) && !/^[A-Z0-9_]+$/.test(n));
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const helper of fresh) {
+    const call = new RegExp(`(?<![\\w$.])${esc(helper)}\\s*\\(`);
+    const caller = mine
+      .filter((h) => ((h.code as string[]) ?? []).some((l) => {
+        const added = String(l).includes('⇒') ? String(l).split('⇒').pop()!.trim() : String(l);
+        return added.startsWith('+ ') && call.test(added) && !new RegExp(`function\\s+${esc(helper)}\\b|(?:const|let)\\s+${esc(helper)}\\s*=|def\\s+${esc(helper)}\\b`).test(added);
+      }))
+      // The function whose changed body holds the call, before git's @@ name.
+      .map((h) =>
+        String(
+          [
+            ...((h.owns as string[]) ?? []),
+            ...((h.touched as string[]) ?? []),
+            ...((h.symbols as string[]) ?? []),
+            h.scope ?? '',
+          ].find((n) => n && String(n) !== helper) ?? '',
+        ),
+      )
+      .find((n) => n && n !== helper && /^[A-Za-z_$][\w$]*$/.test(n));
+    if (caller) return `extracted into \`${helper}\`; \`${caller}\` now calls it`;
+  }
+  return undefined;
+}
+
 /** A short prompt that only says to carry out a plan made before it. */
 export const IMPLEMENTS_PLAN =
   /^\s*(?:please\s+)?(?:(?:ok(?:ay)?|yes|great|good|sounds good)[,.!]?\s+)?(?:go ahead and\s+|now\s+|let's\s+|please\s+)?(?:implement|execute|carry out|proceed with|go (?:ahead )?with|do|follow|start(?: on)?|build|apply|make)\b[^.!?\n]{0,60}\bplan\b/i;
@@ -1435,7 +1473,7 @@ export function briefParts(
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
             h.conds AS conds, h.code AS code, h.added AS added, h.removed AS removed, h.before AS before, h.context AS context,
-            h.tests AS tests, h.words AS words, h.moved AS moved, h.shebang AS shebang, count(DISTINCT e) AS edits,
+            h.tests AS tests, h.words AS words, h.moved AS moved, h.shebang AS shebang, h.owns AS owns, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
   const fileRole = new Map(
@@ -1474,6 +1512,12 @@ export function briefParts(
     g
       .run('MATCH (f:File {inPr: true}) WHERE f.cli IS NOT NULL RETURN f.id AS id, f.cli AS cli')
       .rows.map((r) => [String(r.id), ((r.cli as string[]) ?? []).map(String)]),
+  );
+  // Changed CI workflows, job by job (File.jobs).
+  const workflowJobs = new Map(
+    g
+      .run('MATCH (f:File {inPr: true}) WHERE f.jobs IS NOT NULL RETURN f.id AS id, f.jobs AS jobs')
+      .rows.map((r) => [String(r.id), ((r.jobs as string[]) ?? []).map(String)]),
   );
   // Commits whose own lines touch only comments, docs or tests.
   const noBehavior = new Set(
@@ -1527,9 +1571,14 @@ export function briefParts(
           ((h.pairs as string[]) ?? []).map((p) => `${String(h.file)}: ${p}`),
         )
         .slice(0, 4),
-      ...[...movedIn].map(
-        ([f, n]) => `${f}: ${n} line(s) moved or reflowed, text unchanged`,
-      ),
+      ...[...movedIn].flatMap(([f, n]) => {
+        // A workflow's jobs say what changed there.
+        if (workflowJobs.has(f)) return [];
+        const ex = extractionOf(hs, f);
+        if (ex) return [`${f}: ${ex}`];
+        // A line or two moved is no fact a reader needs.
+        return n > 2 ? [`${f}: ${n} lines moved or reflowed, text unchanged`] : [];
+      }),
     ]).slice(0, 5);
     // What the enclosing function did at the base, when no removed line shows it.
     // (A moved docs line or a test's old value says nothing about the code.)
@@ -1556,6 +1605,16 @@ export function briefParts(
           !['tests', 'docs', 'generated'].includes(fileRole.get(String(h.file)) ?? ''),
       ),
     );
+    // A changed CI workflow says what each job now does (added, removed or
+    // changed jobs with runner, needs, condition and shipping steps), first.
+    for (const f of [...files].reverse()) {
+      const jobs = workflowJobs.get(f);
+      if (!jobs?.length) continue;
+      const base = f.split('/').pop()!;
+      for (let i = behavior.length - 1; i >= 0; i--)
+        if (behavior[i]!.startsWith(`${base}: `)) behavior.splice(i, 1);
+      behavior.unshift(...jobs.slice(0, 6).map((j) => clipText(`${base}: ${j}`, 260)));
+    }
     // Every changed non-test file says something concrete: a file with no
     // condition gets its most telling added line (an option or flag, a
     // default, a workflow step, a config key).

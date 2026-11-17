@@ -13,13 +13,18 @@ instructions. These rules are for you: never copy their wording into the PR.
   run shows live).
 - `changes`: change units with `where` (files and symbols), `newSymbols`, `was`
   (old values; "moved or reflowed, text unchanged" means only moved: never
-  describe those lines as removed, changed or a new rule), `added`/`removed`
+  describe those lines as removed, changed or a new rule; "extracted into
+  `helper`; `caller` now calls it" means a body moved into a new function:
+  say it that way), `added`/`removed`
   lines, `behavior` lines saying what the unit now does (each with the
   condition that guards it: keep that condition in your sentence), `before`
   (key lines of the enclosing function in the base tree, when no removed line
   shows what the code did), `said` (the commit sentences that describe the
   unit) and `checkedBy` (test titles that name it). Read the diff refs a unit
-  cites before describing it.
+  cites before describing it. For a changed CI workflow, `behavior` gives
+  each job added, removed or changed with its `runs-on`, `needs`, `if` and
+  its artifact, signing, publishing or release steps: describe those jobs,
+  not just one step.
 - `requests`: the user's asks scoped to this PR's turns; one is marked goal.
   Each `kind` gives its order: the first request of the session (no earlier
   user prompt anywhere in the session log), the earliest request Tracetoon
@@ -53,8 +58,8 @@ instructions. These rules are for you: never copy their wording into the PR.
 - `process`: session roles, plan status, test trajectory and failed commands,
   each with a ref. Facts about how the work went, not about the code. The
   `entry` row names the symbol a reviewer should start at (a function defined
-  in that file, the function that reads the setting selecting the behavior,
-  or the new interface most files name) and its file, or the file alone,
+  in that file whose changed lines call the most changed code) and its
+  file, or the file alone,
   what the brief ties to it, and (after "Not in") the related functions
   with what is tied to each. A `sources` row instead of a `session` row means
   no agent session was matched: describe the diff and the commit messages
@@ -87,11 +92,14 @@ up to about 600). Never pad a small PR to reach a count. Reviewers mark a
 section-per-topic template down as "inventory-like".
 
 - **Lead with the problem and why, then the design, then its consequences**,
-  in one short paragraph: the motive stated as the PR's purpose (quote or
-  paraphrase the request or plan that gives it, in the user's terms) and the
-  result. Frame the title around that goal too. When a change row has `was` or
-  `before`, include one "Previously …" sentence saying what the code did
-  (quote the value: 30 minutes → 5 minutes); otherwise give no old behavior.
+  in one short paragraph. Open on the concrete trigger the request, plan or
+  background row names (the failure, crash, freeze, error message or the
+  feature asked for, in the user's terms: "Windows installs failed with
+  `aifirst` not recognized"), not on an abstract goal; then the result.
+  Frame the title around that goal too. Whenever any change row has `was` or
+  `before`, a "Previously …" sentence is required, saying what the code did
+  (quote the value: 30 minutes → 5 minutes); with neither, give no old
+  behavior.
   When a `background` row or a change's `why` row exists, one clause on the
   motive, as the PR's purpose ("Installs failed on immutable Linux because
   …", "The plan was to …"), never "a later request in the session asked…";
@@ -119,13 +127,20 @@ section-per-topic template down as "inventory-like".
   them and when it applies.
 - **Tests go with the change they test** ("…; `tests/x.test.ts` covers the
   quoted-script case"), or in one short line naming the test files and what
-  they check (`tests` rows). Never a list of test titles. Don't restate runs or
+  they check (`tests` rows). At most one clause per behavior, naming its
+  test file(s); never a sentence or paragraph per test file, and never a list
+  of test titles. Say what a test checks only from its titles (`tests` rows,
+  `checkedBy`), never from its file name alone. Don't restate runs or
   results: the generated Validation section says them. Attribute each tested
   behavior to the test file whose titles show it; don't group behaviors from
   several files under one.
-- **Consequences** worth a reviewer's attention, in a sentence or two: what
-  changes for users or callers (defaults, output shapes, error paths), the
-  riskiest part, what is deliberately left alone. Skip what is obvious.
+- **Consequences**: one sentence is required on what changes for users,
+  callers or maintainers, built from the decision rows, changed defaults and
+  gating or publish conditions (`behavior` and `details` rows: `if:`
+  conditions, `needs`, release/publish/sign steps): what still ships or
+  publishes, what now fails fast or is refused, what a caller must now pass.
+  Then, if worth it, the riskiest part or what is deliberately left alone.
+  Skip what is obvious.
 - **Open points** from open `limits` rows and `process` facts (a plan step left
   undone, a command that kept failing), each a clause, folded in where they
   belong or in one short paragraph. If you ran `tracetoon check` and it
@@ -191,7 +206,12 @@ strips tags and lists untagged sentences and unknown refs.
   a result. Never turn a limit into "no result" or "no captured result" for
   a command the Validation section shows: a limit about an earlier run of it
   is not an open point then. A limit that says a run's exit status was hidden
-  by a pipe says just that, not that the run had no result.
+  by a pipe says just that, not that the run had no result; leave such
+  recording details (a hidden exit status, a pipe, a wrapper) out of the body
+  unless they change a claim you make.
+- A limit that says a CI run on a platform or of a workflow "came before the
+  last edit of X; none after" says exactly that: a run exists. Never turn it
+  into "no run", "none shows" or "not in the logs".
 - No session-wide blanket negatives ("nothing was run", "no test was
   recorded"): Tracetoon reads only the attributed turns, and such runs often
   sit elsewhere in the logs. Scoped uncertainties are wanted: state each open

@@ -491,7 +491,7 @@ export function environmentRows(
    * checks`, …), with when they were looked at, and each file's last captured
    * edit: a platform passed in CI after a unit's last edit is a run there.
    */
-  ci: { os: string[]; t: string }[] = [],
+  ci: CiRun[] = [],
   lastEdit: Map<string, string> = new Map(),
 ): Row[] {
   const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
@@ -528,26 +528,72 @@ export function environmentRows(
     u.line ??= line;
     units.set(key, u);
   }
-  for (const [change, u] of [...units]
-    .map(([k, u]): [string, typeof u] => {
-      const edited = [...u.files]
-        .map((f) => lastEdit.get(f) ?? '')
-        .sort()
-        .at(-1);
-      const ranInCi = (n: string) =>
-        ci.some((x) => x.os.includes(n) && (!edited || x.t >= edited));
-      return [k, { ...u, names: new Set([...u.names].filter((n) => !ranInCi(n))) }];
-    })
-    .filter(([, u]) => u.names.size > 0)
-    .slice(0, 3)) {
-    const names = PLATFORMS.map((p) => p.name).filter((n) => u.names.has(n));
+  // A CI run of a workflow file runs on the platforms that file's changed
+  // lines pick (`runs-on: windows-latest`), besides the runner labels its
+  // output shows.
+  const wfBase = (f: string) => f.split('/').pop()!.toLowerCase();
+  const wfOs = new Map<string, Set<string>>();
+  for (const h of hunks) {
+    const f = String(h.file);
+    if (!WORKFLOW_FILE.test(f)) continue;
+    const set = wfOs.get(wfBase(f)) ?? new Set<string>();
+    for (const l of addedLines(h)) for (const p of platformsOfLine(l, f)) set.add(p);
+    for (const l of addedLines(h))
+      for (const m of l.matchAll(/\b(windows|macos|ubuntu)-(?:latest|\d[\w.]*)/gi))
+        set.add(m[1]!.toLowerCase() === 'windows' ? 'Windows' : m[1]!.toLowerCase() === 'macos' ? 'macOS' : 'Linux');
+    wfOs.set(wfBase(f), set);
+  }
+  const viaWorkflow = (x: CiRun, n: string) =>
+    (x.workflows ?? []).filter((w) => wfOs.get(w.toLowerCase())?.has(n));
+  const ranOn = (x: CiRun, n: string) =>
+    x.os.includes(n) || (x.ran ?? []).includes(n) || viaWorkflow(x, n).length > 0;
+  const passedOn = (x: CiRun, n: string) =>
+    x.os.includes(n) || (!x.failed && viaWorkflow(x, n).length > 0);
+  const ciLabel = (xs: CiRun[], n: string) => {
+    const wfs = [...new Set(xs.flatMap((x) => viaWorkflow(x, n)))].sort();
+    return wfs.length ? ` (${wfs.join(', ')})` : '';
+  };
+  for (const [change, u] of [...units].slice(0, 3)) {
     const files = [...u.files].sort();
+    const lastFile = files
+      .filter((f) => lastEdit.has(f))
+      .sort((a, b) => lastEdit.get(a)!.localeCompare(lastEdit.get(b)!))
+      .at(-1);
+    const edited = lastFile ? lastEdit.get(lastFile) : undefined;
+    const after = (x: CiRun) => !edited || x.t >= edited;
+    const all = PLATFORMS.map((p) => p.name).filter((n) => u.names.has(n));
+    // A platform passed in CI after the unit's last edit: a run there.
+    const names = all.filter((n) => !ci.some((x) => passedOn(x, n) && after(x)));
+    if (!names.length) continue;
+    const clauses: string[] = [];
+    const none: string[] = [];
+    for (const n of names) {
+      const runs = ci.filter((x) => ranOn(x, n));
+      const late = runs.filter(after);
+      if (late.length)
+        clauses.push(
+          edited
+            ? `the ${n} CI run${ciLabel(late, n)} after the last edit${lastFile ? ` of ${lastFile}` : ''} failed`
+            : `the recorded ${n} CI run${ciLabel(late, n)} failed`,
+        );
+      else if (runs.length)
+        clauses.push(
+          `a ${n} CI run${ciLabel(runs, n)} came before the last edit${lastFile ? ` of ${lastFile}` : ''}; none after`,
+        );
+      else none.push(n);
+    }
+    if (none.length)
+      clauses.push(
+        `the recorded runs were on ${host.platform}/${host.arch}${
+          clauses.length ? ' and in that CI' : ''
+        }, so none shows the ${joinNames(none)} path${none.length > 1 ? 's' : ''} running`,
+      );
     out.push({
       change: change || null,
       kind: 'open',
       limit: `${shown(files)} change${files.length === 1 ? 's' : ''} ${joinNames(names)}-specific code${
         u.line ? ` (\`${clipLine(u.line, 80)}\`)` : ''
-      }; the recorded runs were on ${host.platform}/${host.arch}, so none shows the ${joinNames(names)} path${names.length > 1 ? 's' : ''} running.`,
+      }; ${clauses.join('; ')}.`,
     });
   }
   // Changed scripts and CI workflows no recorded command ran.
@@ -603,14 +649,36 @@ export function environmentRows(
         limit: `${shown(files)} ${files.length === 1 ? 'is a changed script' : 'are changed scripts'} no recorded session command ran; only the diff shows ${files.length === 1 ? 'it' : 'them'}.`,
       });
     }
-    // CI results in the logs (for any commit of the PR) are runs of them.
+    // CI results in the logs (for any commit of the PR) that name no workflow
+    // are runs of them all. A run of a named workflow file (`gh workflow run
+    // release.yml`, then `gh run watch`) is a run of that file: before its
+    // last edit, the row says so.
     if (workflows.size && !ciSeen) {
-      const files = [...workflows.keys()].sort();
-      out.push({
-        change: workflows.get(files[0]!)![0] || null,
-        kind: 'open',
-        limit: `${shown(files)} change${files.length === 1 ? 's' : ''} CI workflow${files.length === 1 ? '' : 's'}; workflows run in CI, and no run of ${files.length === 1 ? 'it' : 'them'} is in the logs Tracetoon read.`,
-      });
+      const runsOf = (f: string) =>
+        ci.filter((x) => (x.workflows ?? []).some((w) => w.toLowerCase() === wfBase(f)));
+      const editedAt = (f: string) => lastEdit.get(f);
+      const unrun = [...workflows.keys()].filter((f) => !runsOf(f).length).sort();
+      const stale = [...workflows.keys()]
+        .filter((f) => {
+          const rs = runsOf(f);
+          const e = editedAt(f);
+          return rs.length > 0 && !!e && rs.every((x) => x.t < e);
+        })
+        .sort();
+      for (const f of stale)
+        out.push({
+          change: workflows.get(f)![0] || null,
+          kind: 'open',
+          limit: `a CI run of ${f} came before its last edit; none after, so no recorded run shows the final ${wfBase(f)}.`,
+        });
+      if (unrun.length)
+        out.push({
+          change: workflows.get(unrun[0]!)![0] || null,
+          kind: 'open',
+          limit: `${shown(unrun)} change${unrun.length === 1 ? 's' : ''} CI workflow${unrun.length === 1 ? '' : 's'}; workflows run in CI, and no run of ${unrun.length === 1 ? 'it' : 'them'} is in the logs Tracetoon read${
+            stale.length || ci.some((x) => (x.workflows ?? []).length) ? ' (the CI runs recorded ran other workflows)' : ''
+          }.`,
+        });
     }
   }
   // Behavior the changed tests reach only through fakes or stubs.
@@ -703,24 +771,49 @@ export function sessionCommands(g: GraphEngine): string[] | undefined {
 }
 
 /**
- * CI looks of the included sessions that showed jobs passing on a runner
- * platform, with when; and each PR file's last captured edit.
+ * A remote CI run of the included sessions: platforms its jobs passed on
+ * (`os`) or finished on (`ran`), the workflow files it ran (`workflows`),
+ * when it was looked at and whether the look failed (`gh run watch
+ * --exit-status`).
+ */
+export type CiRun = {
+  os: string[];
+  ran?: string[];
+  workflows?: string[];
+  t: string;
+  failed?: boolean;
+};
+
+/**
+ * CI looks of the included sessions that showed jobs on a runner platform or
+ * results of a named workflow, with when; and each PR file's last captured
+ * edit.
  */
 export function ciPlatformRuns(g: GraphEngine): {
-  ci: { os: string[]; t: string }[];
+  ci: CiRun[];
   lastEdit: Map<string, string>;
 } {
+  const words = (xs: unknown, i: number) =>
+    String(((xs as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
   const ci = g
     .run(
       `MATCH (s:Session {band: 'included'})
-       RETURN s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed, s.remoteOs AS os`,
+       RETURN s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed, s.remoteOs AS os,
+              s.remoteRanOs AS ran, s.remoteWorkflows AS workflows, s.remoteResults AS results`,
     )
     .rows.flatMap((r) =>
-      ((r.kinds as string[]) ?? []).flatMap((k, i) => {
-        const os = String(((r.os as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
+      ((r.kinds as string[]) ?? []).flatMap((k, i): CiRun[] => {
+        const failed = ((r.failed as string[]) ?? [])[i] === 'failed';
+        // Jobs shown passing passed, whatever the look's exit status (`gh pr
+        // checks` exits non-zero when any other check fails).
+        const os = words(r.os, i);
+        const ran = words(r.ran, i);
+        const results = words(r.results, i)[0] === 'results';
+        // A named workflow counts only from a look that shows its result.
+        const workflows = results ? words(r.workflows, i) : [];
         const t = String(((r.ts as string[]) ?? [])[i] ?? '');
-        return k === 'ci' && os.length && t && ((r.failed as string[]) ?? [])[i] !== 'failed'
-          ? [{ os, t }]
+        return k === 'ci' && t && (os.length || ran.length || workflows.length)
+          ? [{ os, ran, workflows, t, failed }]
           : [];
       }),
     );
@@ -741,7 +834,7 @@ function remoteEvents(g: GraphEngine) {
     .run(
       `MATCH (s:Session {band: 'included'})
        RETURN s.remoteCmds AS cmds, s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed,
-              s.remoteResults AS results`,
+              s.remoteResults AS results, s.remoteWorkflows AS workflows`,
     )
     .rows.flatMap((r) =>
       ((r.cmds as string[]) ?? []).map((c, i) => {
@@ -753,6 +846,7 @@ function remoteEvents(g: GraphEngine) {
           failed: ((r.failed as string[]) ?? [])[i] === 'failed',
           results: res[0] === 'results',
           heads: res.slice(1),
+          workflows: String(((r.workflows as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean),
         };
       }),
     )
@@ -782,7 +876,10 @@ function ciResultLooks(g: GraphEngine) {
 }
 
 /** Whether the logs record CI or check results for any commit of this PR. */
-export const ciResultsSeen = (g: GraphEngine): boolean => ciResultLooks(g).length > 0;
+export const ciResultsSeen = (g: GraphEngine): boolean =>
+  // A look at one named workflow's run is a run of that file only (see
+  // environmentRows), not of every workflow.
+  ciResultLooks(g).some((x) => !x.workflows.length);
 
 /** What a publishing command did, in words. */
 const publishVerb = (cmd: string) =>
@@ -831,7 +928,16 @@ export function finalHeadRow(g: GraphEngine): Row | null {
         looks.flatMap((x) => x.heads).filter((h) => commits.some((k) => shortSha(k.id) === h)),
       ),
     ];
-    const cmds = [...new Set(looks.map((x) => `\`${x.cmd}\``))].slice(0, 3).join(', ');
+    // Looks at the PR's own checks first; runs of one named workflow after.
+    const cmds = [
+      ...new Set(
+        [...looks]
+          .sort((a, b) => Number(a.workflows.length > 0) - Number(b.workflows.length > 0))
+          .map((x) => `\`${x.cmd}\``),
+      ),
+    ]
+      .slice(0, 3)
+      .join(', ');
     return {
       change: null,
       kind: 'open',
@@ -1054,9 +1160,6 @@ const ENTRY_CHARS = 300;
  * file and its changed callers, each with what is tied to it, so a writer
  * doesn't pin a caller's or callee's behavior on the entry.
  */
-/** A function's changed-line words that read the environment or the command line. */
-const SELECTOR_WORDS = /\bprocess env\b|\bos environ\b|\bgetenv\b|\bdeno env\b|\bargv\b|\bparse ?args\b/;
-
 export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const hunks = g
     .run(
@@ -1065,7 +1168,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
               h.touched AS touched, h.fresh AS fresh, h.symbols AS symbols, h.code AS code,
               h.diff AS diff, h.branches AS branches, h.added AS added,
               h.owns AS owns, h.readers AS readers, h.fnLines AS fnLines, h.types AS types,
-              h.thin AS thin, h.fnWords AS fnWords`,
+              h.thin AS thin`,
     )
     .rows.filter((h) => unitRole(String(h.file), String(h.role ?? '')) === 'src')
     .sort((a, b) => Number(String(a.id).slice(1)) - Number(String(b.id).slice(1)));
@@ -1230,60 +1333,6 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
         a.file.localeCompare(b.file) ||
         a.name.localeCompare(b.name),
     );
-  // Preferred over the owner with most calls: a new function that reads the
-  // environment variable or flag selecting the behavior (its changed lines
-  // read `process.env`, `os.environ`, `getenv`, argv), else the new interface
-  // most other files name.
-  const fresh = new Set(hunks.flatMap((h) => ((h.fresh as string[]) ?? []).map(String)));
-  const selectors = uniqStr(
-    hunks.flatMap((h) =>
-      ((h.fnWords as string[]) ?? [])
-        .map(String)
-        .filter((w) => SELECTOR_WORDS.test(w.slice(w.indexOf(':') + 1)))
-        .map((w) => w.slice(0, w.indexOf(':')))
-        .filter(
-          (n) =>
-            fresh.has(n) &&
-            NAME.test(n) &&
-            // A getter or one-line reader is still where the setting is read.
-            fnLike(n, String(h.file)) &&
-            definedHere(n, String(h.file)),
-        )
-        .map((n) => `${String(h.file)}#${n}`),
-    ),
-  ).sort(
-    (a, b) =>
-      refFiles(b.split('#')[1]!) - refFiles(a.split('#')[1]!) || a.localeCompare(b),
-  );
-  if (selectors.length) {
-    const [file, name] = [selectors[0]!.split('#')[0]!, selectors[0]!.split('#')[1]!];
-    const h = hunks.find((x) => String(x.file) === file);
-    const related = callersOf(name).map((o) => ({ name: o.name, how: `calls \`${name}\`` }));
-    const { text, cites } = compose(name, file, ' (reads the setting that selects the behavior)', related);
-    return {
-      kind: 'entry',
-      fact: text,
-      cites: uniqStr([...(h ? [String(h.change), String(h.diff)] : []), ...cites]),
-    };
-  }
-  const iface = [...refsOf.values()].find((r) => r.kind === 'most referenced');
-  const ifaceName = iface ? String(iface.term) : '';
-  const ifaceFile = iface ? ((iface.definedIn as string[]) ?? []).map(String)[0] : undefined;
-  if (
-    iface &&
-    ifaceFile &&
-    fresh.has(ifaceName) &&
-    refFiles(ifaceName) >= 3 &&
-    (!ranked[0] || refFiles(ranked[0].name) < refFiles(ifaceName)) &&
-    unitRole(ifaceFile, pathRole(ifaceFile)) === 'src'
-  ) {
-    const h = hunks.find((x) => String(x.file) === ifaceFile);
-    return {
-      kind: 'entry',
-      fact: `Start at \`${ifaceName}\` in ${ifaceFile}: the new interface ${refFiles(ifaceName)} other files name.`,
-      cites: h ? [String(h.change), String(h.diff)] : [],
-    };
-  }
   const best = ranked[0];
   if (best) {
     // The next owner in the same file, often the one choosing between paths.

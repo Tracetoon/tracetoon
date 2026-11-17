@@ -357,7 +357,7 @@ describe('plan vs code', () => {
 });
 
 describe('entry ranking', () => {
-  test('the new function reading the selecting environment variable is the entry', () => {
+  test('a getter reading the selecting environment variable is not preferred as the entry (c58)', () => {
     const files = [fileNode('src/store.ts'), fileNode('src/evidence.ts')];
     const hunks = [
       hunkNode('H1', 'src/store.ts', {
@@ -385,9 +385,8 @@ describe('entry ranking', () => {
     const row = withGraph(graphOf([...files, ...hunks, change('CH1', [])], rels), (g) =>
       entryRow(g),
     );
-    expect(String(row?.fact)).toStartWith(
-      'Start at `engineName` in src/store.ts (reads the setting that selects the behavior)',
-    );
+    expect(String(row?.fact)).not.toContain('reads the setting');
+    expect(String(row?.fact)).not.toStartWith('Start at `engineName`');
   });
 });
 
