@@ -4,14 +4,40 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The merge queue tests each PR on top of main and the PRs ahead of it, so PRs
+  # no longer have to be up to date with main before merging.
+  merge_group:
+
+# A newer push to the same PR replaces its running CI. Queue and main runs are
+# left alone: the queue manages its own, and main keeps a record of every merge.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
+    name: test (${{ matrix.os }}${{ matrix.shard && format(' {0}', matrix.shard) || '' }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Windows takes about three times as long as the others, so its source
+        # tests are split across machines (TRACETOON_TEST_SHARD, balanced by
+        # scripts/test-times.baseline.json). Shard 1 also runs the other steps
+        # (about 131s), so it starts the split with 262000 ms of test-file time
+        # already counted: two files run at once, so 2 x 131s.
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+            shard: 1/3
+          - os: windows-latest
+            shard: 2/3
+          - os: windows-latest
+            shard: 3/3
     runs-on: ${{ matrix.os }}
+    env:
+      TRACETOON_TEST_SHARD: ${{ matrix.shard }}
+      TRACETOON_TEST_SHARD_PRELOAD: '262000'
     # A hung step must fail in minutes, not hold a runner for hours (the default is 6h).
     timeout-minutes: 45
     steps:
@@ -41,20 +67,34 @@ jobs:
         with:
           python-version: '3.11'
       - name: Verify portable candidate archives
+        if: ${{ !matrix.shard || startsWith(matrix.shard, '1/') }}
         run: python -B -m unittest discover -s .github/scripts -p test_package_candidate.py -v
       - run: bun run typecheck
+        if: ${{ !matrix.shard || startsWith(matrix.shard, '1/') }}
       - run: bun run test
       - name: Bundle and run the end-to-end tests against it
+        if: ${{ !matrix.shard || startsWith(matrix.shard, '1/') }}
         shell: bash
         run: |
           bun run bundle
           bun run build:check
           bun run test:bundled
       - name: Compile and rehearse publication against the executable
+        if: ${{ !matrix.shard || startsWith(matrix.shard, '1/') }}
         shell: bash
         run: |
           bun run build
           bun run test:compiled
+
+  # The one required check. Its name stays the same however the test matrix
+  # changes, and it fails when any test job failed or was cancelled.
+  ci-ok:
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: All test jobs passed
+        run: test "${{ needs.test.result }}" = success
 
   candidate-assets:
     needs: test

@@ -272,10 +272,12 @@ reviewer separate.
         whose findings you rejected; `none` → no recheck. Then `tracetoon
         review import --run <id> --rebind` so `review.json` matches the new
         render. Publish never requires a recheck.
-     9. Draw the comic when `comic.expected` is true (step 5). If the user
-        declines it or drawing keeps failing, record why with `tracetoon comic
-        skip --run <id> --reason "<why>"` and render again. Then publish
-        (step 7) once render reports the review current.
+     9. Draw the comic when `comic.expected` is true (step 5), including its
+        quality loop (`tracetoon comic loop` until it stops): this is the only
+        review the finished image gets on this path. If the user declines it
+        or drawing keeps failing, record why with `tracetoon comic skip --run
+        <id> --reason "<why>"` and render again. Then publish (step 7) once
+        render reports the review current.
 3. **Context.**
    Read the prepared `context.json`; do not repeat preparation. Note the PR template, existing PR,
    settings, AI policy, and `comic.recentComics` (compact creative choices from
@@ -413,14 +415,33 @@ reviewer separate.
      route fails, retry with `--force` or another `--provider`; if it keeps
      failing, `tracetoon comic skip --reason "drawing kept failing: <error>"`;
    - `tracetoon comic render`, then **look at `out/comic.png` and proofread** the
-     lettering against the printed list. Also inspect actual composition, panel
-     count, title placement, reading order and payoff at PR and phone widths.
-     Diagnose a defect before another image request: rewrite a weak premise or
-     script, redraw a missed art instruction, or repair lettering. Tell the user
-     why a redraw is needed. Do not routinely draw hidden alternatives.
-     Redraw an art defect with `comic art --force` (up to 2
-     times), then fall back to `--lettering overlay`. Offer
-     `tracetoon comic reroll` if the user wants a different look.
+     lettering against the printed list. Render archives each image as a
+     candidate (`candidates/cN/`), so a later drawing never loses it.
+   - **Quality loop (every path, after render):** the finished image is
+     always reviewed, technical defects are repaired within a budget, and the
+     joke is never rewritten automatically. Run `tracetoon comic loop --json`
+     and do exactly what it says, repeating until it says `stop`:
+     - `observe`, `phone`, `check` or `compare`: start ONE fresh subagent (not
+       a fork, no PR or drafting context; Claude Code: `Agent`, general-purpose,
+       same model class as you, since it must see images) whose whole
+       instruction is the printed `packet` file. When it has written the
+       result, run `tracetoon comic loop-import --task <task> --agent-id <its
+       real id>`. The observer, the phone reader and the comparator see only
+       images; never add the script, the intended joke or earlier scores to
+       their prompt.
+     - `revise`: make that one technical repair, as `how` says: `comic art
+       --reflow` (a layout whose panels are readable on a phone), `comic art
+       --repair "<instruction>"` (art or lettering), or reordering balloons in
+       `comic.json`. Keep every word, character and the joke; a repair that
+       changes them is rejected. Then `comic render` and `comic loop` again.
+     - `stop`: the loop has restored the selected image to `out/comic.png`.
+       Report what it lists as `unresolved` (for example a joke the AI reader
+       finds flat) and any `humorRegressed`; never call those a success.
+     The loop is bounded (3 image requests, 14 judge calls), keeps the
+     incumbent on ties or uncertainty, and never asks the user to rate a comic.
+     Rewriting the joke is experimental (`comic loop --creative`); use it only
+     when the user asks. Offer `tracetoon comic reroll` only if the user wants
+     a different look.
 6. **Render and independent review.** `tracetoon render --json` composes the full
    PR and writes `review-input.json`. Launch a fresh reviewer, distinct from the
    researcher and drafter. When the render includes a comic, give it ONLY

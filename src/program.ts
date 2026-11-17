@@ -38,6 +38,8 @@ import {
   comicSkipCmd,
   comicPromptsCmd,
   comicRenderCmd,
+  comicLoopRunCmd,
+  comicLoopImportRunCmd,
 } from './commands/comic.ts';
 import { exportCmd } from './commands/export.ts';
 import {
@@ -535,6 +537,14 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--lettering <how>',
       'model (the image model letters the page) or overlay (Tracetoon draws bubbles)',
     )
+    .option(
+      '--repair <instruction>',
+      'edit the current page with this one change instead of redrawing it (from comic loop)',
+    )
+    .option(
+      '--reflow',
+      'same script, a layout whose panels are wide enough to read on a phone; then redraw',
+    )
     .action((o) => comicArtCmd(cwd, { ...g(), ...o }));
   comic
     .command('reroll')
@@ -557,6 +567,25 @@ export function buildProgram(cwd: string = process.cwd()): {
     .description('lay out panels and speech bubbles into out/comic.png')
     .option('--run <id>', 'run id (default: latest)')
     .action((o) => comicRenderCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('loop')
+    .description(
+      'judge the rendered comic with fresh AI readers and say what to do next: judge, repair one thing, or stop (keeps the better version)',
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option(
+      '--creative',
+      'experimental: also rewrite a flat joke or weak script automatically (off by default)',
+    )
+    .action((o) => comicLoopRunCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('loop-import')
+    .description("record a judge subagent's answer for a comic loop task")
+    .option('--run <id>', 'run id (default: latest)')
+    .requiredOption('--task <id>', 'the task comic loop printed, e.g. observe:c1')
+    .option('--file <path>', "the answer file (default: the task's result.json)")
+    .option('--agent-id <id>', "the judge subagent's real id")
+    .action((o) => comicLoopImportRunCmd(cwd, { ...g(), ...o }));
 
   program
     .command('export')

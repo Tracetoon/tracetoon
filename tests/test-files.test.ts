@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   longestFirst,
+  parsePreload,
   parseShard,
   readTestTimes,
   runTestFiles,
@@ -244,6 +245,41 @@ test('shards cover every file exactly once, agree on the split and balance the l
   expect(shardFiles(root, files, times, { index: 1, count: 1 })).toEqual(
     longestFirst(root, files, times),
   );
+});
+
+test('a preloaded shard takes less of the suite, and every shard agrees on the split', () => {
+  const root = tempDir('tracetoon-preload-');
+  const times: Record<string, number> = {
+    'a.test.ts': 220,
+    'b.test.ts': 180,
+    'c.test.ts': 160,
+    'd.test.ts': 120,
+    'e.test.ts': 110,
+    'f.test.ts': 60,
+    'g.test.ts': 50,
+    'h.test.ts': 40,
+  };
+  const files = Object.keys(times);
+  const shards = [1, 2, 3].map((index) =>
+    shardFiles(root, files, times, { index, count: 3 }, [300]),
+  );
+  expect(shards.flat().sort()).toEqual([...files].sort());
+  const cost = (s: string[]) => s.reduce((t, f) => t + times[f]!, 0);
+  // Shard 1 starts at 300, so the big files go elsewhere: 300+110 | 220+120+60 | 180+160+50+40.
+  expect(shards.map(cost)).toEqual([110, 400, 430]);
+  // No preload is the same as none given.
+  expect(shardFiles(root, files, times, { index: 2, count: 3 }, [])).toEqual(
+    shardFiles(root, files, times, { index: 2, count: 3 }),
+  );
+});
+
+test('the preload setting is comma-separated milliseconds or unset', () => {
+  expect(parsePreload(undefined)).toEqual([]);
+  expect(parsePreload(' ')).toEqual([]);
+  expect(parsePreload('262000')).toEqual([262_000]);
+  expect(parsePreload('100, ,5')).toEqual([100, 0, 5]);
+  for (const bad of ['-1', 'abc', '1,x'])
+    expect(() => parsePreload(bad)).toThrow('TRACETOON_TEST_SHARD_PRELOAD');
 });
 
 test('the shard setting is i/n or unset; anything else stops the run', () => {

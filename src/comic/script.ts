@@ -13,7 +13,13 @@ import {
   type ComicScript,
   type ComicSummary,
 } from './types.ts';
-import { comicSummary, compositionProblems, visibleHeadline } from './composition.ts';
+import {
+  comicSummary,
+  compositionProblems,
+  phoneFit,
+  phoneLayout,
+  visibleHeadline,
+} from './composition.ts';
 
 /** Words per text item on a page: one balloon, one breath. */
 export const MAX_ITEM_WORDS = 18;
@@ -104,6 +110,21 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
+  if (
+    Array.isArray(s.panels) &&
+    s.panels.every((p: any) => p && Array.isArray(p.dialogue ?? []))
+  ) {
+    try {
+      const tight = phoneFit(s as ComicScript).filter((f) => !f.fits);
+      if (tight.length) {
+        const better = phoneLayout(s as ComicScript);
+        warn(
+          'composition',
+          `on a phone (360 px) panel${tight.length === 1 ? '' : 's'} ${tight.map((f) => `${f.panel} (~${f.widthPx} px wide, ${f.chars} characters)`).join(', ')} would need text too small to read; reflow rather than shrink${better ? `: use the ${better.composition!.family} family (aspect ${better.aspect})` : ', or cut words'}`,
+        );
+      }
+    } catch {}
+  }
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
