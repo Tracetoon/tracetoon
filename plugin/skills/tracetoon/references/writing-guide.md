@@ -48,8 +48,10 @@ bug fix all take different shapes.
   maintainer would search for. A bare code (an issue number, a rule ID, a CWE)
   doesn't explain anything on its own; pair it with the behavior.
 - **The change that matters most, not the biggest diff.** Cover the whole PR
-  at the level of its main change, not the latest commit. Read the commit
-  subjects; reuse a good one if it fits. The main change is usually what the
+  at the level of its main change, not the latest commit: with several
+  commits, a title that only restates the head commit's subject is flagged by
+  `render`. Read every commit subject and change unit; reuse a subject only
+  if it covers them all. The main change is usually what the
   user asked for: if they asked for something visible (a clickable link, a new
   option), it belongs in the title even when fixes found along the way touched
   more code. Name what's **new**, not what already existed ("draw with Codex
@@ -182,9 +184,10 @@ in the change map's order. The main idea or riskiest part first, then the key
 test, then "the rest is mechanical" when it is. Name files by role, at most one
 per step.>
 
-<Feedback wanted: only when the trace shows a real open decision (an approach
-not discussed, a trade-off left to the reviewer). Name it in one line. Never
-invent one.>
+<Where to start: the function and file a reviewer should read first.>
+
+<Feedback wanted: one concrete question for reviewers about a decision or
+risk the change takes (an approach, a default, a trade-off). One line.>
 ```
 
 A review path is not a file list: it says what to read first and why, and puts
@@ -264,10 +267,10 @@ result to its source without guessing a command or dropping a material outcome.
   and why. Write it only when a prompt, a recorded decision or the user's own
   text supports it. Otherwise state the reason neutrally, or leave it out.
   Quote or paraphrase the request itself rather than characterizing the
-  session: never "the session began/started with…" unless the request is
-  marked "the first request of the session" (an "earliest request Tracetoon
-  kept" may follow earlier prompts), and never "the session chose…" or "the user
-  chose…" without a recorded decision or the user's own words.
+  session: never "the session began/started with…", "the session's first
+  request was…" or "follows the request to 'Continue'", and never "the session
+  chose…" or "the user chose…" without a recorded decision or the user's own
+  words.
 - **Where the change came from is context only the trace has.** The user's
   report or request ("a Codex test showed the PR link couldn't be
   clicked") tells a reviewer why the change exists; state it as the PR's

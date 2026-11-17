@@ -165,7 +165,9 @@ reviewer separate.
         what the PR does and why first, no fixed section list, about 250–450
         words for a typical PR. Tag factual sentences with brief refs
         (`[CH1, commit:<sha>#2]`) and put `<!-- tracetoon:validation -->`
-        where the Validation section belongs.
+        where the Validation section belongs (render writes the checks and
+        every open limit there). End with a "Where to start" line and a
+        "Feedback wanted" line (one concrete question for reviewers).
      3. Run each required check that has no current receipt once with
         `tracetoon check --run <id> --name <check> -- <command>`: one
         `tracetoon check` per repository check, never several chained in one

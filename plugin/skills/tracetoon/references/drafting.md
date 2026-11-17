@@ -8,9 +8,10 @@ instructions. These rules are for you: never copy their wording into the PR.
 
 ## Reading the brief
 
-- `limits`: open points (kind `open`) and caveats; each needs a clause (no
-  pass after the last commit, a failed push or `gh` command, remote paths no
-  run shows live).
+- `limits`: open points (kind `open`) and caveats (no pass after the last
+  commit, a failed push or `gh` command, remote paths no run shows live, no
+  push or tag in the session logs, code no test names). `render` writes every
+  open point under the Validation section itself: don't restate them.
 - `changes`: change units with `where` (files and symbols), `newSymbols`, `was`
   (old values; "moved or reflowed, text unchanged" means only moved: never
   describe those lines as removed, changed or a new rule; "extracted into
@@ -25,20 +26,22 @@ instructions. These rules are for you: never copy their wording into the PR.
   each job added, removed or changed with its `runs-on`, `needs`, `if` and
   its artifact, signing, publishing or release steps: describe those jobs,
   not just one step.
-- `requests`: the user's asks scoped to this PR's turns; one is marked goal.
-  Each `kind` gives its order: the first request of the session (no earlier
-  user prompt anywhere in the session log), the earliest request in the
-  session logs (earlier prompts, such as setup or install asks, may exist), or a
-  later request. Quote or paraphrase a request with
-  its order as given; never characterize how the session started or what the
-  session or the user "chose" beyond a request, plan or decision row.
-- `background`: why the work started (the session's first request, or the
-  earliest request in the session logs when its `kind` says so) and
-  plans or decisions from earlier turns, when this PR's own turns don't show
-  how the work came about. Facts to cover, attributed to the session.
+- `requests`: the user's asks scoped to this PR's turns; the one that drove
+  the commits is marked `goal`. When the user only said "continue" or
+  "implement the plan", the goal row shows the plan or request it continues.
+  Describe the goal as the PR's purpose; never write "follows the request to
+  'Continue'", "the session's first request was" or how the session started,
+  nor what the session or the user "chose" beyond a request, plan or decision
+  row.
+- `background`: why the work started and plans or decisions from earlier
+  turns, when this PR's own turns don't show how the work came about. Facts
+  for the motive clause, stated as the PR's purpose.
 - `doNotSay`: wording the evidence rules out (names that already existed,
   conditional code, results only a commit message states, the files in the
   diff). Check every sentence against it before you finish.
+- `behaviors`: one row per behavior of a change unit (a commit sentence or a
+  behavior line), B refs. Cover each behavior of the units you describe;
+  `render` lists those of cited units the body never mentions.
 - `commitMessages`: each sentence, with `implementedBy` naming its file (a
   `~` after a file: linked by text search or at hunk level, less certain; read
   that hunk before naming the file) and, in `code`, key changed lines of its
@@ -100,12 +103,11 @@ section-per-topic template down as "inventory-like".
   `before`, a "Previously …" sentence is required, saying what the code did
   (quote the value: 30 minutes → 5 minutes); with neither, give no old
   behavior.
-  When a `background` row or a change's `why` row exists, one clause on the
+  When a `goal`, `background` or `why` row exists, one clause on the
   motive, as the PR's purpose ("Installs failed on immutable Linux because
-  …", "The plan was to …"), never "a later request in the session asked…";
-  "the session began/started with/from…" only for a row marked
-  "the first request of the session", never for "the earliest request in
-  the session logs". Take it from the row; never invent a motive, and call it the user's
+  …", "The plan was to …"), never "a later request in the session asked…",
+  "follows the request to 'Continue'" or "the session began/started with…".
+  Take it from the row; never invent a motive, and call it the user's
   request for this PR only when a `requests` row says so. Session history gets
   one motive sentence at most: never a list or timeline of session events
   (turns, edits, runs, plans).
@@ -141,26 +143,20 @@ section-per-topic template down as "inventory-like".
   publishes, what now fails fast or is refused, what a caller must now pass.
   Then, if worth it, the riskiest part or what is deliberately left alone.
   Skip what is obvious.
-- **Open points** from open `limits` rows and `process` facts (a plan step left
-  undone, a command that kept failing), each a clause, folded in where they
-  belong or in one short paragraph. If you ran `tracetoon check` and it
-  passed, don't repeat a "no passing run after the last commit" limit.
-  Session-history rows stay open points beside fresh checks: "the session's
-  last run of <kind> preceded the final edit of <files>" and "push/CI on the
-  final head not shown" are each stated as an open point (one clause), even
-  when a fresh `tracetoon check` passed; the fresh check covers the
-  submitted content, not what the session saw.
-  When a limit calls a pass a historical session run, say it that way: a
-  historical session run, not re-run on the final content (never "the last
-  commit passed"). Don't turn it into a claim that coverage is missing ("not
-  proven to cover", "does not establish coverage").
-- **CI and push status**: at most one sentence in all, from the `limits`
-  row that says it.
-- **Where to start and the feedback wanted**, in one or two lines at the end:
-  the function and file the `entry` process row names ("start at `fn` in
-  `file`"; when it names only a file, or there is none, give a file from
-  `changes.where` and no symbol), not the largest file or the file most
-  commit sentences name, and the decision or risk you want eyes on. Name a
+- **Open points**: `render` writes every open `limits` row under the
+  Validation section (session history, push/CI and tag status, other
+  platforms, fakes, code no test names). Don't repeat what that section
+  states. Keep another open point in prose only when it matters to a
+  reviewer and no limits row says it (a plan step left undone, a command
+  that kept failing, from `process`), as one clause.
+- **Where to start** (required): one line, "Where to start: `fn` in
+  `file` …", the function and file the `entry` process row names (when it
+  names only a file, or there is none, give a file from `changes.where` and
+  no symbol), not the largest file or the file most commit sentences name.
+- **Feedback wanted** (required): one line, "Feedback wanted: …?", one
+  concrete question for reviewers about a decision or risk in this change
+  (a trade-off, a default, a case the change handles one way). `render`
+  flags a body missing either line. Name a
   start symbol only as the `entry` row gives it: never a type, an interface,
   or a name `changes.where` lists for a file that only imports it.
   A review pointer names a function and only behaviors the brief ties to that
@@ -177,7 +173,8 @@ commit message or the Validation section, cut it.
 
 Put `<!-- tracetoon:validation -->` on its own line where the Validation
 section belongs (usually after the changes); `render` writes it from the
-validation rows. A validation row's `earlier` column names an earlier failure
+validation rows: fresh checks (passes on one line), session runs, then every
+open `limits` row as plain sentences. A validation row's `earlier` column names an earlier failure
 of that check; render mentions it there, so don't repeat it in prose.
 
 ## Tagging
@@ -267,6 +264,12 @@ strips tags and lists untagged sentences and unknown refs.
   diff; an addition backed only by those is a suggestion, not a fact.
 - Don't count tests or name test helpers.
 - Say each thing once: no recap, no second list of the same changes.
+- Never use the brief's vocabulary in the body ("the brief", "brief row",
+  "limits row", "Tracetoon read"): `render` flags it.
+- Sentences with "only", "always", "every", "never" or "no longer" tagged to
+  rows whose lines carry a condition, and a "Previously …" sentence whose
+  cited rows show no old code (`was`, `before`, a commit sentence), are
+  flagged: state the condition, or cite the row that shows the old code.
 - No meta text in the body: nothing about the brief, Tracetoon's rows, this
   drafting process or what you did or didn't read ("I did not review these
   hunks", "this description does not claim to cover…"). Describe the change
