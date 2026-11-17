@@ -407,3 +407,16 @@ describe('code evidence direction', () => {
     expect(cell).not.toMatch(/diff:5-19 [-+] /);
   });
 });
+
+describe('shebang', () => {
+  test('a hunk that shows a #! first line marks a runnable script', () => {
+    const patch = (header: string, lines: string[]) =>
+      ['diff --git a/bin/x b/bin/x', '--- a/bin/x', '+++ b/bin/x', header, ...lines].join('\n');
+    // A new file, and a change below an unchanged shebang.
+    expect(patchHunks(patch('@@ -0,0 +1,2 @@', ['+#!/usr/bin/env bash', '+set -e']))[0]!.shebang).toBe(true);
+    expect(patchHunks(patch('@@ -1,2 +1,2 @@', [' #!/bin/sh', '-a', '+b']))[0]!.shebang).toBe(true);
+    // A #! line further down, or none: not marked.
+    expect(patchHunks(patch('@@ -4,1 +4,1 @@', ['-a', '+#!b']))[0]!.shebang).toBeUndefined();
+    expect(patchHunks(patch('@@ -0,0 +1,1 @@', ['+export const a = 1;']))[0]!.shebang).toBeUndefined();
+  });
+});

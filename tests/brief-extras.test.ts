@@ -320,6 +320,42 @@ describe('platform, script and fake rows', () => {
     ]);
     // No session matched: nothing to compare with, no script rows.
     expect(limits(undefined)).toEqual([]);
+    // CI results in the logs (any commit of the PR) are runs of the workflows.
+    expect(
+      environmentRows(hunks, roles, host, ['bash scripts/build.sh'], true).some((r) =>
+        /CI workflow/.test(String(r.limit)),
+      ),
+    ).toBe(false);
+  });
+
+  test('only runnable entry points count as scripts; modules tests drive do not', () => {
+    const rows = environmentRows(
+      [
+        // A library module under scripts/: imported, never run on its own.
+        h('CH1', 'scripts/lib/e2e-oracle.ts', ['+ export function judge() {}']),
+        // A test drives this one by name.
+        { ...h('CH1', 'scripts/lib/e2e-cases.sh', ['+ echo case']) },
+        h('CH2', 'tests/e2e-cases.test.ts', ["+ const cases = load('scripts/lib/e2e-cases.sh');"]),
+        // Entry points: a shebang, a package.json script target.
+        { ...h('CH3', 'bin/release', ['+ #!/usr/bin/env bash', '+ set -e']), shebang: true },
+        h('CH3', 'tools/gen.ts', ['+ main();']),
+        h('CH4', 'package.json', ['+ "gen": "bun tools/gen.ts",']),
+      ],
+      new Map([
+        ...roles,
+        ['scripts/lib/e2e-oracle.ts', 'scripts'],
+        ['scripts/lib/e2e-cases.sh', 'scripts'],
+        ['tests/e2e-cases.test.ts', 'tests'],
+        ['bin/release', 'scripts'],
+        ['tools/gen.ts', 'scripts'],
+        ['package.json', 'config'],
+      ]),
+      host,
+      ['bun test'],
+    );
+    expect(rows.map((r) => String(r.limit)).filter((l) => /changed script/.test(l))).toEqual([
+      'bin/release, tools/gen.ts are changed scripts no recorded session command ran; only the diff shows them.',
+    ]);
   });
 
   test('fakes are named, with the change unit they stand in for', () => {
@@ -1122,6 +1158,25 @@ describe('remote commands and change details', () => {
       { cmd: 'gh run view', kind: 'ci' },
     ]);
     expect(remoteCommands('git status && gh pr view 3')).toEqual([]);
+    // A PR view whose output shows check results is a look at CI.
+    expect(remoteCommands('gh pr view 3 --json statusCheckRollup', '[{"conclusion":"SUCCESS"}]')).toEqual([
+      { cmd: 'gh pr view', kind: 'ci' },
+    ]);
+  });
+
+  test('CI results are read from what a CI look printed', async () => {
+    const { ciResults } = await import('../src/digest/build.ts');
+    const sha = 'a'.repeat(8) + 'b'.repeat(32);
+    expect(ciResults('build\tpass\t1m2s\thttps://x/1\nlint\tfail\t3s\thttps://x/2')).toEqual({ results: true });
+    expect(ciResults('Some checks are still pending\n0 cancelled, 1 failing, 5 successful, 0 skipped, and 2 pending checks')).toEqual({ results: true });
+    expect(ciResults(`[{"conclusion":"success","headSha":"${sha}","name":"CI"}]`)).toEqual({
+      results: true,
+      heads: [sha.slice(0, 12)],
+    });
+    // Only pending, or an error: no results.
+    expect(ciResults('0 failing, 0 successful, 3 pending checks')).toEqual({});
+    expect(ciResults('unknown flag: --json')).toEqual({});
+    expect(ciResults(undefined)).toEqual({});
   });
 
   test('details: flags, thresholds, defaults, workflow steps, config keys', async () => {
@@ -1149,18 +1204,74 @@ describe('remote commands and change details', () => {
       ],
       (f) => roles[f] ?? 'behavior',
     );
-    expect(d).toEqual([
-      '--no-timeout',
-      'MIN_DURATION_MS = 750',
-      'elapsed < 1500',
-      "?? 'fast'",
-      'job publish',
-    ]);
+    expect(d).toEqual(['--no-timeout', 'MIN_DURATION_MS = 750', 'job publish', 'step "Upload SBOM"']);
     const long = `Readers answer at their own pace, so the final interactive command runs with no watchdog timeout, while compile and build commands keep the existing execution timeout policy for every run of a sample input and every other path that does not wait on a reader at all`;
     const c = clipClause(long, 200);
     expect(c.length).toBeLessThanOrEqual(200);
     expect(c.endsWith('…')).toBe(true);
     expect(c).toContain('no watchdog timeout');
+  });
+});
+
+describe('details: only clean facts', () => {
+  test('fallback chains, ternaries, mismatched flag/value pairs, locals and test values are left out', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'src/run.ts',
+          code: [
+            "+ const out = flag('--out') ?? 'medium';",
+            "+ const effort = args.effort ?? opts.mode ?? 'acceptEdits';",
+            "+ const tools = argv.includes('--tools') || argv.includes('--allowedTools') ? list : 45;",
+            '+ const desired = 2;',
+            '+ let height = 4;',
+            '+ const exitCode = 127;',
+            "+ const label = title ?? 'Running verification';",
+            '+ const diff = 120;',
+            '+ const limit = 40;',
+            '+ for (let i = 0, step = 3; i < n; i++) {}',
+          ],
+        },
+        {
+          file: 'src/lib/thing.test.ts',
+          code: ['+ const MAX_ITEMS = 9;', "+ .option('--fake <x>', 'desc', 'y')"],
+        },
+        {
+          file: 'tests/fixtures/run.ts',
+          code: ['+ const RETRY_LIMIT = 7;'],
+        },
+      ],
+      () => 'behavior',
+    );
+    // Flags stay, never paired with a fallback value from another expression.
+    expect(d).toEqual(['--out', '--tools', '--allowedTools']);
+  });
+
+  test('flag defaults, named constants and settings with one literal are kept', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'src/cli.ts',
+          code: [
+            "+ .option('--effort <level>', 'reasoning effort', 'medium')",
+            "+ { flag: '--jobs', default: 4 },",
+            '+ export const HISTORY_GENERATION = 2;',
+            '+ const retryTimeoutMs = 30_000;',
+            '+   maxRetries: 3,',
+          ],
+        },
+      ],
+      () => 'behavior',
+    );
+    expect(d).toEqual([
+      "--effort (default 'medium')",
+      '--jobs (default 4)',
+      'HISTORY_GENERATION = 2',
+      'retryTimeoutMs = 30_000',
+      'maxRetries = 3',
+    ]);
   });
 });
 

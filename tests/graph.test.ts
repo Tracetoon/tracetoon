@@ -1985,7 +1985,41 @@ describe('the brief states recorded process and behavior', () => {
     s.props.remoteT = [t(6), t(7), t(8)];
     s.props.remoteFailed = ['ok', 'ok', 'failed'];
     expect(lim(pushed)).toContain(
-      "The session pushed or opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the logs Tracetoon read (afterwards it ran `gh run rerun`, which failed; Tracetoon doesn't read CI results).",
+      'The session pushed and opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the logs Tracetoon read (afterwards it ran `gh run rerun`, which failed; its output shows no check results).',
+    );
+    // A push alone is worded as a push, never as a PR opened.
+    const pushOnly: EvidenceGraph = structuredClone(graph);
+    Object.assign(pushOnly.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push'],
+      remoteKinds: ['publish'],
+      remoteT: [t(6)],
+      remoteFailed: ['ok'],
+    });
+    expect(lim(pushOnly)).toContain(
+      'The session pushed (`git push`); CI results for the final head are not in the logs Tracetoon read.',
+    );
+    // Check results after the last push cover the final head: no row.
+    const checked: EvidenceGraph = structuredClone(pushOnly);
+    Object.assign(checked.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push', 'gh pr checks'],
+      remoteKinds: ['publish', 'ci'],
+      remoteT: [t(6), t(7)],
+      remoteFailed: ['ok', 'ok'],
+      remoteResults: ['', 'results'],
+    });
+    expect(lim(checked).some((l) => /CI results/.test(l))).toBe(false);
+    // Results that name an earlier commit only: said exactly so.
+    const earlier: EvidenceGraph = structuredClone(checked);
+    earlier.nodes.push(N('Commit', 'fed987cba654', { subject: 'fix: follow-up', body: null, t: t(9) }));
+    Object.assign(earlier.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push', 'gh run list', 'git push'],
+      remoteKinds: ['publish', 'ci', 'publish'],
+      remoteT: [t(6), t(7), t(10)],
+      remoteFailed: ['ok', 'ok', 'ok'],
+      remoteResults: ['', 'results abc123def456', ''],
+    });
+    expect(lim(earlier)).toContain(
+      'The session pushed (`git push`); the logs record CI results (`gh run list`) for an earlier commit of this PR (abc123def456), not for the final head (fed987cba654).',
     );
     // A push before the PR's first commit pushed earlier work.
     const early: EvidenceGraph = structuredClone(pushed);

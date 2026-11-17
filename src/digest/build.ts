@@ -79,7 +79,16 @@ export interface DigestSession {
    * (`publish`), or a look at CI (`ci`: `gh run …`, `gh pr checks`), in order,
    * at most 20. Older digests: absent.
    */
-  remote?: { cmd: string; kind: 'publish' | 'ci'; t?: string; failed: boolean }[];
+  remote?: {
+    cmd: string;
+    kind: 'publish' | 'ci';
+    t?: string;
+    failed: boolean;
+    /** A `ci` look whose output shows CI or check results (pass/fail), not only pending. */
+    results?: true;
+    /** Commit shas (12 characters) that output names, when it shows results. */
+    heads?: string[];
+  }[];
   /** Individual verification runs (tests, builds, linters, type checks, evals). */
   runs: Run[];
   milestones: string[];
@@ -849,16 +858,41 @@ export interface Invocation {
 
 const PUBLISH_CMD = /^git\s+(?:-C\s+\S+\s+)?push\b|^gh\s+pr\s+(?:create|ready|merge)\b/;
 const CI_CMD = /^gh\s+(?:run\s+(?:view|watch|list|rerun)|pr\s+checks|workflow\s+run)\b/;
+/** Commands that may show check results in their output (`gh pr view --json statusCheckRollup`, `gh api …/check-runs`). */
+const CI_MAYBE_CMD = /^gh\s+(?:pr\s+(?:view|status)|api)\b/;
+/**
+ * Output that shows a CI or check result: `gh pr checks` rows (`name<TAB>pass`)
+ * and summaries, run conclusions in JSON or text, a failed run's log.
+ */
+const CI_RESULT =
+  /\t(?:pass|fail|failure|success)\t|\b[1-9]\d* (?:successful|failing|failed|passing)\b|\bAll checks (?:were successful|have passed)\b|\bSome checks were not successful\b|"(?:conclusion|bucket|state)"\s*:\s*"(?:success|failure|pass|fail|SUCCESS|FAILURE|timed_out|TIMED_OUT|cancelled|CANCELLED)"|\bcompleted with '(?:success|failure)'|\bconclusion:\s*(?:success|failure)\b|^[✓✗X] .+ (?:in \d|·)|##\[error\]/m;
+
+/**
+ * Whether a CI look's output shows results, and the commit shas it names
+ * (12 characters), for `results`/`heads` of a remote entry.
+ */
+export function ciResults(output: string | undefined): { results?: true; heads?: string[] } {
+  if (!output || !CI_RESULT.test(output)) return {};
+  const heads = [...new Set([...output.matchAll(/\b[0-9a-f]{40}\b/g)].map((m) => m[0].slice(0, 12)))];
+  return { results: true, ...(heads.length ? { heads: heads.slice(0, 12) } : {}) };
+}
 
 /**
  * The segments of a command that push, open a PR, or look at CI, as their
  * program and subcommand (`git push`, `gh pr create`, `gh run view`).
  */
-export function remoteCommands(cmd: string): { cmd: string; kind: 'publish' | 'ci' }[] {
+export function remoteCommands(
+  cmd: string,
+  output?: string,
+): { cmd: string; kind: 'publish' | 'ci' }[] {
   const out: { cmd: string; kind: 'publish' | 'ci' }[] = [];
   for (const raw of splitCommands(cmd)) {
     const seg = raw.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim();
-    const kind = PUBLISH_CMD.test(seg) ? 'publish' : CI_CMD.test(seg) ? 'ci' : undefined;
+    const kind = PUBLISH_CMD.test(seg)
+      ? 'publish'
+      : CI_CMD.test(seg) || (output !== undefined && CI_MAYBE_CMD.test(seg) && CI_RESULT.test(output))
+        ? 'ci'
+        : undefined;
     if (!kind) continue;
     const words = seg.split(/\s+/).filter((w) => !w.startsWith('-'));
     out.push({ cmd: seg.startsWith('git') ? 'git push' : words.slice(0, 3).join(' '), kind });
@@ -1124,9 +1158,14 @@ function sessionDigest(
             });
           }
         if (here)
-          for (const x of remoteCommands(r.cmd))
+          for (const x of remoteCommands(r.cmd, r.output))
             if (remote.length < 20)
-              remote.push({ ...x, ...(r.ts ? { t: r.ts } : {}), failed: r.isError === true });
+              remote.push({
+                ...x,
+                ...(r.ts ? { t: r.ts } : {}),
+                failed: r.isError === true,
+                ...(x.kind === 'ci' ? ciResults(r.output) : {}),
+              });
         const seg = testSegment(r.cmd);
         const test = seg !== undefined;
         const key = clip(scrub.text(commandKey(seg ?? r.cmd)), 60);

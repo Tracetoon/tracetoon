@@ -467,8 +467,10 @@ const joinNames = (xs: string[]) =>
 /**
  * Open points about the environment the recorded runs could not reach: code
  * specific to an OS or architecture other than the session's (one row per
- * change unit, platforms merged), changed scripts and CI workflows no session
- * command ran, behavior the changed tests reach only through fakes, and
+ * change unit, platforms merged), changed runnable scripts (a shell or
+ * PowerShell/batch file, a file with a shebang, a target a changed
+ * package.json script names) that no session command ran and no changed test
+ * names, CI workflows when the logs record no CI results (`ciSeen`), behavior the changed tests reach only through fakes, and
  * changed interactive (TTY) paths. Each says what the evidence shows, never
  * "untested". `ran` is the text of every command the included sessions ran;
  * undefined when no session was matched (no script rows then).
@@ -481,6 +483,7 @@ export function environmentRows(
     arch: process.arch,
   },
   ran?: string[],
+  ciSeen = false,
 ): Row[] {
   const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
   const code = (f: string) =>
@@ -533,15 +536,31 @@ export function environmentRows(
     const base = (f: string) => f.split('/').pop()!.toLowerCase();
     const scripts = new Map<string, string[]>();
     const workflows = new Map<string, string[]>();
+    // Text of the changed tests and of changed package.json scripts: a module
+    // a test names is driven by it; a file a package.json script names is a
+    // runnable entry point.
+    const testText = tests.map(hunkText).join('\n').toLowerCase();
+    const pkgText = hunks
+      .filter((h) => /(^|\/)package\.json$/.test(String(h.file)))
+      .map(hunkText)
+      .join('\n')
+      .toLowerCase();
+    const stem = (f: string) => base(f).replace(/\.[^.]+$/, '');
+    const entry = (h: Row, f: string) =>
+      SCRIPT_FILE.test(f) ||
+      h.shebang === true ||
+      (!!pkgText && (pkgText.includes(f.toLowerCase()) || pkgText.includes(base(f))));
+    const entries = new Set(hunks.filter((h) => entry(h, String(h.file))).map((h) => String(h.file)));
     for (const h of hunks) {
       const f = String(h.file);
       if (role(f) === 'tests') continue;
       const ch = String(h.change ?? '');
       if (WORKFLOW_FILE.test(f)) workflows.set(f, [...(workflows.get(f) ?? []), ch]);
       else if (
-        (SCRIPT_FILE.test(f) || (role(f) === 'scripts' && /^(?:scripts?|bin|tools?)\//i.test(f))) &&
+        entries.has(f) &&
         !said.includes(base(f)) &&
-        !said.includes(base(f).replace(/\.[^.]+$/, ''))
+        !said.includes(stem(f)) &&
+        !(stem(f).length >= 4 && testText.includes(stem(f)))
       )
         scripts.set(f, [...(scripts.get(f) ?? []), ch]);
     }
@@ -553,7 +572,8 @@ export function environmentRows(
         limit: `${shown(files)} ${files.length === 1 ? 'is a changed script' : 'are changed scripts'} no recorded session command ran; only the diff shows ${files.length === 1 ? 'it' : 'them'}.`,
       });
     }
-    if (workflows.size) {
+    // CI results in the logs (for any commit of the PR) are runs of them.
+    if (workflows.size && !ciSeen) {
       const files = [...workflows.keys()].sort();
       out.push({
         change: workflows.get(files[0]!)![0] || null,
@@ -651,32 +671,79 @@ export function sessionCommands(g: GraphEngine): string[] | undefined {
   ];
 }
 
-/**
- * CI on the final head is not in the logs: only when an included session
- * pushed or opened a PR (`git push`, `gh pr create` that didn't fail). No push
- * means no CI could exist for this head yet (the session was asked not to
- * push, or works locally), and with no session matched there is nothing to
- * pair it with. Names the CI commands run after the last push, if any:
- * Tracetoon doesn't read their results.
- */
-export function finalHeadRow(g: GraphEngine): Row | null {
-  const remote = g
+/** Pushes, PRs made and CI looks of the included sessions, oldest first. */
+function remoteEvents(g: GraphEngine) {
+  return g
     .run(
       `MATCH (s:Session {band: 'included'})
-       RETURN s.remoteCmds AS cmds, s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed`,
+       RETURN s.remoteCmds AS cmds, s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed,
+              s.remoteResults AS results`,
     )
     .rows.flatMap((r) =>
-      ((r.cmds as string[]) ?? []).map((c, i) => ({
-        cmd: String(c),
-        kind: String(((r.kinds as string[]) ?? [])[i] ?? ''),
-        t: String(((r.ts as string[]) ?? [])[i] ?? ''),
-        failed: ((r.failed as string[]) ?? [])[i] === 'failed',
-      })),
+      ((r.cmds as string[]) ?? []).map((c, i) => {
+        const res = String(((r.results as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
+        return {
+          cmd: String(c),
+          kind: String(((r.kinds as string[]) ?? [])[i] ?? ''),
+          t: String(((r.ts as string[]) ?? [])[i] ?? ''),
+          failed: ((r.failed as string[]) ?? [])[i] === 'failed',
+          results: res[0] === 'results',
+          heads: res.slice(1),
+        };
+      }),
     )
     .sort((a, b) => a.t.localeCompare(b.t));
-  const commits = g
+}
+
+/** This PR's commits with a time, newest first. */
+const prCommits = (g: GraphEngine) =>
+  g
     .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
     .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)));
+
+/**
+ * CI looks whose output shows check results (pass/fail) for this PR: made at
+ * or after its first commit, or naming one of its commits.
+ */
+function ciResultLooks(g: GraphEngine) {
+  const commits = prCommits(g);
+  const first = commits.at(-1);
+  const ids = commits.map((k) => shortSha(k.id));
+  return remoteEvents(g).filter(
+    (x) =>
+      x.kind === 'ci' &&
+      x.results &&
+      (x.heads.some((h) => ids.includes(h)) || !first || !x.t || x.t >= String(first.t)),
+  );
+}
+
+/** Whether the logs record CI or check results for any commit of this PR. */
+export const ciResultsSeen = (g: GraphEngine): boolean => ciResultLooks(g).length > 0;
+
+/** What a publishing command did, in words. */
+const publishVerb = (cmd: string) =>
+  /^gh pr create/.test(cmd)
+    ? 'opened a PR'
+    : /^gh pr ready/.test(cmd)
+      ? 'marked the PR ready for review'
+      : /^gh pr merge/.test(cmd)
+        ? 'merged the PR'
+        : 'pushed';
+
+/**
+ * CI on the final head is not in the logs: only when an included session
+ * pushed or opened a PR (`git push`, `gh pr create` that didn't fail), worded
+ * after what ran. No push means no CI could exist for this head yet (the
+ * session was asked not to push, or works locally), and with no session
+ * matched there is nothing to pair it with. CI looks whose output shows check
+ * results answer it when they cover the final head (they name it, or came
+ * after the last push and the last commit); when they cover only an earlier
+ * commit the row says so. Otherwise names the CI commands run after the last
+ * push, if any.
+ */
+export function finalHeadRow(g: GraphEngine): Row | null {
+  const remote = remoteEvents(g);
+  const commits = prCommits(g);
   const last = commits[0];
   const first = commits.at(-1);
   // A push before this PR's first commit pushed earlier work (a shared session).
@@ -686,17 +753,39 @@ export function finalHeadRow(g: GraphEngine): Row | null {
   if (!pushes.length) return null;
   const lastPush = pushes.at(-1)!;
   const commitAfter = !!last && !!lastPush.t && String(last.t) > lastPush.t;
+  const verbs = [...new Set(pushes.map((x) => publishVerb(x.cmd)))];
+  const did = `The session ${joinNames(verbs)} (${[...new Set(pushes.map((x) => `\`${x.cmd}\``))].join(', ')})`;
+  const lastId = last ? shortSha(last.id) : '';
+  const looks = ciResultLooks(g);
+  const onHead = looks.filter((x) =>
+    x.heads.length ? x.heads.includes(lastId) : !commitAfter && !!x.t && x.t >= lastPush.t,
+  );
+  if (onHead.length) return null;
+  if (looks.length) {
+    const named = [
+      ...new Set(
+        looks.flatMap((x) => x.heads).filter((h) => commits.some((k) => shortSha(k.id) === h)),
+      ),
+    ];
+    const cmds = [...new Set(looks.map((x) => `\`${x.cmd}\``))].slice(0, 3).join(', ');
+    return {
+      change: null,
+      kind: 'open',
+      limit: `${did}; the logs record CI results (${cmds}) for an earlier commit of this PR${
+        named.length ? ` (${named.join(', ')})` : ''
+      }, not for the final head${lastId ? ` (${lastId})` : ''}.`,
+    };
+  }
   const ci = remote.filter((x) => x.kind === 'ci' && x.t >= lastPush.t);
   const ciCmds = [...new Map(ci.map((x) => [`${x.cmd}${x.failed ? ' (failed)' : ''}`, x])).keys()];
-  const did = [...new Set(pushes.map((x) => `\`${x.cmd}\``))].join(', ');
   return {
     change: null,
     kind: 'open',
-    limit: `The session pushed or opened a PR (${did})${
-      commitAfter ? `; the last commit (${shortSha(last!.id)}) came after the last push` : ''
+    limit: `${did}${
+      commitAfter ? `; the last commit (${lastId}) came after the last push` : ''
     }; CI results for the final head are not in the logs Tracetoon read${
       ciCmds.length
-        ? ` (afterwards it ran ${ciCmds.slice(0, 3).map((c) => `\`${c.replace(' (failed)', '')}\`${c.endsWith('(failed)') ? ', which failed' : ''}`).join('; ')}; Tracetoon doesn't read CI results)`
+        ? ` (afterwards it ran ${ciCmds.slice(0, 3).map((c) => `\`${c.replace(' (failed)', '')}\`${c.endsWith('(failed)') ? ', which failed' : ''}`).join('; ')}; its output shows no check results)`
         : ''
     }.`,
   };

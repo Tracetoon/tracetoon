@@ -31,6 +31,7 @@ import {
   remotePathRows,
   environmentRows,
   finalHeadRow,
+  ciResultsSeen,
   sessionCommands,
   liveEvidence,
   functionProfiles,
@@ -387,12 +388,35 @@ export function addedFact(hs: Record<string, unknown>[]): string | undefined {
 }
 
 const MAX_DETAILS = 5;
-const DETAIL_WORD_SKIP = /^(?:i|j|k|n|x|y|id|index|length|count|len|idx|line|row|col|version)$/i;
+/** A test file by its path, whatever role it was given. */
+const TEST_PATH =
+  /(^|\/)(?:tests?|__tests__|spec|specs)\/|\.(?:test|spec)\.[cm]?[jt]sx?$|_test\.(?:go|py|rb)$|(^|\/)test_[^/]+\.py$/i;
+/** A literal value: a number, a quoted string, a boolean. */
+const LITERAL = String.raw`-?\d[\d_]*(?:\.\d+)?(?:\s*\*\s*\d[\d_]*)*|'[^']{1,40}'|"[^"]{1,40}"|\`[^\`]{1,40}\`|true|false`;
+/** Words that make a name a setting: a limit, a timeout, a size, a count of attempts. */
+const SETTING_WORD =
+  /^(?:timeout|ms|millis|seconds|secs?|interval|delay|retries|retry|attempts|max|min|limit|threshold|budget|ttl|size|cap|depth|tokens|chars|bytes|concurrency|workers|port|duration|grace|backoff|window|quota)$/i;
+const nameParts = (n: string) =>
+  n
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .split(/[\s_]+/)
+    .filter(Boolean);
+/** A named constant (`MAX_ITEMS`) or a setting (`minDurationMs`, `retry_limit`): never a local like `height`. */
+const settingName = (n: string) =>
+  /^[A-Z][A-Z\d]*(?:_[A-Z\d]+)+$|^[A-Z]{3,}$/.test(n) ||
+  (nameParts(n).length >= 2 && nameParts(n).some((w) => SETTING_WORD.test(w)));
+/** `[export] [const|let|readonly …] NAME [: type] = literal;` or `NAME: literal,` as the whole line. */
+const ASSIGNED = new RegExp(
+  String.raw`^(?:export\s+)?(?:(?:const|let|var|static|readonly|private|public|protected|final|val)\s+)*(?:this\.|self\.)?([A-Za-z_$][\w$]*)\s*(?::\s*[\w<>[\]|]+\s*)?(?:=(?![=>])|:)\s*(${LITERAL})\s*[;,]?$`,
+);
 /**
- * Concrete literals the added lines define behavior with: new CLI flags,
- * defaults and numeric thresholds or timeouts (`minDurationMs = 750`,
- * `< 500`), CI job and step names, config keys. At most five per change
- * unit, in patch order: the diff-only details a writer otherwise leaves out.
+ * Clean facts the added lines define behavior with: new CLI flags (with the
+ * default a literal assigns that flag on its own line), named constants and
+ * settings assigned one literal (`MIN_DURATION_MS = 750`, `retryLimit = 3`),
+ * CI job and step names, config keys. Never an expression (`??`, `||`, a
+ * ternary), a local (`height = 4`), or a test file's values. At most five
+ * per change unit, in patch order: the diff-only details a writer otherwise
+ * leaves out.
  */
 export function detailsOf(
   hs: Record<string, unknown>[],
@@ -406,7 +430,7 @@ export function detailsOf(
   for (const h of hs) {
     const file = String(h.file);
     const role = roleOf(file);
-    if (['tests', 'docs', 'generated', 'version'].includes(role)) continue;
+    if (['tests', 'docs', 'generated', 'version'].includes(role) || TEST_PATH.test(file)) continue;
     const workflow = /(^|\/)\.github\/workflows\/|\.gitlab-ci\.ya?ml$/.test(file);
     const config = role === 'config' && !workflow;
     for (const raw of ((h.code as string[]) ?? []).map(String)) {
@@ -438,16 +462,21 @@ export function detailsOf(
           add(`${kv[1]}: ${kv[2]!.trim()}`);
         continue;
       }
-      for (const m of l.matchAll(/(?<![\w-])--[a-z][\w-]+/g)) add(m[0]);
-      for (const m of l.matchAll(
-        /\b([A-Za-z_$][\w$]*)\s*(?::\s*(?:number\s*=\s*)?|=(?!=|>)\s*)(-?\d[\d_]*(?:\.\d+)?(?:\s*\*\s*\d[\d_]*)*)(?![\w.])/g,
-      ))
-        if (!DETAIL_WORD_SKIP.test(m[1]!) && !/^-?[01]$/.test(m[2]!)) add(`${m[1]} = ${m[2]}`);
-      for (const m of l.matchAll(/([\w$.]+)\s*(<=?|>=?)\s*(\d[\d_]{1,}(?:\.\d+)?)\b/g))
-        if (!DETAIL_WORD_SKIP.test(m[1]!.split('.').pop()!)) add(`${m[1]} ${m[2]} ${m[3]}`);
-      for (const m of l.matchAll(/\bdefault\w*\s*[:=(]\s*((['"`])[^'"`]{1,40}\2|-?\d[\d_.]*|true|false)/gi))
-        add(`default ${m[1]}`);
-      for (const m of l.matchAll(/\?\?\s*((['"`])[^'"`]{3,40}\2|-?\d[\d_.]{1,})/g)) add(`?? ${m[1]}`);
+      // Loops and conditions hold locals and comparisons, not settings.
+      if (/^(?:for|while|if|else|switch|case|return)\b/.test(l)) continue;
+      const flags = [...l.matchAll(/(?<![\w-])--[a-z][\w-]+/g)].map((m) => m[0]);
+      // A flag's default only when its own definition assigns one literal:
+      // `.option('--x <v>', 'text', 'medium')`, `{ flag: '--x', default: 5 }`.
+      const fallback = /\?\?|\|\||\?[^?.]*:/.test(l);
+      const def =
+        flags.length === 1 && !fallback
+          ? (new RegExp(String.raw`\.option\(\s*(['"\`])[^'"\`]*\1\s*,\s*(['"\`])[^'"\`]*\2\s*,\s*(${LITERAL})\s*\)`).exec(l)?.[3] ??
+            new RegExp(String.raw`\bdefault\w*\s*:\s*(${LITERAL})\s*[,})]`).exec(l)?.[1])
+          : undefined;
+      for (const f of flags) add(def ? `${f} (default ${def})` : f);
+      if (flags.length) continue;
+      const a = ASSIGNED.exec(l);
+      if (a && settingName(a[1]!) && !/^-?[01]$/.test(a[2]!)) add(`${a[1]} = ${a[2]}`);
     }
   }
   return out.slice(0, MAX_DETAILS);
@@ -1303,7 +1332,7 @@ export function briefParts(
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
             h.conds AS conds, h.code AS code, h.added AS added, h.removed AS removed, h.before AS before, h.context AS context,
-            h.tests AS tests, h.words AS words, h.moved AS moved, count(DISTINCT e) AS edits,
+            h.tests AS tests, h.words AS words, h.moved AS moved, h.shebang AS shebang, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
   const fileRole = new Map(
@@ -1902,7 +1931,7 @@ export function briefParts(
       // Environment rows first: what no recorded run could reach (another OS,
       // faked steps, a terminal, CI on the final head), above check recognition.
       [
-        ...environmentRows(hunkRows, fileRole, undefined, sessionCommands(g)),
+        ...environmentRows(hunkRows, fileRole, undefined, sessionCommands(g), ciResultsSeen(g)),
         ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
         ...limits,
       ],

@@ -94,6 +94,8 @@ export interface PatchHunk {
   types?: string[];
   /** Lowercased words of the changed lines (identifiers split, strings), for matching prose to code. */
   words: string[];
+  /** The hunk shows the file's first line as a shebang (`#!`): a runnable script. */
+  shebang?: true;
   /**
    * Up to 24 key changed lines, in patch order, for the neighborhood brief:
    * `- old ⇒ + new` for a removed line and its closest added line, then lines
@@ -225,6 +227,7 @@ export function patchHunks(patch: string): PatchHunk[] {
     if (cur && (oldLeft > 0 || newLeft > 0)) {
       const c = line[0];
       const text = line.slice(1);
+      if (c !== '-' && newLine === 1 && text.startsWith('#!')) cur.shebang = true;
       const indent = /^\s*/.exec(text)![0].replace(/\t/g, '    ').length;
       const listed = inImport;
       if (inImport) {
@@ -1007,6 +1010,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       fnWords: h.fnWords,
       words: h.words,
       code: h.code,
+      shebang: h.shebang ?? false,
     });
     rel('OF', ['Hunk', h.id], ['File', h.file]);
   }
@@ -1076,6 +1080,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       remoteKinds: (s.remote ?? []).map((x) => x.kind),
       remoteT: (s.remote ?? []).map((x) => x.t ?? ''),
       remoteFailed: (s.remote ?? []).map((x) => (x.failed ? 'failed' : 'ok')),
+      remoteResults: (s.remote ?? []).map((x) =>
+        x.results ? ['results', ...(x.heads ?? [])].join(' ') : '',
+      ),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)
