@@ -136,6 +136,13 @@ A visible title is optional. Choose no visible title, an integrated title, or a
 separate heading; a visible title has at most 6 words. The page holds at most
 80 words, and most good comics use 25–60. If it doesn't read on a phone, cut.
 
+The page must read at 360 px wide, where a four-across strip leaves each panel
+about 80 px. Give text-carrying panels room instead of shrinking the words:
+keep three or four panels in one row only when they are nearly wordless,
+otherwise stack them (`vertical`) or use `asymmetric`/`tiered`, and draw signs
+big rather than lettering them small. `tracetoon comic check` warns when a
+panel's text won't fit at phone width and names a layout that does.
+
 ## 4. Style and characters
 
 **Make it look like a comic.** Pick a comic style that suits the joke from
@@ -177,10 +184,10 @@ stand-ins for developers.
   "v": 2,
   "title": "Why Didn't You Just Say So",
   "synopsis": "A courier robot ignores every polite note telling it to stop, until a gate slams down with the reason written on it.",
-  "altText": "Three comic panels. A courier robot rolls past a sticky note reading JSON: please stop, then over a big note reading PLEASE. Finally a striped gate drops in front of it with a sign reading stderr: use the tracetoon skill, and the robot says: Oh. Why didn't you just say so?",
-  "format": "strip",
-  "composition": { "family": "sequence", "title": { "mode": "none" } },
-  "designReason": "Rule of three: two polite notes ignored, then the gate; the robot's cheerful obliviousness carries it.",
+  "altText": "Three comic panels, a wide one over two. A courier robot rolls past a sticky note reading JSON: please stop, then over a big note reading PLEASE. Finally a striped gate drops in front of it with a sign reading stderr: use the tracetoon skill, and the robot says: Oh. Why didn't you just say so?",
+  "format": "tiered-strip",
+  "composition": { "family": "tiered", "title": { "mode": "none" } },
+  "designReason": "Rule of three: two polite notes ignored, then the gate; the robot's cheerful obliviousness carries it. Tiered, not one row of three, so every sign reads on a phone.",
   "anchor": {
     "change": "Tracetoon blocks PR creation in Kiro by exiting with status 2 and writing the reason to stderr, because Kiro ignores JSON answers.",
     "terms": ["Kiro", "stderr", "gh pr create"],

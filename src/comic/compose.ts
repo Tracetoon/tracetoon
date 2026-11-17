@@ -312,11 +312,14 @@ ${footerBar(h, PAGE_W)}
 </svg>`;
 }
 
-/** Columns for a page of n square panels. */
+/**
+ * Columns for a page of n square panels (legacy scripts without a
+ * composition). At most two: three across left bubble text about 4 px tall
+ * on a 360 px phone. Pages that must read on a phone get a composition
+ * (phoneLayout), whose designed bubbles stay about 12 px.
+ */
 function columns(n: number): number {
-  if (n <= 3) return n;
-  if (n === 4) return 2;
-  return 3;
+  return n === 1 ? 1 : 2;
 }
 
 /**

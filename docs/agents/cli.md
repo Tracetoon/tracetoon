@@ -345,6 +345,8 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 | `--consent` | the user agreed to send comic prompts to this provider |
 | `--force` | redraw panels that already exist |
 | `--lettering <how>` | model (the image model letters the page) or overlay (Tracetoon draws bubbles) |
+| `--repair <instruction>` | edit the current page with this one change instead of redrawing it (from comic loop) |
+| `--reflow` | same script, a layout whose panels are wide enough to read on a phone; then redraw |
 
 ## `tracetoon comic reroll`
 
@@ -364,6 +366,26 @@ lay out panels and speech bubbles into out/comic.png
 | Option | Description |
 | --- | --- |
 | `--run <id>` | run id (default: latest) |
+
+## `tracetoon comic loop`
+
+judge the rendered comic with fresh AI readers and say what to do next: judge, repair one thing, or stop (keeps the better version)
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--creative` | experimental: also rewrite a flat joke or weak script automatically (off by default) |
+
+## `tracetoon comic loop-import`
+
+record a judge subagent's answer for a comic loop task
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--task <id>` | the task comic loop printed, e.g. observe:c1 (required) |
+| `--file <path>` | the answer file (default: the task's result.json) |
+| `--agent-id <id>` | the judge subagent's real id |
 
 ## `tracetoon export`
 
