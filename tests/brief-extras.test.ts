@@ -1163,3 +1163,25 @@ describe('remote commands and change details', () => {
     expect(c).toContain('no watchdog timeout');
   });
 });
+
+describe('details: config noise', () => {
+  test('versions, build ids, prose values and one-character fallbacks are left out', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'config/app.json',
+          code: [
+            '+ "version": "1.2.3",',
+            '+ "buildId": "3a604c88a7c5b63cd9489d6bf6646ac7",',
+            '+ "description": "Render a screenshot of the first frame",',
+            '+ "interval": "monthly",',
+          ],
+        },
+        { file: 'src/a.ts', code: ["+ const dir = opts.dir ?? '.';"] },
+      ],
+      (f) => (f.endsWith('.json') ? 'config' : 'behavior'),
+    );
+    expect(d).toEqual(['interval: "monthly"']);
+  });
+});

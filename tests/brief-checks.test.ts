@@ -452,7 +452,7 @@ describe('do not say', () => {
             ...x,
             rows: x.rows.map((r) => ({
               ...r,
-              behavior: ['.gitignore: + .claude/', 'SKILL.md: + if you need it, ask', ...((r.behavior as string[]) ?? [])],
+              behavior: ['.gitignore: + .claude/', 'SKILL.md: + if you need it, ask', 'LICENSE: + unless required by law or if agreed', ...((r.behavior as string[]) ?? [])],
             })),
           }
         : x,
@@ -460,6 +460,7 @@ describe('do not say', () => {
     const row = doNotSayRows(s, ['load']).find((r) => r.kind === 'conditional code')!;
     expect(String(row.text)).not.toContain('.gitignore');
     expect(String(row.text)).not.toContain('SKILL.md');
+    expect(String(row.text)).not.toContain('LICENSE');
   });
 
   test('recorded requests, plans and decisions: never "none was recorded"', () => {

@@ -1987,6 +1987,14 @@ describe('the brief states recorded process and behavior', () => {
     expect(lim(pushed)).toContain(
       "The session pushed or opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the logs Tracetoon read (afterwards it ran `gh run rerun`, which failed; Tracetoon doesn't read CI results).",
     );
+    // A push before the PR's first commit pushed earlier work.
+    const early: EvidenceGraph = structuredClone(pushed);
+    early.nodes.find((n) => n.label === 'Session')!.props.remoteT = [
+      '2000-01-01T00:00:00.000Z',
+      '2000-01-01T00:00:01.000Z',
+      '2000-01-01T00:00:02.000Z',
+    ];
+    expect(lim(early).some((l) => /CI results/.test(l))).toBe(false);
     // A push that failed reached nothing.
     s.props.remoteCmds = ['git push'];
     s.props.remoteKinds = ['publish'];

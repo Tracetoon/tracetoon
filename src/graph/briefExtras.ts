@@ -503,7 +503,9 @@ export function environmentRows(
     if (WINDOWS_SCRIPT.test(file)) names.add('Windows');
     for (const l of addedLines(h)) {
       const ps = platformsOfLine(l, file).filter(foreign);
-      if (ps.length && !line) line = l;
+      // A message that names a command is no example of the code.
+      if (ps.length && !line && !/^(?:echo|printf|Write-Host|console\.\w+|print)\b/.test(l))
+        line = l;
       for (const p of ps) names.add(p);
     }
     const kept = [...names].filter(foreign);
@@ -672,12 +674,17 @@ export function finalHeadRow(g: GraphEngine): Row | null {
       })),
     )
     .sort((a, b) => a.t.localeCompare(b.t));
-  const pushes = remote.filter((x) => x.kind === 'publish' && !x.failed);
+  const commits = g
+    .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
+    .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)));
+  const last = commits[0];
+  const first = commits.at(-1);
+  // A push before this PR's first commit pushed earlier work (a shared session).
+  const pushes = remote.filter(
+    (x) => x.kind === 'publish' && !x.failed && (!first || !x.t || x.t >= String(first.t)),
+  );
   if (!pushes.length) return null;
   const lastPush = pushes.at(-1)!;
-  const last = g
-    .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
-    .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
   const commitAfter = !!last && !!lastPush.t && String(last.t) > lastPush.t;
   const ci = remote.filter((x) => x.kind === 'ci' && x.t >= lastPush.t);
   const ciCmds = [...new Map(ci.map((x) => [`${x.cmd}${x.failed ? ' (failed)' : ''}`, x])).keys()];

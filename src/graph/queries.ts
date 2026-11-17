@@ -423,8 +423,19 @@ export function detailsOf(
         continue;
       }
       if (config) {
+        // A setting: a number, a boolean or a short word; never a version,
+        // a build id or prose (a fixture's description).
         const kv = /^["']?([\w.-]+)["']?\s*[:=]\s*(["']?[^,{[]+?["']?)\s*,?$/.exec(l);
-        if (kv && kv[2]!.trim()) add(`${kv[1]}: ${kv[2]}`);
+        const v = kv?.[2]?.trim().replace(/^["']|["']$/g, '') ?? '';
+        if (
+          kv &&
+          v &&
+          v.length <= 30 &&
+          !/\s/.test(v) &&
+          !/^(?:version|buildId|build_id|hash|sha\w*|checksum|integrity)$/i.test(kv[1]!) &&
+          !/^[0-9a-f]{16,}$/i.test(v)
+        )
+          add(`${kv[1]}: ${kv[2]!.trim()}`);
         continue;
       }
       for (const m of l.matchAll(/(?<![\w-])--[a-z][\w-]+/g)) add(m[0]);
@@ -436,7 +447,7 @@ export function detailsOf(
         if (!DETAIL_WORD_SKIP.test(m[1]!.split('.').pop()!)) add(`${m[1]} ${m[2]} ${m[3]}`);
       for (const m of l.matchAll(/\bdefault\w*\s*[:=(]\s*((['"`])[^'"`]{1,40}\2|-?\d[\d_.]*|true|false)/gi))
         add(`default ${m[1]}`);
-      for (const m of l.matchAll(/\?\?\s*((['"`])[^'"`]{1,40}\2|-?\d[\d_.]{1,})/g)) add(`?? ${m[1]}`);
+      for (const m of l.matchAll(/\?\?\s*((['"`])[^'"`]{3,40}\2|-?\d[\d_.]{1,})/g)) add(`?? ${m[1]}`);
     }
   }
   return out.slice(0, MAX_DETAILS);

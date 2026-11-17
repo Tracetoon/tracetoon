@@ -662,7 +662,7 @@ export function valuePairs(minus: string[], plus: string[]): string[] {
 
 /** Files whose lines are prose or data, not code: an "if" there is a word. */
 export const PROSE_FILE =
-  /\.(md|mdx|txt|rst|adoc|json|jsonc|ya?ml|toml|lock|csv|svg|html?|xml|ini|cfg)$|(^|\/)VERSION$/i;
+  /\.(md|mdx|txt|rst|adoc|json|jsonc|ya?ml|toml|lock|csv|svg|html?|xml|ini|cfg)$|(^|\/)VERSION$|(^|\/)(?:LICEN[CS]E|NOTICE|COPYING|AUTHORS|CHANGELOG|README)(?:\.[\w-]+)?$/i;
 /** A line's code with string contents blanked, so an "if" or "??" in a string doesn't count. */
 const codeOnly = (l: string) =>
   l.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`]*`/g, '""');
