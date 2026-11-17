@@ -16,6 +16,8 @@
   "keywords": [
     "pull-request",
     "pull-request-description",
+    "pr-description-generator",
+    "ai-pull-request",
     "github",
     "code-review",
     "ai-agents",
@@ -43,6 +45,10 @@
     "session-logs",
     "agent-trace",
     "provenance",
+    "ai-provenance",
+    "mcp",
+    "mcp-server",
+    "developer-tools",
     "comic"
   ],
   "bin": {

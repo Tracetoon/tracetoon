@@ -35,7 +35,9 @@ and caveats.</sub>
 > **For AI agents:** start with [AGENTS.md](AGENTS.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
 > [docs/agents/install.md](docs/agents/install.md) (install routes an agent can
-> run, per host). [llms.txt](llms.txt) indexes both.
+> run, per host). [docs/agents/use-cases.md](docs/agents/use-cases.md) lists
+> the problems it solves, in the words users ask them. [llms.txt](llms.txt)
+> indexes all three.
 
 **Contents:** [Quick start](#-quick-start) ·
 [Better PRs](#-better-prs-judged-blind-picked-almost-every-time) ·

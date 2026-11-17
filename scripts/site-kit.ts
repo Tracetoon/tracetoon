@@ -32,6 +32,7 @@ import {
   llmsFullTxt,
   llmsTxt,
   pitch,
+  PROBLEMS,
   root,
   surfaces,
 } from './agent-surfaces.ts';
@@ -62,6 +63,7 @@ export const PAGES: Record<string, string> = {
   'AGENTS.md': 'agents.md',
   'docs/agents/install.md': 'docs/agents/install.md',
   'docs/agents/faq.md': 'docs/agents/faq.md',
+  'docs/agents/use-cases.md': 'docs/agents/use-cases.md',
   'docs/agents/support.md': 'docs/agents/support.md',
   'docs/agents/cli.md': 'docs/agents/cli.md',
   'docs/agents/errors.md': 'docs/agents/errors.md',
@@ -77,6 +79,7 @@ export const SITE_LINKS: LlmsLinks = {
   errors: `${SITE}/docs/agents/errors.md`,
   readme: `${SITE}/index.md`,
   support: `${SITE}/docs/agents/support.md`,
+  useCases: `${SITE}/docs/agents/use-cases.md`,
 };
 
 const RAW = 'https://raw.githubusercontent.com/Tracetoon/tracetoon/main/';
@@ -125,7 +128,8 @@ ${intro}
 
 > **For AI agents:** start with [agents.md](AGENTS.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
-> [install.md](docs/agents/install.md). [llms.txt](${SITE}/llms.txt) indexes them.
+> [install.md](docs/agents/install.md). [use-cases.md](docs/agents/use-cases.md)
+> lists the problems it solves. [llms.txt](${SITE}/llms.txt) indexes them.
 
 ${quick}
 
@@ -183,10 +187,36 @@ export function jsonLd(version = pkg.version) {
     codeRepository: REPO_URL,
     programmingLanguage: 'TypeScript',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    keywords: [
+      'pull request description generator',
+      'AI pull request description',
+      'coding agent session logs',
+      'AI code provenance',
+      'code review',
+      'GitHub CLI',
+      'MCP server',
+    ].join(', '),
   };
 }
 
-function headHtml(ld: object, pages: string[]): string {
+/**
+ * schema.org FAQPage for the home page, from the problems the use-cases page
+ * answers: search engines and AI answer engines read it to match a question
+ * to Tracetoon.
+ */
+export function faqLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: PROBLEMS.map((p) => ({
+      '@type': 'Question',
+      name: p.q,
+      acceptedAnswer: { '@type': 'Answer', text: p.a.replace(/`/g, '') },
+    })),
+  };
+}
+
+function headHtml(ld: object, faq: object, pages: string[]): string {
   const alternates = pages
     .map(
       (p) =>
@@ -198,6 +228,9 @@ function headHtml(ld: object, pages: string[]): string {
 ${alternates}
 <script type="application/ld+json">
 ${JSON.stringify(ld, null, 2)}
+</script>
+<script type="application/ld+json">
+${JSON.stringify(faq, null, 2)}
 </script>
 `;
 }
@@ -217,6 +250,7 @@ ${pages.map((p) => `| \`${p}\` | Markdown page |`).join('\n')}
 | \`robots.txt\` | Welcomes AI crawlers and fetchers by name; points at the sitemap and llms.txt |
 | \`sitemap-agents.xml\` | The markdown pages and llms files |
 | \`jsonld.json\` | schema.org \`SoftwareApplication\` for the home page |
+| \`faq-jsonld.json\` | schema.org \`FAQPage\`: the problems Tracetoon solves, for the home page |
 | \`head.html\` | \`<link rel="alternate">\` tags and the JSON-LD \`<script>\` to paste into \`<head>\` |
 ${skills ? '| `.well-known/agent-skills/` | Experimental: the skill index (draft RFC v0.2.0) and the skill archive it names |\n' : ''}
 ## Deploy
@@ -259,7 +293,9 @@ ${skills ? '| `.well-known/agent-skills/` | Experimental: the skill index (draft
    \`<link rel="alternate" type="text/markdown" href="…">\` (\`head.html\` has
    the tags, one per page).
 4. **Embed the JSON-LD** on the home page: the \`<script type="application/ld+json">\`
-   block in \`head.html\`, which holds \`jsonld.json\`.
+   blocks in \`head.html\`, which hold \`jsonld.json\` and \`faq-jsonld.json\`.
+   Show the same questions and answers on the page itself (FAQPage markup
+   must match visible content); \`docs/agents/use-cases.md\` has them.
 5. **Install \`robots.txt\`** at the root. If the site already has a sitemap,
    add its \`Sitemap:\` line too; keep \`sitemap-agents.xml\` beside it.
 ${
@@ -394,6 +430,7 @@ export function siteKit(opts: { skillZip?: string } = {}): Map<string, string | 
     llmsFullTxt(
       llms,
       out.get('agents.md') as string,
+      out.get('docs/agents/use-cases.md') as string,
       out.get('docs/agents/install.md') as string,
       out.get('docs/agents/support.md') as string,
       out.get('docs/agents/faq.md') as string,
@@ -404,7 +441,9 @@ export function siteKit(opts: { skillZip?: string } = {}): Map<string, string | 
   out.set('sitemap-agents.xml', sitemap([...pages, 'llms.txt', 'llms-full.txt']));
   const ld = jsonLd();
   out.set('jsonld.json', JSON.stringify(ld, null, 2) + '\n');
-  out.set('head.html', headHtml(ld, pages));
+  const faq = faqLd();
+  out.set('faq-jsonld.json', JSON.stringify(faq, null, 2) + '\n');
+  out.set('head.html', headHtml(ld, faq, pages));
   if (opts.skillZip) {
     const { zip: archive, description } = skillArchive(opts.skillZip);
     out.set('.well-known/agent-skills/tracetoon.zip', archive);

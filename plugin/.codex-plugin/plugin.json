@@ -12,12 +12,15 @@
   "keywords": [
     "pull-request",
     "pull-request-description",
+    "pr-description-generator",
     "github",
     "code-review",
     "agent-skills",
     "session-logs",
     "agent-trace",
     "provenance",
+    "ai-provenance",
+    "mcp-server",
     "comic"
   ],
   "skills": "./skills/",
