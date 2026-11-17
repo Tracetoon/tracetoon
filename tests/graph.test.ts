@@ -845,12 +845,57 @@ describe('evidence graph', () => {
         },
       ],
     } as any);
+    // Passing receipts collapse into one line naming each.
     const lines = v.split('\n').filter((l) => l.startsWith('- '));
-    expect(lines).toHaveLength(4);
-    expect(v).toContain(
-      '- `bun run bundle`: passed, run by `tracetoon check` on the submitted content.',
-    );
+    expect(lines).toEqual([
+      '- 4 checks passed, run by `tracetoon check` on the submitted content: `bun x tsc --noEmit`, `bun test` (96 pass, 0 fail), `bun run bundle`, `bun x prettier --check .`.',
+    ]);
+    expect(v).toContain('from `tracetoon check` runs on the submitted content.</sub>');
     expect(v).not.toContain('tests/a.test.ts');
+  });
+
+  test('a failed receipt keeps the session pass, names failing files and the toolchain', () => {
+    const v = validationSection({
+      unchecked: [],
+      toolchain: ['bun 1.2.0 (.bun-version; this environment runs 1.3.14)'],
+      sections: [
+        {
+          title: 'changes',
+          rows: [{ change: 'CH1', where: ['tests/cache.test.ts', 'src/cache.ts (get)'] }],
+        },
+        {
+          title: 'validation',
+          rows: [
+            {
+              check: 'V1',
+              kind: 'test',
+              outcome: 'failed',
+              result: '40 pass; 2 fail; tests/cache.test.ts; tests/other.test.ts',
+              cmd: 'bun test',
+              when: 'fresh: run on the submitted content',
+              editedAfter: [],
+            },
+            {
+              check: 'R4',
+              kind: 'test',
+              outcome: 'passed',
+              result: '42 pass; 0 fail',
+              cmd: 'bun test',
+              when: 'after the last edit the logs captured',
+              editedAfter: [],
+              statable: true,
+            },
+          ],
+        },
+      ],
+    } as any);
+    expect(v).toContain(
+      'Failing test files: `tests/cache.test.ts` (changed in this PR), `tests/other.test.ts` (not changed in this PR).',
+    );
+    expect(v).toContain('The repo pins bun 1.2.0');
+    expect(v).toContain('passed (42 pass, 0 fail) in the session logs');
+    // No lines, no heading.
+    expect(validationSection({ unchecked: [], sections: [] } as any)).toBe('');
   });
 
   test('shown commands drop output redirections', () => {

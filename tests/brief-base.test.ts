@@ -84,3 +84,26 @@ describe('base code of adding-only hunks (`before`)', () => {
     expect(none.nodes[0]!.props.before).toBeUndefined();
   });
 });
+
+describe('pinned toolchains', () => {
+  test('a pin the running version does not satisfy is named', async () => {
+    const { toolchainMismatch, satisfies } = await import('../src/graph/toolchain.ts');
+    const { tempDir } = await import('./helpers.ts');
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    expect(satisfies('1.2.0', '1.3.14')).toBe(false);
+    expect(satisfies('>=1.3.14', '1.3.14')).toBe(true);
+    expect(satisfies('^20.1.0', '20.5.0')).toBe(true);
+    expect(satisfies('20', '22.1.0')).toBe(false);
+    const root = tempDir();
+    writeFileSync(join(root, '.bun-version'), '1.2.0\n');
+    writeFileSync(
+      join(root, 'package.json'),
+      JSON.stringify({ engines: { node: '>=18' } }),
+    );
+    const running = (t: string) => (t === 'bun' ? '1.3.14' : '22.0.0');
+    expect(toolchainMismatch(root, running)).toEqual([
+      'bun 1.2.0 (.bun-version; this environment runs 1.3.14)',
+    ]);
+  });
+});

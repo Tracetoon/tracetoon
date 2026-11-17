@@ -26,6 +26,11 @@ export interface BriefParts {
   owners?: { name: string; file: string; nameWords: string[]; words: string[] }[];
   /** A `tracetoon check` receipt passed on the submitted content. */
   freshPass?: boolean;
+  /**
+   * Toolchain versions the repo pins that differ from the ones that ran here
+   * (`toolchainMismatch`): a fresh failure may reflect this environment.
+   */
+  toolchain?: string[];
 }
 
 export interface BriefApplied {
@@ -132,7 +137,22 @@ export function validationSection(b: BriefParts): string {
     latest.delete(cmd);
     latest.set(cmd, r);
   }
+  const changed = new Set(
+    rowsOf(b, 'changes').flatMap((r) =>
+      ((r.where as string[]) ?? []).map((w) => String(w).replace(/\s*\(.*$/, '')),
+    ),
+  );
+  const passing: { cmd: string; result: string }[] = [];
   for (const [cmd, r] of latest) {
+    if (r.outcome === 'passed' && !plain(r.result).startsWith(COULD_NOT_RUN)) {
+      const result = plain(r.result)
+        .split(/\s*;\s*/)
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .join(', ');
+      passing.push({ cmd, result });
+      continue;
+    }
     // A check that could not start here (no tool, dependency or network) did
     // not fail on the submitted content: it says why, and nothing more.
     const unrun = plain(r.result).startsWith(COULD_NOT_RUN);
@@ -146,6 +166,35 @@ export function validationSection(b: BriefParts): string {
       });
       continue;
     }
+    // A failure: the failing test files its output names, and whether this PR
+    // changed them; a pinned toolchain other than the one that ran.
+    const failing =
+      r.outcome === 'failed'
+        ? [
+            ...new Set(
+              (plain(r.result).match(TEST_FILE) ?? []).map((f) => f.replace(/^\.\//, '')),
+            ),
+          ].slice(0, 3)
+        : [];
+    const inPr = (f: string) =>
+      [...changed].some((c) => c === f || c.endsWith(`/${f}`) || f.endsWith(`/${c}`));
+    const notes = [
+      ...(failing.length
+        ? [
+            `Failing test file${failing.length === 1 ? '' : 's'}: ${failing
+              .map(
+                (f) =>
+                  `\`${f}\` (${inPr(f) ? 'changed in this PR' : 'not changed in this PR'})`,
+              )
+              .join(', ')}.`,
+          ]
+        : []),
+      ...(r.outcome === 'failed' && b.toolchain?.length
+        ? [
+            `The repo pins ${b.toolchain.join(', ')}; the failure may reflect this environment rather than the change.`,
+          ]
+        : []),
+    ];
     shown.push({
       kind: String(r.kind),
       line: `- \`${cmd}\`: ${String(r.outcome)}${
@@ -156,15 +205,29 @@ export function validationSection(b: BriefParts): string {
               .filter(Boolean)
               .join(', ')})`
           : ''
-      }, run by \`tracetoon check\` on the submitted content.`,
+      }, run by \`tracetoon check\` on the submitted content.${notes.length ? ` ${notes.join(' ')}` : ''}`,
       when: 'fresh',
       current: true,
     });
   }
+  if (passing.length)
+    shown.unshift({
+      kind: 'receipts',
+      line:
+        passing.length === 1
+          ? `- \`${passing[0]!.cmd}\`: passed${passing[0]!.result ? ` (${passing[0]!.result})` : ''}, run by \`tracetoon check\` on the submitted content.`
+          : `- ${passing.length} checks passed, run by \`tracetoon check\` on the submitted content: ${passing
+              .map((p) => `\`${p.cmd}\`${p.result ? ` (${p.result})` : ''}`)
+              .join(', ')}.`,
+      when: 'fresh',
+      current: true,
+    });
   // A receipt that could not run here leaves its kind to the session logs.
+  // A failed receipt keeps the kind's last session run beside it: the pass
+  // the session saw is evidence too, and the failure may be this environment.
   const receiptKinds = new Set(
     receipts
-      .filter((r) => !plain(r.result).startsWith(COULD_NOT_RUN))
+      .filter((r) => r.outcome === 'passed' && !plain(r.result).startsWith(COULD_NOT_RUN))
       .map((r) => String(r.kind)),
   );
   for (const r of logRuns) {
@@ -184,7 +247,8 @@ export function validationSection(b: BriefParts): string {
         (x) =>
           x.current &&
           x.line.startsWith(`- \`${cmd}\`:`) &&
-          !x.line.startsWith(`- \`${cmd}\`: could not run in this environment`),
+          !x.line.startsWith(`- \`${cmd}\`: could not run in this environment`) &&
+          !x.line.startsWith(`- \`${cmd}\`: failed`),
       )
     )
       continue;
@@ -254,14 +318,27 @@ export function validationSection(b: BriefParts): string {
   const fresh = shown.some((x) => /submitted content|fresh/i.test(x.when));
   if (predates && !fresh)
     lines.push("- Tracetoon can't tell whether these runs saw the final commit.");
+  if (!lines.length) return '';
+  const fromReceipts = shown.some((x) => x.current);
+  const fromLogs = shown.some((x) => !x.current);
   return [
     '## Validation',
     '',
-    '<sub>Written by Tracetoon from the checks recorded in the session logs.</sub>',
+    `<sub>Written by Tracetoon from ${
+      fromReceipts && fromLogs
+        ? '`tracetoon check` runs on the submitted content and the checks recorded in the session logs'
+        : fromReceipts
+          ? '`tracetoon check` runs on the submitted content'
+          : 'the checks recorded in the session logs'
+    }.</sub>`,
     '',
     ...lines,
   ].join('\n');
 }
+
+/** Test file paths in a check's output. */
+const TEST_FILE =
+  /(?:\.\/)?[\w./-]*?(?:[\w-]+\.(?:test|spec)\.[cm]?[jt]sx?|test_[\w]+\.py|[\w]+_test\.(?:py|go)|[\w]+Test\.(?:java|kt))\b/g;
 
 /** Every ref a writer may cite. */
 export function briefRefs(b: BriefParts): Set<string> {
@@ -718,7 +795,12 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     '',
   );
   const validation = text.includes(VALIDATION_MARKER);
-  if (validation) text = text.replace(VALIDATION_MARKER, validationSection(b));
+  if (validation) {
+    const section = validationSection(b);
+    text = section
+      ? text.replace(VALIDATION_MARKER, section)
+      : text.replace(`${VALIDATION_MARKER}\n`, '').replace(VALIDATION_MARKER, '');
+  }
   return {
     text,
     validation,

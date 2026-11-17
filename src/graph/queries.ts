@@ -1512,10 +1512,12 @@ export function briefParts(
   // One run per kind, only one whose result can be checked exactly (see
   // runHistory.ts). A kind Tracetoon checked itself on the submitted content
   // (a V receipt) needs no log run.
+  // Only a passing receipt: beside a failed one the kind's session run stays.
   const receiptKinds = new Set(
     receipts
       .filter(
         (v) =>
+          v.outcome === 'passed' &&
           !String(((v.summary as string[]) ?? [])[0] ?? '').startsWith(COULD_NOT_RUN),
       )
       .map((v) => String(v.kind)),

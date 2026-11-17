@@ -4,6 +4,7 @@
  * something changed since or the leak scan found something. The only edits
  * after rendering fill in where the comic image is hosted.
  */
+import { toolchainMismatch } from '../graph/toolchain.ts';
 import { digestCmd } from './digest.ts';
 import {
   loadReviewPlan,
@@ -364,7 +365,8 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   // returned an unrendered draft.
   const checksStale = () =>
     readTask(run) &&
-    digest!.checksSha !== (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
+    digest!.checksSha !==
+      (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
   if (checksStale()) {
     digestCmd(cwd, { run: run.id, offline: true }, undefined, false);
     ({ run, truth } = loadRun(cwd, run.id));
@@ -396,10 +398,18 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   const storedGraph = loadGraph(run);
   // A check that passed on the submitted content retires "no pass after the last commit".
   const freshPass = passOnSubmittedContent(run, truth.toplevel);
-  const briefCheck = applyBrief(
-    bodyMd,
-    storedGraph ? graphBriefParts(storedGraph, runLayout(run), freshPass) : undefined,
-  );
+  const parts = storedGraph
+    ? graphBriefParts(storedGraph, runLayout(run), freshPass)
+    : undefined;
+  // A fresh check that failed: a pinned toolchain other than the one here may be why.
+  if (
+    parts &&
+    (parts.sections.find((s) => s.title === 'validation')?.rows ?? []).some(
+      (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'failed',
+    )
+  )
+    parts.toolchain = toolchainMismatch(truth.toplevel);
+  const briefCheck = applyBrief(bodyMd, parts);
   const draft = briefCheck.text;
   // The title: a person's choice is kept. A title edited on GitHub since
   // Tracetoon posted it, or written by someone on a PR Tracetoon didn't title,
