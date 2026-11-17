@@ -62,6 +62,19 @@ const sha = (p: string) => createHash('sha256').update(readFileSync(p)).digest('
 const pageFile = (dir: string) =>
   ['png', 'jpg', 'jpeg', 'webp'].map((e) => join(dir, `page.${e}`)).find(existsSync);
 
+/**
+ * The candidate a repair starts from: the incumbent, else the newest repair
+ * baseline (not a candidate that was rejected), else the latest.
+ */
+function repairBase(s: State): string | null {
+  return (
+    s.incumbent ??
+    [...s.log].reverse().find((l) => l.decision === 'baseline')?.candidate ??
+    s.candidates.at(-1)?.id ??
+    null
+  );
+}
+
 /** Count one image-generation request against the loop's render budget. */
 export function noteRender(run: Run) {
   const s: State = loadLoop(run) ?? newLoop();
@@ -95,7 +108,7 @@ export function archiveCandidate(
   if (page) copyFileSync(page, join(dir, `page${page.slice(page.lastIndexOf('.'))}`));
   if (!s.used.renders) s.used.renders = 1; // art drawn before the loop started counting
   const pending = s.pendingRevision;
-  const parent = s.incumbent ?? s.candidates.at(-1)?.id ?? null;
+  const parent = repairBase(s);
   const kind = pending?.kind ?? 'initial';
   let frozen: string[] | undefined;
   if (kind === 'concrete' && parent) {
@@ -126,7 +139,7 @@ export function repairReference(
   run: Run,
 ): { path: string; data: Uint8Array } | undefined {
   const s = loadLoop(run);
-  const id = s?.incumbent ?? s?.candidates.at(-1)?.id;
+  const id = s && repairBase(s);
   const page = id ? pageFile(join(run.dir, 'candidates', id)) : undefined;
   return page ? { path: page, data: new Uint8Array(readFileSync(page)) } : undefined;
 }

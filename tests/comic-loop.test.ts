@@ -147,3 +147,27 @@ describe('comic loop', () => {
     expect(loadLoop(run)!.used.renders).toBe(2);
   });
 });
+
+describe('repair base', () => {
+  test('a repair edits the baseline, not a rejected newer candidate', async () => {
+    const { repairReference } = await import('../src/commands/comicLoop.ts');
+    const run = await runDir();
+    archiveCandidate(run, script, true);
+    writeFileSync(
+      join(run.dir, 'out', 'comic.png'),
+      await svgToPng(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#0f0"/></svg>',
+      ),
+    );
+    archiveCandidate(run, script, true);
+    for (const id of ['c1', 'c2'])
+      writeFileSync(join(run.dir, 'candidates', id, 'page.png'), id);
+    const s = loadLoop(run)!;
+    s.log.push(
+      { candidate: 'c1', decision: 'baseline', reason: '' },
+      { candidate: 'c2', decision: 'rejected', reason: '' },
+    );
+    writeFileSync(join(run.dir, 'comic-loop.json'), JSON.stringify(s));
+    expect(repairReference(run)!.path).toContain(join('candidates', 'c1'));
+  });
+});
