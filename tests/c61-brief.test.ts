@@ -374,7 +374,7 @@ describe('new limit generators', () => {
       sessionEndRows(g, [
         hunk({
           file: 'README.md',
-          pairs: ['Requires vexaim 0.5.0 → Requires vexaim 0.5.1'],
+          pairs: ['Requires examplelib 0.5.0 → Requires examplelib 0.5.1'],
         }),
       ]),
     );
