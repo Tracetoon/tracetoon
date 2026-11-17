@@ -1240,6 +1240,8 @@ describe('details: only clean facts', () => {
             '+ spawn(cmd, { timeoutMs: opts.timeoutMs ?? 45 * 60_000, retryLimit: 2 + extra });',
             '+ const diff = 120;',
             '+ const limit = 40;',
+            "+ const REPO = 'owner/name';",
+            "+ spawn(cmd, { env: { FEATURE_FLAG: '0' } });",
             '+ for (let i = 0, step = 3; i < n; i++) {}',
             "+ const EMBEDDED_PACK_VERSION = '2.0.1';",
           ],

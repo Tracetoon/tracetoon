@@ -403,7 +403,7 @@ const nameParts = (n: string) =>
     .filter(Boolean);
 /** A named constant (`MAX_ITEMS`) or a setting (`minDurationMs`, `retry_limit`): never a local like `height`. */
 const settingName = (n: string) =>
-  /^[A-Z][A-Z\d]*(?:_[A-Z\d]+)+$|^[A-Z]{3,}$/.test(n) ||
+  /^[A-Z][A-Z\d]*(?:_[A-Z\d]+)+$/.test(n) ||
   (nameParts(n).length >= 2 && nameParts(n).some((w) => SETTING_WORD.test(w)));
 /** `[export] [const|let|readonly …] NAME [: type] = literal;` or `NAME: literal,` as the whole line. */
 const ASSIGNED = new RegExp(
@@ -480,7 +480,7 @@ export function detailsOf(
       if (flags.length || /^(?:for|while|if|else|switch|case|return)\b/.test(l)) continue;
       const keep = (name: string, value: string) =>
         settingName(name) &&
-        !/^-?[01]$/.test(value) &&
+        !/^(['"]?)-?[01]\1$/.test(value) &&
         // A version, build id or hash is no behavior.
         !/version|build_?id|hash|sha\d*$|checksum|integrity/i.test(name) &&
         !/^['"`]v?\d+\.\d+/.test(value);
