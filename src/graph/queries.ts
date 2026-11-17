@@ -574,10 +574,11 @@ export function extractionOf(hs: Record<string, unknown>[], file: string): strin
             ...((h.touched as string[]) ?? []),
             ...((h.symbols as string[]) ?? []),
             h.scope ?? '',
-          ].find((n) => n && String(n) !== helper) ?? '',
+          ].find((n) => n && String(n) !== helper && /^[a-z_$]/.test(String(n))) ?? '',
         ),
       )
-      .find((n) => n && n !== helper && /^[A-Za-z_$][\w$]*$/.test(n));
+      // A function, never a type (`TuiChoiceLayout`).
+      .find((n) => n && n !== helper && /^[a-z_$][\w$]*$/.test(n));
     if (caller) return `extracted into \`${helper}\`; \`${caller}\` now calls it`;
   }
   return undefined;
