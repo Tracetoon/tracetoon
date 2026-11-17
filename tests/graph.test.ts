@@ -20,6 +20,8 @@ import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import {
   behaviorOf,
   briefParts,
+  planText,
+  requestText,
   describedHunks,
   findQuery,
   listsSeveral,
@@ -1792,7 +1794,8 @@ describe('the brief states recorded process and behavior', () => {
   test('background: the session goal and earlier plans and decisions, outside requests', () => {
     expect(sec('background').map((r) => [r.ref, r.kind, r.text])).toEqual([
       ['S1', "why this work started: the session's first request", 'Earlier work'],
-      // At most the goal and one plan: a decision gives way to the plan.
+      // At most three rows: the goal, the latest plan, then the latest decision.
+      ['D0', 'earlier decision in the session', 'Old question'],
       ['P1', 'earlier plan (not approved as written) in the session', 'Limit v1'],
     ]);
     // An earlier prompt the digest did not keep: S1 is only the earliest kept.
@@ -1823,11 +1826,11 @@ describe('the brief states recorded process and behavior', () => {
     ).toEqual([]);
   });
 
-  test('background: at most two rows, clipped text, acknowledgments are no goal', () => {
+  test('background: at most three rows, clipped text, acknowledgments are no goal', () => {
     const more: EvidenceGraph = structuredClone(graph);
     more.nodes.find((n) => n.id === 'S1')!.props.text = 'go ahead';
     more.nodes.find((n) => n.id === 'S2')!.props.text =
-      `Plan the limit ${'x'.repeat(700)}`;
+      `Plan the limit ${'x'.repeat(2000)}`;
     for (const i of [5, 6, 7, 8]) {
       more.nodes.push(
         N('Decision', `D${i}`, {
@@ -1841,8 +1844,8 @@ describe('the brief states recorded process and behavior', () => {
     const rows = withGraph(more, (g) => briefParts(g)).sections.find(
       (s) => s.title === 'background',
     )!.rows;
-    expect(rows.map((r) => r.ref)).toEqual(['S2', 'P1']);
-    expect(String(rows[0]!.text).length).toBe(600);
+    expect(rows.map((r) => r.ref)).toEqual(['S2', 'D8', 'P1']);
+    expect(String(rows[0]!.text).length).toBe(1500);
     expect(String(rows[0]!.text).endsWith('…')).toBe(true);
     // With no earlier plan, the latest decision, clipped.
     more.nodes = more.nodes.filter((n) => n.id !== 'P1');
@@ -1850,8 +1853,8 @@ describe('the brief states recorded process and behavior', () => {
     const noPlan = withGraph(more, (g) => briefParts(g)).sections.find(
       (s) => s.title === 'background',
     )!.rows;
-    expect(noPlan.map((r) => r.ref)).toEqual(['S2', 'D8']);
-    expect(String(noPlan[1]!.text).length).toBe(400);
+    expect(noPlan.map((r) => r.ref)).toEqual(['S2', 'D7', 'D8']);
+    expect(String(noPlan[2]!.text).length).toBe(400);
   });
 
   test('background: plans and decisions of a session with no captured prompt still show', () => {
@@ -1868,19 +1871,21 @@ describe('the brief states recorded process and behavior', () => {
     );
     const parts = withGraph(cut, (g) => briefParts(g)).sections;
     const rows = parts.find((s) => s.title === 'background')!.rows;
-    // No goal: the two latest plans (decisions give way to plans).
+    // No goal: the plans first, then the latest decision.
     expect(rows.map((r) => [r.ref, r.kind])).toEqual([
       [
         'P1',
         "plan (not approved as written) in the session (the prompt before it wasn't captured)",
       ],
+      ['D1', "decision in the session (the prompt before it wasn't captured)"],
       ['P2', "plan (approved) in the session (the prompt before it wasn't captured)"],
     ]);
     const plan = parts
       .find((s) => s.title === 'process')!
       .rows.find((r) => r.kind === 'plan')!;
+    // A plan with no turn opened its session: it is this PR's plan, never "none recorded".
     expect(plan.fact).toBe(
-      "No plan or decision in this PR's own turns; the session recorded P1 (plan not approved as written), P2 (approved plan) outside them: see background.",
+      'Plans, in order: P1 "Limit v1" not approved as written → P2 "Limit v2" approved.',
     );
     expect(plan.cites).toEqual(['P1', 'P2']);
     expect(
@@ -1888,18 +1893,71 @@ describe('the brief states recorded process and behavior', () => {
         .find((s) => s.title === 'doNotSay')!
         .rows.find((r) => r.kind === 'recorded requests')?.text,
     ).toBe(
-      "Plans were recorded (P1, P2): don't say none was recorded, or that an approval or review wasn't.",
+      "Plans/decisions were recorded (P1, D1, P2): don't say none was recorded, or that an approval or review wasn't.",
     );
-    // Before a captured prompt, a turnless plan is the tail of earlier work.
+    // Before a captured prompt, a turnless plan still shows (a session started
+    // to carry out a plan opens with it); one after the last productive turn doesn't.
     const tail: EvidenceGraph = structuredClone(graph);
     tail.nodes.push(
       N('Plan', 'P8', { t: t(0), approved: true, text: 'Old', session: 'h:s' }),
+      N('Plan', 'P7', { t: t(50), approved: true, text: 'Later', session: 'h:s' }),
     );
-    tail.rels.push(R('IN_SESSION', ['Plan', 'P8'], ['Session', 'h:s']));
+    tail.rels.push(
+      R('IN_SESSION', ['Plan', 'P8'], ['Session', 'h:s']),
+      R('IN_SESSION', ['Plan', 'P7'], ['Session', 'h:s']),
+    );
     const tailParts = withGraph(tail, (g) => briefParts(g)).sections;
-    expect(
-      tailParts.find((s) => s.title === 'background')!.rows.map((r) => r.ref),
-    ).not.toContain('P8');
+    const tailRefs = tailParts
+      .find((s) => s.title === 'background')!
+      .rows.map((r) => r.ref);
+    expect(tailRefs).toContain('P8');
+    expect(tailRefs).not.toContain('P7');
+  });
+
+  test('background: a short "implement the plan" request brings the plan before it', () => {
+    const impl: EvidenceGraph = structuredClone(graph);
+    impl.nodes.find((n) => n.id === 'S3')!.props.text = 'Implement the plan.';
+    impl.nodes = impl.nodes.filter((n) => n.id !== 'P2');
+    impl.rels = impl.rels.filter((r) => r.from.id !== 'P2' && r.to.id !== 'P2');
+    const parts = withGraph(impl, (g) => briefParts(g)).sections;
+    const bg = parts.find((s) => s.title === 'background')!.rows;
+    // The plan before S3 is P1, made in an earlier turn.
+    const planRow = bg.find((r) => /refers to/.test(String(r.kind)));
+    expect(planRow?.ref).toBe('P1');
+  });
+
+  test('requestText drops task boilerplate and keeps the reason when clipping', () => {
+    const text = [
+      'Fix the cache eviction order.',
+      'Work in the worktree at /tmp/wt on branch fix-cache.',
+      'bun test tests/cache.test.ts',
+      'End commits with Co-Authored-By: Someone <x@example.com>',
+      ...Array.from({ length: 40 }, (_, i) => `Detail number ${i} about the layout.`),
+      'This matters because stale entries are served after a restart.',
+    ].join('\n');
+    const out = requestText(text, 600);
+    expect(out.length).toBeLessThanOrEqual(600);
+    expect(out).toStartWith('Fix the cache eviction order.');
+    expect(out).not.toContain('worktree');
+    expect(out).not.toContain('Co-Authored-By');
+    expect(out).not.toContain('bun test');
+    expect(out).toContain('because stale entries are served after a restart');
+    expect(out).toContain('…');
+    // Short requests are quoted whole.
+    expect(requestText('Make it faster.')).toBe('Make it faster.');
+  });
+
+  test('planText quotes the why-sections of a plan before its steps', () => {
+    const plan = [
+      '# Rework the cache',
+      '## Steps',
+      ...Array.from({ length: 60 }, (_, i) => `- step ${i} edits a file`),
+      '## Context',
+      'Entries outlive a restart, so users see stale data.',
+    ].join('\n');
+    const out = planText(plan, 200);
+    expect(out).toStartWith('# Rework the cache ## Context Entries outlive a restart');
+    expect(out.length).toBeLessThanOrEqual(200);
   });
 
   test('process rows: session role, plan history, test trajectory, failed commands', () => {

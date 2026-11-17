@@ -258,6 +258,108 @@ const clipText = (s: unknown, n: number) => {
 const refs = (xs: string[], cap: number) =>
   xs.length > cap ? [...xs.slice(0, cap), `+${xs.length - cap} more`] : xs;
 
+/** How much of a request the brief quotes, once task boilerplate is gone. */
+export const REQUEST_CLIP = 1500;
+
+/**
+ * Lines of task boilerplate in a request: where to work (worktree, branch),
+ * which commands to run, credentials, co-author or attribution lines and tool
+ * instructions. They fill the clip and push out the reason for the work.
+ */
+const BOILERPLATE: RegExp[] = [
+  /\bworktree\b|\bgit (?:checkout|switch)\b|\b(?:create|use|stay on|switch to|work (?:in|on)) (?:a |the |new )?branch\b|\bbranch (?:named|called|off)\b/i,
+  /\bco-authored-by\b|\bsigned-off-by\b|\battribution (?:line|trailer)s?\b|\b(?:credentials?|api[_ -]?key|GH_TOKEN|password)\b/i,
+  /\b(?:do not|don't|never) (?:push|commit|tag)\b|\bno push\b/i,
+  /\b(?:use|run|call|invoke) (?:the )?[\w-]+ tool\b|\btool (?:call|instruction)s?\b|\bTMPDIR=/i,
+  // A bare command line (lowercase, no sentence in it): `bun test x.test.ts`.
+  /^\s*(?:[-*]\s*|\d+[.)]\s*)?`?(?:\$\s*)?(?:bun|npm|npx|pnpm|yarn|cargo|go|pytest|python3?|make|mvn|gradle|uv|pip|git|\.\/[\w./-]+)\s(?:(?!\.\s|\.$)[^!?])*$/,
+  /^\s*(?:time ?box|timebox)\b/i,
+];
+/** Sentences that carry the reason for the work. */
+const MOTIVE =
+  /\b(?:why|because|since|context|background|so that|in order to|the problem|problem is|the issue|issue is|motivat\w*|the goal|goal is|reason|otherwise|currently|right now|broke|broken|fails?|failing|regress\w*|instead of|we need|needs? to)\b/i;
+
+/**
+ * A request as the brief quotes it: boilerplate lines (worktree and branch
+ * instructions, command lists, credentials and attribution, tool instructions)
+ * dropped, then clipped to `n`. When it is still too long, the opening and the
+ * sentences that give a reason (why, because, context, so that, the problem)
+ * are kept, in their order, over the rest; " … " marks what was left out.
+ */
+export function requestText(s: unknown, n = REQUEST_CLIP): string {
+  const raw = String(s ?? '').trim();
+  const kept = raw
+    .split('\n')
+    .filter((l) => !BOILERPLATE.some((re) => re.test(l)))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  // Never strip a request down to nothing.
+  const t = kept.length >= Math.min(40, raw.length / 3) ? kept : raw;
+  if (t.length <= n) return t;
+  const sentences = t.match(/[^.!?\n]+(?:[.!?]+|\n+|$)/g) ?? [t];
+  const pick = new Set<number>();
+  let used = 0;
+  const room = n - 3 * 8; // gap markers
+  const take = (i: number) => {
+    const len = sentences[i]!.length + 1;
+    if (pick.has(i) || used + len > room) return false;
+    pick.add(i);
+    used += len;
+    return true;
+  };
+  // The opening (what is asked), then each sentence that says why, then the rest.
+  for (let i = 0; i < sentences.length && used < n * 0.4; i++) if (!take(i)) break;
+  sentences.forEach((x, i) => MOTIVE.test(x) && take(i));
+  sentences.forEach((_, i) => take(i));
+  if (!pick.size) return clipText(t, n);
+  let out = '';
+  let prev = -1;
+  for (const i of [...pick].sort((a, b) => a - b)) {
+    out += (i !== prev + 1 ? ' … ' : ' ') + sentences[i]!.trim();
+    prev = i;
+  }
+  if (prev < sentences.length - 1) out += ' …';
+  return clipText(out.replace(/\s+/g, ' ').trim(), n);
+}
+
+/** Plan section headings that say why and what, quoted before the steps. */
+const PLAN_FIRST =
+  /^(?:summary|context|why|motivation|background|problem|goals?|overview|rationale)\b/i;
+/** How much of a plan the brief quotes. */
+export const PLAN_CLIP = 800;
+
+/**
+ * A plan as the brief quotes it: its title, then the sections that say why
+ * (Summary, Context, Why, Problem, Goal …) before the others, clipped to `n`.
+ */
+export function planText(s: unknown, n = PLAN_CLIP): string {
+  const t = String(s ?? '').trim();
+  if (t.length <= n) return t.replace(/\s+/g, ' ');
+  const parts = t.split(/\n(?=#{1,6}\s)|\s(?=#{2,6}\s)/);
+  if (parts.length < 2) return clipText(t.replace(/\s+/g, ' '), n);
+  const heading = (p: string) =>
+    p
+      .replace(/^#+\s*/, '')
+      .split(/[\n:]/)[0]!
+      .trim();
+  const rest = parts.slice(1);
+  const ordered = [
+    parts[0]!,
+    ...rest.filter((p) => PLAN_FIRST.test(heading(p))),
+    ...rest.filter((p) => !PLAN_FIRST.test(heading(p))),
+  ];
+  return clipText(ordered.map((p) => p.replace(/\s+/g, ' ').trim()).join(' '), n);
+}
+
+/** A short prompt that only says to carry out a plan made before it. */
+export const IMPLEMENTS_PLAN =
+  /^\s*(?:please\s+)?(?:(?:ok(?:ay)?|yes|great|good|sounds good)[,.!]?\s+)?(?:go ahead and\s+|now\s+|let's\s+|please\s+)?(?:implement|execute|carry out|proceed with|go (?:ahead )?with|do|follow|start(?: on)?|build|apply|make)\b[^.!?\n]{0,60}\bplan\b/i;
+const implementsPlan = (text: unknown) => {
+  const t = String(text ?? '').trim();
+  return t.length <= 300 && IMPLEMENTS_PLAN.test(t);
+};
+
 const VERSION_PAIR = /\b\d+\.\d+\.\d+(?:-[\w.]+)?\b.*→.*\b\d+\.\d+\.\d+/;
 
 /** Words too common in prose or code to tie a sentence to a hunk. */
@@ -554,8 +656,8 @@ const includedSession = (g: GraphEngine, id: unknown) =>
   g.run(`MATCH (s:Session {band: 'included'}) WHERE s.id = $id RETURN s.id AS id`, {
     id: String(id),
   }).rows.length > 0;
-/** At most this many background rows: the goal and one plan (else decision). */
-const MAX_BACKGROUND = 2;
+/** At most this many background rows: the goals, then a plan (else a decision). */
+const MAX_BACKGROUND = 3;
 
 /**
  * How the work came about, from the included sessions, when this PR's own
@@ -595,7 +697,7 @@ export function backgroundRows(
         first.t && first.firstPromptT && String(first.t) === String(first.firstPromptT)
           ? "why this work started: the session's first request"
           : 'why this work started: the earliest request Tracetoon kept (the session log holds earlier prompts or their order is unknown)',
-      text: clipText(String(first.text ?? '').trim(), 600),
+      text: requestText(first.text),
       t: first.t,
     });
   }
@@ -607,24 +709,55 @@ export function backgroundRows(
     const t = promptTime.get(id) ?? '';
     if (s && t > (lastProductive.get(s) ?? '')) lastProductive.set(s, t);
   }
-  // A plan or decision with no turn came before the first prompt the log
-  // captured. In a session with no captured prompt at all (its opening request
-  // cut off or redacted) it is the only record of how the work started, so it
-  // is shown; before a captured prompt it is the tail of earlier work.
+  // A decision with no turn came before the first prompt the log captured.
+  // In a session with no captured prompt at all (its opening request cut off
+  // or redacted) it is the only record of how the work started, so it is
+  // shown; before a captured prompt it is the tail of earlier work. A plan
+  // with no turn is shown either way (a session started to carry out a plan
+  // opens with it, before any prompt the log keeps), unless it came after the
+  // session's last productive turn.
   const withPrompts = new Set(promptSession.values());
-  const earlier = g
-    .run(
-      `MATCH (x) WHERE x:Plan OR x:Decision
-       OPTIONAL MATCH (x)-[:IN_TURN]->(p:Prompt)
-       OPTIONAL MATCH (x)-[:IN_SESSION]->(s:Session)
-       RETURN x.id AS id, labels(x)[0] AS label, x.approved AS approved, x.t AS t,
-              coalesce(x.answers, x.excerpt, x.text) AS text, p.id AS turn, p.t AS turnT,
-              coalesce(s.id, x.session) AS session`,
-    )
-    .rows.filter((x) => {
+  const sessionEnd = new Map<string, string>();
+  for (const [turn, s] of promptSession)
+    if (turns.productive.has(turn)) sessionEnd.set(s, lastProductive.get(s) ?? '');
+  // A short "implement the plan" request: the plan before it is its motive.
+  const planPrompts = prompts.filter(
+    (p) => turns.productive.has(String(p.id)) && implementsPlan(p.text),
+  );
+  const all = g.run(
+    `MATCH (x) WHERE x:Plan OR x:Decision
+     OPTIONAL MATCH (x)-[:IN_TURN]->(p:Prompt)
+     OPTIONAL MATCH (x)-[:IN_SESSION]->(s:Session)
+     RETURN x.id AS id, labels(x)[0] AS label, x.approved AS approved, x.t AS t,
+            coalesce(x.answers, x.excerpt, x.text) AS text, p.id AS turn, p.t AS turnT,
+            coalesce(s.id, x.session) AS session`,
+  ).rows;
+  const carriedOut = new Set<string>();
+  for (const p of planPrompts) {
+    const before = all
+      .filter(
+        (x) =>
+          x.label === 'Plan' &&
+          String(x.session) === String(p.session) &&
+          !!x.t &&
+          !!p.t &&
+          String(x.t) <= String(p.t),
+      )
+      .sort(byTime)
+      .at(-1);
+    if (before) carriedOut.add(String(before.id));
+  }
+  const earlier = all
+    .filter((x) => {
       if (exclude.has(String(x.id))) return false;
-      if (x.turn == null)
-        return !withPrompts.has(String(x.session)) && includedSession(g, x.session);
+      if (carriedOut.has(String(x.id))) return true;
+      if (x.turn == null) {
+        if (!includedSession(g, x.session)) return false;
+        if (!withPrompts.has(String(x.session))) return true;
+        if (x.label !== 'Plan') return false;
+        const end = sessionEnd.get(String(x.session));
+        return !end || !x.t || String(x.t) <= end;
+      }
       const turn = String(x.turn);
       const session = promptSession.get(turn);
       const until = session ? lastProductive.get(session) : undefined;
@@ -633,26 +766,42 @@ export function backgroundRows(
     .sort(byTime)
     .map((x) => ({
       ref: String(x.id),
-      kind:
-        x.turn == null
+      carried: carriedOut.has(String(x.id)),
+      kind: carriedOut.has(String(x.id))
+        ? `${planStatus(x.approved)} that this PR's request to carry out the plan refers to`
+        : x.turn == null
           ? x.label === 'Plan'
             ? `${planStatus(x.approved)} in the session (the prompt before it wasn't captured)`
             : "decision in the session (the prompt before it wasn't captured)"
           : x.label === 'Plan'
             ? `earlier ${planStatus(x.approved)} in the session`
             : 'earlier decision in the session',
-      text: clipText(String(x.text ?? '').trim(), 400),
+      text:
+        x.label === 'Plan'
+          ? planText(x.text)
+          : clipText(String(x.text ?? '').trim(), 400),
       t: x.t,
     }));
-  // One motive sentence's worth: the goal, then the latest earlier plan (its
-  // approval or rejection says how the work was steered), else the latest decision.
-  const goalRows = goals.slice(0, MAX_BACKGROUND - 1);
-  const room = MAX_BACKGROUND - goalRows.length;
+  // A few motive sentences' worth: the goals, then the plan a request carries
+  // out, else the latest earlier plan (its approval or rejection says how the
+  // work was steered), then the latest decision.
   const plans = earlier.filter((x) => x.kind.includes('plan'));
   const others = earlier.filter((x) => !x.kind.includes('plan'));
+  const planPick = [
+    ...plans.filter((x) => x.carried),
+    ...plans.filter((x) => !x.carried).reverse(),
+  ].slice(0, 1);
+  const goalRows = goals.slice(0, MAX_BACKGROUND - Math.max(1, planPick.length));
+  const room = MAX_BACKGROUND - goalRows.length;
   const factRows =
     room > 0
-      ? [...plans.slice(-room), ...others.slice(-room)].slice(0, room).sort(byTime)
+      ? [
+          ...planPick,
+          ...plans.filter((x) => !planPick.includes(x)).reverse(),
+          ...[...others].reverse(),
+        ]
+          .slice(0, room)
+          .sort(byTime)
       : [];
   return [...goalRows, ...factRows].map(({ ref, kind, text }) => ({ ref, kind, text }));
 }
@@ -762,11 +911,18 @@ function processRows(
     !!turn && (turns.productive.has(String(turn)) || turns.leadIn.has(String(turn)));
   const facts = g
     .run(
-      `MATCH (x)-[:IN_TURN]->(p:Prompt) WHERE x:Plan OR x:Decision
+      `MATCH (x) WHERE x:Plan OR x:Decision
+       OPTIONAL MATCH (x)-[:IN_TURN]->(p:Prompt)
        RETURN x.id AS id, labels(x)[0] AS label, x.approved AS approved, x.t AS t,
               x.text AS title, x.truncated AS truncated, p.id AS turn`,
     )
-    .rows.filter((x) => inScope(x.turn))
+    // A plan with no turn opened its session (one started to carry it out):
+    // it is this PR's when background shows it.
+    .rows.filter(
+      (x) =>
+        inScope(x.turn) ||
+        (x.turn == null && x.label === 'Plan' && background.has(String(x.id))),
+    )
     .sort(
       (a, b) =>
         String(a.t ?? '').localeCompare(String(b.t ?? '')) ||
@@ -783,7 +939,12 @@ function processRows(
        OPTIONAL MATCH (x)-[:IN_TURN]->(p:Prompt)
        RETURN x.id AS id, labels(x)[0] AS label, x.approved AS approved, x.t AS t, p.id AS turn`,
     )
-    .rows.filter((x) => !inScope(x.turn) && background.has(String(x.id)))
+    .rows.filter(
+      (x) =>
+        !inScope(x.turn) &&
+        background.has(String(x.id)) &&
+        !(x.turn == null && x.label === 'Plan'),
+    )
     .sort(
       (a, b) =>
         String(a.t ?? '').localeCompare(String(b.t ?? '')) ||
@@ -798,15 +959,24 @@ function processRows(
           ? `${String(x.id)} (plan not approved as written)`
           : `${String(x.id)} (plan)`,
   );
+  // Plans the graph holds at all: "no plan was recorded" is never said beside one.
+  const anyPlans = g
+    .run('MATCH (x:Plan) RETURN x.id AS id')
+    .rows.map((x) => String(x.id))
+    .sort(factOrder);
   if (!plans.length)
     add(
       'plan',
       outside.length
         ? `${decisions.length ? 'No plan' : 'No plan or decision'} in this PR's own turns; the session recorded ${refs(outside, 4).join(', ')} outside them: see background.`
-        : decisions.length
-          ? 'No plan was recorded.'
-          : 'No plan or decision was recorded.',
-      elsewhere.slice(0, 4).map((x) => String(x.id)),
+        : anyPlans.length
+          ? `No plan in this PR's own turns; the session logs hold ${refs(anyPlans, 4).join(', ')} from other work.`
+          : decisions.length
+            ? 'No plan was recorded.'
+            : 'No plan or decision was recorded.',
+      elsewhere.length
+        ? elsewhere.slice(0, 4).map((x) => String(x.id))
+        : anyPlans.slice(0, 4),
     );
   else
     add(
@@ -1120,7 +1290,7 @@ export function briefParts(
       kind: plan
         ? `${planStatus(x.approved)}${kind}`
         : `decision (question asked and the answer)${kind}`,
-      text: clipText(x.text, plan ? 400 : 700),
+      text: plan ? planText(x.text) : clipText(x.text, 700),
       truncated: x.truncated === true || null,
     });
   };
@@ -1132,7 +1302,7 @@ export function briefParts(
       kind: a.pushback
         ? 'user pushback typed in the turn that made these edits (not necessarily why they were made)'
         : 'user request',
-      text: clipText(a.text, 600),
+      text: requestText(a.text),
     });
     if (turns.productive.has(String(a.id)))
       for (const f of ((a.facts as string[]) ?? []).sort(factOrder))
@@ -1152,7 +1322,7 @@ export function briefParts(
       requests.unshift({
         ref: opening.id,
         kind: openingKind,
-        text: clipText(opening.text, 600),
+        text: requestText(opening.text),
       });
     } else
       for (const r of requests)

@@ -1100,7 +1100,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           t: p.t ?? null,
           approved: p.approved ?? null,
           text: clip(firstLine(p.excerpt), 120),
-          excerpt: clip(p.excerpt.replace(/\s+/g, ' '), 600),
+          // Headings kept: the brief quotes the why-sections first (queries.ts planText).
+          excerpt: clip(p.excerpt.replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n'), 1500),
           session: s.ref,
         });
     for (const r of s.runs)
