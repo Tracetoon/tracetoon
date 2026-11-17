@@ -45,6 +45,26 @@ describe('base code of adding-only hunks (`before`)', () => {
     ]);
   });
 
+  test('a multi-line signature is not the body; lines near the change come first', () => {
+    const base = [
+      'export function plan(',
+      '  deps: string[],',
+      '  which: (n: string) => string | undefined = (n) => find(n) ?? undefined,',
+      '): Plan | undefined {',
+      '  if (deps.length === 0) return undefined;',
+      '  if (platform === "darwin" && which("brew")) return brewPlan();',
+      '  if (platform === "linux" && which("apt-get")) return aptPlan();',
+      '  if (platform === "linux" && which("dnf")) return dnfPlan();',
+      '  return undefined;',
+      '}',
+    ];
+    const lines = enclosingKeyLines(base, 'export function plan(', 5);
+    expect(lines).toContain(
+      'if (platform === "linux" && which("dnf")) return dnfPlan();',
+    );
+    expect(lines.some((l) => l.startsWith('which:'))).toBe(false);
+  });
+
   test('old starts per file and new start', () => {
     const patch =
       'diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -3,2 +3,4 @@ export function pick\n';

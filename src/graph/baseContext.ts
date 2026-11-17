@@ -80,10 +80,16 @@ export function enclosingKeyLines(
     const l = base[i]!;
     if (l.trim() && indentOf(l) <= indent && !/^\s*[)}\]]/.test(l)) break;
     body.push({ l, i });
-    if (l.trim() && indentOf(l) <= indent) break;
+    // A closing brace at the definition's indent ends it; a `) {` closing a
+    // multi-line signature does not.
+    if (l.trim() && indentOf(l) <= indent && /^\s*[}\]]/.test(l)) break;
   }
+  // Lines of a multi-line signature (parameter defaults) are not the body.
+  const opened = [{ l: base[at]!, i: at }, ...body].find(({ l }) => /[{:]\s*$/.test(l));
+  const bodyStart = opened?.i ?? at;
   const keys = body.filter(
-    ({ l }) =>
+    ({ l, i }) =>
+      i > bodyStart &&
       KEY.test(l) &&
       !/^\s*(?:\/\/|#|\*)/.test(l) &&
       l.trim().length > 3 &&
