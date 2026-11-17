@@ -17,7 +17,14 @@ const MAX_LINES = 5;
 const MAX_BODY = 80;
 /** A line that decides what the function does. */
 const KEY =
-  /^\s*(?:if\b|else\b|elif\b|switch\b|case\b|match\b|return\b|for\b|while\b|throw\b|raise\b)|\?\?|\.sort\(|\.sorted\(|\bsort\b|\bdefault\b|\bfallback\b|[^=!<>]=[^=>].*\?.*:/;
+  /^\s*(?:(?:\}\s*)?(?:if|else|elif|switch|case|match|for|while)\b|return\s+\S(?!\s*$)|throw\b|raise\b)|\?\?|\.sort(?:ed)?\(/;
+/** Conditions decide most; orderings next; returns last. */
+const rankOf = (l: string) =>
+  /^\s*(?:\}\s*)?(?:if|else|elif|switch|case|match)\b|\?\?/.test(l)
+    ? 0
+    : /sort/.test(l)
+      ? 1
+      : 2;
 
 /** A line that defines a function or method. */
 const DEF =
@@ -80,12 +87,15 @@ export function enclosingKeyLines(
       KEY.test(l) &&
       !/^\s*(?:\/\/|#|\*)/.test(l) &&
       l.trim().length > 3 &&
-      !/^[{}()[\];,]+$/.test(l.trim()),
+      !/^[{}()[\];,]+$/.test(l.trim()) &&
+      !/^return\s*[{([]\s*$/.test(l.trim()),
   );
   // The lines at and after the change first (what the new code now precedes
   // or replaces), then the function's opening lines; kept in source order.
   const near = keys.filter(({ i }) => i >= oldStart - 1 && i <= oldStart + 20);
-  const picked = [...near, ...keys.filter((k) => !near.includes(k))]
+  const byRank = (xs: typeof keys) =>
+    [...xs].sort((a, b) => rankOf(a.l) - rankOf(b.l) || a.i - b.i);
+  const picked = [...byRank(near), ...byRank(keys.filter((k) => !near.includes(k)))]
     .slice(0, MAX_LINES)
     .sort((a, b) => a.i - b.i);
   return picked
