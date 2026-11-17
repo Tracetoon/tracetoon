@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.32",
-  "buildId": "ad2f9936342d11271dbe5649d513d2a734b1267072605927ae83f2174a132fd3",
+  "version": "1.0.0-rc.33",
+  "buildId": "181ee4161893b7483a0a3466ac748b48288149071348a93452425f765f8c094f",
   "artifact": {
-    "runId": 43944549206,
-    "id": 14264093659,
-    "name": "tracetoon-candidate-daba49cdc3bb344f68e007bf2da642faf74730d5-attempt-1",
-    "digest": "sha256:eb2cb235e4a939543289deb82b445d081724dbfb3b86f5d16393098a23e2a473"
+    "runId": 44015012738,
+    "id": 14298996346,
+    "name": "tracetoon-candidate-e8c41b6256365b3212444782e0db6e7889c5b8b6-attempt-1",
+    "digest": "sha256:b91647ff86dcd7983be1fe6a487ce8b55e1f3c32c23a5c9c27a6c35d5356c43e"
   },
   "expected": {
-    "manifestSha256": "05f971bbfc0cd018fea93a9232101c2abcce713aa17541868d717f91b004849c",
-    "checksumsSha256": "82322673fa1db49cca7e398dcacaf64c69310e33dfa0fc2d5b53b75801f48373",
-    "windowsSha256": "5ead502c76ce12af5453d22be3e5c9151c670779ca5bf780263d1ba1e8438bd8",
-    "bundleSha256": "4878b95d19a3eacde71b195a9fe0518153482c1d2c37c2ec3ab84c42854fec9a"
+    "manifestSha256": "0bf9291721856af2fde144a5f2408f621bab8fa51311326e976e8dab359d66ea",
+    "checksumsSha256": "27a6b83528723c154fbbc65bb0166e7083b8dce120b7b2822eaa091896558316",
+    "windowsSha256": "c5c0d7ffe84ef84067bd18f210c801a7dbffe36135cc885ba143345b8c14724d",
+    "bundleSha256": "9f76fdb6f631beac5a580681cf34c3c063439970d3f134f32a1909b3e03e316e"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-16T20:45:00.000Z",
-    "reason": "The user judged the comic overhaul (#133) an improvement, asked to merge it and to push a new release so users get the new comic styles, in-scene text and joke-first drafting. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-17T05:00:00.000Z",
+    "reason": "The user asked to merge the comic quality loop (#139) and release it, so that comics are judged by fresh AI readers, checked at phone width and repaired without rewriting the joke. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
