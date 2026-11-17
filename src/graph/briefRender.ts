@@ -366,6 +366,18 @@ const VALIDATION_CLAIM =
 const ABSENCE =
   /\b(?:untested|not (?:been |yet )?(?:tested|run|re-?run|recorded|verified|exercised|executed)|never (?:been )?(?:tested|run|executed)|(?:was|were|is|are|has|have)(?:n't| not)(?: been)? (?:tested|run|recorded|verified|exercised)|no\s+(?:[\w-]+\s+){0,5}(?:was|were|has been|have been|is|are)\s+(?:run|recorded|executed|tested|performed)|without (?:running|testing|a (?:test|live) run))\b/i;
 
+/** Words that carry a sentence's subject (for "restates a limits row"). */
+const COMMON = new Set(
+  'the and for with that this from into when then than only not are was were has have had its also each but out off our you yet any all can was been being which what there here they them their these those such some more most other run runs ran test tests tested check checks checked recorded record session sessions tracetoon evidence shows show logs log'.split(
+    ' ',
+  ),
+);
+const contentWords = (s: string) => [
+  ...new Set(
+    (s.toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g) ?? []).filter((w) => !COMMON.has(w)),
+  ),
+];
+
 /** Lines of prose: skips headings, code, HTML, tables and the generated section. */
 function proseUnits(text: string): string[] {
   const out: string[] = [];
@@ -539,10 +551,28 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
           'only a commit message says this: write "the commit message says…" or leave it out.',
       });
   }
-  // An absence ("not tested", "no … was run") with no limits row behind it:
-  // the logs Tracetoon read are not the whole history (judged contradicted
-  // where the session did test it). Blocking.
-  const limitRefs = new Set(rowsOf(b, 'limits').map((r) => String(r.ref)));
+  // An absence ("not tested", "no … was run") with no row behind it: the logs
+  // Tracetoon read are not the whole history (judged contradicted where the
+  // session did test it). Not blocking: an environment-scope statement ("tried
+  // only on Linux", "verified only with fakes") is fine when a test, request,
+  // run or commit row supports it (drafting.md), and a sentence that restates
+  // a limits row needs no tag of its own.
+  const limitRows = rowsOf(b, 'limits');
+  const limitRefs = new Set(limitRows.map((r) => String(r.ref)));
+  const limitWords = limitRows.map(
+    (r) => new Set(contentWords(`${String(r.limit ?? '')} ${String(r.text ?? '')}`)),
+  );
+  const restatesLimit = (sentence: string) => {
+    const ws = contentWords(sentence);
+    return (
+      ws.length > 0 &&
+      limitWords.some((l) => ws.filter((w) => l.has(w)).length >= Math.min(3, ws.length))
+    );
+  };
+  const supportRef = (r: string) =>
+    limitRefs.has(r) ||
+    /^(?:T|S|R|V|L|U)\d+$/.test(r) ||
+    /^(?:commit:)?[0-9a-f]{7,40}(?:#\d+)?$/.test(r);
   const unrunReceipts = new Set(
     rowsOf(b, 'validation')
       .filter(
@@ -566,12 +596,13 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     )
       continue;
     const refs = [...unit.matchAll(TAG)].flatMap((m) => tagRefs(m[1]!));
-    if (refs.some((r) => limitRefs.has(r) || unrunReceipts.has(r))) continue;
+    if (refs.some((r) => supportRef(r) || unrunReceipts.has(r))) continue;
+    if (restatesLimit(clean)) continue;
     flags.push({
       sentence: clean,
-      severity: 'fix',
+      severity: 'check',
       problem:
-        'unsupported absence: no limits row says this was not tested, run or recorded (Tracetoon reads only some of the session). Tag the limits row that says it, or drop the sentence.',
+        'unsupported absence: no row is behind it. Tag the limits, test, request or commit row that supports it, or say it in the evidence\'s scope ("the recorded tests use fakes"); keep the uncertainty, never write "untested".',
     });
   }
   // A review pointer that pins a behavior on the wrong function.

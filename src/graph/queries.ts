@@ -28,6 +28,8 @@ import {
   noPassAfterCommitRow,
   editsBetween,
   remotePathRows,
+  environmentRows,
+  finalHeadRow,
   liveEvidence,
   functionProfiles,
   type FnProfile,
@@ -1178,7 +1180,7 @@ export function briefParts(
      OPTIONAL MATCH (h)<-[:INTRODUCED]-(k:Commit)
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
-            h.conds AS conds,
+            h.conds AS conds, h.code AS code,
             h.tests AS tests, h.words AS words, h.moved AS moved, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
@@ -1718,7 +1720,13 @@ export function briefParts(
     0,
     limits.length,
     ...capLimits(
-      limits,
+      // Environment rows first: what no recorded run could reach (another OS,
+      // faked steps, a terminal, CI on the final head), above check recognition.
+      [
+        ...environmentRows(hunkRows, fileRole),
+        ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
+        ...limits,
+      ],
       [...(noPass ? [noPass] : []), ...failedPublishRows(g)],
       remotePathRows(hunkRows, fileRole, scopedRuns, liveEvidence(g)),
     ),

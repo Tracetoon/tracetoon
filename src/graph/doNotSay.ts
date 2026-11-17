@@ -148,9 +148,11 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
   const absent = rowsOf(sections, 'limits')
     .filter((r) => ABSENCE.test(String(r.limit ?? '')))
     .map((r) => String(r.ref));
+  // Only the session-wide claim: a scoped uncertainty ("verified only with
+  // fakes", "not run on Windows") with a row behind it is an open point.
   out.push({
     kind: 'absence',
-    text: `Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested${absent.length ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}` : ' (no limits row says so)'}.`,
+    text: `Never say session-wide that nothing ran or that no test was recorded${absent.length ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}` : ' (no limits row says so)'}; scoped uncertainties with a row behind them stay.`,
     cites: absent.slice(0, 3),
   });
 

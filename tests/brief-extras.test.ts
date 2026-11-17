@@ -15,6 +15,7 @@ import {
   noPassAfterCommitRow,
   historicalRunLimit,
   remotePathRows,
+  environmentRows,
   type LiveEvidence,
 } from '../src/graph/briefExtras.ts';
 import { invocationsOf } from '../src/digest/build.ts';
@@ -245,13 +246,13 @@ describe('open points promoted into limits', () => {
     ).toEqual([]);
   });
 
-  test('at most six limits: remote rows, then the no-request row give way first', () => {
+  test('over the cap, remote rows, then the no-request row give way first', () => {
     const row = (limit: string) => ({ change: null, kind: 'open', limit });
     const existing = [1, 2, 3, 4].map((i) => row(`existing ${i}`));
     existing.splice(2, 0, row('No user request was recorded for CH2.'));
     const extra = [row('no pass'), row('gh failed')];
     const remote = [row('remote')];
-    const out = capLimits(existing, extra, remote);
+    const out = capLimits(existing, extra, remote, 6);
     expect(out.map((r) => r.limit)).toEqual([
       'existing 1',
       'existing 2',
@@ -261,6 +262,46 @@ describe('open points promoted into limits', () => {
       'gh failed',
     ]);
     expect(capLimits([row('a')], [row('b')], remote)).toHaveLength(3);
+  });
+
+  test('environment rows: other-OS branches, faked steps, terminal paths', () => {
+    const roles = new Map([
+      ['src/launch.ts', 'behavior'],
+      ['src/ui.ts', 'behavior'],
+      ['tests/launch.test.ts', 'tests'],
+    ]);
+    const hunks = [
+      {
+        change: 'CH1',
+        file: 'src/launch.ts',
+        code: ["+ if (process.platform === 'win32') return runCmd(exe);"],
+        conds: [],
+      },
+      {
+        change: 'CH2',
+        file: 'src/ui.ts',
+        code: ['+ if (!process.stdout.isTTY) return plain(text);'],
+        conds: [],
+      },
+      {
+        change: 'CH1',
+        file: 'tests/launch.test.ts',
+        code: ['+ const spawn = mock(() => ({ status: 0 })); // fake spawnSync'],
+        conds: [],
+      },
+    ];
+    const rows = environmentRows(hunks, roles, { platform: 'linux', arch: 'x64' });
+    expect(rows.map((r) => r.limit)).toEqual([
+      'src/launch.ts changes Windows-specific code; the recorded runs were on linux/x64, so none shows the Windows path running.',
+      'The changed tests (tests/launch.test.ts) replace spawned processes with fakes or stubs: they check the logic around those steps, not the real step.',
+      'src/ui.ts changes interactive (terminal/TTY) handling; recorded checks run without a terminal, so none shows that path with a user at the keyboard.',
+    ]);
+    // On the platform the code branches for, no OS row.
+    expect(
+      environmentRows(hunks, roles, { platform: 'win32', arch: 'x64' }).some((r) =>
+        /Windows/.test(String(r.limit)),
+      ),
+    ).toBe(false);
   });
 });
 

@@ -1926,6 +1926,22 @@ describe('the brief states recorded process and behavior', () => {
     expect(planRow?.ref).toBe('P1');
   });
 
+  test('limits: a session that ends at a push leaves CI on the final head open', () => {
+    const lim = (x: EvidenceGraph) =>
+      withGraph(x, (g) => briefParts(g))
+        .sections.find((s) => s.title === 'limits')!
+        .rows.map((r) => String(r.limit));
+    // Checks ran after the last commit and nothing was pushed: no row.
+    expect(lim(graph).some((l) => /CI results/.test(l))).toBe(false);
+    const pushed: EvidenceGraph = structuredClone(graph);
+    const s = pushed.nodes.find((n) => n.label === 'Session')!;
+    s.props.lateCmds = ['git push origin feature'];
+    s.props.lateT = [t(6)];
+    expect(lim(pushed)).toContain(
+      'The session ends at a push; CI results for the final head are not in the logs Tracetoon read.',
+    );
+  });
+
   test('requestText drops task boilerplate and keeps the reason when clipping', () => {
     const text = [
       'Fix the cache eviction order.',

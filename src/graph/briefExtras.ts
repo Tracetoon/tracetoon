@@ -18,7 +18,7 @@ import { wordsOf } from './codeEvidence.ts';
 type Row = Record<string, unknown>;
 
 /** At most this many `limits` rows: each needs a clause in the PR. */
-export const MAX_LIMITS = 6;
+export const MAX_LIMITS = 9;
 
 const shortSha = (s: unknown) => String(s ?? '').slice(0, 12);
 
@@ -444,6 +444,143 @@ export function capLimits(
   drop((r) => remote.includes(r));
   drop((r) => /^No user request was recorded/.test(String(r.limit ?? '')));
   return all.slice(0, max);
+}
+
+/** Platforms a changed line branches on, by the names code uses for them. */
+const PLATFORMS: { name: string; host: string; re: RegExp }[] = [
+  {
+    name: 'Windows',
+    host: 'win32',
+    re: /\bwin32\b|\bwindows\b|\bIS_WINDOWS\b|\bisWindows\b|cfg\(\s*windows|\.exe\b|\.cmd\b|\.ps1\b|%APPDATA%|%USERPROFILE%|\bComSpec\b|[A-Z]:\\\\/i,
+  },
+  {
+    name: 'macOS',
+    host: 'darwin',
+    re: /\bdarwin\b|\bmacos\b|\bisMac\b|\bIS_MAC\b|cfg\(\s*target_os\s*=\s*"macos"|\/Library\/|\/Applications\/|\bbrew\b|\bhomebrew\b/i,
+  },
+  { name: 'arm64', host: 'arm64', re: /\barm64\b|\baarch64\b/i },
+  { name: 'x64', host: 'x64', re: /\bx64\b|\bx86_64\b|\bamd64\b/i },
+];
+/** A test line that replaces a real step with a fake. */
+const FAKE =
+  /\b(?:mock\w*|stub\w*|fake\w*|spyOn|jest\.fn|vi\.fn|sinon|nock|msw|monkeypatch|httpretty|responses\.add|patch\(|MagicMock|override\w*)\b/i;
+/** What a fake stands in for: the network, an install, a process, hardware. */
+const FAKED_STEP: [string, RegExp][] = [
+  [
+    'network or remote calls',
+    /\b(?:fetch|http|https|request|axios|socket|api|endpoint|server|remote|download|upload|url)\b/i,
+  ],
+  [
+    'installs or package managers',
+    /\b(?:install\w*|npm|brew|apt|dnf|pip|cargo|winget|choco)\b/i,
+  ],
+  [
+    'spawned processes',
+    /\b(?:spawn\w*|exec\w*|child_process|subprocess|Popen|runCommand)\b/i,
+  ],
+  [
+    'hardware or devices',
+    /\b(?:device|hardware|serial|usb|camera|gpio|bluetooth|sensor|robot|printer)\b/i,
+  ],
+];
+const TTY =
+  /\b(?:isTTY|setRawMode|tty|pty|readline|inquirer|prompts?\(|stdin|interactive|isatty|raw mode)\b/i;
+
+const hunkText = (h: Row) =>
+  [...((h.code as string[]) ?? []), ...((h.conds as string[]) ?? [])]
+    .map(String)
+    .join('\n');
+
+/**
+ * Open points about the environment the recorded runs could not reach: code
+ * that branches on an OS or architecture other than the session's, added tests
+ * that replace the network, an install, a process or hardware with fakes, and
+ * changed interactive (TTY) paths. Each says what the evidence shows, never
+ * "untested".
+ */
+export function environmentRows(
+  hunks: Row[],
+  fileRole: Map<string, string>,
+  host: { platform: string; arch: string } = {
+    platform: process.platform,
+    arch: process.arch,
+  },
+): Row[] {
+  const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
+  const src = hunks.filter((h) => role(String(h.file)) === 'src');
+  const tests = hunks.filter((h) => role(String(h.file)) === 'tests');
+  const out: Row[] = [];
+  for (const p of PLATFORMS) {
+    if (p.host === host.platform || p.host === host.arch) continue;
+    const hs = src.filter((h) => p.re.test(hunkText(h)));
+    if (!hs.length) continue;
+    const files = [...new Set(hs.map((h) => String(h.file)))].sort();
+    out.push({
+      change: String(hs[0]!.change ?? '') || null,
+      kind: 'open',
+      limit: `${files.slice(0, 3).join(', ')} change${files.length === 1 ? 's' : ''} ${p.name}-specific code; the recorded runs were on ${host.platform}/${host.arch}, so none shows the ${p.name} path running.`,
+    });
+  }
+  const faked = new Map<string, Set<string>>();
+  for (const h of tests) {
+    const lines = ((h.code as string[]) ?? []).map(String).filter((l) => FAKE.test(l));
+    for (const [what, re] of FAKED_STEP)
+      if (lines.some((l) => re.test(l)))
+        faked.set(what, new Set([...(faked.get(what) ?? []), String(h.file)]));
+  }
+  if (faked.size) {
+    const files = [...new Set([...faked.values()].flatMap((x) => [...x]))].sort();
+    out.push({
+      change: null,
+      kind: 'open',
+      limit: `The changed tests (${files.slice(0, 3).join(', ')}) replace ${[...faked.keys()].join(', ')} with fakes or stubs: they check the logic around those steps, not the real ${[...faked.keys()].length === 1 ? 'step' : 'steps'}.`,
+    });
+  }
+  const tty = src.filter((h) => TTY.test(hunkText(h)));
+  if (tty.length) {
+    const files = [...new Set(tty.map((h) => String(h.file)))].sort();
+    out.push({
+      change: String(tty[0]!.change ?? '') || null,
+      kind: 'open',
+      limit: `${files.slice(0, 3).join(', ')} change${files.length === 1 ? 's' : ''} interactive (terminal/TTY) handling; recorded checks run without a terminal, so none shows that path with a user at the keyboard.`,
+    });
+  }
+  return out;
+}
+
+/**
+ * The session ends at or after a commit or a push: CI on the final head is
+ * not in the logs. Null when a check run came after the last commit and no
+ * push followed it.
+ */
+export function finalHeadRow(g: GraphEngine): Row | null {
+  const last = g
+    .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
+    .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
+  const late = g
+    .run(`MATCH (s:Session {band: 'included'}) RETURN s.lateCmds AS cmds, s.lateT AS ts`)
+    .rows.flatMap((r) =>
+      ((r.cmds as string[]) ?? []).map((c, i) => ({
+        cmd: String(c),
+        t: String(((r.ts as string[]) ?? [])[i] ?? ''),
+      })),
+    );
+  const pushed = late.some((x) => /\bgit\s+push\b|\bgh\s+pr\s+create\b/.test(x.cmd));
+  if (!last && !pushed) return null;
+  const runAfter =
+    !!last &&
+    g
+      .run(
+        `MATCH (r:Run)-[:IN_SESSION]->(:Session {band: 'included'}) WHERE r.t IS NOT NULL
+         RETURN r.t AS t`,
+      )
+      .rows.some((r) => String(r.t) > String(last.t));
+  if (!pushed && runAfter) return null;
+  return {
+    change: null,
+    kind: 'open',
+    limit: `The session ends at ${pushed ? 'a push' : `commit ${String(last!.id)}`}; CI results for the final head are not in the logs Tracetoon read.`,
+  };
 }
 
 /** Added code of a hunk's `code` lines: `+ x`, or the new side of `- a ⇒ + b`. */

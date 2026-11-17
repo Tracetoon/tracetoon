@@ -393,7 +393,7 @@ describe('do not say', () => {
       'files in this diff',
     ]);
     expect(rows[1]!.text).toBe(
-      'Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested (no limits row says so).',
+      'Never say session-wide that nothing ran or that no test was recorded (no limits row says so); scoped uncertainties with a row behind them stay.',
     );
     expect(rows[2]!.text).toBe('`load`: changed, not "new" or "added".');
     expect(String(rows[3]!.text)).toContain('(a.ts: + if (!cfg) return;)');
@@ -421,7 +421,7 @@ describe('do not say', () => {
     ];
     expect(doNotSayRows(withLimit).find((r) => r.kind === 'absence')).toEqual({
       kind: 'absence',
-      text: 'Open points say what the evidence shows: never that no hardware, live-service or test run was recorded, run or tested, beyond what L1 says.',
+      text: 'Never say session-wide that nothing ran or that no test was recorded, beyond what L1 says; scoped uncertainties with a row behind them stay.',
       cites: ['L1'],
     });
   });
@@ -748,16 +748,24 @@ describe('unsupported absence', () => {
   } as any;
   const absent = (body: string) =>
     applyBrief(body, parts).flags.filter((f) => /unsupported absence/.test(f.problem));
-  test('an absence without a limits row is a blocking finding', () => {
+  test('an absence without a supporting row is a non-blocking check', () => {
     const f = absent('It was not tested on real hardware. [CH1]');
     expect(f.length).toBe(1);
-    expect(f[0]!.severity).toBe('fix');
+    expect(f[0]!.severity).toBe('check');
     expect(absent('No end-to-end test was run against the service. [CH1]').length).toBe(
       1,
     );
   });
   test('a sentence citing a limits row may say it', () => {
     expect(absent('The remote call was not run live. [L1]')).toEqual([]);
+    // A test, request, run or commit row supports an environment-scope statement.
+    expect(
+      absent('The installer was not run on Windows; the tests fake it. [T1]'),
+    ).toEqual([]);
+    expect(absent('It was not tested on hardware. [S2]')).toEqual([]);
+    expect(absent('Not run against the service. [commit:abc1234#2]')).toEqual([]);
+    // Restating a limits row needs no tag of its own.
+    expect(absent('No live run was recorded that shows the remote call.')).toEqual([]);
     expect(absent('The change adds a retry to the client. [CH1]')).toEqual([]);
   });
 });
