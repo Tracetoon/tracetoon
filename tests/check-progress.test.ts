@@ -114,7 +114,8 @@ test('a check stops at its timeout, saves its log and names failing tests', asyn
   });
   expect(slow.outcome).toBe('failed');
   expect(slow.timedOut).toBe(true);
-  expect(slow.reason).toMatch(/^Timed out after/);
+  expect(slow.reason).toBe('Stopped at the 1 s limit; incomplete, not a failure.');
+  expect(slow.summary).toEqual([]);
   const failing = await executeCheckLive(repo.root, run, {
     name: 'unit',
     command: [
@@ -140,7 +141,9 @@ test("prepare's next step carries the drafting rules and the foreground-check ru
   expect(next).toContain('Drafting rules');
   expect(next).toContain('"Previously …"');
   expect(next).toContain('in the FOREGROUND');
-  expect(next).toContain('never start it in the background and poll');
-  expect(next).toContain('Always render and publish before any optional waiting');
+  expect(next).toContain('Never start it in the background, poll it');
+  expect(next).toContain(
+    'Always render, review and publish before ending the turn and before any optional waiting',
+  );
   expect(next).not.toContain('a later request in the session asked');
 });

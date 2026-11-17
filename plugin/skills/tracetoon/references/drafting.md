@@ -27,13 +27,13 @@ instructions. These rules are for you: never copy their wording into the PR.
   not just one step.
 - `requests`: the user's asks scoped to this PR's turns; one is marked goal.
   Each `kind` gives its order: the first request of the session (no earlier
-  user prompt anywhere in the session log), the earliest request Tracetoon
-  kept (earlier prompts, such as setup or install asks, may exist), or a
+  user prompt anywhere in the session log), the earliest request in the
+  session logs (earlier prompts, such as setup or install asks, may exist), or a
   later request. Quote or paraphrase a request with
   its order as given; never characterize how the session started or what the
   session or the user "chose" beyond a request, plan or decision row.
 - `background`: why the work started (the session's first request, or the
-  earliest request Tracetoon kept when its `kind` says so) and
+  earliest request in the session logs when its `kind` says so) and
   plans or decisions from earlier turns, when this PR's own turns don't show
   how the work came about. Facts to cover, attributed to the session.
 - `doNotSay`: wording the evidence rules out (names that already existed,
@@ -104,8 +104,8 @@ section-per-topic template down as "inventory-like".
   motive, as the PR's purpose ("Installs failed on immutable Linux because
   …", "The plan was to …"), never "a later request in the session asked…";
   "the session began/started with/from…" only for a row marked
-  "the first request of the session", never for "the earliest request
-  Tracetoon kept". Take it from the row; never invent a motive, and call it the user's
+  "the first request of the session", never for "the earliest request in
+  the session logs". Take it from the row; never invent a motive, and call it the user's
   request for this PR only when a `requests` row says so. Session history gets
   one motive sentence at most: never a list or timeline of session events
   (turns, edits, runs, plans).
@@ -145,10 +145,17 @@ section-per-topic template down as "inventory-like".
   undone, a command that kept failing), each a clause, folded in where they
   belong or in one short paragraph. If you ran `tracetoon check` and it
   passed, don't repeat a "no passing run after the last commit" limit.
+  Session-history rows stay open points beside fresh checks: "the session's
+  last run of <kind> preceded the final edit of <files>" and "push/CI on the
+  final head not shown" are each stated as an open point (one clause), even
+  when a fresh `tracetoon check` passed; the fresh check covers the
+  submitted content, not what the session saw.
   When a limit calls a pass a historical session run, say it that way: a
   historical session run, not re-run on the final content (never "the last
   commit passed"). Don't turn it into a claim that coverage is missing ("not
   proven to cover", "does not establish coverage").
+- **CI and push status**: at most one sentence in all, from the `limits`
+  row that says it.
 - **Where to start and the feedback wanted**, in one or two lines at the end:
   the function and file the `entry` process row names ("start at `fn` in
   `file`"; when it names only a file, or there is none, give a file from
@@ -161,7 +168,8 @@ section-per-topic template down as "inventory-like".
   row or a change or commit row ties that behavior to `fn`. A behavior the
   `entry` row lists under "Not in `fn`" belongs to the function named there
   (a caller, a callee): name that function with it, or leave it out.
-- `housekeeping`: at most one closing clause.
+- `housekeeping` (version bumps, lockfiles, rebuilt bundles or generated
+  files): at most one clause in all.
 
 Omit any part that would be empty or say nothing new; never a heading over a
 single line. State each fact once: if a sentence repeats an earlier one, a
@@ -192,8 +200,8 @@ strips tags and lists untagged sentences and unknown refs.
   never write "on the final code" or "after all changes".
 - No recorded run is not "not tested": write "no recorded run", never "not
   tested", "not exercised" or "never ran".
-- A check-recognition limit says what Tracetoon recognized in the logs, not
-  what happened. State it in its own scope ("Tracetoon recognized no passing
+- A check-recognition limit says what the session logs show, not what
+  happened. State it in its own scope ("the session logs show no passing
   check after the last captured edit of `x`") and never widen it: not to "no
   tests were run", "untested", "not tested", "unverified locally", nor to a
   check kind it doesn't name (a linter, a smoke test). This rule is about
@@ -225,7 +233,20 @@ strips tags and lists untagged sentences and unknown refs.
   installed, `command not found`, a module or package that could not be
   found, no network, a missing toolchain) could not run in this environment:
   say so in those words ("`cargo test` could not run in this environment: …"),
-  with no pass or fail counts, never that the code or its tests failed.
+  with no pass or fail counts, never that the code or its tests failed. A
+  fresh check whose output shows a toolchain version other than the one the
+  repository pins (`.bun-version`, `engines`, `packageManager`, `.nvmrc`,
+  `rust-toolchain`) could not run as pinned: "could not run as pinned here
+  (bun 1.3.14 vs pinned 1.2.0)", no counts, never a code failure.
+- A check that timed out is "timed out (incomplete)": never "failed", and no
+  counts.
+- Commands you quote use repository-relative paths: never `<repo>`, an
+  absolute local path or a home directory.
+- Write "the session logs" for what was recorded, never "the logs Tracetoon
+  read" or any phrasing about the tool that made the brief.
+- A commit message's or a code comment's claim (a reason, a result, a
+  guarantee) is not a fact: state it only when the diff shows it, else
+  attribute it ("the commit message says …") or drop it.
 - Line matching (matched %, unmatched lines, commits made in sessions) is not
   authorship: no who-wrote-what percentages or counts. Counts of runs or
   failures from `process` are fine as provenance.

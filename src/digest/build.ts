@@ -73,7 +73,13 @@ export interface DigestSession {
       ownWords?: boolean;
     }[];
   }[];
-  commands: { cmd: string; count: number; failures: number; isTest: boolean; isCheck?: boolean }[];
+  commands: {
+    cmd: string;
+    count: number;
+    failures: number;
+    isTest: boolean;
+    isCheck?: boolean;
+  }[];
   /**
    * Commands that reach the remote in this repository: a push or a PR made
    * (`publish`), or a look at CI (`ci`: `gh run …`, `gh pr checks`), in order,
@@ -98,6 +104,8 @@ export interface DigestSession {
      * watches, when an earlier command's output tied that id to a workflow.
      */
     workflows?: string[];
+    /** A push whose command line committed first (`git commit … ; git push`): one action. */
+    withCommit?: true;
   }[];
   /** Individual verification runs (tests, builds, linters, type checks, evals). */
   runs: Run[];
@@ -522,12 +530,14 @@ export function commandRuns(
   if (viaScript) testSegments.push(viaScript);
   const logged = testSegments.filter((s) => !toFile(s));
   const tests = logged.length ? logged : testSegments;
-  const found: { seg: string; kind: Run['kind']; unlogged?: boolean; script?: true }[] = [];
+  const found: { seg: string; kind: Run['kind']; unlogged?: boolean; script?: true }[] =
+    [];
   let testAdded = false;
   for (const seg of segments) {
     // A script this PR adds or changes, run by an interpreter or its path: the
     // PR's own harness or check, whatever its name says.
-    const script = prScript && !isTestRunner(seg) && !verifyKind(seg) ? scriptPath(seg) : undefined;
+    const script =
+      prScript && !isTestRunner(seg) && !verifyKind(seg) ? scriptPath(seg) : undefined;
     if (script && prScript!(script)) {
       found.push({ seg, kind: scriptKind(script), script: true });
       continue;
@@ -558,10 +568,18 @@ export function commandRuns(
         return { cmd: seg, kind, outcome: 'unknown', basis: 'none', summary: [] };
       if (script) {
         const masked = statusMask(fromOf(seg), seg);
+        // Several checks in one command: a clean exit of a command whose
+        // every program must succeed (`a && b && script`, no `;`, `|` or
+        // `||`) is a clean exit of each, the script's too.
+        const status = several
+          ? isError === false && !masked && everyStepMustPass(cmd)
+            ? false
+            : undefined
+          : isError;
         return {
           cmd: seg,
           kind,
-          ...scriptOutcome(several ? undefined : isError, output, masked),
+          ...scriptOutcome(status, output, masked),
           ...(masked ? { masked } : {}),
           ...(several ? {} : { sole: true as const }),
         };
@@ -644,8 +662,12 @@ export function scriptPath(seg: string): string | undefined {
 
 /** A PR script's check kind by its name: a build or bundle script builds; anything else is a test run. */
 function scriptKind(path: string): Run['kind'] {
-  const stem = path.split('/').pop()!.replace(/\.[^.]+$/, '');
-  if (/(?:^|[-_.])(?:build|bundle|compile|package)(?:[-_.]|$)/i.test(stem)) return 'build';
+  const stem = path
+    .split('/')
+    .pop()!
+    .replace(/\.[^.]+$/, '');
+  if (/(?:^|[-_.])(?:build|bundle|compile|package)(?:[-_.]|$)/i.test(stem))
+    return 'build';
   if (/(?:^|[-_.])(?:lint|check-format)(?:[-_.]|$)/i.test(stem)) return 'lint';
   return 'test';
 }
@@ -676,6 +698,15 @@ export function scriptOutcome(
     return { outcome: isError ? 'failed' : 'passed', basis: 'exit status', summary };
   if (!summary.length) return { outcome: 'unknown', basis: 'none', summary };
   const last = summary.at(-1)!;
+  // The script's own verdict word leads its tally line: `PASS … 163/163
+  // steps, 0/2 smokes` passed (a skipped part is no failure), `FAIL …` failed.
+  const verdict = /^(?:\W*)(PASS(?:ED)?|OK|SUCCESS|FAIL(?:ED|URE)?)\b/.exec(last)?.[1];
+  if (verdict)
+    return {
+      outcome: /^FAIL/.test(verdict) ? 'failed' : 'passed',
+      basis: 'output',
+      summary,
+    };
   const fractions = [...last.matchAll(/\b(\d+)\s*\/\s*(\d+)\s+[A-Za-z]/g)];
   const incomplete = fractions.some((m) => Number(m[1]) < Number(m[2]));
   const failures = /\b[1-9]\d*\s+(?:fail(?:ed|ures?|s)?|errors?)\b/i.test(last);
@@ -772,6 +803,20 @@ export function echoedStatus(
     .filter((x) => x !== undefined)
     .at(-1);
   return hit === undefined ? undefined : Number(hit);
+}
+
+/**
+ * Whether a clean exit of the whole command means every program in it exited
+ * cleanly: its programs are joined by `&&` only (no `;`, `||`, pipe or
+ * background `&` outside quotes; redirections like `2>&1` aside).
+ */
+export function everyStepMustPass(cmd: string): boolean {
+  const bare = cmd
+    .replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''")
+    .replace(/\d*>&\d+|&>/g, '')
+    .replace(/&&\s*\\?\n/g, ' ')
+    .replace(/&&/g, ' ');
+  return !/[;|&\n]|<</.test(bare.trim());
 }
 
 /** What a captured run shows, and how we know. */
@@ -973,7 +1018,9 @@ export function ciResults(output: string | undefined): {
   os?: string[];
 } {
   if (!output || !CI_RESULT.test(output)) return {};
-  const heads = [...new Set([...output.matchAll(/\b[0-9a-f]{40}\b/g)].map((m) => m[0].slice(0, 12)))];
+  const heads = [
+    ...new Set([...output.matchAll(/\b[0-9a-f]{40}\b/g)].map((m) => m[0].slice(0, 12))),
+  ];
   const os = passingRunnerOs(output);
   const ranOs = finishedRunnerOs(output);
   return {
@@ -994,7 +1041,9 @@ export function finishedRunnerOs(output: string): string[] {
   for (const line of lines) {
     const labels = [...line.matchAll(RUNNER_LABEL)];
     if (!labels.length) continue;
-    const done = JOB_PASSED.test(line) || /^\s*[✗✘X]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)\b/i.test(line);
+    const done =
+      JOB_PASSED.test(line) ||
+      /^\s*[✗✘X]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)\b/i.test(line);
     if (!done || /\bpending\b|\bqueued\b|\bin_progress\b/i.test(line)) continue;
     for (const m of labels) {
       const k = m[1]!.toLowerCase();
@@ -1009,7 +1058,8 @@ export function finishedRunnerOs(output: string): string[] {
 const WORKFLOW_ARG =
   /^gh\s+workflow\s+run\s+(?:-\S+\s+\S+\s+)*([\w.-]+\.ya?ml)\b|\s(?:--workflow|-w)(?:=|\s+)['"]?([\w.-]+\.ya?ml)\b/;
 /** A run id a CI command names: `gh run watch|view|rerun|download <id>`. */
-const RUN_ID_ARG = /^gh\s+run\s+(?:watch|view|rerun|download|cancel)\s+(?:-\S+\s+)*(\d{5,})\b/;
+const RUN_ID_ARG =
+  /^gh\s+run\s+(?:watch|view|rerun|download|cancel)\s+(?:-\S+\s+)*(\d{5,})\b/;
 /** Run ids an output names: `"databaseId":N`, `.../actions/runs/N`. */
 const RUN_ID_OUT = /"databaseId"\s*:\s*(\d{5,})|\/actions\/runs\/(\d{5,})/g;
 
@@ -1025,15 +1075,17 @@ export function ciTargetOf(seg: string): { workflow?: string; run?: string } {
 
 /** Run ids an output names. */
 export function runIdsIn(output: string | undefined): string[] {
-  return [...new Set([...(output ?? '').matchAll(RUN_ID_OUT)].map((m) => (m[1] ?? m[2])!))];
+  return [
+    ...new Set([...(output ?? '').matchAll(RUN_ID_OUT)].map((m) => (m[1] ?? m[2])!)),
+  ];
 }
-
 
 /** A runner label a job runs on (`windows-latest`, `macos-14`, `ubuntu-24.04-arm`). */
 const RUNNER_LABEL = /\b(windows|macos|ubuntu)-(?:latest|\d[\w.]*)(-arm(?:64)?)?\b/gi;
 /** A job line that passed: `✓ build (windows-latest) in 1m`, `name\tpass\t…`, a success conclusion. */
 const JOB_PASSED = /^\s*[✓✔]|\tpass(?:ed)?\t|\bsuccess(?:ful)?\b/i;
-const JOB_FAILED = /^\s*[✗✘X*]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)?\b|\bcancell?ed\b|\bpending\b/i;
+const JOB_FAILED =
+  /^\s*[✗✘X*]\s|\tfail(?:ed|ure)?\t|\bfail(?:ed|ure)?\b|\bcancell?ed\b|\bpending\b/i;
 
 /**
  * Runner platforms of the jobs a CI look shows passing, from runner labels in
@@ -1049,10 +1101,22 @@ export function passingRunnerOs(output: string): string[] {
   for (const line of lines) {
     const labels = [...line.matchAll(RUNNER_LABEL)];
     if (!labels.length) continue;
-    const ok = JOB_PASSED.test(line) && !JOB_FAILED.test(line.replace(/\bfail(?:ing|ed)?,/g, ''));
+    const ok =
+      JOB_PASSED.test(line) && !JOB_FAILED.test(line.replace(/\bfail(?:ing|ed)?,/g, ''));
     for (const m of labels) {
-      const name = m[1]!.toLowerCase() === 'windows' ? 'Windows' : m[1]!.toLowerCase() === 'macos' ? 'macOS' : 'Linux';
-      last.set(`${line.split(m[0])[0]!.replace(/^\s*\S\s+/, '').trim()}|${name}`, ok);
+      const name =
+        m[1]!.toLowerCase() === 'windows'
+          ? 'Windows'
+          : m[1]!.toLowerCase() === 'macos'
+            ? 'macOS'
+            : 'Linux';
+      last.set(
+        `${line
+          .split(m[0])[0]!
+          .replace(/^\s*\S\s+/, '')
+          .trim()}|${name}`,
+        ok,
+      );
       if (m[2]) last.set(`${line.split(m[0])[0]!.trim()}|arm64`, ok);
     }
   }
@@ -1073,16 +1137,51 @@ export function remoteCommands(
     const seg = raw.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim();
     const kind = PUBLISH_CMD.test(seg)
       ? 'publish'
-      : CI_CMD.test(seg) || (output !== undefined && CI_MAYBE_CMD.test(seg) && CI_RESULT.test(output))
+      : CI_CMD.test(seg) ||
+          (output !== undefined && CI_MAYBE_CMD.test(seg) && CI_RESULT.test(output))
         ? 'ci'
         : undefined;
     if (!kind) continue;
     const words = seg.split(/\s+/).filter((w) => !w.startsWith('-'));
     // `gh api` names its endpoint next: an owner, a repo, run ids. Never kept.
     const n = words[1] === 'api' ? 2 : 3;
-    out.push({ cmd: seg.startsWith('git') ? 'git push' : words.slice(0, n).join(' '), kind });
+    out.push({
+      cmd: seg.startsWith('git') ? 'git push' : words.slice(0, n).join(' '),
+      kind,
+    });
   }
   return out;
+}
+
+/**
+ * Whether a command line commits before its push (`git commit -m x && git
+ * push`, `git commit …; git push`): the commit and the push are one action.
+ */
+export function commitsBefore(cmd: string, push: string): boolean {
+  if (!/^git push\b/.test(push)) return false;
+  const segs = splitCommands(cmd).map((x) =>
+    x.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim(),
+  );
+  const p = segs.findIndex((x) => /^git\s+(?:-C\s+\S+\s+)?push\b/.test(x));
+  return p > 0 && segs.slice(0, p).some((x) => /^git\s+(?:-C\s+\S+\s+)?commit\b/.test(x));
+}
+
+/**
+ * At most 20 remote entries, in order: every push and PR made (the last
+ * push matters most), then the latest CI looks. A long CI watch loop no
+ * longer crowds out a push that came after it.
+ */
+export function keptRemote<T extends { kind: string }>(remote: T[], max = 20): T[] {
+  if (remote.length <= max) return remote;
+  const publish = remote.filter((x) => x.kind === 'publish').slice(-max);
+  let room = max - publish.length;
+  const keep = new Set<T>(publish);
+  for (let i = remote.length - 1; i >= 0 && room > 0; i--)
+    if (!keep.has(remote[i]!)) {
+      keep.add(remote[i]!);
+      room--;
+    }
+  return remote.filter((x) => keep.has(x));
 }
 
 /** Programs that read, move or inspect files: running one runs none of the project's code. */
@@ -1197,7 +1296,8 @@ function sessionDigest(
     );
     const named = [...new Set(targets.flatMap((x) => (x.workflow ? [x.workflow] : [])))];
     if (named.length === 1)
-      for (const id of runIdsIn(r.output)) if (!runWorkflow.has(id)) runWorkflow.set(id, named[0]!);
+      for (const id of runIdsIn(r.output))
+        if (!runWorkflow.has(id)) runWorkflow.set(id, named[0]!);
     const watched = targets.flatMap((x) =>
       x.run && runWorkflow.has(x.run) ? [runWorkflow.get(x.run)!] : [],
     );
@@ -1205,13 +1305,16 @@ function sessionDigest(
     for (const x of remoteCommands(r.cmd, r.output))
       // From another folder only the CI look is this repository's (a
       // push there pushed that clone's branch).
-      if (remote.length < 20 && (here || x.kind === 'ci'))
+      if (here || x.kind === 'ci')
         remote.push({
           ...x,
           ...(r.ts ? { t: r.ts } : {}),
           failed: r.isError === true,
           ...(x.kind === 'ci' ? ciResults(r.output) : {}),
           ...(x.kind === 'ci' && workflows.length ? { workflows } : {}),
+          ...(x.kind === 'publish' && commitsBefore(r.cmd, x.cmd)
+            ? { withCommit: true as const }
+            : {}),
         });
   };
   let current: { ledToEdits: boolean } | undefined;
@@ -1477,7 +1580,7 @@ function sessionDigest(
     artifacts,
     decisions,
     runs,
-    ...(remote.length ? { remote } : {}),
+    ...(remote.length ? { remote: keptRemote(remote) } : {}),
     commands: [...cmdGroups.entries()]
       .map(([cmd, g]) => ({ cmd, ...g }))
       .sort((a, b) => Number(b.isTest) - Number(a.isTest) || b.count - a.count)

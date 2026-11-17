@@ -9,7 +9,7 @@
  * A small indentation reader, not a YAML parser: anchors, flow mappings and
  * multi-document files are read as far as their lines show. Fails open.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { git } from '../util/exec.ts';
 import type { EvidenceGraph } from './model.ts';
@@ -300,5 +300,94 @@ export function addWorkflowJobs(
       }
     const lines = workflowChanges(base, now);
     if (lines.length) n.props.jobs = lines.slice(0, MAX_JOB_LINES);
+  }
+}
+
+/**
+ * The workflow files (base names) whose text runs a path: names it as a
+ * command word (`./scripts/build.ps1`, `bash scripts/x.sh`, `.\scripts\x.ps1`),
+ * not only in a `paths:` filter. Pure, for tests.
+ */
+export function workflowsRunning(
+  path: string,
+  workflows: { file: string; text: string }[],
+): string[] {
+  const norm = path.replace(/\\/g, '/');
+  const out: string[] = [];
+  for (const w of workflows) {
+    const lines = w.text.replace(/\\/g, '/').split('\n');
+    // Lines under a `paths:` / `paths-ignore:` filter only list files.
+    let filterIndent = -1;
+    const runs = lines.some((l) => {
+      const ind = l.length - l.trimStart().length;
+      if (/^\s*paths(?:-ignore)?:/.test(l)) {
+        filterIndent = ind;
+        return false;
+      }
+      if (
+        filterIndent >= 0 &&
+        (ind > filterIndent || (/^\s*-\s/.test(l) && ind >= filterIndent))
+      )
+        return false;
+      filterIndent = -1;
+      const at = l.indexOf(norm);
+      if (at < 0) return false;
+      // The path itself, not a longer name that ends with it.
+      const before = l[at - 1] ?? ' ';
+      const after = l[at + norm.length] ?? ' ';
+      return /[\s'"=./(:]/.test(before) && !/[\w-]/.test(after) && after !== '.';
+    });
+    if (runs) out.push(w.file.split('/').pop()!.toLowerCase());
+  }
+  return [...new Set(out)].sort();
+}
+
+/**
+ * Sets `ciCallers` on each changed non-workflow File node that a workflow
+ * file at the head (`head` undefined: the working tree) runs.
+ */
+export function addCiCallers(
+  graph: EvidenceGraph,
+  toplevel: string,
+  head: string | undefined,
+): void {
+  const files: string[] = [];
+  if (head) {
+    const r = git(toplevel, [
+      'ls-tree',
+      '-r',
+      '--name-only',
+      head,
+      '--',
+      '.github/workflows',
+    ]);
+    if (r.ok) files.push(...r.stdout.split('\n').filter((f) => WORKFLOW_PATH.test(f)));
+  } else {
+    try {
+      for (const f of readdirSync(join(toplevel, '.github/workflows')))
+        if (/\.ya?ml$/.test(f)) files.push(`.github/workflows/${f}`);
+    } catch {
+      // No workflows folder.
+    }
+  }
+  for (const f of ['.gitlab-ci.yml', 'azure-pipelines.yml']) files.push(f);
+  const workflows = files.flatMap((file) => {
+    let text: string | undefined;
+    if (head) {
+      const r = git(toplevel, ['show', `${head}:${file}`]);
+      text = r.ok ? r.stdout : undefined;
+    } else
+      try {
+        text = readFileSync(join(toplevel, file), 'utf8');
+      } catch {
+        text = undefined;
+      }
+    return text ? [{ file, text }] : [];
+  });
+  if (!workflows.length) return;
+  for (const n of graph.nodes) {
+    if (n.label !== 'File' || n.props.inPr !== true || WORKFLOW_PATH.test(n.id)) continue;
+    const callers = workflowsRunning(n.id, workflows);
+    if (callers.length) n.props.ciCallers = callers;
   }
 }

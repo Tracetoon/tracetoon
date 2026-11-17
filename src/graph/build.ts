@@ -96,6 +96,10 @@ export interface PatchHunk {
   words: string[];
   /** The hunk shows the file's first line as a shebang (`#!`): a runnable script. */
   shebang?: true;
+  /** Added lines start a local server (`Bun.serve`, `createServer`, `127.0.0.1`): real code runs against it. */
+  localServer?: true;
+  /** Test doubles the added lines name in words (`a fake release server`), lowercased. */
+  fakes?: string[];
   /**
    * Up to 24 key changed lines, in patch order, for the neighborhood brief:
    * `- old ⇒ + new` for a removed line and its closest added line, then lines
@@ -409,6 +413,9 @@ export function patchHunks(patch: string): PatchHunk[] {
       ? []
       : conditionFacts(kept.minus, kept.plus, h.pairs);
     h.tests = uniqStrings(ch.plus.flatMap(testTitles)).slice(0, 8);
+    if (ch.plus.some((l) => LOCAL_SERVER.test(l))) h.localServer = true;
+    const fakes = uniqStrings(ch.plus.flatMap(fakePhrases)).slice(0, 4);
+    if (fakes.length) h.fakes = fakes;
     h.words = uniqStrings([...ch.minus, ...ch.plus].flatMap(wordsOf)).slice(0, 400);
     h.fnWords = [...(byFn.get(h) ?? [])].map(
       ([fn, ls]) => `${fn}: ${uniqStrings(ls.flatMap(wordsOf)).slice(0, 120).join(' ')}`,
@@ -507,6 +514,40 @@ const isComment = (l: string) => /^\s*(\/\/|#(?!\[)|\*|\/\*|--\s)/.test(l);
 /** A line with whitespace collapsed; blank or brace-only lines are no evidence of a move. */
 const normLine = (l: string) => l.replace(/\s+/g, ' ').trim();
 const MOVABLE = (l: string) => /[\w'"`]/.test(l) && l.length >= 6;
+/** A line that starts or addresses a server on this machine. */
+export const LOCAL_SERVER =
+  /\bBun\.serve\(|\b(?:http|https|net)\.createServer\(|\bcreateServer\(|\bHTTPServer\(|\bhttptest\.NewServer|\bTestServer\b|\b(?:localhost|127\.0\.0\.1)(?::\d+|\b)/;
+/**
+ * Test doubles a line names in words, inside a string or comment: "a fake
+ * release server", "mock registry". The double word and up to three words
+ * after it, lowercased; never code identifiers.
+ */
+export function fakePhrases(line: string): string[] {
+  const text = [
+    ...(line.match(/(['"`])(?:(?!\1).)*\1/g) ?? []),
+    ...(line.match(/(?:\/\/|#|\/\*)\s.*$/) ?? []),
+  ].join(' ');
+  const out: string[] = [];
+  for (const m of text.matchAll(
+    /\b(fake|mock|stub(?:bed)?|dummy)\s+([a-z][a-z-]*(?:\s+[a-z][a-z-]*){0,2})/gi,
+  )) {
+    const words = m[2]!
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 3);
+    // Stop at a word that starts a clause.
+    const cut = words.findIndex((w) =>
+      /^(?:and|or|but|that|which|with|for|the|when|then|returns?|to|in|on|is|are|was)$/.test(
+        w,
+      ),
+    );
+    const kept = cut < 0 ? words : words.slice(0, cut);
+    if (kept.length)
+      out.push(`${m[1]!.toLowerCase().replace(/^stubbed$/, 'stub')} ${kept.join(' ')}`);
+  }
+  return out;
+}
+
 /** A changed line that is code: not blank, brace-only or a comment. */
 const isCodeLine = (l: string) => /[\w'"`]/.test(l) && !isComment(l);
 
@@ -842,7 +883,9 @@ function decisionAnswers(
 ): string | null {
   if (!d.questions?.length) return null;
   // A question with no recorded answer decided nothing: left out.
-  const answered = d.questions.filter((q) => q.answer !== undefined && q.answer.trim() !== '');
+  const answered = d.questions.filter(
+    (q) => q.answer !== undefined && q.answer.trim() !== '',
+  );
   if (!answered.length) return null;
   return clip(
     answered
@@ -1189,6 +1232,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       words: h.words,
       code: h.code,
       shebang: h.shebang ?? false,
+      localServer: h.localServer ?? false,
+      fakes: h.fakes ?? [],
     });
     rel('OF', ['Hunk', h.id], ['File', h.file]);
   }
@@ -1273,6 +1318,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       remoteRanOs: (s.remote ?? []).map((x) => (x.ranOs ?? x.os ?? []).join(' ')),
       // Same position: workflow files the CI command ran or watched.
       remoteWorkflows: (s.remote ?? []).map((x) => (x.workflows ?? []).join(' ')),
+      // Same position: `commit` when the push's command line committed first.
+      remoteWith: (s.remote ?? []).map((x) => (x.withCommit ? 'commit' : '')),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)

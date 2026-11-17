@@ -91,7 +91,9 @@ describe('open points promoted into limits', () => {
     });
     // A pass with no captured edit between it and the commit: no open point
     // (a "historical session run" row beside "nothing changed" invited hedging).
-    expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toBeUndefined();
+    expect(
+      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs)),
+    ).toBeUndefined();
     expect(
       withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
         noPassAfterCommitRow(e, runs),
@@ -262,16 +264,26 @@ describe('platform, script and fake rows', () => {
     ['tests/a.test.ts', 'tests'],
     ['src/run/fake-gh.ts', 'behavior'],
   ]);
-  const h = (change: string, file: string, code: string[]) => ({ change, file, code, conds: [] });
+  const h = (change: string, file: string, code: string[]) => ({
+    change,
+    file,
+    code,
+    conds: [],
+  });
 
   test('only lines that test the platform count; one row per change unit, merged', () => {
     const rows = environmentRows(
       [
         // A platform name mapped to an asset suffix is not a branch.
-        h('CH1', 'src/a.ts', ["+ const os = win ? 'windows' : platform === 'darwin' ? 'darwin' : 'linux';"]),
+        h('CH1', 'src/a.ts', [
+          "+ const os = win ? 'windows' : platform === 'darwin' ? 'darwin' : 'linux';",
+        ]),
         h('CH1', 'src/a.ts', ['+ return platform === "win32" ? "windows" : platform;']),
         // A `.cmd` property and a config file naming a platform are not either.
-        h('CH2', 'src/digest.ts', ['+ const key = commandKey(r.cmd);', '+ if (run.cmd) out.push(x);']),
+        h('CH2', 'src/digest.ts', [
+          '+ const key = commandKey(r.cmd);',
+          '+ if (run.cmd) out.push(x);',
+        ]),
         h('CH3', 'packaging/signing.xml', ['+ <file path="app-windows-arm64.exe" />']),
         // Real branches, two platforms in one unit: one row.
         h('CH4', 'src/b.ts', [
@@ -294,13 +306,18 @@ describe('platform, script and fake rows', () => {
     const rows = environmentRows(
       [
         h('CH1', 'scripts/build-win.ps1', ['+ if ($LASTEXITCODE -ne 0) { exit 1 }']),
-        h('CH2', '.github/workflows/release.yml', ['+ runs-on: windows-latest', '+ name: Sign']),
+        h('CH2', '.github/workflows/release.yml', [
+          '+ runs-on: windows-latest',
+          '+ name: Sign',
+        ]),
       ],
       roles,
       host,
     );
     expect(rows.map((r) => r.change)).toEqual(['CH1', 'CH2']);
-    expect(String(rows[0]!.limit)).toStartWith('scripts/build-win.ps1 changes Windows-specific code;');
+    expect(String(rows[0]!.limit)).toStartWith(
+      'scripts/build-win.ps1 changes Windows-specific code;',
+    );
     expect(String(rows[1]!.limit)).toContain('(`runs-on: windows-latest`)');
   });
 
@@ -316,7 +333,7 @@ describe('platform, script and fake rows', () => {
         .filter((l) => !/-specific/.test(l));
     expect(limits(['bash scripts/build.sh', 'bun test'])).toEqual([
       'scripts/build-win.ps1 is a changed script no recorded session command ran; only the diff shows it.',
-      '.github/workflows/release.yml changes CI workflow; workflows run in CI, and no run of it is in the logs Tracetoon read.',
+      '.github/workflows/release.yml changes CI workflow; workflows run in CI, and no run of it is in the session logs.',
     ]);
     // No session matched: nothing to compare with, no script rows.
     expect(limits(undefined)).toEqual([]);
@@ -335,11 +352,19 @@ describe('platform, script and fake rows', () => {
         h('CH1', 'scripts/lib/e2e-oracle.ts', ['+ export function judge() {}']),
         // A test drives this one by name.
         { ...h('CH1', 'scripts/lib/e2e-cases.sh', ['+ echo case']) },
-        h('CH2', 'tests/e2e-cases.test.ts', ["+ const cases = load('scripts/lib/e2e-cases.sh');"]),
+        h('CH2', 'tests/e2e-cases.test.ts', [
+          "+ const cases = load('scripts/lib/e2e-cases.sh');",
+        ]),
         // Entry points: a shebang, a package.json script target.
-        { ...h('CH3', 'bin/release', ['+ #!/usr/bin/env bash', '+ set -e']), shebang: true },
+        {
+          ...h('CH3', 'bin/release', ['+ #!/usr/bin/env bash', '+ set -e']),
+          shebang: true,
+        },
         h('CH3', 'tools/gen.ts', ['+ main();']),
-        h('CH4', 'package.json', ['+ "gen": "bun tools/gen.ts",', '+ "files": ["LICENSE", "tools/pack.ts"],']),
+        h('CH4', 'package.json', [
+          '+ "gen": "bun tools/gen.ts",',
+          '+ "files": ["LICENSE", "tools/pack.ts"],',
+        ]),
         // Listed in package.json, never run by a script there.
         h('CH4', 'LICENSE', ['+ Copyright']),
         h('CH4', 'tools/pack.ts', ['+ pack();']),
@@ -358,7 +383,9 @@ describe('platform, script and fake rows', () => {
       host,
       ['bun test'],
     );
-    expect(rows.map((r) => String(r.limit)).filter((l) => /changed script/.test(l))).toEqual([
+    expect(
+      rows.map((r) => String(r.limit)).filter((l) => /changed script/.test(l)),
+    ).toEqual([
       'bin/release, tools/gen.ts are changed scripts no recorded session command ran; only the diff shows them.',
     ]);
   });
@@ -367,16 +394,26 @@ describe('platform, script and fake rows', () => {
     const rows = environmentRows(
       [
         h('CH1', 'src/run/fake-github.ts', ['+ export function fakeGithub() {}']),
-        { change: 'CH2', file: 'src/github.ts', code: ['+ export function github() {}'], conds: [], symbols: ['github'] },
+        {
+          change: 'CH2',
+          file: 'src/github.ts',
+          code: ['+ export function github() {}'],
+          conds: [],
+          symbols: ['github'],
+        },
         h('CH3', 'tests/a.test.ts', ['+ const runner = fakeRunner({ exit: 0 });']),
       ],
-      new Map([...roles, ['src/github.ts', 'behavior'], ['src/run/fake-github.ts', 'behavior']]),
+      new Map([
+        ...roles,
+        ['src/github.ts', 'behavior'],
+        ['src/run/fake-github.ts', 'behavior'],
+      ]),
       host,
     );
     expect(rows.map((r) => [r.change, r.limit])).toEqual([
       [
         'CH2',
-        'The changed tests (tests/a.test.ts) replace collaborators with fakes or stubs (`fake-github.ts`, `fakeRunner`); CH2 is reached that way: they check the logic around those steps, not the real steps.',
+        'The changed tests (tests/a.test.ts) use a fake github and a fake runner (`fake-github.ts`, `fakeRunner`); CH2 is reached that way: they check the code around them, not the real github and runner.',
       ],
     ]);
   });
@@ -1155,30 +1192,41 @@ describe('tested behaviors attributed to the file whose titles show them', () =>
 describe('remote commands and change details', () => {
   test('pushes, PRs made and CI looks are read from a command', async () => {
     const { remoteCommands } = await import('../src/digest/build.ts');
-    expect(remoteCommands('git add -A && git commit -m x && git push -u origin feat')).toEqual([
-      { cmd: 'git push', kind: 'publish' },
-    ]);
+    expect(
+      remoteCommands('git add -A && git commit -m x && git push -u origin feat'),
+    ).toEqual([{ cmd: 'git push', kind: 'publish' }]);
     expect(remoteCommands('gh pr create --fill; gh run view 123 --log-failed')).toEqual([
       { cmd: 'gh pr create', kind: 'publish' },
       { cmd: 'gh run view', kind: 'ci' },
     ]);
     expect(remoteCommands('git status && gh pr view 3')).toEqual([]);
     // An API call's endpoint (owner, repo, ids) is never kept.
-    expect(remoteCommands('gh api repos/o/r/actions/jobs/1/logs', '##[error]boom')).toEqual([
-      { cmd: 'gh api', kind: 'ci' },
-    ]);
+    expect(
+      remoteCommands('gh api repos/o/r/actions/jobs/1/logs', '##[error]boom'),
+    ).toEqual([{ cmd: 'gh api', kind: 'ci' }]);
     // A PR view whose output shows check results is a look at CI.
-    expect(remoteCommands('gh pr view 3 --json statusCheckRollup', '[{"conclusion":"SUCCESS"}]')).toEqual([
-      { cmd: 'gh pr view', kind: 'ci' },
-    ]);
+    expect(
+      remoteCommands(
+        'gh pr view 3 --json statusCheckRollup',
+        '[{"conclusion":"SUCCESS"}]',
+      ),
+    ).toEqual([{ cmd: 'gh pr view', kind: 'ci' }]);
   });
 
   test('CI results are read from what a CI look printed', async () => {
     const { ciResults } = await import('../src/digest/build.ts');
     const sha = 'a'.repeat(8) + 'b'.repeat(32);
-    expect(ciResults('build\tpass\t1m2s\thttps://x/1\nlint\tfail\t3s\thttps://x/2')).toEqual({ results: true });
-    expect(ciResults('Some checks are still pending\n0 cancelled, 1 failing, 5 successful, 0 skipped, and 2 pending checks')).toEqual({ results: true });
-    expect(ciResults(`[{"conclusion":"success","headSha":"${sha}","name":"CI"}]`)).toEqual({
+    expect(
+      ciResults('build\tpass\t1m2s\thttps://x/1\nlint\tfail\t3s\thttps://x/2'),
+    ).toEqual({ results: true });
+    expect(
+      ciResults(
+        'Some checks are still pending\n0 cancelled, 1 failing, 5 successful, 0 skipped, and 2 pending checks',
+      ),
+    ).toEqual({ results: true });
+    expect(
+      ciResults(`[{"conclusion":"success","headSha":"${sha}","name":"CI"}]`),
+    ).toEqual({
       results: true,
       heads: [sha.slice(0, 12)],
     });
@@ -1208,12 +1256,20 @@ describe('remote commands and change details', () => {
             '+ for (let i = 0; i < n; i++) {}',
           ],
         },
-        { file: '.github/workflows/ci.yml', code: ['+ publish:', '+ - name: Upload SBOM'] },
+        {
+          file: '.github/workflows/ci.yml',
+          code: ['+ publish:', '+ - name: Upload SBOM'],
+        },
         { file: 'docs/a.md', code: ['+ Use --verbose for more.'] },
       ],
       (f) => roles[f] ?? 'behavior',
     );
-    expect(d).toEqual(['--no-timeout', 'MIN_DURATION_MS = 750', 'job publish', 'step "Upload SBOM"']);
+    expect(d).toEqual([
+      '--no-timeout',
+      'MIN_DURATION_MS = 750',
+      'job publish',
+      'step "Upload SBOM"',
+    ]);
     const long = `Readers answer at their own pace, so the final interactive command runs with no watchdog timeout, while compile and build commands keep the existing execution timeout policy for every run of a sample input and every other path that does not wait on a reader at all`;
     const c = clipClause(long, 200);
     expect(c.length).toBeLessThanOrEqual(200);
@@ -1291,7 +1347,10 @@ describe('details: only clean facts', () => {
         [
           {
             file: 'src/run.ts',
-            code: ['+ run(cmd, { cwd, timeoutMs: 15_000, height: 4 });', "+ if (argv.includes('--verbose')) log();"],
+            code: [
+              '+ run(cmd, { cwd, timeoutMs: 15_000, height: 4 });',
+              "+ if (argv.includes('--verbose')) log();",
+            ],
           },
         ],
         () => 'behavior',

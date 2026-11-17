@@ -13,7 +13,7 @@
 import type { Section } from './queries.ts';
 import { existingSymbols, housekeepingOverclaim } from './doNotSay.ts';
 import { wordsOf } from './codeEvidence.ts';
-import { COULD_NOT_RUN, ORPHAN_COMMAND } from '../trace/types.ts';
+import { COULD_NOT_RUN, ORPHAN_COMMAND, TIMED_OUT } from '../trace/types.ts';
 
 export const VALIDATION_MARKER = '<!-- tracetoon:validation -->';
 
@@ -57,10 +57,15 @@ const rowsOf = (b: BriefParts, title: string) =>
 
 /** A command as run, without output redirections (files, /dev/null, redacted paths). */
 export function shownCommand(cmd: unknown): string {
-  return String(cmd ?? '')
-    .replace(/\s+(\d?>>?|&>)\s*(&\d|<[^>\s]+>|"[^"]*"|'[^']*'|[^\s;|&]+)/g, '')
-    .replace(/\s+([;|&]{1,2})\s*/g, ' $1 ')
-    .trim();
+  return (
+    String(cmd ?? '')
+      // Repository paths as typed from its root: no local placeholder.
+      .replace(/<repo>\//g, '')
+      .replace(/(^|[=\s:])<repo>(?=$|[\s:;|&])/g, '$1.')
+      .replace(/\s+(\d?>>?|&>)\s*(&\d|<[^>\s]+>|"[^"]*"|'[^']*'|[^\s;|&]+)/g, '')
+      .replace(/\s+([;|&]{1,2})\s*/g, ' $1 ')
+      .trim()
+  );
 }
 
 const plain = (s: unknown) =>
@@ -123,8 +128,13 @@ export function validationSection(b: BriefParts): string {
   // whole history is a process fact, not repeated here.
   const shown: { kind: string; line: string; when: string; current: boolean }[] = [];
   const perKind = new Map<string, number>();
+  // A receipt that hit the time limit is listed too: incomplete, never failed.
+  const timedOut = (r: Record<string, unknown>) => plain(r.result).startsWith(TIMED_OUT);
   const rows = rowsOf(b, 'validation').filter(
-    (r) => r.outcome === 'passed' || r.outcome === 'failed',
+    (r) =>
+      r.outcome === 'passed' ||
+      r.outcome === 'failed' ||
+      (/^V\d/.test(String(r.check ?? '')) && timedOut(r)),
   );
   const receipts = rows.filter((r) => /^V\d/.test(String(r.check ?? '')));
   const logRuns = rows.filter((r) => !/^V\d/.test(String(r.check ?? '')));
@@ -155,12 +165,25 @@ export function validationSection(b: BriefParts): string {
     }
     // A check that could not start here (no tool, dependency or network) did
     // not fail on the submitted content: it says why, and nothing more.
+    if (timedOut(r)) {
+      shown.push({
+        kind: String(r.kind),
+        line: `- \`${cmd}\`: ${plain(r.result).split(/\s*;\s*/)[0]}; it gave no pass/fail result on the code.`,
+        when: 'fresh',
+        current: true,
+      });
+      continue;
+    }
     const unrun = plain(r.result).startsWith(COULD_NOT_RUN);
     if (unrun) {
       const why = plain(r.result).slice(COULD_NOT_RUN.length).trim();
+      // A pinned toolchain other than this one: said as such, no counts.
+      const pinned = /^as pinned here\b/.test(why);
       shown.push({
         kind: String(r.kind),
-        line: `- \`${cmd}\`: could not run in this environment${why ? ` (${why})` : ''}; it got no result on the code.`,
+        line: pinned
+          ? `- \`${cmd}\`: could not run ${why}; it got no pass/fail result on the code.`
+          : `- \`${cmd}\`: could not run in this environment${why ? ` (${why})` : ''}; it got no result on the code.`,
         when: 'fresh',
         current: true,
       });

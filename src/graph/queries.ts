@@ -5,7 +5,7 @@
  */
 import { GraphError, type GraphEngine } from './engine.ts';
 import { shownCommand } from './briefRender.ts';
-import { COULD_NOT_RUN } from '../trace/types.ts';
+import { COULD_NOT_RUN, TIMED_OUT } from '../trace/types.ts';
 import { SCHEMA_DOC } from './model.ts';
 import { DO_NOT_SAY_COLUMNS, doNotSayRows } from './doNotSay.ts';
 import {
@@ -167,6 +167,12 @@ function turnsInto(g: GraphEngine, t: { file?: string; hunk?: string }): Section
       })),
   );
 }
+
+/** A result line that says the run passed: a PASS/OK verdict word. */
+const passingLine = (l: string) => /^\W*(?:PASS(?:ED)?|OK|SUCCESS)\b/.test(l);
+/** A result line that says something failed: a FAIL verdict or a nonzero failure count. */
+const failingLine = (l: string) =>
+  /^\W*FAIL/.test(l) || /\b[1-9]\d*\s+(?:fail(?:ed|ures?|s|ing)?|errors?)\b/i.test(l);
 
 /** Check runs (test, build, …) of included sessions after a file's last captured edit. */
 export function checksAfterLastEdit(
@@ -430,12 +436,14 @@ export function detailsOf(
   const out: string[] = [];
   const add = (x: string) => {
     const v = x.trim().replace(/\s+/g, ' ');
-    if (v.length >= 3 && !out.includes(v)) out.push(v.length > 70 ? `${v.slice(0, 69)}…` : v);
+    if (v.length >= 3 && !out.includes(v))
+      out.push(v.length > 70 ? `${v.slice(0, 69)}…` : v);
   };
   for (const h of hs) {
     const file = String(h.file);
     const role = roleOf(file);
-    if (['tests', 'docs', 'generated', 'version'].includes(role) || TEST_PATH.test(file)) continue;
+    if (['tests', 'docs', 'generated', 'version'].includes(role) || TEST_PATH.test(file))
+      continue;
     const workflow = /(^|\/)\.github\/workflows\/|\.gitlab-ci\.ya?ml$/.test(file);
     const config = role === 'config' && !workflow;
     for (const raw of ((h.code as string[]) ?? []).map(String)) {
@@ -447,7 +455,12 @@ export function detailsOf(
         const step = /^-?\s*name:\s*['"]?(.+?)['"]?\s*$/.exec(l);
         if (step) add(`step "${step[1]}"`);
         const job = /^([\w-]+):\s*$/.exec(l);
-        if (job && !/^(?:jobs|steps|on|with|env|permissions|strategy|matrix|outputs|defaults|inputs|secrets|push|pull_request|workflow_dispatch)$/.test(job[1]!))
+        if (
+          job &&
+          !/^(?:jobs|steps|on|with|env|permissions|strategy|matrix|outputs|defaults|inputs|secrets|push|pull_request|workflow_dispatch)$/.test(
+            job[1]!,
+          )
+        )
           add(`job ${job[1]}`);
         continue;
       }
@@ -461,7 +474,9 @@ export function detailsOf(
           v &&
           v.length <= 30 &&
           !/\s/.test(v) &&
-          !/^(?:version|buildId|build_id|hash|sha\w*|checksum|integrity)$/i.test(kv[1]!) &&
+          !/^(?:version|buildId|build_id|hash|sha\w*|checksum|integrity)$/i.test(
+            kv[1]!,
+          ) &&
           !/^[0-9a-f]{16,}$/i.test(v)
         )
           add(`${kv[1]}: ${kv[2]!.trim()}`);
@@ -473,7 +488,9 @@ export function detailsOf(
       const fallback = /\?\?|\|\||\?[^?.]*:/.test(l);
       const def =
         flags.length === 1 && !fallback
-          ? (new RegExp(String.raw`\.option\(\s*(['"\`])[^'"\`]*\1\s*,\s*(['"\`])[^'"\`]*\2\s*,\s*(${LITERAL})\s*\)`).exec(l)?.[3] ??
+          ? (new RegExp(
+              String.raw`\.option\(\s*(['"\`])[^'"\`]*\1\s*,\s*(['"\`])[^'"\`]*\2\s*,\s*(${LITERAL})\s*\)`,
+            ).exec(l)?.[3] ??
             new RegExp(String.raw`\bdefault\w*\s*:\s*(${LITERAL})\s*[,})]`).exec(l)?.[1])
           : undefined;
       for (const f of flags) add(def ? `${f} (default ${def})` : f);
@@ -492,7 +509,8 @@ export function detailsOf(
       }
       // A setting passed by name inside a call or object: `{ timeoutMs: 30_000 }`,
       // `configure(timeout_ms=30000)`; never one a fallback or operator follows.
-      for (const m of l.matchAll(INLINE_SETTING)) if (keep(m[1]!, m[2]!)) add(`${m[1]} = ${m[2]}`);
+      for (const m of l.matchAll(INLINE_SETTING))
+        if (keep(m[1]!, m[2]!)) add(`${m[1]} = ${m[2]}`);
     }
   }
   return out.slice(0, MAX_DETAILS);
@@ -507,7 +525,9 @@ export function clipClause(text: string, n: number): string {
   const t = text.replace(/\s+/g, ' ').trim();
   if (t.length <= n) return t;
   const head = t.slice(0, n - 1);
-  const cut = Math.max(...[';', ',', ':', ' —', ' -', ' ('].map((c) => head.lastIndexOf(c)));
+  const cut = Math.max(
+    ...[';', ',', ':', ' —', ' -', ' ('].map((c) => head.lastIndexOf(c)),
+  );
   return `${(cut > n * 0.6 ? head.slice(0, cut) : head.replace(/\s+\S*$/, '')).trim()}…`;
 }
 
@@ -551,7 +571,10 @@ export function planDesignRows(sections: Section[]): Record<string, unknown>[] {
  * code calls it. Said as "extracted into `helper`; `caller` now calls it"
  * rather than a count of moved lines. Undefined when no such pair shows.
  */
-export function extractionOf(hs: Record<string, unknown>[], file: string): string | undefined {
+export function extractionOf(
+  hs: Record<string, unknown>[],
+  file: string,
+): string | undefined {
   // The helper and its caller in the file the lines moved within.
   const mine = hs.filter((h) => String(h.file) === file);
   if (!mine.some((h) => Number(h.moved) > 0)) return undefined;
@@ -562,10 +585,20 @@ export function extractionOf(hs: Record<string, unknown>[], file: string): strin
   for (const helper of fresh) {
     const call = new RegExp(`(?<![\\w$.])${esc(helper)}\\s*\\(`);
     const caller = mine
-      .filter((h) => ((h.code as string[]) ?? []).some((l) => {
-        const added = String(l).includes('⇒') ? String(l).split('⇒').pop()!.trim() : String(l);
-        return added.startsWith('+ ') && call.test(added) && !new RegExp(`function\\s+${esc(helper)}\\b|(?:const|let)\\s+${esc(helper)}\\s*=|def\\s+${esc(helper)}\\b`).test(added);
-      }))
+      .filter((h) =>
+        ((h.code as string[]) ?? []).some((l) => {
+          const added = String(l).includes('⇒')
+            ? String(l).split('⇒').pop()!.trim()
+            : String(l);
+          return (
+            added.startsWith('+ ') &&
+            call.test(added) &&
+            !new RegExp(
+              `function\\s+${esc(helper)}\\b|(?:const|let)\\s+${esc(helper)}\\s*=|def\\s+${esc(helper)}\\b`,
+            ).test(added)
+          );
+        }),
+      )
       // The function whose changed body holds the call, before git's @@ name.
       .map((h) =>
         String(
@@ -928,7 +961,7 @@ export function backgroundRows(
       kind:
         first.t && first.firstPromptT && String(first.t) === String(first.firstPromptT)
           ? "why this work started: the session's first request"
-          : 'why this work started: the earliest request Tracetoon kept (the session log holds earlier prompts or their order is unknown)',
+          : 'why this work started: the earliest request in the session logs (the session log holds earlier prompts or their order is unknown)',
       text: requestText(first.text),
       t: first.t,
     });
@@ -1474,7 +1507,8 @@ export function briefParts(
      RETURN c.id AS change, h.id AS hunk, h.file AS file, h.diff AS diff, h.scope AS scope,
             h.touched AS symbols, h.branches AS branches, h.fresh AS fresh, h.pairs AS pairs,
             h.conds AS conds, h.code AS code, h.added AS added, h.removed AS removed, h.before AS before, h.context AS context,
-            h.tests AS tests, h.words AS words, h.moved AS moved, h.shebang AS shebang, h.owns AS owns, count(DISTINCT e) AS edits,
+            h.tests AS tests, h.words AS words, h.moved AS moved, h.shebang AS shebang, h.localServer AS localServer, h.fakes AS fakes,
+            h.owns AS owns, count(DISTINCT e) AS edits,
             collect(DISTINCT k.id) AS commits`,
   ).rows;
   const fileRole = new Map(
@@ -1511,13 +1545,17 @@ export function briefParts(
   // New scripts' interfaces (File.cli).
   const scriptCli = new Map(
     g
-      .run('MATCH (f:File {inPr: true}) WHERE f.cli IS NOT NULL RETURN f.id AS id, f.cli AS cli')
+      .run(
+        'MATCH (f:File {inPr: true}) WHERE f.cli IS NOT NULL RETURN f.id AS id, f.cli AS cli',
+      )
       .rows.map((r) => [String(r.id), ((r.cli as string[]) ?? []).map(String)]),
   );
   // Changed CI workflows, job by job (File.jobs).
   const workflowJobs = new Map(
     g
-      .run('MATCH (f:File {inPr: true}) WHERE f.jobs IS NOT NULL RETURN f.id AS id, f.jobs AS jobs')
+      .run(
+        'MATCH (f:File {inPr: true}) WHERE f.jobs IS NOT NULL RETURN f.id AS id, f.jobs AS jobs',
+      )
       .rows.map((r) => [String(r.id), ((r.jobs as string[]) ?? []).map(String)]),
   );
   // Commits whose own lines touch only comments, docs or tests.
@@ -1640,7 +1678,10 @@ export function briefParts(
       details: uniq([
         ...files.flatMap((f) => scriptCli.get(f) ?? []),
         ...detailsOf(hs, (f) => fileRole.get(f) ?? pathRole(f)),
-      ]).slice(0, Math.max(MAX_DETAILS, files.flatMap((f) => scriptCli.get(f) ?? []).length)),
+      ]).slice(
+        0,
+        Math.max(MAX_DETAILS, files.flatMap((f) => scriptCli.get(f) ?? []).length),
+      ),
       added: c.added,
       removed: c.removed,
       diff: refs(
@@ -1694,7 +1735,7 @@ export function briefParts(
   // session log at all; a setup or install ask Tracetoon left out still counts.
   const openingKind = opening?.first
     ? 'goal: the first request of the session'
-    : 'goal: the earliest request Tracetoon kept (the session log holds earlier prompts or their order is unknown)';
+    : 'goal: the earliest request in the session logs (the session log holds earlier prompts or their order is unknown)';
   if (opening && turns.productive.has(opening.id)) {
     if (!seen.has(opening.id)) {
       seen.add(opening.id);
@@ -1720,11 +1761,11 @@ export function briefParts(
         opening && r.ref === opening.id
           ? opening.first
             ? 'the first request of the session'
-            : 'earliest request Tracetoon kept, not necessarily the first of the session'
+            : 'earliest request in the session logs, not necessarily the first of the session'
           : opening
             ? 'later request, not the first of the session'
             : n === 1
-              ? 'earliest request Tracetoon kept, not necessarily the first of the session'
+              ? 'earliest request in the session logs, not necessarily the first of the session'
               : 'later request'
       }`;
     }
@@ -1862,7 +1903,11 @@ export function briefParts(
     if (!f) return null;
     const cmd = shownCommand(f.cmd);
     if (!cmd || /‹withheld›|<withheld>/.test(cmd)) return null;
-    const summary = ((f.summary as string[]) ?? []).filter(Boolean).join(', ');
+    const lines = ((f.summary as string[]) ?? []).filter(Boolean);
+    // A result line that reads as a pass (a PASS verdict, no failure count)
+    // can't stand beside "failed": the run's outcome is unsure, so no clause.
+    if (lines.some(passingLine) && !lines.some(failingLine)) return null;
+    const summary = lines.join(', ');
     return `\`${cmd}\` failed${summary ? ` (${summary})` : ''}`;
   };
   // No passing receipt: the session-log runs are all Validation can show, so a
@@ -1899,7 +1944,10 @@ export function briefParts(
   ).map((r) => ({
     check: r.id,
     kind: r.kind,
-    outcome: r.outcome,
+    // A receipt stopped at its time limit is incomplete, never "failed".
+    outcome: String(((r.summary as string[]) ?? [])[0] ?? '').startsWith(TIMED_OUT)
+      ? TIMED_OUT
+      : r.outcome,
     result: ((r.summary as string[]) ?? []).join('; ') || null,
     when: (r.editedAfter as string[]).length
       ? 'before later edits to the files in editedAfter'
@@ -2015,9 +2063,9 @@ export function briefParts(
       limits.push({
         change: c.id,
         kind: 'open',
-        limit: `Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}${
+        limit: `The session logs show no passing test, build, lint or typecheck run after the last captured edit of ${unchecked.join(', ')}${
           others.length
-            ? `; after that edit the session ran commands Tracetoon does not classify: ${others.map((x) => `\`${x}\``).join(', ')}`
+            ? `; after that edit the session ran other commands: ${others.map((x) => `\`${x}\``).join(', ')}`
             : ''
         }.`,
       });
@@ -2030,6 +2078,36 @@ export function briefParts(
           .filter((h) => !/(^|\/)\.[\w.-]*ignore$/.test(String(h.file)))
           .map((h) => String(((h.symbols as string[]) ?? [])[0] ?? h.file)),
       );
+  }
+  // Session history beside a fresh pass: the session's own last run of a kind
+  // came before the final edit of these files. It stays (the fresh receipt
+  // covers the content, not what the session saw), said once, as history.
+  if (
+    (freshPass.length > 0 || !!opts.freshPass) &&
+    !passOnFinal &&
+    matchedSession &&
+    uncheckedAll.length
+  ) {
+    const files = uniq(uncheckedAll).sort();
+    const firstEdit = files
+      .map((f) => checks.get(f)?.lastEdit ?? committed.get(f))
+      .filter((t): t is string => !!t)
+      .sort()
+      .at(-1);
+    const lastRun = scopedRuns
+      .filter(
+        (r) =>
+          ['test', 'build', 'lint', 'typecheck'].includes(String(r.kind)) &&
+          (!firstEdit || String(r.t ?? '') < firstEdit),
+      )
+      .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))
+      .at(-1);
+    if (lastRun)
+      limits.push({
+        change: null,
+        kind: 'open',
+        limit: `The session's last ${String(lastRun.kind)} run (${String(lastRun.id)}) preceded the final edit of ${files.slice(0, 3).join(', ')}${files.length > 3 ? ` and ${files.length - 3} more` : ''}; the fresh check on the submitted content came after it.`,
+      });
   }
   // No "no request was recorded" row: requests are read from the turns
   // attributed to this PR, and in a long or shared session the request often
@@ -2089,10 +2167,10 @@ export function briefParts(
         change: null,
         kind: 'open',
         limit: hidden
-          ? `${earlier ? `The last run of \`${cmd}\` (${String(v.id)})` : `\`${cmd}\` (${String(v.id)})`} ran, but ${hidden}, so Tracetoon can't tell whether it passed${earlier ? "; an earlier run's result doesn't cover the code it ran on" : ''}.`
+          ? `${earlier ? `The last run of \`${cmd}\` (${String(v.id)})` : `\`${cmd}\` (${String(v.id)})`} ran, but ${hidden}, so the session logs don't show whether it passed${earlier ? "; an earlier run's result doesn't cover the code it ran on" : ''}.`
           : earlier
-            ? `The last run of \`${cmd}\` (${String(v.id)}) shows no exit status or result in the logs Tracetoon read; an earlier run's result doesn't cover the code it ran on.`
-            : `\`${cmd}\` ran, but its exit status isn't shown in the logs Tracetoon read.`,
+            ? `The last run of \`${cmd}\` (${String(v.id)}) shows no exit status or result in the session logs; an earlier run's result doesn't cover the code it ran on.`
+            : `\`${cmd}\` ran, but its exit status isn't shown in the session logs.`,
       });
     }
   // (No "earlier failures weren't recorded" point: Tracetoon keeps only result
@@ -2114,6 +2192,16 @@ export function briefParts(
       [
         ...(() => {
           const { ci, lastEdit } = ciPlatformRuns(g);
+          const ciCallers = new Map(
+            g
+              .run(
+                'MATCH (f:File {inPr: true}) WHERE f.ciCallers IS NOT NULL RETURN f.id AS id, f.ciCallers AS callers',
+              )
+              .rows.map((r) => [
+                String(r.id),
+                ((r.callers as string[]) ?? []).map(String),
+              ]),
+          );
           return environmentRows(
             hunkRows,
             fileRole,
@@ -2122,13 +2210,18 @@ export function briefParts(
             ciResultsSeen(g),
             ci,
             lastEdit,
+            liveEvidence(g),
+            ciCallers,
           );
         })(),
         ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
         ...limits,
       ],
       [...(noPass ? [noPass] : []), ...failedPublishRows(g)],
-      remotePathRows(hunkRows, fileRole, scopedRuns, liveEvidence(g)),
+      // With no session matched there is no record to say a path never ran live.
+      matchedSession
+        ? remotePathRows(hunkRows, fileRole, scopedRuns, liveEvidence(g))
+        : [],
     ),
   );
   limits.forEach((l, i) => (l.ref = `L${i + 1}`));

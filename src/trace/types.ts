@@ -149,3 +149,5 @@ export interface TraceAdapter {
 export const ORPHAN_COMMAND = '‹command not in the log›';
 /** Starts a receipt's result when its check could not start in this environment. */
 export const COULD_NOT_RUN = 'could not run here: ';
+/** Starts a receipt's result when its check hit the time limit: incomplete, not failed. */
+export const TIMED_OUT = 'timed out (incomplete)';

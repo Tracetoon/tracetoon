@@ -19,7 +19,8 @@ import { publicationLock } from './publication.ts';
 import { readSubmittedFile, repoPath } from '../util/repoFiles.ts';
 import { dependencyFingerprint } from './validationInputs.ts';
 import { count } from '../util/profile.ts';
-import { COULD_NOT_RUN } from '../trace/types.ts';
+import { COULD_NOT_RUN, TIMED_OUT } from '../trace/types.ts';
+import { pinnedRunFailure } from '../graph/toolchain.ts';
 
 export interface CheckReceipt {
   v: 1;
@@ -46,12 +47,14 @@ export interface CheckReceipt {
   log?: string;
   /** Failing test names the output shows (at most a few). */
   failing?: string[];
-  /** It was stopped after the timeout. */
+  /** It was stopped after the timeout: incomplete, neither a pass nor a failure. */
   timedOut?: boolean;
+  /** The limit it ran under, when it timed out. */
+  timeoutMs?: number;
 }
 
 /** Default limit on one check's run time; `--timeout` or TRACETOON_CHECK_TIMEOUT_MIN overrides it. */
-export const CHECK_TIMEOUT_MS = 10 * 60_000;
+export const CHECK_TIMEOUT_MS = 15 * 60_000;
 export function checkTimeoutMs(minutes?: string | number): number {
   const m = Number(minutes ?? process.env.TRACETOON_CHECK_TIMEOUT_MIN ?? '');
   return Number.isFinite(m) && m > 0 ? Math.round(m * 60_000) : CHECK_TIMEOUT_MS;
@@ -83,16 +86,29 @@ export function failingTests(output: string, max = 8): string[] {
   return out;
 }
 
+/** A time limit in words: minutes, or seconds under a minute. */
+const limitText = (ms: number) =>
+  ms >= 60_000
+    ? `${Math.round(ms / 60_000)} min`
+    : `${Math.max(1, Math.round(ms / 1000))} s`;
+/** How a timed-out check reads everywhere: incomplete, never "failed". */
+export const timedOutText = (durationMs: number) =>
+  `${TIMED_OUT}, ${Math.round(durationMs / 1000)} s`;
+/** What to do after a timeout, said once where it is printed. */
+const TIMEOUT_ADVICE =
+  "don't rerun it: report it as timed out (incomplete), with no pass/fail result";
+
 /** The few lines `tracetoon check` prints: outcome, counts, failing tests, the log. */
 export function compactCheckText(r: CheckReceipt & { reused?: boolean }): string {
-  const head =
-    r.outcome === 'failed' && r.couldNotRun
-      ? `${r.name}: could not run in this environment (${r.couldNotRun}); this says nothing about the code${r.reused ? ' (reused unchanged inputs)' : ''}; ${r.durationMs}ms`
+  const head = r.timedOut
+    ? `${r.name}: ${timedOutText(r.durationMs)}${r.reused ? ' (reused: it timed out on this code before)' : ''}; ${TIMEOUT_ADVICE}`
+    : r.outcome === 'failed' && r.couldNotRun
+      ? `${r.name}: could not run ${/^as pinned here\b/.test(r.couldNotRun) ? r.couldNotRun : `in this environment (${r.couldNotRun})`}; this says nothing about the code${r.reused ? ' (reused unchanged inputs)' : ''}; ${r.durationMs}ms`
       : `${r.name}: ${r.outcome}${r.reused ? ' (reused unchanged inputs)' : ''}; ${r.durationMs}ms${r.reason ? `; ${r.reason}` : ''}`;
   return [
     head,
-    ...r.summary.slice(0, 4).map((x) => `  ${x}`),
-    ...(r.failing?.length
+    ...(r.timedOut ? [] : r.summary.slice(0, 4).map((x) => `  ${x}`)),
+    ...(!r.timedOut && r.failing?.length
       ? ['  failing:', ...r.failing.slice(0, 10).map((x) => `  - ${x}`)]
       : []),
     ...(r.log ? [`  full log: ${r.log}`] : []),
@@ -332,7 +348,7 @@ export function executeCheck(
           ? {
               ...result,
               error: new Error(
-                `Timed out after ${Math.round((opts.timeoutMs ?? checkTimeoutMs()) / 60_000)} min (pass --timeout <minutes> to allow longer).`,
+                `Stopped at the ${limitText(opts.timeoutMs ?? checkTimeoutMs())} limit; incomplete, not a failure.`,
               ),
               timedOut,
             }
@@ -395,7 +411,7 @@ function streamCheck(
     const timer = setTimeout(() => {
       timedOut = true;
       error ??= new Error(
-        `Timed out after ${Math.round(timeoutMs / 60_000)} min (pass --timeout <minutes> to allow longer).`,
+        `Stopped at the ${limitText(timeoutMs)} limit; incomplete, not a failure.`,
       );
       child.kill('SIGTERM');
       setTimeout(() => child.kill('SIGKILL'), 5_000).unref();
@@ -479,6 +495,7 @@ function prepareCheck(
           environment,
           cwd: rel,
           command: hash(opts.command),
+          timeoutMs: opts.timeoutMs ?? checkTimeoutMs(),
         });
   if (old) {
     count('check.reused');
@@ -491,8 +508,9 @@ function prepareCheck(
       reused: true,
       reuse: {
         state: 'reused' as const,
-        reason:
-          old.fingerprint === fingerprint
+        reason: old.timedOut
+          ? 'It timed out on this code under the same or a longer limit; a rerun would time out again (pass --force to rerun anyway).'
+          : old.fingerprint === fingerprint
             ? 'Exact command, inputs, directory and environment match.'
             : 'Same command, directory and environment, and the tracked code is unchanged since this receipt; pass --force to rerun.',
         matchedName: old.name,
@@ -548,6 +566,21 @@ function prepareCheck(
               (t) => makeScrubber([root]).text(t),
             )
           : undefined;
+      // A failure under a toolchain other than the repository pins, whose
+      // output complains about the version: the run says nothing about the code.
+      const notAsPinned =
+        !couldNotRun &&
+        !opts.skip &&
+        result &&
+        !result.timedOut &&
+        result.status !== 0 &&
+        after === fingerprint
+          ? pinnedRunFailure(
+              root,
+              opts.command,
+              makeScrubber([root]).text(`${result.stdout}\n${result.stderr}`),
+            )
+          : undefined;
       const receipt: CheckReceipt = {
         v: 1,
         name: safeName,
@@ -574,12 +607,13 @@ function prepareCheck(
           ) || undefined,
         // A check the environment stopped keeps no pass/fail counts: they
         // say nothing about the code.
-        summary: couldNotRun
-          ? []
-          : checkSummary(result?.stdout ?? '', result?.stderr ?? '', (t) =>
-              makeScrubber([root]).text(t),
-            ),
-        couldNotRun,
+        summary:
+          couldNotRun || notAsPinned
+            ? []
+            : checkSummary(result?.stdout ?? '', result?.stderr ?? '', (t) =>
+                makeScrubber([root]).text(t),
+              ),
+        couldNotRun: couldNotRun ?? notAsPinned,
         startedAt,
         durationMs: Math.round(performance.now() - start),
         reuse: {
@@ -591,9 +625,18 @@ function prepareCheck(
       };
       if (result) {
         const output = makeScrubber([root]).text(`${result.stdout}\n${result.stderr}`);
-        const failing = receipt.outcome === 'failed' ? failingTests(output) : [];
+        const failing =
+          receipt.outcome === 'failed' && !receipt.couldNotRun
+            ? failingTests(output)
+            : [];
         if (failing.length) receipt.failing = failing;
-        if (result.timedOut) receipt.timedOut = true;
+        if (result.timedOut) {
+          receipt.timedOut = true;
+          receipt.timeoutMs = opts.timeoutMs ?? checkTimeoutMs();
+          receipt.summary = [];
+          delete receipt.failing;
+          delete receipt.couldNotRun;
+        }
         try {
           const dir = join(run.dir, 'check-logs');
           mkdirSync(dir, { recursive: true });
@@ -630,13 +673,17 @@ function latestReceipt(
     environment: string;
     cwd: string;
     command: string;
+    /** This attempt's limit: a timeout under the same or a longer one would repeat. */
+    timeoutMs?: number;
   },
 ): CheckReceipt | undefined {
   const fits = (c: CheckReceipt) =>
     // A failure is the code's only with a nonzero exit and no environment
     // stop (an exit-0 failure means the command changed its own inputs).
     (c.outcome === 'passed' ||
-      (c.outcome === 'failed' && !c.couldNotRun && !!c.exitCode)) &&
+      (c.outcome === 'failed' && !c.couldNotRun && !!c.exitCode) ||
+      (c.timedOut === true &&
+        (c.timeoutMs ?? CHECK_TIMEOUT_MS) >= (want.timeoutMs ?? CHECK_TIMEOUT_MS))) &&
     c.environment === want.environment &&
     c.cwd === want.cwd &&
     (c.commandSha256 ?? hash(c.command)) === want.command &&
@@ -715,6 +762,19 @@ function atRepo(arg: string, root: string): string {
   return out;
 }
 
+/**
+ * A receipt's command as typed from the repository root: `<repo>/x` → `x`,
+ * `<repo>` → `.` (a PR shows no local placeholder or absolute path).
+ */
+export function repoRelative(argv: string[]): string[] {
+  return argv.map((a) =>
+    a
+      .replace(/<repo>\//g, '')
+      .replace(/(^|[=\s:])<repo>(?=$|[\s:])/g, '$1.')
+      .replace(/^<repo>$/, '.'),
+  );
+}
+
 /** argv as a shell would need it typed: arguments with spaces or shell characters quoted. */
 export function shellJoin(argv: string[]): string {
   return argv
@@ -734,13 +794,15 @@ export function receiptEvidence(
     .filter((c) => c.current && ['passed', 'failed'].includes(c.outcome))
     .map((c, i) => ({
       id: `V${i + 1}`,
-      cmd: shellJoin(c.command),
+      cmd: shellJoin(repoRelative(c.command)),
       kind: c.kind,
-      outcome: c.outcome as 'passed' | 'failed',
+      // A timeout is incomplete: no outcome, its own result line.
+      outcome: c.timedOut ? ('unknown' as const) : (c.outcome as 'passed' | 'failed'),
       basis: 'exit status',
       // A check that could not start here says why, in place of result lines.
-      summary:
-        c.outcome === 'failed' && c.couldNotRun
+      summary: c.timedOut
+        ? [timedOutText(c.durationMs)]
+        : c.outcome === 'failed' && c.couldNotRun
           ? [`${COULD_NOT_RUN}${c.couldNotRun}`]
           : c.summary,
       t: c.startedAt,

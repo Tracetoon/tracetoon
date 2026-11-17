@@ -1756,7 +1756,7 @@ describe('the brief states recorded process and behavior', () => {
       .find((x) => x.title === 'limits')!
       .rows.map((l) => String(l.limit));
     expect(limits).toContainEqual(
-      'Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of src/a.ts; after that edit the session ran commands Tracetoon does not classify: `make smoke-local`.',
+      'The session logs show no passing test, build, lint or typecheck run after the last captured edit of src/a.ts; after that edit the session ran other commands: `make smoke-local`.',
     );
     expect(limits.join('\n')).not.toMatch(/^No recorded passing/m);
     expect(p.sections.find((x) => x.title === 'otherRuns')!.rows).toEqual([
@@ -1781,6 +1781,22 @@ describe('the brief states recorded process and behavior', () => {
     const q = withGraph(g, (e) => briefParts(e));
     expect(q.sections.some((x) => x.title === 'otherRuns')).toBe(false);
     expect(validationSection(q)).not.toContain('also ran');
+  });
+
+  test('session history stays beside a fresh pass: the last run preceded the final edit', () => {
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['R2', 'R3', 'V1'].includes(n.id));
+    const limits = (fresh: boolean) =>
+      withGraph(g, (e) => briefParts(e, { freshPass: fresh }))
+        .sections.find((x) => x.title === 'limits')!
+        .rows.map((l) => String(l.limit));
+    const row = limits(true).find((l) => /^The session's last /.test(l));
+    expect(row).toMatch(
+      /^The session's last test run \(R1\) preceded the final edit of src\/a\.ts\b/,
+    );
+    expect(row).not.toMatch(/Tracetoon/);
+    // Without a fresh pass the scoped no-pass row says it instead.
+    expect(limits(false).some((l) => /^The session's last /.test(l))).toBe(false);
   });
 
   test('a pass just before the commit covers it in the process rows', () => {
@@ -1854,7 +1870,7 @@ describe('the brief states recorded process and behavior', () => {
       (x) => x.title === 'background',
     )!.rows;
     expect(String(bg[0]!.kind)).toMatch(
-      /^why this work started: the earliest request Tracetoon kept/,
+      /^why this work started: the earliest request in the session logs/,
     );
     expect(String(bg[0]!.kind)).not.toContain("session's first request");
     // Optional context: refs render accepts, never required for coverage.
@@ -1985,7 +2001,7 @@ describe('the brief states recorded process and behavior', () => {
     s.props.remoteT = [t(6), t(7), t(8)];
     s.props.remoteFailed = ['ok', 'ok', 'failed'];
     expect(lim(pushed)).toContain(
-      'The session pushed and opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the logs Tracetoon read (afterwards it ran `gh run rerun`, which failed; its output shows no check results).',
+      'The session pushed and opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the session logs (afterwards it ran `gh run rerun`, which failed; its output shows no check results).',
     );
     // A push alone is worded as a push, never as a PR opened.
     const pushOnly: EvidenceGraph = structuredClone(graph);
@@ -1996,7 +2012,7 @@ describe('the brief states recorded process and behavior', () => {
       remoteFailed: ['ok'],
     });
     expect(lim(pushOnly)).toContain(
-      'The session pushed (`git push`); CI results for the final head are not in the logs Tracetoon read.',
+      'The session pushed (`git push`); CI results for the final head are not in the session logs.',
     );
     // Check results after the last push cover the final head: no row.
     const checked: EvidenceGraph = structuredClone(pushOnly);
@@ -2010,7 +2026,9 @@ describe('the brief states recorded process and behavior', () => {
     expect(lim(checked).some((l) => /CI results/.test(l))).toBe(false);
     // Results that name an earlier commit only: said exactly so.
     const earlier: EvidenceGraph = structuredClone(checked);
-    earlier.nodes.push(N('Commit', 'fed987cba654', { subject: 'fix: follow-up', body: null, t: t(9) }));
+    earlier.nodes.push(
+      N('Commit', 'fed987cba654', { subject: 'fix: follow-up', body: null, t: t(9) }),
+    );
     Object.assign(earlier.nodes.find((n) => n.label === 'Session')!.props, {
       remoteCmds: ['git push', 'gh run list', 'git push'],
       remoteKinds: ['publish', 'ci', 'publish'],

@@ -130,7 +130,7 @@ describe('CI runs of a named workflow', () => {
   test('with no CI run the old wording stays', () => {
     const none = rows([]);
     expect(none.some((l) => /so none shows the Windows path running/.test(l))).toBe(true);
-    expect(none.some((l) => /no run of it is in the logs/.test(l))).toBe(true);
+    expect(none.some((l) => /no run of it is in the session logs/.test(l))).toBe(true);
   });
 });
 

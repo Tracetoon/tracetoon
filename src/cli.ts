@@ -107,7 +107,10 @@ program
   .option('--cwd <path>', 'directory inside the repository')
   .option('--skip <reason>', 'explicit CI-only or unavailable check')
   .option('--force', 'rerun even if unchanged')
-  .option('--timeout <minutes>', 'stop the check after this long (default 10)')
+  .option(
+    '--timeout <minutes>',
+    'stop the check after this long (default 15); a timeout is reported as incomplete, never as failed',
+  )
   .option(
     '--input <path>',
     'also fingerprint an ignored generated artifact (repeatable)',

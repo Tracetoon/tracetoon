@@ -68,11 +68,17 @@ reviewer separate.
      way to record checks the user or repository already requires. Reuse existing
      logs/receipts with their revision limits; do not rerun validation just to
      fill evidence gaps. Missing checks are reported as unknown, not as passes.
-     Run each `tracetoon check` in the FOREGROUND and wait for it; never start
-     one in the background and poll it. It stops after 10 minutes
-     (`--timeout <minutes>` allows longer) and prints a short summary (counts,
-     failing tests, the path of the full log in the run folder): read the log
-     only when the summary isn't enough. Serialize `tracetoon check` attempts
+     Run each `tracetoon check` in the FOREGROUND and wait for it: it blocks
+     until done. Never start one in the background, never poll it (no
+     `sleep`/`until` loops, no monitor), and never end your turn while one
+     runs. On Claude Code give the Bash call `timeout: 600000` (the default
+     120 s moves it to the background); if a check is moved to the background
+     anyway, run the same `tracetoon check` command again in the foreground:
+     it waits for the running one and prints its receipt. A check stops after
+     15 minutes and is then reported as "timed out (incomplete), N s", never as
+     failed: don't rerun it, and say it timed out. It prints a short summary
+     (counts, failing tests, the path of the full log in the run folder): read
+     the log only when the summary isn't enough. Serialize `tracetoon check` attempts
      for the same run. A check already run on the
      same tracked code returns its receipt without rerunning (`reused`); run
      each check once, each as its own `tracetoon check` (no chained
@@ -164,12 +170,15 @@ reviewer separate.
         `tracetoon check --run <id> --name <check> -- <command>`: one
         `tracetoon check` per repository check, never several chained in one
         `bash -c '… && …'` (its result can't be told apart per check), each in
-        the foreground (never backgrounded and polled). A check
+        the foreground (never backgrounded and polled; see step 1's check
+        rules for Claude Code's Bash timeout). A check
         that can't run here gets `--skip "<reason>"`; when the repository
         declares test/check/typecheck scripts, publish requires a receipt or a
         recorded skip on this path.
-        Render and publish before any optional waiting (CI, a slow rerun):
-        a finished, rendered PR first, extras after.
+        Render, review and publish before ending the turn and before any
+        optional waiting (CI, a slow rerun): a finished, rendered, reviewed PR
+        first, extras after. A body with `[CH1]`-style tags left in it was
+        never rendered: never end the turn there.
      4. `tracetoon render --check --json --run <id>`: fix every sentence it lists
         and cover every listed row, up to three rounds.
      5. `tracetoon render --json --run <id>`, then
@@ -522,4 +531,4 @@ Graph search: fulltext.
 
 Preparation commands do not require repeating passing checks. Reuse matching check receipts, research, and unchanged renders. Valid review findings remain findings after the two correction rounds; never rerun an entire external benchmark to obtain a favorable review. `profiles.jsonl` is optional local timing/counter data, never evidence that a check passed. Older runtimes without `prepare` can use `digest` followed by `context`.
 
-`check` streams progress on stderr while its receipt remains running. A quiet interval alone does not establish a hang. Wait for completion or record an explicit interruption; an interrupted run does not establish a pass.
+`check` streams progress on stderr while its receipt remains running. A quiet interval alone does not establish a hang. Wait for completion in the foreground (a second `tracetoon check` of the run waits for the first) or record an explicit interruption; an interrupted or timed-out run does not establish a pass or a failure.

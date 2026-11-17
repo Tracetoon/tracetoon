@@ -16,7 +16,7 @@ import type { Run as DigestRun } from '../digest/build.ts';
 import { buildEvidenceGraph } from './build.ts';
 import { addHeadScan } from './headScan.ts';
 import { addBaseContext } from './baseContext.ts';
-import { addWorkflowJobs } from './workflowJobs.ts';
+import { addCiCallers, addWorkflowJobs } from './workflowJobs.ts';
 import { addSearchLinks, type GraphSearch } from './search.ts';
 import { annotateDigest, deriveFromGraphJson, type GraphDerived } from './derive.ts';
 import type { EvidenceGraph } from './model.ts';
@@ -183,11 +183,27 @@ export function graphEnricher(
             graph,
             truth.toplevel,
             truth.mergeBase,
-            truth.usedWorkingTree ? undefined : (truth.headSha ?? truth.commits.at(-1)?.sha),
+            truth.usedWorkingTree
+              ? undefined
+              : (truth.headSha ?? truth.commits.at(-1)?.sha),
           ),
         );
       } catch {
         // No job summaries; the graph is otherwise whole.
+      }
+      // Changed files a workflow at the head runs (a script CI calls).
+      try {
+        measured('graph.ciCallers', () =>
+          addCiCallers(
+            graph,
+            truth.toplevel,
+            truth.usedWorkingTree
+              ? undefined
+              : (truth.headSha ?? truth.commits.at(-1)?.sha),
+          ),
+        );
+      } catch {
+        // No CI callers; the graph is otherwise whole.
       }
       // Key lines per hunk, and search links from commit text, requests and plans.
       measured('graph.search', () =>

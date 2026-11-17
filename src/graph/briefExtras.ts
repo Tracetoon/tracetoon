@@ -207,6 +207,20 @@ function routesOf(conds: string[]): string[] {
 }
 
 /**
+ * Two forms of one word: equal, or sharing all but the last letter of the
+ * shorter one and at least five letters (`compare` / `comparison`, `upload` /
+ * `uploader`).
+ */
+export function sameWord(a: string, b: string): boolean {
+  if (a === b) return true;
+  const n = Math.min(a.length, b.length);
+  if (n < 5) return false;
+  let i = 0;
+  while (i < n && a[i] === b[i]) i++;
+  return i >= 5 && i >= n - 1;
+}
+
+/**
  * The recorded commands that reach a remote file's changed code: a command
  * whose words name a changed command handler (`comicArtCmd` ← `… comic art`)
  * in a file whose changed lines call that file's changed symbols (or in the
@@ -252,8 +266,10 @@ function reachingRuns(file: string, live: LiveEvidence): LiveEvidence['invocatio
   return live.invocations.filter((inv) => {
     // Bare arguments only (subcommands, values): a path argument (a formatter
     // given `src/commands/comic.ts`) runs nothing of that file.
-    const words = new Set(bareWords(inv.cmd));
-    return [...handlers, ...fileWords].some((ws) => ws.every((w) => words.has(w)));
+    const words = [...new Set(bareWords(inv.cmd))];
+    return [...handlers, ...fileWords].some((ws) =>
+      ws.every((w) => words.some((c) => sameWord(c, w))),
+    );
   });
 }
 
@@ -375,15 +391,24 @@ export function capLimits(
 
 /** Platforms a changed line can be specific to, by the names code uses for them. */
 const PLATFORMS: { name: string; host: string; re: RegExp }[] = [
-  { name: 'Windows', host: 'win32', re: /\bwin32\b|\bwindows\b|\bIS_WINDOWS\b|\bisWindows\b|\bIsWindows\b|cfg!?\(\s*windows/i },
-  { name: 'macOS', host: 'darwin', re: /\bdarwin\b|\bmacos\b|\bisMac\w*\b|\bIS_MAC\b|\bIsMacOS\b/i },
+  {
+    name: 'Windows',
+    host: 'win32',
+    re: /\bwin32\b|\bwindows\b|\bIS_WINDOWS\b|\bisWindows\b|\bIsWindows\b|cfg!?\(\s*windows/i,
+  },
+  {
+    name: 'macOS',
+    host: 'darwin',
+    re: /\bdarwin\b|\bmacos\b|\bisMac\w*\b|\bIS_MAC\b|\bIsMacOS\b/i,
+  },
   { name: 'arm64', host: 'arm64', re: /\barm64\b|\baarch64\b/i },
   { name: 'x64', host: 'x64', re: /\bx64\b|\bx86_64\b|\bamd64\b/i },
 ];
 /** A test of the running OS or CPU: what makes a line platform-specific. */
 const PLATFORM_TEST =
   /\bprocess\.(?:platform|arch)\b|\bos\.(?:platform|arch|type)\(\)|\bsys\.platform\b|\bplatform\.(?:system|machine)\(\)|\bos\.name\b|\bruntime\.GOOS\b|\bruntime\.GOARCH\b|\bcfg!?\(\s*(?:windows|unix|target_os|target_arch)|#\s*if(?:def)?\s+_WIN32|\$Is(?:Windows|MacOS|Linux)\b|\$env:OS\b|\$\(?uname\b|\bRUNNER_OS\b|\brunner\.os\b|\bOSTYPE\b|\bis(?:Windows|Mac\w*|Linux)\b|\bIS_(?:WINDOWS|MAC|LINUX)\b|\b(?:platform|arch|os|hostOs|targetOs)\s*(?:[!=]==?|-eq|-ne)\s*['"]|['"]\w+['"]\s*[!=]==?\s*(?:platform|arch|os)\b/;
-const CONDITIONAL = /\bif\b|\belif\b|\bwhen\b|\bcase\b|\bswitch\b|\bmatch\b|\?|&&|\|\||\bunless\b|\bthen\b/;
+const CONDITIONAL =
+  /\bif\b|\belif\b|\bwhen\b|\bcase\b|\bswitch\b|\bmatch\b|\?|&&|\|\||\bunless\b|\bthen\b/;
 /** A ternary or table that maps a platform to a name (an asset suffix), not a branch. */
 const MAPPING = /\?\s*(['"`])[^'"`]*\1\s*:\s*(?:(['"`])[^'"`]*\2|[\w$.]+)\s*[;,)]?\s*$/;
 /** A Windows path or a Windows shell invoked. */
@@ -392,7 +417,8 @@ const WINDOWS_ONLY =
 /** A CI workflow line that picks a runner OS or CPU. */
 const WORKFLOW_PLATFORM =
   /\bruns-on:|\bos:|^[+-]?\s*-\s*(?:windows|macos|ubuntu)-[\w.-]+\s*$|\brunner\.os\b|\bmatrix\.os\b|\bplatform:|\barch:/i;
-const WORKFLOW_FILE = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)azure-pipelines\.ya?ml$/;
+const WORKFLOW_FILE =
+  /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)azure-pipelines\.ya?ml$/;
 /** A script for Windows shells: the whole file is Windows-specific. */
 const WINDOWS_SCRIPT = /\.(?:ps1|psm1|bat|cmd)$/i;
 /** A script a shell or interpreter runs directly. */
@@ -493,6 +519,13 @@ export function environmentRows(
    */
   ci: CiRun[] = [],
   lastEdit: Map<string, string> = new Map(),
+  /** Recorded commands and the code they reach: a live run answers a faked path. */
+  live?: LiveEvidence,
+  /**
+   * Per changed file, the workflow files (base names) whose steps run it: a
+   * CI result for such a workflow is a run of the script.
+   */
+  ciCallers: Map<string, string[]> = new Map(),
 ): Row[] {
   const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
   const code = (f: string) =>
@@ -505,7 +538,10 @@ export function environmentRows(
     return p.host !== host.platform && p.host !== host.arch;
   };
   // Per change unit: its platforms, files and one line that shows it.
-  const units = new Map<string, { names: Set<string>; files: Set<string>; line?: string }>();
+  const units = new Map<
+    string,
+    { names: Set<string>; files: Set<string>; line?: string }
+  >();
   for (const h of hunks) {
     const file = String(h.file);
     if (!code(file) || role(file) === 'tests' || DOUBLE_FILE.test(file)) continue;
@@ -516,7 +552,11 @@ export function environmentRows(
     for (const l of addedLines(h)) {
       const ps = platformsOfLine(l, file).filter(foreign);
       // A message that names a command is no example of the code.
-      if (ps.length && !line && !/^(?:echo|printf|Write-Host|console\.\w+|print)\b/.test(l))
+      if (
+        ps.length &&
+        !line &&
+        !/^(?:echo|printf|Write-Host|console\.\w+|print)\b/.test(l)
+      )
         line = l;
       for (const p of ps) names.add(p);
     }
@@ -540,7 +580,13 @@ export function environmentRows(
     for (const l of addedLines(h)) for (const p of platformsOfLine(l, f)) set.add(p);
     for (const l of addedLines(h))
       for (const m of l.matchAll(/\b(windows|macos|ubuntu)-(?:latest|\d[\w.]*)/gi))
-        set.add(m[1]!.toLowerCase() === 'windows' ? 'Windows' : m[1]!.toLowerCase() === 'macos' ? 'macOS' : 'Linux');
+        set.add(
+          m[1]!.toLowerCase() === 'windows'
+            ? 'Windows'
+            : m[1]!.toLowerCase() === 'macos'
+              ? 'macOS'
+              : 'Linux',
+        );
     wfOs.set(wfBase(f), set);
   }
   const viaWorkflow = (x: CiRun, n: string) =>
@@ -624,10 +670,20 @@ export function environmentRows(
         );
     const stem = (f: string) => base(f).replace(/\.[^.]+$/, '');
     const entry = (h: Row, f: string) =>
-      SCRIPT_FILE.test(f) ||
-      h.shebang === true ||
-      (CODE_SCRIPT.test(f) && pkgRuns(f));
-    const entries = new Set(hunks.filter((h) => entry(h, String(h.file))).map((h) => String(h.file)));
+      SCRIPT_FILE.test(f) || h.shebang === true || (CODE_SCRIPT.test(f) && pkgRuns(f));
+    const entries = new Set(
+      hunks.filter((h) => entry(h, String(h.file))).map((h) => String(h.file)),
+    );
+    // A CI result the logs show for a workflow whose steps run the script
+    // (results naming no workflow are all of them) is a run of it.
+    const ciRanScript = (f: string) =>
+      (ciCallers.get(f) ?? []).some(
+        (w) =>
+          ciSeen ||
+          ci.some((x) =>
+            (x.workflows ?? []).some((y) => y.toLowerCase() === w.toLowerCase()),
+          ),
+      );
     for (const h of hunks) {
       const f = String(h.file);
       if (role(f) === 'tests') continue;
@@ -635,6 +691,7 @@ export function environmentRows(
       if (WORKFLOW_FILE.test(f)) workflows.set(f, [...(workflows.get(f) ?? []), ch]);
       else if (
         entries.has(f) &&
+        !ciRanScript(f) &&
         !said.includes(base(f)) &&
         !said.includes(stem(f)) &&
         !(stem(f).length >= 4 && testText.includes(stem(f)))
@@ -675,22 +732,31 @@ export function environmentRows(
         out.push({
           change: workflows.get(unrun[0]!)![0] || null,
           kind: 'open',
-          limit: `${shown(unrun)} change${unrun.length === 1 ? 's' : ''} CI workflow${unrun.length === 1 ? '' : 's'}; workflows run in CI, and no run of ${unrun.length === 1 ? 'it' : 'them'} is in the logs Tracetoon read${
-            stale.length || ci.some((x) => (x.workflows ?? []).length) ? ' (the CI runs recorded ran other workflows)' : ''
+          limit: `${shown(unrun)} change${unrun.length === 1 ? 's' : ''} CI workflow${unrun.length === 1 ? '' : 's'}; workflows run in CI, and no run of ${unrun.length === 1 ? 'it' : 'them'} is in the session logs${
+            stale.length || ci.some((x) => (x.workflows ?? []).length)
+              ? ' (the CI runs recorded ran other workflows)'
+              : ''
           }.`,
         });
     }
   }
-  // Behavior the changed tests reach only through fakes or stubs.
+  // Behavior the changed tests reach only through fakes or stubs, named as
+  // the tests name them ("a fake release server").
   const faked = new Map<string, Set<string>>();
   const doubles = new Set<string>();
+  const phrases = new Set<string>();
   const files = new Set<string>();
+  // A server the tests start on this machine stands in for the remote end
+  // only: the code under test makes its real calls to it (a real path).
+  const localServer = tests.some((h) => h.localServer === true);
   for (const h of tests) {
     const lines = ((h.code as string[]) ?? []).map(String).filter((l) => FAKE.test(l));
-    if (!lines.length) continue;
+    const named = ((h.fakes as string[]) ?? []).map(String);
+    if (!lines.length && !named.length) continue;
     files.add(String(h.file));
+    named.forEach((x) => phrases.add(x));
     for (const [what, re] of FAKED_STEP)
-      if (lines.some((l) => re.test(l)))
+      if ([...lines, ...named].some((l) => re.test(l)))
         faked.set(what, new Set([...(faked.get(what) ?? []), String(h.file)]));
     for (const l of lines)
       for (const m of l.matchAll(FAKE_NAME)) {
@@ -701,38 +767,70 @@ export function environmentRows(
   for (const h of hunks)
     if (role(String(h.file)) !== 'tests' && DOUBLE_FILE.test(String(h.file)))
       doubles.add(String(h.file).split('/').pop()!);
-  if (files.size) {
+  const NETWORK = FAKED_STEP[0]![1];
+  if (localServer) {
+    faked.delete(FAKED_STEP[0]![0]);
+    for (const x of [...phrases]) if (NETWORK.test(x)) phrases.delete(x);
+  }
+  // The change units whose code the doubles stand in for, by name.
+  const doubleStem = (n: string) =>
+    n
+      .replace(/\.[^.]+$/, '')
+      .replace(/^(?:mock|stub|fake)[-_]?|[-_]?(?:mock|stub|fake)$/i, '')
+      .toLowerCase();
+  const stems = [...doubles].map(doubleStem).filter((x) => x.length >= 3);
+  const reached = src
+    .filter((h) => !DOUBLE_FILE.test(String(h.file)))
+    .filter((h) =>
+      stems.some(
+        (x) =>
+          String(h.file).toLowerCase().includes(x) ||
+          ((h.symbols as string[]) ?? []).some((s) => String(s).toLowerCase() === x),
+      ),
+    );
+  const fakeUnits = [
+    ...new Set(reached.map((h) => String(h.change ?? '')).filter(Boolean)),
+  ].sort();
+  // A recorded command that ran that code for real answers the row.
+  const ranForReal =
+    !!live && reached.some((h) => reachingRuns(String(h.file), live).length > 0);
+  // Every fake was the local server's stand-in: nothing faked is left.
+  const onlyServer = localServer && !faked.size && !phrases.size;
+  if (files.size && !ranForReal && !onlyServer) {
     const fs = [...files].sort();
     const what = [...faked.keys()];
-    const names = [...doubles].sort().slice(0, 3).map((n) => `\`${n}\``);
-    // The change units whose code the doubles stand in for, by name.
-    const stem = (n: string) =>
-      n
-        .replace(/\.[^.]+$/, '')
-        .replace(/^(?:mock|stub|fake)[-_]?|[-_]?(?:mock|stub|fake)$/i, '')
-        .toLowerCase();
-    const stems = [...doubles].map(stem).filter((x) => x.length >= 3);
-    const units = [
-      ...new Set(
-        src
-          .filter((h) => !DOUBLE_FILE.test(String(h.file)))
-          .filter((h) =>
-            stems.some(
-              (x) =>
-                String(h.file).toLowerCase().includes(x) ||
-                ((h.symbols as string[]) ?? []).some((s) => String(s).toLowerCase() === x),
-            ),
-          )
-          .map((h) => String(h.change ?? ''))
-          .filter(Boolean),
-      ),
-    ].sort();
+    const names = [...doubles]
+      .sort()
+      .slice(0, 3)
+      .map((n) => `\`${n}\``);
+    // Name the specific fake: the tests' own words, else the double's name.
+    const fromName = (n: string) => {
+      const ws = splitName(
+        n
+          .replace(/\.[^.]+$/, '')
+          .replace(/^(?:mock|stub|fake)[-_]?|[-_]?(?:mock|stub|fake)$/i, ''),
+      )
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length >= 3 && !/^(?:mock|stub|fake)$/.test(w));
+      return ws.length ? `fake ${ws.join(' ')}` : '';
+    };
+    const specific = [
+      ...new Set([
+        ...phrases,
+        ...(phrases.size ? [] : [...doubles].sort().map(fromName).filter(Boolean)),
+      ]),
+    ].slice(0, 2);
+    const reachedBy = fakeUnits.length
+      ? `; ${fakeUnits.join(', ')} ${fakeUnits.length === 1 ? 'is' : 'are'} reached that way`
+      : '';
+    const shownNames = names.length ? ` (${names.join(', ')})` : '';
     out.push({
-      change: units[0] ?? null,
+      change: fakeUnits[0] ?? null,
       kind: 'open',
-      limit: `The changed tests (${shown(fs)}) replace ${what.length ? what.join(', ') : 'collaborators'} with fakes or stubs${
-        names.length ? ` (${names.join(', ')})` : ''
-      }${units.length ? `; ${units.join(', ')} ${units.length === 1 ? 'is' : 'are'} reached that way` : ''}: they check the logic around those steps, not the real ${what.length === 1 ? 'step' : 'steps'}.`,
+      limit: specific.length
+        ? `The changed tests (${shown(fs)}) use ${joinNames(specific.map((x) => `a ${x}`))}${shownNames}${reachedBy}: they check the code around ${specific.length > 1 ? 'them' : 'it'}, not the real ${joinNames(specific.map((x) => x.replace(/^\S+\s+/, '')))}.`
+        : `The changed tests (${shown(fs)}) replace ${what.length ? what.join(', ') : 'collaborators'} with fakes or stubs${shownNames}${reachedBy}: they check the logic around those steps, not the real ${what.length === 1 ? 'step' : 'steps'}.`,
     });
   }
   const tty = src.filter((h) => TTY.test(hunkText(h)));
@@ -751,12 +849,10 @@ const clipLine = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}
 
 /** Every command text the included sessions ran (checks, others, failures); undefined with none. */
 export function sessionCommands(g: GraphEngine): string[] | undefined {
-  const sessions = g
-    .run(
-      `MATCH (s:Session {band: 'included'})
+  const sessions = g.run(
+    `MATCH (s:Session {band: 'included'})
        RETURN s.invoked AS invoked, s.lateCmds AS late, s.failedCmds AS failed`,
-    )
-    .rows;
+  ).rows;
   if (!sessions.length) return undefined;
   return [
     ...sessions.flatMap((s) =>
@@ -794,7 +890,9 @@ export function ciPlatformRuns(g: GraphEngine): {
   lastEdit: Map<string, string>;
 } {
   const words = (xs: unknown, i: number) =>
-    String(((xs as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
+    String(((xs as string[]) ?? [])[i] ?? '')
+      .split(' ')
+      .filter(Boolean);
   const ci = g
     .run(
       `MATCH (s:Session {band: 'included'})
@@ -834,11 +932,13 @@ function remoteEvents(g: GraphEngine) {
     .run(
       `MATCH (s:Session {band: 'included'})
        RETURN s.remoteCmds AS cmds, s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed,
-              s.remoteResults AS results, s.remoteWorkflows AS workflows`,
+              s.remoteResults AS results, s.remoteWorkflows AS workflows, s.remoteWith AS pushedWith`,
     )
     .rows.flatMap((r) =>
       ((r.cmds as string[]) ?? []).map((c, i) => {
-        const res = String(((r.results as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean);
+        const res = String(((r.results as string[]) ?? [])[i] ?? '')
+          .split(' ')
+          .filter(Boolean);
         return {
           cmd: String(c),
           kind: String(((r.kinds as string[]) ?? [])[i] ?? ''),
@@ -846,7 +946,10 @@ function remoteEvents(g: GraphEngine) {
           failed: ((r.failed as string[]) ?? [])[i] === 'failed',
           results: res[0] === 'results',
           heads: res.slice(1),
-          workflows: String(((r.workflows as string[]) ?? [])[i] ?? '').split(' ').filter(Boolean),
+          workflows: String(((r.workflows as string[]) ?? [])[i] ?? '')
+            .split(' ')
+            .filter(Boolean),
+          withCommit: ((r.pushedWith as string[]) ?? [])[i] === 'commit',
         };
       }),
     )
@@ -909,23 +1012,39 @@ export function finalHeadRow(g: GraphEngine): Row | null {
   const first = commits.at(-1);
   // A push before this PR's first commit pushed earlier work (a shared session).
   const pushes = remote.filter(
-    (x) => x.kind === 'publish' && !x.failed && (!first || !x.t || x.t >= String(first.t)),
+    (x) =>
+      x.kind === 'publish' && !x.failed && (!first || !x.t || x.t >= String(first.t)),
   );
   if (!pushes.length) return null;
   const lastPush = pushes.at(-1)!;
-  const commitAfter = !!last && !!lastPush.t && String(last.t) > lastPush.t;
+  // A push whose command line committed first (`git commit …; git push`)
+  // pushed that commit: one commit after it, made with it, is not "after".
+  const after = commits.filter((k) => !!lastPush.t && String(k.t) > lastPush.t);
+  const commitAfter =
+    !!last &&
+    !!lastPush.t &&
+    String(last.t) > lastPush.t &&
+    !(
+      lastPush.withCommit &&
+      after.length === 1 &&
+      Date.parse(String(last.t)) - Date.parse(lastPush.t) < 15 * 60_000
+    );
   const verbs = [...new Set(pushes.map((x) => publishVerb(x.cmd)))];
   const did = `The session ${joinNames(verbs)} (${[...new Set(pushes.map((x) => `\`${x.cmd}\``))].join(', ')})`;
   const lastId = last ? shortSha(last.id) : '';
   const looks = ciResultLooks(g);
   const onHead = looks.filter((x) =>
-    x.heads.length ? x.heads.includes(lastId) : !commitAfter && !!x.t && x.t >= lastPush.t,
+    x.heads.length
+      ? x.heads.includes(lastId)
+      : !commitAfter && !!x.t && x.t >= lastPush.t,
   );
   if (onHead.length) return null;
   if (looks.length) {
     const named = [
       ...new Set(
-        looks.flatMap((x) => x.heads).filter((h) => commits.some((k) => shortSha(k.id) === h)),
+        looks
+          .flatMap((x) => x.heads)
+          .filter((h) => commits.some((k) => shortSha(k.id) === h)),
       ),
     ];
     // Looks at the PR's own checks first; runs of one named workflow after.
@@ -947,15 +1066,23 @@ export function finalHeadRow(g: GraphEngine): Row | null {
     };
   }
   const ci = remote.filter((x) => x.kind === 'ci' && x.t >= lastPush.t);
-  const ciCmds = [...new Map(ci.map((x) => [`${x.cmd}${x.failed ? ' (failed)' : ''}`, x])).keys()];
+  const ciCmds = [
+    ...new Map(ci.map((x) => [`${x.cmd}${x.failed ? ' (failed)' : ''}`, x])).keys(),
+  ];
   return {
     change: null,
     kind: 'open',
     limit: `${did}${
       commitAfter ? `; the last commit (${lastId}) came after the last push` : ''
-    }; CI results for the final head are not in the logs Tracetoon read${
+    }; CI results for the final head are not in the session logs${
       ciCmds.length
-        ? ` (afterwards it ran ${ciCmds.slice(0, 3).map((c) => `\`${c.replace(' (failed)', '')}\`${c.endsWith('(failed)') ? ', which failed' : ''}`).join('; ')}; its output shows no check results)`
+        ? ` (afterwards it ran ${ciCmds
+            .slice(0, 3)
+            .map(
+              (c) =>
+                `\`${c.replace(' (failed)', '')}\`${c.endsWith('(failed)') ? ', which failed' : ''}`,
+            )
+            .join('; ')}; its output shows no check results)`
         : ''
     }.`,
   };
