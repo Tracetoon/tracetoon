@@ -377,11 +377,15 @@ describe('drafting guidance', () => {
     expect(next).not.toContain('10 min');
   });
   test('session-history caveats, environment-only failures and economy', () => {
-    expect(drafting).toMatch(/Session-history rows stay open points/);
+    // Session history, push/CI and tag status are written under Validation by render.
+    expect(drafting).toMatch(
+      /`render` writes every open `limits` row under the\s+Validation section/,
+    );
     expect(drafting).toContain('could not run as pinned here');
-    expect(drafting).toMatch(/\*\*CI and push status\*\*: at most one sentence/);
     expect(drafting).toMatch(/lockfiles, rebuilt bundles/);
-    expect(DRAFTING_RULES).toMatch(/At most one sentence on CI\/push status/);
+    expect(DRAFTING_RULES).toMatch(
+      /Render writes every open `limits` row under the Validation section/,
+    );
     expect(drafting).not.toMatch(/logs Tracetoon read|Tracetoon kept/);
   });
 });

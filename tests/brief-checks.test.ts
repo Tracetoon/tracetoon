@@ -452,7 +452,12 @@ describe('do not say', () => {
             ...x,
             rows: x.rows.map((r) => ({
               ...r,
-              behavior: ['.gitignore: + .claude/', 'SKILL.md: + if you need it, ask', 'LICENSE: + unless required by law or if agreed', ...((r.behavior as string[]) ?? [])],
+              behavior: [
+                '.gitignore: + .claude/',
+                'SKILL.md: + if you need it, ask',
+                'LICENSE: + unless required by law or if agreed',
+                ...((r.behavior as string[]) ?? []),
+              ],
             })),
           }
         : x,
@@ -684,11 +689,10 @@ describe('receipts in the Validation section', () => {
     })
       .split('\n')
       .filter((l) => l.startsWith('- '));
-    // Passing receipts without counts collapse into one line; each command
-    // once (the latest), and a pass with counts keeps its own line.
+    // Passing receipts collapse into one line, each command once (the
+    // latest), its counts beside it.
     expect(lines).toEqual([
-      '- 5 checks passed, run on the submitted content: `bun run typecheck`, `bun run bundle`, `bun run build:check`, `bun run build:reproduce`, `bun x prettier --check src`.',
-      '- `bun test`: passed (697 pass, 0 fail), run on the submitted content.',
+      '- Checks passed on the submitted content: `bun run typecheck`, `bun run bundle`, `bun run build:check`, `bun run build:reproduce`, `bun test` (697 pass, 0 fail), `bun x prettier --check src`.',
     ]);
     const verification = rows.map((r, i) => ({
       id: r.check,

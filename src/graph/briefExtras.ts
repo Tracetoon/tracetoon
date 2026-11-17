@@ -1102,6 +1102,8 @@ const NAME = /^[A-Za-z_$][\w$]{2,}$/;
 const CALLABLE = /^[a-z_$][\w$]*[a-z][\w$]*$/;
 const uniqStr = (xs: string[]) => [...new Set(xs)];
 const MIN_CALLS = 2;
+/** Callbacks, event handlers and setters by name: `onRunCreated`, `handleClick`, `setName`. */
+const CALLBACK_NAME = /^(?:on|handle|set)[A-Z]/;
 
 /**
  * A hunk's changed code lines per function that owns them (`fnLines`), empty
@@ -1348,7 +1350,7 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   const refsOf = new Map(
     g
       .run(
-        `MATCH (x:HeadRef) WHERE x.kind <> 'still mentions' RETURN x.term AS term, x.files AS files, x.kind AS kind, x.definedIn AS definedIn`,
+        `MATCH (x:HeadRef) WHERE x.kind <> 'still mentions' AND x.kind <> 'test scan' RETURN x.term AS term, x.files AS files, x.kind AS kind, x.definedIn AS definedIn`,
       )
       .rows.map((r) => [String(r.term), r]),
   );
@@ -1450,13 +1452,18 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
       .filter((o) => o.name !== name && o.calls.has(name))
       .sort((a, b) => a.file.localeCompare(b.file) || a.name.localeCompare(b.name));
   const refFiles = (n: string) => Number(refsOf.get(n)?.files ?? 0);
+  // A callback, handler or setter is never where the decision lives, nor a
+  // thin wrapper: the function holding the most changed lines with branches is.
+  const handler = (o: Owner) => CALLBACK_NAME.test(o.name) || thinFn.has(o.name);
   const ranked = [...owners.values()]
     .filter((o) => o.calls.size >= MIN_CALLS)
+    .filter((o) => !handler(o))
     .sort(
       (a, b) =>
         b.calls.size - a.calls.size ||
         refFiles(b.name) - refFiles(a.name) ||
         b.branches - a.branches ||
+        (linesOfFn.get(b.name) ?? 0) - (linesOfFn.get(a.name) ?? 0) ||
         a.file.localeCompare(b.file) ||
         a.name.localeCompare(b.name),
     );
@@ -1519,7 +1526,10 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
   // A type, or a name the file doesn't define: the function there that owns
   // the most added lines instead, else the file alone.
   const term =
-    definedHere(named, file) && fnLike(named, file) && !thinFn.has(named)
+    definedHere(named, file) &&
+    fnLike(named, file) &&
+    !thinFn.has(named) &&
+    !CALLBACK_NAME.test(named)
       ? named
       : uniqStr(
           hunks
@@ -1531,7 +1541,14 @@ export function entryRow(g: GraphEngine, ctx?: SentenceLinks): Row | undefined {
             ])
             .map((x) => (x == null ? '' : String(x))),
         )
-          .filter((n) => NAME.test(n) && owning(n) && fnLike(n, file) && !thinFn.has(n))
+          .filter(
+            (n) =>
+              NAME.test(n) &&
+              owning(n) &&
+              fnLike(n, file) &&
+              !thinFn.has(n) &&
+              !CALLBACK_NAME.test(n),
+          )
           .map((n) => ({ n, share: ownedShare(hunks, n, file) }))
           .filter((x) => x.share >= MIN_ENTRY_SHARE)
           .sort((a, b) => b.share - a.share || a.n.localeCompare(b.n))[0]?.n;
@@ -1820,4 +1837,187 @@ export function ownerRows(
       String(a.change).localeCompare(String(b.change)) ||
       String(a.file).localeCompare(String(b.file)),
   );
+}
+
+/** A command that tags, releases or publishes a package. */
+const RELEASING =
+  /\bgit\s+tag\b|\bgit\s+push\b[^;&|]*(?:--tags|\brefs\/tags\/|\sv?\d+\.\d+\.\d+)|\bgh\s+release\b|\b(?:npm|pnpm|yarn|bun|cargo|poetry|gem)\s+(?:publish|push)\b|\btwine\s+upload\b/i;
+const CHANGELOG_FILE =
+  /(^|\/)(changelog|changes|history|news|releases?)(\.(?:md|txt|rst|adoc))?$/i;
+const RELEASE_WORKFLOW =
+  /(^|\/)\.github\/workflows\/[^/]*(?:release|publish|deploy)[^/]*\.ya?ml$/i;
+const VERSION_FILE =
+  /(^|\/)(?:package\.json|Cargo\.toml|pyproject\.toml|setup\.(?:py|cfg)|[^/]+\.gemspec|build\.gradle(?:\.kts)?|pom\.xml|VERSION(?:\.txt)?|version\.\w+|plugin\.json|manifest\.json)$/i;
+const VERSION_BUMP = /\b\d+\.\d+\.\d+(?:-[\w.]+)?\b.*→.*\b\d+\.\d+\.\d+/;
+
+/**
+ * Where the session's own record stops short of shipping the change: no push
+ * of this PR's commits in the session logs (so no CI on its head either), and
+ * a diff that prepares a release (a version bump, a changelog entry, a release
+ * workflow) with no tag, release or publish command in them. Only with a
+ * matched session and at least one commit; each row is worded in the scope
+ * of the session logs.
+ */
+export function sessionEndRows(g: GraphEngine, hunks: Row[]): Row[] {
+  const cmds = sessionCommands(g);
+  if (!cmds) return [];
+  const commits = prCommits(g);
+  const first = commits.at(-1);
+  if (!first) return [];
+  const remote = remoteEvents(g);
+  const out: Row[] = [];
+  // A failed push has its own row (failedPublishRows): what reached the remote isn't recorded.
+  const pushed = remote.some(
+    (x) => x.kind === 'publish' && (!x.t || x.t >= String(first.t)),
+  );
+  if (!pushed && !failedPublishRows(g).length)
+    out.push({
+      change: null,
+      kind: 'open',
+      limit:
+        'The session logs show no push of these commits, so push and CI results for the final head are not in them.',
+    });
+  const files = [...new Set(hunks.map((h) => String(h.file)))];
+  // Changelog hunks whose changed lines say "Unreleased" (headings aren't in `code`).
+  const unreleased = new Set(
+    g
+      .run('MATCH (h:Hunk) RETURN h.id AS id, h.words AS words')
+      .rows.filter((h) =>
+        ((h.words as string[]) ?? []).map(String).includes('unreleased'),
+      )
+      .map((h) => String(h.id)),
+  );
+  // A version pair of a manifest or version file, or one that names a version:
+  // a docs line requiring another tool's version is no bump of this one.
+  const SEMVER = /\d+\.\d+\.\d+(?:-[\w.]+)?/;
+  const bump = [
+    ...new Set(
+      hunks.flatMap((h) =>
+        ((h.pairs as string[]) ?? [])
+          .map(String)
+          .filter(
+            (p) =>
+              VERSION_BUMP.test(p) &&
+              (VERSION_FILE.test(String(h.file)) || /version/i.test(p)) &&
+              !/\.(?:md|mdx|rst|txt|adoc)$/i.test(String(h.file)),
+          )
+          .map((p) => {
+            const [a, b] = p.split(' → ');
+            return `${SEMVER.exec(a ?? '')?.[0]} → ${SEMVER.exec(b ?? '')?.[0]}`;
+          }),
+      ),
+    ),
+  ][0];
+  const what = bump
+    ? `bumps the version (${bump})`
+    : // A changelog entry under "Unreleased" announces no release.
+      hunks.some(
+          (h) =>
+            CHANGELOG_FILE.test(String(h.file)) &&
+            !((h.code as string[]) ?? []).some((l) =>
+              /^\+\s*#+\s*\[?unreleased\b/i.test(String(l)),
+            ) &&
+            !unreleased.has(String(h.hunk ?? h.id)),
+        )
+      ? 'adds a changelog entry'
+      : files.some((f) => RELEASE_WORKFLOW.test(f))
+        ? 'changes a release workflow'
+        : '';
+  const released =
+    cmds.some((c) => RELEASING.test(c)) || remote.some((x) => RELEASING.test(x.cmd));
+  if (what && !released)
+    out.push({
+      change: null,
+      kind: 'open',
+      limit: `The diff ${what}, but no tag or release appears in the session logs.`,
+    });
+  return out;
+}
+
+/**
+ * The session's last check run when it came before the last commit with a
+ * captured edit of a PR file in between: which run, and the files edited
+ * after it. Undefined when a run saw the last commit's content.
+ */
+export function lastRunBeforeFinalCommit(
+  g: GraphEngine,
+  scopedRuns: Row[],
+): { id: string; kind: string; files: string[]; commit: string } | undefined {
+  const checks = scopedRuns.filter((r) =>
+    ['test', 'build', 'lint', 'typecheck'].includes(String(r.kind)),
+  );
+  const last = prCommits(g)[0];
+  if (!last || !checks.length) return undefined;
+  const lastRun = [...checks]
+    .filter((r) => r.t)
+    .sort((a, b) => String(a.t).localeCompare(String(b.t)))
+    .at(-1);
+  if (!lastRun || String(lastRun.t) > String(last.t)) return undefined;
+  const files = editsBetween(g)(String(lastRun.t), String(last.t));
+  if (!files.length) return undefined;
+  return {
+    id: String(lastRun.id),
+    kind: String(lastRun.kind),
+    files,
+    commit: shortSha(last.id),
+  };
+}
+
+const orNames = (xs: string[]) =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`;
+/** A unit's file is code a test can exercise: not docs, config, CI or prose. */
+const TESTABLE = /\.(?:[cm]?[jt]sx?|py|go|rs|rb|java|kt|swift|cs|php|sh|ps1)$/i;
+
+/**
+ * A changed behavior no test names: a change unit of shipped code (no test,
+ * docs or config files) whose symbols and file stems a head-tree scan looked
+ * for in every test file and found in none, and that no changed test's title
+ * names (`checkedBy`). Never claimed when the scan didn't run or didn't look
+ * for every term of the unit.
+ */
+export function untestedRows(
+  g: GraphEngine,
+  changes: Row[],
+  hunks: Row[],
+  fileRole: Map<string, string>,
+): Row[] {
+  const scan = g.run(
+    `MATCH (x:HeadRef) WHERE x.kind = 'test scan' RETURN x.terms AS terms, x.tested AS tested`,
+  ).rows[0];
+  if (!scan) return [];
+  const looked = new Set(((scan.terms as string[]) ?? []).map(String));
+  const tested = new Set(((scan.tested as string[]) ?? []).map(String));
+  const out: Row[] = [];
+  for (const c of changes) {
+    if (Array.isArray(c.checkedBy) && c.checkedBy.length) continue;
+    const hs = hunks.filter((h) => h.change === c.change);
+    const files = [...new Set(hs.map((h) => String(h.file)))];
+    if (!files.length) continue;
+    if (!files.every((f) => fileRole.get(f) === 'behavior' && TESTABLE.test(f))) continue;
+    // Generated code isn't tested by name; Rust keeps unit tests inside the
+    // source file, where a scan of test files can't see them.
+    if (files.some((f) => /(^|[./_-])generated([./_-]|$)/i.test(f) || /\.rs$/.test(f)))
+      continue;
+    const terms = new Set<string>();
+    for (const f of files) {
+      const stem = (f.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
+      if (stem.length >= 4) terms.add(stem);
+    }
+    for (const h of hs)
+      for (const s of [
+        ...((h.fresh as string[]) ?? []),
+        ...((h.symbols as string[]) ?? []),
+      ].map(String))
+        if (/^[A-Za-z_$][\w$]{3,}$/.test(s)) terms.add(s);
+    if (!terms.size) continue;
+    if (![...terms].every((t) => looked.has(t))) continue;
+    if ([...terms].some((t) => tested.has(t))) continue;
+    const names = [...terms].filter((t) => !files.some((f) => f.includes(t))).slice(0, 3);
+    out.push({
+      change: c.change,
+      kind: 'open',
+      limit: `No test file names ${orNames([...files.slice(0, 2), ...names.map((n) => `\`${n}\``)])}, so no changed or existing test refers to this code by name or import.`,
+    });
+  }
+  return out;
 }

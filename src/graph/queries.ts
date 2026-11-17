@@ -36,6 +36,10 @@ import {
   sessionCommands,
   liveEvidence,
   functionProfiles,
+  sessionEndRows,
+  lastRunBeforeFinalCommit,
+  untestedRows,
+  MAX_LIMITS,
   type FnProfile,
 } from './briefExtras.ts';
 
@@ -958,10 +962,7 @@ export function backgroundRows(
     if (!first || exclude.has(String(first.id))) continue;
     goals.push({
       ref: String(first.id),
-      kind:
-        first.t && first.firstPromptT && String(first.t) === String(first.firstPromptT)
-          ? "why this work started: the session's first request"
-          : 'why this work started: the earliest request in the session logs (the session log holds earlier prompts or their order is unknown)',
+      kind: 'why this work started',
       text: requestText(first.text),
       t: first.t,
     });
@@ -1462,6 +1463,118 @@ function processRows(
  * establish. Each row cites
  * its evidence; nothing in it is inferred beyond the graph.
  */
+/** A prompt that only says to go on: its meaning is the plan or request before it. */
+export const BARE_PROMPT =
+  /^\s*(?:please\s+)?(?:(?:ok(?:ay)?|yes|yep|great|good|sounds good|perfect|thanks)[,.!]?\s*)?(?:please\s+)?(?:continue|go ahead|go on|proceed|keep going|carry on|do it|go for it|implement it|ship it|(?:now\s+)?(?:implement|execute|carry out|proceed with|go ahead with|start on|follow|apply) (?:the|this|that|your) plan)\b[^\n]{0,40}$/i;
+
+/**
+ * One request is the goal: the user request linked to the most change units
+ * (the opening request on a tie). A bare "continue" or "implement the plan"
+ * goal shows what it continues instead: the plan it carries out, else the
+ * request that started the work, else the last substantive request before it.
+ * That row's own text is then replaced by a pointer, so the brief says it once.
+ */
+export function markGoal(
+  requests: Record<string, unknown>[],
+  background: Record<string, unknown>[],
+  changeRows: Record<string, unknown>[],
+): void {
+  const asks = requests.filter((r) => /^(?:goal|user request)/.test(String(r.kind)));
+  if (!asks.length) return;
+  const units = (ref: string) =>
+    changeRows.filter((c) =>
+      (Array.isArray(c.requests) ? c.requests : []).some(
+        (x) => String(x).split(' ')[0] === ref,
+      ),
+    ).length;
+  const current = asks.find((r) => String(r.kind).startsWith('goal'));
+  const best = [...asks].sort(
+    (a, b) =>
+      units(String(b.ref)) - units(String(a.ref)) ||
+      Number(b === current) - Number(a === current),
+  )[0]!;
+  for (const r of asks)
+    if (r !== best && String(r.kind).startsWith('goal'))
+      r.kind = String(r.kind).replace(/^goal(?:; )?/, '') || 'user request';
+  if (!String(best.kind).startsWith('goal')) best.kind = `goal; ${String(best.kind)}`;
+  const text = String(best.text ?? '').trim();
+  if (!BARE_PROMPT.test(text) && !(IMPLEMENTS_PLAN.test(text) && text.length <= 80))
+    return;
+  const before = requests
+    .slice(0, requests.indexOf(best))
+    .reverse()
+    .find(
+      (r) =>
+        /^(?:user request)/.test(String(r.kind)) &&
+        !BARE_PROMPT.test(String(r.text ?? '')),
+    );
+  const target =
+    background.find((r) =>
+      /request to carry out the plan refers to/.test(String(r.kind)),
+    ) ??
+    background.find((r) => String(r.kind).startsWith('why this work started')) ??
+    before;
+  if (!target) return;
+  best.kind = `goal (the user's "${clipClause(text, 40)}" continues ${String(target.ref)}; its text is shown here)`;
+  best.text = target.text;
+  target.text = `(shown under requests as the goal, ${String(best.ref)})`;
+}
+
+/** At most this many behavior rows in a brief. */
+export const MAX_BEHAVIORS = 12;
+
+/**
+ * Behavior-level rows (B#): per change unit, each commit-message sentence the
+ * graph links to its hunks (most of that sentence's linked hunks in this
+ * unit), else its `behavior` lines. Round-robin over the units so each gets a
+ * row first; at most MAX_BEHAVIORS in all. `render` lists behaviors of cited
+ * units the body never mentions.
+ */
+export function behaviorRows(
+  changeRows: Record<string, unknown>[],
+  commitText: Record<string, unknown>[],
+  hunkLinks: Record<string, string[]>,
+  hunkRows: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  const hunkChange = new Map(hunkRows.map((h) => [String(h.hunk), String(h.change)]));
+  const perUnit = changeRows.map((r) => {
+    const items: { text: string; from: string }[] = [];
+    for (const m of commitText) {
+      const ref = String(m.ref);
+      const text = String(m.text ?? '').trim();
+      if (!/#\d+$/.test(ref) || text.split(/\s+/).length < 4 || text.endsWith(':'))
+        continue;
+      const linked = (hunkLinks[ref] ?? []).filter((h) => hunkChange.has(h));
+      const mine = linked.filter((h) => hunkChange.get(h) === String(r.change));
+      if (mine.length && mine.length * 2 >= linked.length)
+        items.push({ text: clipClause(text, 200), from: ref });
+    }
+    if (!items.length)
+      for (const b of (Array.isArray(r.behavior) ? r.behavior : [])
+        .map(String)
+        .slice(0, 3))
+        items.push({ text: clipClause(b, 200), from: 'behavior' });
+    return { change: String(r.change), items };
+  });
+  const out: Record<string, unknown>[] = [];
+  for (let i = 0; out.length < MAX_BEHAVIORS; i++) {
+    let added = false;
+    for (const u of perUnit) {
+      const it = u.items[i];
+      if (!it || out.length >= MAX_BEHAVIORS) continue;
+      out.push({
+        ref: `B${out.length + 1}`,
+        change: u.change,
+        text: it.text,
+        from: it.from,
+      });
+      added = true;
+    }
+    if (!added) break;
+  }
+  return out;
+}
+
 export function brief(g: GraphEngine, opts: { freshPass?: boolean } = {}): Section[] {
   return briefParts(g, opts).sections;
 }
@@ -1730,45 +1843,20 @@ export function briefParts(
   }
   // The session's opening request is the goal when its own turn produced
   // surviving edits or commits in this PR; otherwise it is earlier work.
+  // No "first"/"later request" labels: writers turned them into session
+  // history ("the session's first request was …") instead of the PR's purpose.
   const opening = turns.opening;
-  // "First request of the session" only when no earlier prompt exists in the
-  // session log at all; a setup or install ask Tracetoon left out still counts.
-  const openingKind = opening?.first
-    ? 'goal: the first request of the session'
-    : 'goal: the earliest request in the session logs (the session log holds earlier prompts or their order is unknown)';
   if (opening && turns.productive.has(opening.id)) {
     if (!seen.has(opening.id)) {
       seen.add(opening.id);
       requests.unshift({
         ref: opening.id,
-        kind: openingKind,
+        kind: 'goal',
         text: requestText(opening.text),
       });
     } else
       for (const r of requests)
-        if (r.ref === opening.id) r.kind = `${openingKind}; ${String(r.kind)}`;
-  }
-  // Each user request's order: the session's first, or a later one. Writers
-  // said "the session started with …" of a request asked well into it.
-  {
-    let n = 0;
-    for (const r of requests) {
-      const k = String(r.kind);
-      if (!/^(?:goal|user request|user pushback)/.test(k)) continue;
-      n++;
-      if (opening && r.ref === opening.id && /^goal/.test(k)) continue; // says its order
-      r.kind = `${k}; ${
-        opening && r.ref === opening.id
-          ? opening.first
-            ? 'the first request of the session'
-            : 'earliest request in the session logs, not necessarily the first of the session'
-          : opening
-            ? 'later request, not the first of the session'
-            : n === 1
-              ? 'earliest request in the session logs, not necessarily the first of the session'
-              : 'later request'
-      }`;
-    }
+        if (r.ref === opening.id) r.kind = `goal; ${String(r.kind)}`;
   }
   // Plans and decisions made in turns that produced this PR's edits or commits.
   for (const [id, x] of [...turnFacts].sort((a, b) =>
@@ -2106,7 +2194,24 @@ export function briefParts(
       limits.push({
         change: null,
         kind: 'open',
-        limit: `The session's last ${String(lastRun.kind)} run (${String(lastRun.id)}) preceded the final edit of ${files.slice(0, 3).join(', ')}${files.length > 3 ? ` and ${files.length - 3} more` : ''}; the fresh check on the submitted content came after it.`,
+        history: true,
+        limit: `The session's last ${String(lastRun.kind)} run (${String(lastRun.id)}) came before the final edits to ${files.slice(0, 3).join(', ')}${files.length > 3 ? ` and ${files.length - 3} more` : ''}; the fresh check on the submitted content came after it.`,
+      });
+  }
+  // The same history when every file had a pass after its last captured edit
+  // but the session's last check still came before the final commit's edits.
+  if (
+    (freshPass.length > 0 || !!opts.freshPass) &&
+    matchedSession &&
+    !limits.some((l) => l.history)
+  ) {
+    const before = lastRunBeforeFinalCommit(g, scopedRuns);
+    if (before)
+      limits.push({
+        change: null,
+        kind: 'open',
+        history: true,
+        limit: `The session's last ${before.kind} run (${before.id}) came before the final edits to ${before.files.slice(0, 3).join(', ')}${before.files.length > 3 ? ` and ${before.files.length - 3} more` : ''} (committed in ${before.commit}); the fresh check on the submitted content came after it.`,
       });
   }
   // No "no request was recorded" row: requests are read from the turns
@@ -2217,7 +2322,12 @@ export function briefParts(
         ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
         ...limits,
       ],
-      [...(noPass ? [noPass] : []), ...failedPublishRows(g)],
+      [
+        ...(noPass ? [noPass] : []),
+        ...failedPublishRows(g),
+        // Where the session's record stops: no push, no tag or release.
+        ...(matchedSession ? sessionEndRows(g, hunkRows) : []),
+      ],
       // With no session matched there is no record to say a path never ran live.
       matchedSession
         ? remotePathRows(hunkRows, fileRole, scopedRuns, liveEvidence(g))
@@ -2291,6 +2401,29 @@ export function briefParts(
     );
     if (checked.length) r.checkedBy = checked.slice(0, 3);
   }
+  // One row per behavior of a change unit: each commit sentence said of it,
+  // else its behavior lines; every unit gets a row before any gets a second.
+  const behaviors = behaviorRows(
+    changeRows as Record<string, unknown>[],
+    commitText,
+    hunkLinks,
+    hunkRows,
+  );
+  // A changed behavior no changed or existing test names (needs checkedBy).
+  {
+    const room = MAX_LIMITS - limits.length;
+    if (room > 0 && matchedSession) {
+      limits.push(
+        ...untestedRows(
+          g,
+          changeRows as Record<string, unknown>[],
+          hunkRows,
+          fileRole,
+        ).slice(0, Math.min(room, 2)),
+      );
+      limits.forEach((l, i) => (l.ref = `L${i + 1}`));
+    }
+  }
 
   // Version bumps and generated files: one sentence covers them.
   const housekeeping: Record<string, unknown>[] = [];
@@ -2352,6 +2485,7 @@ export function briefParts(
     turns,
     new Set(requests.map((r) => String(r.ref))),
   );
+  markGoal(requests, background, changeRows as Record<string, unknown>[]);
   const process = processRows(
     g,
     turns,
@@ -2399,6 +2533,9 @@ export function briefParts(
       ],
       changeRows,
     ),
+    ...(behaviors.length
+      ? [section('behaviors', ['ref', 'change', 'text', 'from'], behaviors)]
+      : []),
     // Only when it has rows: most PRs have no unit where owners get mixed up.
     ...(owners.length
       ? [section('owners', ['change', 'behavior', 'function', 'file', 'cites'], owners)]
@@ -2519,7 +2656,9 @@ export function headScanRows(
       change: hunkChange.get(String(r.hunk)) ?? null,
     });
   }
-  const counted = refs.filter((x) => x.kind !== 'still mentions');
+  const counted = refs.filter(
+    (x) => x.kind === 'references' || x.kind === 'most referenced',
+  );
   const top = counted.find((x) => x.kind === 'most referenced');
   for (const r of [...(top ? [top] : []), ...counted.filter((x) => x !== top)].slice(
     0,

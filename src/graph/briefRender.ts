@@ -104,6 +104,115 @@ function editedList(xs: unknown): string {
   return `${total} files, among them ${names.slice(0, 2).join(' and ')}`;
 }
 
+/**
+ * Absolute local paths in quoted output (`Report: /src/test-results/x.json`):
+ * repo-relative when a known repo path ends the path, else `<local path>`.
+ * URLs and repo-relative paths are left alone.
+ */
+export function redactLocalPaths(text: string, repoPaths: string[] = []): string {
+  const tops = new Set(repoPaths.map((p) => p.split('/')[0]!).filter(Boolean));
+  return text.replace(/(?<![\w.:/<>~-])\/(?:[\w.@+-]+\/)+[\w.@+-]*/g, (path) => {
+    const parts = path.slice(1).split('/');
+    for (let i = 1; i < parts.length; i++) {
+      const rest = parts.slice(i).join('/');
+      if (
+        rest &&
+        (repoPaths.includes(rest) || (tops.has(parts[i]!) && i < parts.length - 1))
+      )
+        return rest;
+    }
+    return '<local path>';
+  });
+}
+
+/** Repo paths the brief names: changed files and test files. */
+const repoPathsOf = (b: BriefParts) =>
+  [
+    ...new Set([
+      ...rowsOf(b, 'changes').flatMap((r) =>
+        (Array.isArray(r.where) ? r.where : []).map((w) =>
+          String(w).replace(/\s*\(.*$/, ''),
+        ),
+      ),
+      ...rowsOf(b, 'tests').map((r) => String(r.file ?? '')),
+    ]),
+  ].filter(Boolean);
+
+/**
+ * A check's result lines as a reader sees them: whitespace collapsed, quoted
+ * source lines (`103 |   expect(…)`) dropped, local paths redacted.
+ */
+function resultText(result: unknown, repoPaths: string[]): string {
+  return redactLocalPaths(
+    plain(result)
+      .split(/\s*;\s*/)
+      .map((x) => x.replace(/\s+/g, ' ').trim())
+      .filter((x) => x && !/^\d+\s*\|/.test(x) && !/\bexpect\(/.test(x))
+      .join(', '),
+    repoPaths,
+  );
+}
+
+/** A brief ref in prose: `CH1`, `R42`, `L3`. */
+const BRIEF_REF = /\b(?:CH|HK|PR|HS|[STLRDPHBV])\d+\b/;
+
+/**
+ * An open `limits` row as a sentence for readers: no brief refs or run ids,
+ * "the session logs" for what was recorded, a commit-message-only result
+ * attributed to that message. Undefined when nothing readable is left.
+ */
+export function limitSentence(
+  limit: unknown,
+  repoPaths: string[] = [],
+): string | undefined {
+  let t = String(limit ?? '').trim();
+  if (!t) return undefined;
+  const claim = /^"(.+)" comes only from commit ([0-9a-f]{7,40})'s message\b/.exec(t);
+  if (claim) t = `Only commit ${claim[2]}'s message reports "${claim[1]}".`;
+  t = t
+    .replace(/the logs Tracetoon read/g, 'the session logs')
+    .replace(/\bTracetoon can't tell whether\b/g, "the session logs don't show whether")
+    .replace(/^Tracetoon recognized no\b/, 'The session logs show no')
+    .replace(/\bTracetoon\b/g, 'the session logs')
+    // Run and receipt ids: "(R42)", "(R63, test)", "(R4, R6 … R17)".
+    .replace(/\s*\((?:[RV]\d+(?:\s*(?:,|…|and)\s*)?)+\)/g, '')
+    .replace(/\(([RV]\d+),\s*/g, '(');
+  // A clause still naming a brief ref says nothing a reader can follow.
+  const clauses = t
+    .replace(/[.]\s*$/, '')
+    .split(/;\s+/)
+    .filter((c) => !BRIEF_REF.test(c.replace(/`[^`]*`/g, '')));
+  if (!clauses.length) return undefined;
+  t = clauses.join('; ');
+  t = redactLocalPaths(t, repoPaths).trim();
+  if (!t) return undefined;
+  // A sentence starting with a word, not a path or file name, starts upper-case.
+  if (/^[a-z][a-z'-]*(?=[\s,;:])/.test(t)) t = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
+/**
+ * Open `limits` rows render writes under the Validation section, as plain
+ * sentences: every open row except a "no pass after the last edit" point a
+ * passing fresh check already answers.
+ */
+export function openPointLines(b: BriefParts): string[] {
+  const receiptPassed =
+    !!b.freshPass ||
+    rowsOf(b, 'validation').some(
+      (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'passed',
+    );
+  const paths = repoPathsOf(b);
+  const out: string[] = [];
+  for (const r of rowsOf(b, 'limits')) {
+    if (r.kind !== 'open') continue;
+    if (receiptPassed && PASS_LIMIT.test(String(r.limit ?? ''))) continue;
+    const line = limitSentence(r.limit, paths);
+    if (line && !out.includes(line)) out.push(line);
+  }
+  return out;
+}
+
 /** Most a reader needs: the test runs first, then the other checks. */
 const KIND_ORDER = ['test', 'typecheck', 'lint', 'build', 'eval'];
 const MAX_LINES = 3;
@@ -127,6 +236,7 @@ export function validationSection(b: BriefParts): string {
   // lines in all. An earlier failure of a shown kind gets one clause; the
   // whole history is a process fact, not repeated here.
   const shown: { kind: string; line: string; when: string; current: boolean }[] = [];
+  const paths = repoPathsOf(b);
   const perKind = new Map<string, number>();
   // A receipt that hit the time limit is listed too: incomplete, never failed.
   const timedOut = (r: Record<string, unknown>) => plain(r.result).startsWith(TIMED_OUT);
@@ -155,11 +265,7 @@ export function validationSection(b: BriefParts): string {
   const passing: { cmd: string; result: string }[] = [];
   for (const [cmd, r] of latest) {
     if (r.outcome === 'passed' && !plain(r.result).startsWith(COULD_NOT_RUN)) {
-      const result = plain(r.result)
-        .split(/\s*;\s*/)
-        .map((x) => x.trim())
-        .filter(Boolean)
-        .join(', ');
+      const result = resultText(r.result, paths);
       passing.push({ cmd, result });
       continue;
     }
@@ -221,37 +327,22 @@ export function validationSection(b: BriefParts): string {
     shown.push({
       kind: String(r.kind),
       line: `- \`${cmd}\`: ${String(r.outcome)}${
-        r.result
-          ? ` (${plain(r.result)
-              .split(/\s*;\s*/)
-              .map((x) => x.trim())
-              .filter(Boolean)
-              .join(', ')})`
-          : ''
+        resultText(r.result, paths) ? ` (${resultText(r.result, paths)})` : ''
       }, run on the submitted content.${notes.length ? ` ${notes.join(' ')}` : ''}`,
       when: 'fresh',
       current: true,
     });
   }
-  // Passes with counts keep their own line (the claim check matches a line's
-  // counts to its one command); the rest collapse into one line.
-  const counted = passing.filter((p) => p.result);
-  const bare = passing.filter((p) => !p.result);
-  for (const p of counted.reverse())
-    shown.unshift({
-      kind: 'receipts',
-      line: `- \`${p.cmd}\`: passed (${p.result}), run on the submitted content.`,
-      when: 'fresh',
-      current: true,
-    });
-  if (bare.length)
+  // Every pass on one line, each command with its counts beside it; only
+  // failures, timeouts and environment notes get lines of their own.
+  if (passing.length)
     shown.unshift({
       kind: 'receipts',
       line:
-        bare.length === 1
-          ? `- \`${bare[0]!.cmd}\`: passed, run on the submitted content.`
-          : `- ${bare.length} checks passed, run on the submitted content: ${bare
-              .map((p) => `\`${p.cmd}\``)
+        passing.length === 1
+          ? `- \`${passing[0]!.cmd}\`: passed${passing[0]!.result ? ` (${passing[0]!.result})` : ''}, run on the submitted content.`
+          : `- Checks passed on the submitted content: ${passing
+              .map((p) => `\`${p.cmd}\`${p.result ? ` (${p.result})` : ''}`)
               .join(', ')}.`,
       when: 'fresh',
       current: true,
@@ -308,7 +399,7 @@ export function validationSection(b: BriefParts): string {
       kind,
       // A run with later edits says so even when they aren't PR files, as
       // the claim check (digest/claims.ts) requires of a stale run.
-      line: `- ${cmd === ORPHAN_COMMAND ? "A test run whose command the log doesn't show" : `\`${cmd}\``}: ${String(r.outcome)} (${plain(r.result).replace(/;\s*/g, ', ')}) in the session logs${edited ? `, before later edits to ${edited}` : String(r.when ?? '').startsWith('before later edits') ? ', before later edits' : ''}.${earlier ? ` An earlier run of ${earlier}.` : ''}${followed ? ` Followed by ${followed}.` : ''}`,
+      line: `- ${cmd === ORPHAN_COMMAND ? "A test run whose command the log doesn't show" : `\`${cmd}\``}: ${String(r.outcome)} (${resultText(r.result, paths)}) in the session logs${edited ? `, before later edits to ${edited}` : String(r.when ?? '').startsWith('before later edits') ? ', before later edits' : ''}.${earlier ? ` An earlier run of ${earlier}.` : ''}${followed ? ` Followed by ${followed}.` : ''}`,
       when: String(r.when ?? ''),
       current: false,
     });
@@ -352,21 +443,33 @@ export function validationSection(b: BriefParts): string {
   const fresh = shown.some((x) => /submitted content|fresh/i.test(x.when));
   if (predates && !fresh)
     lines.push("- The session logs don't show whether these runs saw the final commit.");
-  if (!lines.length) return '';
+  // Every open point the brief lists, as plain sentences: the writer doesn't
+  // restate them, and a reader finds the checks and their limits together.
+  const open = openPointLines(b).filter(
+    (o) => !lines.some((l) => l.includes(o.replace(/[.]$/, ''))),
+  );
+  if (!lines.length && !open.length) return '';
   const fromReceipts = shown.some((x) => x.current);
   const fromLogs = shown.some((x) => !x.current);
   return [
     '## Validation',
     '',
-    `<sub>From ${
-      fromReceipts && fromLogs
-        ? 'runs on the submitted content and, on separate lines, the checks recorded in the session logs while the change was made'
-        : fromReceipts
-          ? 'runs on the submitted content'
-          : 'the checks recorded in the session logs while the change was made'
-    }.</sub>`,
-    '',
-    ...lines,
+    ...(lines.length
+      ? [
+          `<sub>From ${
+            fromReceipts && fromLogs
+              ? 'runs on the submitted content and, on separate lines, the checks recorded in the session logs while the change was made'
+              : fromReceipts
+                ? 'runs on the submitted content'
+                : 'the checks recorded in the session logs while the change was made'
+          }.</sub>`,
+          '',
+          ...lines,
+        ]
+      : []),
+    ...(open.length
+      ? [...(lines.length ? [''] : []), 'Open points:', '', ...open.map((o) => `- ${o}`)]
+      : []),
   ].join('\n');
 }
 
@@ -647,6 +750,46 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
           severity: 'check',
           problem: `"${universal}": ${branchy.join(', ')} has conditional paths; read them in the patch and keep "${universal}" if every path in the patch does this; otherwise qualify the sentence. Don't drop the behavior.`,
         });
+      else if (/^(?:only|always|every|no longer|never)$/i.test(universal)) {
+        // A cited change or behavior row whose lines carry a condition.
+        const guarded = refs
+          .map((r) => r.replace(/^commit:/, ''))
+          .flatMap((r) => [
+            ...changeRows.filter((x) => x.change === r),
+            ...rowsOf(b, 'behaviors').filter((x) => x.ref === r),
+          ])
+          .some((x) => CONDITION.test(`${list(x.behavior)} ${String(x.text ?? '')}`));
+        if (guarded)
+          flags.push({
+            sentence: clean,
+            severity: 'check',
+            problem: `"${universal}": the cited rows' lines carry a condition (if/when/unless/fallback); keep "${universal}" only if every path does this, otherwise state the condition.`,
+          });
+      }
+    }
+    // "Previously …" with no cited row that shows the old code.
+    if (/^previously\b/i.test(clean)) {
+      const oldShown = refs
+        .map((r) => r.replace(/^commit:/, ''))
+        .some(
+          (r) =>
+            /^[0-9a-f]{7,40}(#\d+)?$/.test(r) ||
+            /^[SP]\d+$/.test(r) ||
+            changeRows.some(
+              (x) =>
+                x.change === r &&
+                ((typeof x.was === 'string' ? x.was.trim() : list(x.was)) ||
+                  (x.before != null && list(x.before).length > 0) ||
+                  (typeof x.before === 'string' && x.before.trim())),
+            ),
+        );
+      if (!oldShown)
+        flags.push({
+          sentence: clean,
+          severity: 'check',
+          problem:
+            '"Previously …" needs a cited row that shows the old code (a change row with `was` or `before`, or the commit sentence that says it); cite it or drop the old behavior.',
+        });
     }
     // PR or issue links, and scope statements, that only a commit message makes.
     const commitOnly = refs.every((r) => /^(commit:)?[0-9a-f]{7,40}(#\d+)?$/.test(r));
@@ -760,7 +903,7 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
   // Brief refs are for render, not readers: one left in the prose (outside a tag) is noise.
   for (const unit of proseUnits(body)) {
     const clean = unit.replace(TAG, '');
-    const leaked = (clean.match(/\b(?:CH|HK|PR|[STLRDPH])\d+\b/g) ?? []).filter((r) =>
+    const leaked = (clean.match(/\b(?:CH|HK|PR|[STLRDPHB])\d+\b/g) ?? []).filter((r) =>
       known.has(r),
     );
     if (leaked.length)
@@ -811,8 +954,11 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     rowsOf(b, 'validation').some(
       (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'passed',
     );
+  // With the Validation marker, render writes every open point there itself.
+  const marker = body.includes(VALIDATION_MARKER);
   for (const r of rowsOf(b, 'limits'))
     if (
+      !marker &&
       r.kind === 'open' &&
       !cited(r.ref) &&
       !(receiptPassed && PASS_LIMIT.test(String(r.limit ?? '')))
@@ -822,6 +968,7 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
   for (const r of rowsOf(b, 'requests'))
     if (String(r.kind ?? '').startsWith('goal') && !cited(r.ref))
       uncovered.push(`${String(r.ref)} (the goal): ${clipped(String(r.text ?? ''))}`);
+  flags.push(...bodyFlags(body, b, cites));
   let text = body.replace(TAG, '');
   // The section brings its own heading: drop a writer's heading right above the marker.
   text = text.replace(
@@ -835,6 +982,7 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
       ? text.replace(VALIDATION_MARKER, section)
       : text.replace(`${VALIDATION_MARKER}\n`, '').replace(VALIDATION_MARKER, '');
   }
+  text = tidyProse(text);
   return {
     text,
     validation,
@@ -846,6 +994,173 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     uncovered,
     flags,
   };
+}
+
+/** Lines that guard a behavior: a branch, a fallback, a condition word. */
+const CONDITION =
+  /\bif\b|\bwhen\b|\bunless\b|\belse\b|\bexcept\b|\?\?|\|\||&&|\bcase\b|\bfalls? back\b/i;
+
+/** Words about the brief itself: readers never see it. */
+const BRIEF_WORDS =
+  /\b(?:the (?:evidence )?brief|brief rows?|limits rows?|(?:change|commit|process|validation|request) rows?|Tracetoon read|rows? (?:CH|L|S)\d+)\b/i;
+/** A "where to start" pointer for reviewers. */
+const START_LINE =
+  /\bwhere to start\b|\bstart (?:at|with|in|from|reading|by reading|the review)\b|\bbegin (?:at|with|in)\b|\breview (?:can |should )?(?:start|begin)\b|\bstarting point\b|\bentry point\b|\bread first\b/i;
+/** A concrete question for reviewers. */
+const FEEDBACK_LINE =
+  /\bfeedback (?:wanted|welcome|on|requested)\b|\b(?:reviewers?|review)[^.\n]{0,40}\b(?:please|check|confirm|weigh in|look)\b[^.\n]*\?|\bopen question\b|\bquestion for reviewers\b|\b(?:would like|want) (?:eyes|feedback|input|a second opinion)\b/i;
+
+/**
+ * Whole-body checks: the required "Where to start" and "Feedback wanted"
+ * lines, the brief's own vocabulary in the prose, and behaviors of cited
+ * change units the body never mentions (non-blocking, at most five listed).
+ */
+export function bodyFlags(
+  body: string,
+  b: BriefParts,
+  cites: Set<string>,
+): BriefApplied['flags'] {
+  const flags: BriefApplied['flags'] = [];
+  const prose = body.split(VALIDATION_MARKER).join('\n').replace(TAG, '');
+  const changesText = JSON.stringify(rowsOf(b, 'changes'));
+  for (const unit of proseUnits(body)) {
+    const clean = unit.replace(TAG, '').trim();
+    const m = BRIEF_WORDS.exec(clean);
+    if (m)
+      flags.push({
+        sentence: clean,
+        // A PR about briefs may say "brief": then only a check.
+        severity: /\bbrief\b/i.test(changesText) ? 'check' : 'fix',
+        problem: `"${m[0]}" is the drafting brief's vocabulary, not something a reader has: say what the evidence shows ("the session logs", "the diff") instead.`,
+      });
+  }
+  // The required closing lines, on a full description (a one-line body is a fragment).
+  const full = proseUnits(body).length >= 4;
+  if (full && !START_LINE.test(prose))
+    flags.push({
+      sentence: '(no "Where to start" line)',
+      severity: 'check',
+      problem:
+        'add a "Where to start" line: the function and file the `entry` process row names (or a file from `changes.where` when there is none).',
+    });
+  if (full && !FEEDBACK_LINE.test(prose))
+    flags.push({
+      sentence: '(no "Feedback wanted" line)',
+      severity: 'check',
+      problem:
+        'add a "Feedback wanted" line: one concrete question for reviewers about a decision or risk in this change.',
+    });
+  const missed = missedBehaviors(prose, b, cites).slice(0, 5);
+  if (missed.length)
+    flags.push({
+      sentence: '(behaviors of cited changes the description never mentions)',
+      severity: 'check',
+      problem: `${missed.join('; ')}. Mention each in a clause if a reviewer needs it.`,
+    });
+  return flags;
+}
+
+/** Behavior rows of cited change units whose words the body doesn't use. */
+export function missedBehaviors(
+  prose: string,
+  b: BriefParts,
+  cites: Set<string>,
+): string[] {
+  const bodyWords = wordsOf(prose.replace(/`([^`]*)`/g, ' $1 '));
+  const cited = (ref: unknown) => {
+    const r = String(ref ?? '').replace(/^commit:/, '');
+    return [...cites].some(
+      (c) =>
+        c === r ||
+        (/^[0-9a-f]{7,}/.test(c) &&
+          (r.startsWith(c.split('#')[0]!) || c.startsWith(r.split('#')[0]!))),
+    );
+  };
+  const out: string[] = [];
+  for (const r of rowsOf(b, 'behaviors')) {
+    // Commit sentences only: a behavior line is code, matched poorly by prose.
+    if (!/#\d+$/.test(String(r.from ?? ''))) continue;
+    if (!cited(r.change) && !cited(r.ref) && !cited(r.from)) continue;
+    const text = String(r.text ?? '');
+    const words = [...wordsOf(text.replace(/`([^`]*)`/g, ' $1 '))]
+      .filter((w) => w.length >= 4 && !TEST_FILLER.has(w))
+      .sort((a, b2) => b2.length - a.length)
+      .slice(0, 6);
+    if (words.length < 2) continue;
+    const hit = words.filter((w) => bodyWords.has(w)).length;
+    if (hit >= Math.max(2, Math.ceil(words.length * 0.4))) continue;
+    out.push(`${String(r.ref)} (${String(r.change)}): ${clipped(text)}`);
+  }
+  return out;
+}
+
+/**
+ * Joins the writer's text cleanly once tags are gone: no doubled spaces
+ * inside a line, and a sentence after a doubled space starts upper-case.
+ * Code fences, indented code and inline code are left alone.
+ */
+export function tidyProse(text: string): string {
+  let fence = false;
+  return text
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fence = !fence;
+        return line;
+      }
+      if (fence || /^( {4}|\t)/.test(line) || /^\s*\|/.test(line)) return line;
+      const lead = /^\s*/.exec(line)![0];
+      const parts = line.slice(lead.length).split(/(`[^`]*`)/);
+      const out = parts
+        .map((p, i) =>
+          i % 2
+            ? p
+            : p
+                .replace(
+                  /([.!?])\s{2,}([a-z])/g,
+                  (_m, end: string, c: string) => `${end} ${c.toUpperCase()}`,
+                )
+                .replace(/(\S)[ \t]{2,}(?=\S)/g, '$1 '),
+        )
+        .join('');
+      return lead + out;
+    })
+    .join('\n');
+}
+
+/**
+ * A title that only restates the head commit's subject when the PR has
+ * several commits: it names one commit, not the whole PR.
+ */
+export function titleFlags(title: string, subjects: string[]): BriefApplied['flags'] {
+  const subs = subjects.map((x) => x.trim()).filter(Boolean);
+  if (new Set(subs).size < 2) return [];
+  const norm = (x: string) =>
+    x
+      .toLowerCase()
+      .replace(/^[a-z]+(?:\([^)]*\))?!?:\s*/, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  const head = norm(subs.at(-1)!);
+  const t = norm(title);
+  if (!t || !head) return [];
+  const tw = [...wordsOf(t)];
+  const hw = wordsOf(head);
+  const others = wordsOf(subs.slice(0, -1).map(norm).join(' '));
+  const fromHead = tw.length > 0 && tw.every((w) => hw.has(w));
+  const fromOthers = tw.some((w) => others.has(w) && !hw.has(w));
+  // Other commits that add words of their own: the PR is more than its last commit.
+  const distinct = [...others].filter((w) => !hw.has(w)).length;
+  if (distinct >= 3 && (t === head || (fromHead && !fromOthers)))
+    return [
+      {
+        sentence: `title: ${title}`,
+        severity: 'check',
+        problem:
+          "the title restates the head commit's subject; describe the whole PR (every change unit), not its last commit.",
+      },
+    ];
+  return [];
 }
 
 const uniqList = (xs: string[]) => [...new Set(xs)];

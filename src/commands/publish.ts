@@ -39,7 +39,7 @@ import {
   loadGraph,
   loadGraphReview,
 } from '../graph/evidence.ts';
-import { applyBrief, type BriefApplied } from '../graph/briefRender.ts';
+import { applyBrief, titleFlags, type BriefApplied } from '../graph/briefRender.ts';
 import {
   existsSync,
   readdirSync,
@@ -433,6 +433,14 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
       digest.pr.commits[digest.pr.commits.length - 1]?.subject ||
       digest.pr.head;
   }
+  // A title that only restates the last commit of several (brief check, advisory).
+  if (parts)
+    briefCheck.flags.push(
+      ...titleFlags(
+        title,
+        digest.pr.commits.map((c) => c.subject),
+      ),
+    );
   const titleFindings = checkTitle({ title, rules: ctx.titleRules, digest });
   writeJson(run, 'title-checks.json', titleFindings);
 

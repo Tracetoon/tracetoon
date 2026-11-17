@@ -186,7 +186,9 @@ describe('the brief, end to end', () => {
     const rows = (title: string) =>
       (sections.find((s: any) => s.title === title)?.rows ?? []) as Record<string, any>[];
     return {
+      // Check lines only: the open points render writes after them are limits rows.
       validation: validationSection({ unchecked: [], sections })
+        .split('Open points:')[0]!
         .split('\n')
         .filter((l) => l.startsWith('- ')),
       limits: rows('limits').map((l) => String(l.limit)),

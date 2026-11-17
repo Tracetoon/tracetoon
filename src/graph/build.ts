@@ -203,6 +203,21 @@ export function patchHunks(patch: string): PatchHunk[] {
   let current: string | undefined;
   // Indent of the line that defined `current`; a later line at or left of it ends its body.
   let currentIndent = -1;
+  // Enclosing definitions of `current` (a callback or method defined inside
+  // a function): when the inner one ends, its lines below go to the outer one.
+  let outer: { name: string; indent: number }[] = [];
+  const resume = (indent: number) => {
+    current = undefined;
+    currentIndent = -1;
+    while (outer.length) {
+      const o = outer.pop()!;
+      if (indent > o.indent) {
+        current = o.name;
+        currentIndent = o.indent;
+        return;
+      }
+    }
+  };
   const removedDefs = new Set<string>();
   const changed = new Map<PatchHunk, { minus: string[]; plus: string[] }>();
   // Per hunk: function → its changed lines.
@@ -244,10 +259,14 @@ export function patchHunks(patch: string): PatchHunk[] {
       // still belongs to it, anything else (the next function, a comment) doesn't.
       let closes = false;
       if (current && text.trim() && !def && indent <= currentIndent) {
-        if (/^\s*[}\])]/.test(text)) closes = true;
-        else current = undefined;
+        // A multi-line signature's `): T {` opens the body; it doesn't end it.
+        if (/^\s*[}\])]/.test(text) && !/[{([]\s*$/.test(text)) closes = true;
+        else if (!/^\s*[)\]]/.test(text)) resume(indent);
       }
       if (def) {
+        if (current && indent > currentIndent)
+          outer.push({ name: current, indent: currentIndent });
+        else outer = outer.filter((o) => o.indent < indent);
         current = def;
         currentIndent = indent;
         // A changed doc comment right above a definition describes it.
@@ -274,7 +293,11 @@ export function patchHunks(patch: string): PatchHunk[] {
           if (!cur.dropped.includes(def)) cur.dropped.push(def);
         }
       }
-      if (closes) current = undefined;
+      if (closes) {
+        const o = outer.pop();
+        current = o?.name;
+        currentIndent = o?.indent ?? -1;
+      }
       if (c === '+') {
         newLeft--;
         cur.added++;
@@ -307,6 +330,7 @@ export function patchHunks(patch: string): PatchHunk[] {
       first = last = n;
       pendingDoc = [];
       inImport = false;
+      outer = [];
       current = h[4]?.trim() ? definedSymbol(h[4]) : undefined;
       currentIndent = current ? /^\s*/.exec(h[4]!)![0].replace(/\t/g, '    ').length : -1;
       cur = {

@@ -260,6 +260,7 @@ describe('evidence graph', () => {
       'limits',
       'doNotSay',
       'changes',
+      'behaviors',
       'process',
       'requests',
       'background',
@@ -279,10 +280,10 @@ describe('evidence graph', () => {
     expect(of('src/farewell.ts')).not.toBe(of('src/greet.ts'));
     expect(sec('requests').map((x: any) => x.ref)).toEqual(['S1', 'S2']);
     expect(sec('requests')[0].text).toContain('greet helper');
-    // Each request says its order.
+    // One goal; no "first"/"later request" labels.
     expect(sec('requests').map((x: any) => x.kind)).toEqual([
-      'goal: the first request of the session; user request',
-      'user request; later request, not the first of the session',
+      'goal; user request',
+      'user request',
     ]);
     // The goal is this PR's own request already: no background row repeats it.
     expect(sec('background')).toEqual([]);
@@ -748,9 +749,11 @@ describe('evidence graph', () => {
       'The shell module changes how commands split. [CH1]\n\n<!-- tracetoon:validation -->',
       b,
     );
-    expect(r.uncovered).toEqual([
-      'L1 (open point): Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
-    ]);
+    // With the marker, render writes the open point itself: nothing left to cover.
+    expect(r.uncovered).toEqual([]);
+    expect(r.text).toContain(
+      '- Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
+    );
     expect(r.text).toContain(
       '- `bun test`: passed (9 pass, 0 fail) in the session logs.',
     );
@@ -848,8 +851,7 @@ describe('evidence graph', () => {
     // Passing receipts collapse into one line naming each.
     const lines = v.split('\n').filter((l) => l.startsWith('- '));
     expect(lines).toEqual([
-      '- 3 checks passed, run on the submitted content: `bun x tsc --noEmit`, `bun run bundle`, `bun x prettier --check .`.',
-      '- `bun test`: passed (96 pass, 0 fail), run on the submitted content.',
+      '- Checks passed on the submitted content: `bun x tsc --noEmit`, `bun test` (96 pass, 0 fail), `bun run bundle`, `bun x prettier --check .`.',
     ]);
     expect(v).toContain('<sub>From runs on the submitted content.</sub>');
     expect(v).not.toContain('tests/a.test.ts');
@@ -967,7 +969,11 @@ describe('evidence graph', () => {
         names: ['SeriesBible'],
       },
     ]);
-    expect(r.flags.map((f) => [f.severity, f.problem.slice(0, 30)])).toEqual([
+    expect(
+      r.flags
+        .filter((f) => !f.sentence.startsWith('(no '))
+        .map((f) => [f.severity, f.problem.slice(0, 30)]),
+    ).toEqual([
       ['fix', '`ImageJob` already existed (no'],
       ['fix', 'only a commit message says thi'],
     ]);
@@ -1673,6 +1679,7 @@ describe('the brief states recorded process and behavior', () => {
       'limits',
       'doNotSay',
       'changes',
+      'behaviors',
       'process',
       'requests',
       'background',
@@ -1792,7 +1799,7 @@ describe('the brief states recorded process and behavior', () => {
         .rows.map((l) => String(l.limit));
     const row = limits(true).find((l) => /^The session's last /.test(l));
     expect(row).toMatch(
-      /^The session's last test run \(R1\) preceded the final edit of src\/a\.ts\b/,
+      /^The session's last test run \(R1\) came before the final edits to src\/a\.ts\b/,
     );
     expect(row).not.toMatch(/Tracetoon/);
     // Without a fresh pass the scoped no-pass row says it instead.
@@ -1846,15 +1853,17 @@ describe('the brief states recorded process and behavior', () => {
       ['P2', null],
     ]);
     expect(sec('requests')[2]!.kind).toBe('plan (approved) in the turn of S3');
-    // The session's first request lies outside this PR's turns: this one is later.
-    expect(sec('requests')[0]!.kind).toBe(
-      'user request; later request, not the first of the session',
+    // A bare "go ahead" is the goal, shown as the request it continues; no
+    // "first"/"later request" labels.
+    expect(sec('requests')[0]!.kind).toMatch(
+      /^goal \(the user's "Go ahead" continues S1/,
     );
+    expect(sec('requests')[0]!.text).toBe('Earlier work');
   });
 
   test('background: the session goal and earlier plans and decisions, outside requests', () => {
     expect(sec('background').map((r) => [r.ref, r.kind, r.text])).toEqual([
-      ['S1', "why this work started: the session's first request", 'Earlier work'],
+      ['S1', 'why this work started', '(shown under requests as the goal, S3)'],
       // At most three rows: the goal, the latest plan, then the latest decision.
       ['D0', 'earlier decision in the session', 'Old question'],
       ['P1', 'earlier plan (not approved as written) in the session', 'Limit v1'],
@@ -1869,10 +1878,7 @@ describe('the brief states recorded process and behavior', () => {
     const bg = withGraph(earlier, (e) => briefParts(e)).sections.find(
       (x) => x.title === 'background',
     )!.rows;
-    expect(String(bg[0]!.kind)).toMatch(
-      /^why this work started: the earliest request in the session logs/,
-    );
-    expect(String(bg[0]!.kind)).not.toContain("session's first request");
+    expect(String(bg[0]!.kind)).toBe('why this work started');
     // Optional context: refs render accepts, never required for coverage.
     const r = applyBrief(
       'The limit is now 12. [CH1]\n\nIt started from earlier work. [S1]',
@@ -1906,8 +1912,12 @@ describe('the brief states recorded process and behavior', () => {
       (s) => s.title === 'background',
     )!.rows;
     expect(rows.map((r) => r.ref)).toEqual(['S2', 'D8', 'P1']);
-    expect(String(rows[0]!.text).length).toBe(1500);
-    expect(String(rows[0]!.text).endsWith('…')).toBe(true);
+    // The bare goal ("Go ahead") shows S2's text, clipped.
+    const goal = withGraph(more, (g) => briefParts(g)).sections.find(
+      (s) => s.title === 'requests',
+    )!.rows[0]!;
+    expect(String(goal.text).length).toBe(1500);
+    expect(String(goal.text).endsWith('…')).toBe(true);
     // With no earlier plan, the latest decision, clipped.
     more.nodes = more.nodes.filter((n) => n.id !== 'P1');
     more.rels = more.rels.filter((r) => r.from.id !== 'P1');
@@ -1992,7 +2002,7 @@ describe('the brief states recorded process and behavior', () => {
       withGraph(x, (g) => briefParts(g))
         .sections.find((s) => s.title === 'limits')!
         .rows.map((r) => String(r.limit));
-    // Nothing pushed (asked not to, or local work): no CI could exist, no row.
+    // Only a failed push (its own row says what's unknown): no CI row.
     expect(lim(graph).some((l) => /CI results/.test(l))).toBe(false);
     const pushed: EvidenceGraph = structuredClone(graph);
     const s = pushed.nodes.find((n) => n.label === 'Session')!;
