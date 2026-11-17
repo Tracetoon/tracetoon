@@ -49,6 +49,7 @@ import type { Run } from '../run.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
 import {
   importLeanReview,
+  compactWarnings,
   lensFindingsFile,
   loadPasses,
   openRun,
@@ -681,7 +682,7 @@ export async function reviewRunCmd(cwd: string, opts: ReviewRunOptions): Promise
   const o = await runPass(s, slot, !!opts.recheck, opts.note);
   const pass = o.pass;
   const next = opts.recheck
-    ? `tracetoon render --json --run ${run.id}; publish when the review is current`
+    ? `tracetoon finish --run ${run.id} (it says when to publish)`
     : singleNext(run, plan, slot, pass.findings);
   emit(
     opts,
@@ -700,7 +701,7 @@ export async function reviewRunCmd(cwd: string, opts: ReviewRunOptions): Promise
         `${opts.recheck ? 'Rechecked' : 'Reviewed'} with codex exec on ${s.codexModel}${s.effort ? ` (effort ${s.effort})` : ''}: session ${o.sessionId}, ${pass.findings} finding(s) (pass ${pass.pass}${lens ? `, lens ${lens}` : ''}).`,
         `Verified model (rollout): ${o.verifiedModel ?? 'not found'}.`,
         `Wrote ${o.findingsPath} and ${o.result.path}.`,
-        ...o.warnings.map((w) => `  warning: ${w}`),
+        ...compactWarnings(o.warnings),
         planText(plan, o.result.planMissing),
         `Next: ${next}`,
       ]
@@ -805,7 +806,7 @@ async function reviewRunAll(cwd: string, opts: ReviewRunOptions): Promise<void> 
   const next = failed.length
     ? `${rerun} (reruns only the failed pass(es): ${failed.map((f) => f.label).join(', ')})`
     : opts.recheck
-      ? `tracetoon render --json --run ${run.id}; publish when the review is current`
+      ? `tracetoon finish --run ${run.id} (it says when to publish)`
       : recheckNext(run, plan, merged?.items.length ?? 0);
   const error = failed.length
     ? `${failed.length} of ${todo.length} reviewer pass(es) failed (${failed.map((f) => `${f.label}: ${f.error}`).join('; ')}). Rerun: ${rerun}`
@@ -849,8 +850,8 @@ async function reviewRunAll(cwd: string, opts: ReviewRunOptions): Promise<void> 
         skipped.length
           ? `Skipped: ${skipped.map((k) => `${k.label} (${k.reason})`).join(', ')}.`
           : '',
-        ...ran.flatMap((o) =>
-          o.warnings.map((w) => `  warning (${slotLabel(o.slot)}): ${w}`),
+        ...compactWarnings(
+          ran.flatMap((o) => o.warnings.map((w) => `(${slotLabel(o.slot)}) ${w}`)),
         ),
         ...failed.map((f) => `FAILED ${f.label}: ${f.error}`),
         failed.length ? `Rerun the failed pass(es): ${rerun}` : '',

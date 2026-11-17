@@ -127,7 +127,7 @@ export function skillInstalls(
 
 export function doctor(
   cwd: string,
-  opts: OutOpts & { probe?: boolean; strict?: boolean },
+  opts: OutOpts & { probe?: boolean; strict?: boolean; verbose?: boolean },
 ): void {
   const runtime = describeRuntime();
   const hooks = hookStatus().filter((h) => h.present);
@@ -204,6 +204,37 @@ export function doctor(
   );
   emit(opts, { ...report, comics }, () => {
     const yes = (b: boolean) => (b ? 'yes' : 'no');
+    // Default: only what the PR workflow acts on (gh, push access, comic
+    // setup, problems). --verbose (or --json) has the full report.
+    if (!opts.verbose && !report.unknownRecordTypes) {
+      const comicMode = loadConfig(report.repo ?? undefined).comic;
+      const problems = [
+        ...installs
+          .filter((i) => !i.matchesRuntime)
+          .map((i) => `skill for ${i.agent}: different or unknown build (update the runtime and skill together)`),
+        ...report.prHook.filter((h) => h.problem).map((h) => `${h.label} PR hook: ${h.problem}`),
+        report.evidenceGraph.ok ? '' : `evidence graph unavailable: ${report.evidenceGraph.reason}`,
+      ].filter(Boolean);
+      return [
+        `${report.tool} on ${runtime}; tracetoon here: ${report.switch.enabled ? 'on' : 'off'} (${report.switch.why})`,
+        `gh: ${ghV ?? 'not found'}${ghV ? `, signed in: ${yes(ghAuth)}` : ''}; repo: ${report.repo ?? 'not inside a git repository'}`,
+        report.push
+          ? report.push.canPush
+            ? `push: ${report.push.account ?? 'this gh account'} can push to ${report.push.repo}`
+            : `push: ${report.push.account ?? 'this gh account'} can't push to ${report.push.repo}. Publishing will fail: switch accounts (gh auth switch), or push to a fork.`
+          : '',
+        `comic: ${comicMode} (${comics.kind}); next: ${comics.text}`,
+        ...problems.map((p) => `problem: ${p}`),
+        !ghV
+          ? 'Install the GitHub CLI (gh) to create or update PRs.'
+          : !ghAuth
+            ? 'Run `gh auth login` to let Tracetoon post PRs.'
+            : '',
+        '(details: tracetoon doctor --verbose)',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
     const lines = [
       `${report.tool} on ${runtime}`,
       `git ${gitV ?? 'not found'} | gh ${ghV ?? 'not found'} (signed in: ${yes(ghAuth)}, --attach: ${yes(report.ghAttach)})`,

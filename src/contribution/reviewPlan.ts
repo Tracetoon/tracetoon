@@ -258,14 +258,16 @@ export const tracetoonRuns = (plan: ReviewPlan | undefined): boolean =>
 export function recheckStep(run: string, plan: ReviewPlan | undefined): string {
   const rebind = `\`tracetoon review import --run ${run} --rebind\``;
   const recheck = planRecheck(plan);
+  // With no recheck, finish and publish bind the review to the final render themselves.
+  const bound = `no reviewer recheck (Review recheck: none): \`tracetoon finish --run ${run}\` and publish bind the review to the final render themselves (no ${rebind} needed)`;
   if (tracetoonRuns(plan))
     return recheck === 'none'
-      ? `no reviewer recheck (Review recheck: none): ${rebind}`
+      ? bound
       : recheck === 'contested'
         ? `only if you rejected a finding, \`tracetoon review run --all --recheck --run ${run}\` (it rechecks just the passes whose findings you rejected; pass your reasons with --note), else ${rebind}`
         : `\`tracetoon review run --all --recheck --run ${run}\` once`;
   return recheck === 'none'
-    ? `no reviewer recheck (Review recheck: none): ${rebind}`
+    ? bound
     : recheck === 'contested'
       ? `only for findings you rejected, send the reviewer that raised them your rejection and its diff line (SendMessage / followup_task) and re-import it; then ${rebind}`
       : `send the same reviewer(s) the changed lines and your rejections once (SendMessage / followup_task), re-import each, then ${rebind}`;
