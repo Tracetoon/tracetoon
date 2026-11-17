@@ -9,7 +9,6 @@
  * - the cap on `limits` rows.
  * Generic rules over graph facts only; each row is short and cites its refs.
  */
-import { hostAgent, type HostAgent } from '../util/host.ts';
 import type { GraphEngine } from './engine.ts';
 import { fileRole as pathRole } from '../digest/build.ts';
 import { unitRole } from './build.ts';
@@ -43,62 +42,11 @@ export function editsBetween(g: GraphEngine): (from: string, to: string) => stri
  * "No passing run after the last commit", when it holds: the session's check
  * runs (this PR's turns) all came before the last commit, or none passed after,
  * and every pass was followed by a captured edit of a PR file before that
- * commit. A pass with no captured edit between it and the commit (the suite
- * run just before `git commit`) gets a softer open point (`historical`): the
- * logs show nothing changing, yet a session run is history, not a re-run on the
- * committed content. The process rows say the same per kind; as a limit a
- * writer states it.
+ * commit. A pass with no captured edit between it and the commit gives no row:
+ * a "historical session run, not re-run" point beside a row saying nothing
+ * changed in between invited needless hedging (r1, Claude Code writers).
  */
-/**
- * Whether a quiet pass (no captured edit before the last commit) still gets a
- * "historical session run" open point. Measured on prbench real-cases@2.0.0:
- * Claude Code writers state it accurately and gain from it; Codex writers turn
- * it into coverage claims judges mark wrong. So it is shown on Claude Code hosts
- * only (`TRACETOON_HOST_AGENT` overrides the detected host).
- */
-export const historicalRunLimit = (host: HostAgent | undefined = hostAgent()): boolean =>
-  host === 'claude';
-
-/** A test runner's own count of passing tests, with no failure counted. */
-const OWN_PASS_LINE = /\b[1-9]\d*\s+(?:pass|passed|passing)\b|^test result: ok\b|^ok\s/i;
-const FAIL_COUNT = /\b[1-9]\d*\s+(?:fail|failed|failing|failures?|errors?)\b/i;
-
-/**
- * Whether a quiet pass (no captured edit before the last commit) ran on the
- * committed content as far as the logs can tell: a test run whose own result
- * lines show passing tests and no failure, the commit made by an included
- * session, and no prompt of an included session between the run and that
- * commit (one agent turn ran the suite and committed; nobody had the keyboard
- * in between).
- */
-export function gateBeforeCommit(g: GraphEngine, run: Row, commit: Row): boolean {
-  if (run.kind !== 'test' || !run.t) return false;
-  const summary = ((run.summary as string[]) ?? []).map(String);
-  if (
-    !summary.some((l) => OWN_PASS_LINE.test(l)) ||
-    summary.some((l) => FAIL_COUNT.test(l))
-  )
-    return false;
-  const made = g.run(
-    `MATCH (:Session {band: 'included'})-[:MADE]->(k:Commit {id: $id}) RETURN k.id AS id`,
-    { id: String(commit.id) },
-  ).rows.length;
-  if (!made) return false;
-  const from = String(run.t);
-  const to = String(commit.t);
-  return !g
-    .run(
-      `MATCH (p:Prompt)-[:IN_SESSION]->(:Session {band: 'included'})
-       WHERE p.t IS NOT NULL RETURN p.t AS t`,
-    )
-    .rows.some((p) => String(p.t) > from && String(p.t) <= to);
-}
-
-export function noPassAfterCommitRow(
-  g: GraphEngine,
-  scopedRuns: Row[],
-  historical: boolean = historicalRunLimit(),
-): Row | undefined {
+export function noPassAfterCommitRow(g: GraphEngine, scopedRuns: Row[]): Row | undefined {
   if (!scopedRuns.length) return undefined;
   const last = g
     .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
@@ -112,30 +60,9 @@ export function noPassAfterCommitRow(
   if (passed.some((r) => String(r.t ?? '') > String(last.t))) return undefined;
   const between = editsBetween(g);
   const editedBetween = (r: Row) => between(String(r.t ?? ''), String(last.t));
-  // A pass with no captured edit before the commit is still a session run:
-  // edits Tracetoon can't see (a script, another tool, by hand) may have come
-  // in between, so it is history, not proof about the committed content.
-  const quiet = passed
-    .filter((r) => r.t && !editedBetween(r).length)
-    .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')));
   // A pass with no captured edit between it and the last commit covers the
-  // commit (an inferred shell write would count as an edit). On Claude Code
-  // hosts it is still said to be a historical session run (see above).
-  if (quiet.length && !historical) return undefined;
-  if (quiet.length) {
-    const r = quiet.filter((x) => x.kind === 'test').at(-1) ?? quiet.at(-1)!;
-    // The suite run right before committing (a release gate, `bun test && git
-    // commit`) is no history: with its own result line, no captured edit and no
-    // user turn between it and a commit the session made, it ran on what was
-    // committed.
-    if (gateBeforeCommit(g, r, last)) return undefined;
-    return {
-      change: null,
-      kind: 'open',
-      historical: true,
-      limit: `The last passing run, ${String(r.id)} (${String(r.kind)}), is a session run from before the last commit (${shortSha(last.id)}); no captured edit came between; it is a historical session run, not re-run on the final content.`,
-    };
-  }
+  // commit (an inferred shell write would count as an edit).
+  if (passed.some((r) => r.t && !editedBetween(r).length)) return undefined;
   const lastPass =
     [...passed]
       .sort((a, b) => String(a.t ?? '').localeCompare(String(b.t ?? '')))
@@ -446,21 +373,58 @@ export function capLimits(
   return all.slice(0, max);
 }
 
-/** Platforms a changed line branches on, by the names code uses for them. */
+/** Platforms a changed line can be specific to, by the names code uses for them. */
 const PLATFORMS: { name: string; host: string; re: RegExp }[] = [
-  {
-    name: 'Windows',
-    host: 'win32',
-    re: /\bwin32\b|\bwindows\b|\bIS_WINDOWS\b|\bisWindows\b|cfg\(\s*windows|\.exe\b|\.cmd\b|\.ps1\b|%APPDATA%|%USERPROFILE%|\bComSpec\b|[A-Z]:\\\\/i,
-  },
-  {
-    name: 'macOS',
-    host: 'darwin',
-    re: /\bdarwin\b|\bmacos\b|\bisMac\b|\bIS_MAC\b|cfg\(\s*target_os\s*=\s*"macos"|\/Library\/|\/Applications\//i,
-  },
+  { name: 'Windows', host: 'win32', re: /\bwin32\b|\bwindows\b|\bIS_WINDOWS\b|\bisWindows\b|\bIsWindows\b|cfg!?\(\s*windows/i },
+  { name: 'macOS', host: 'darwin', re: /\bdarwin\b|\bmacos\b|\bisMac\w*\b|\bIS_MAC\b|\bIsMacOS\b/i },
   { name: 'arm64', host: 'arm64', re: /\barm64\b|\baarch64\b/i },
   { name: 'x64', host: 'x64', re: /\bx64\b|\bx86_64\b|\bamd64\b/i },
 ];
+/** A test of the running OS or CPU: what makes a line platform-specific. */
+const PLATFORM_TEST =
+  /\bprocess\.(?:platform|arch)\b|\bos\.(?:platform|arch|type)\(\)|\bsys\.platform\b|\bplatform\.(?:system|machine)\(\)|\bos\.name\b|\bruntime\.GOOS\b|\bruntime\.GOARCH\b|\bcfg!?\(\s*(?:windows|unix|target_os|target_arch)|#\s*if(?:def)?\s+_WIN32|\$Is(?:Windows|MacOS|Linux)\b|\$env:OS\b|\$\(?uname\b|\bRUNNER_OS\b|\brunner\.os\b|\bOSTYPE\b|\bis(?:Windows|Mac\w*|Linux)\b|\bIS_(?:WINDOWS|MAC|LINUX)\b|\b(?:platform|arch|os|hostOs|targetOs)\s*(?:[!=]==?|-eq|-ne)\s*['"]|['"]\w+['"]\s*[!=]==?\s*(?:platform|arch|os)\b/;
+const CONDITIONAL = /\bif\b|\belif\b|\bwhen\b|\bcase\b|\bswitch\b|\bmatch\b|\?|&&|\|\||\bunless\b|\bthen\b/;
+/** A ternary or table that maps a platform to a name (an asset suffix), not a branch. */
+const MAPPING = /\?\s*(['"`])[^'"`]*\1\s*:\s*(?:(['"`])[^'"`]*\2|[\w$.]+)\s*[;,)]?\s*$/;
+/** A Windows path or a Windows shell invoked. */
+const WINDOWS_ONLY =
+  /['"`][A-Za-z]:\\\\|%(?:APPDATA|LOCALAPPDATA|USERPROFILE|ProgramFiles|SystemRoot)%|\$env:(?:APPDATA|LOCALAPPDATA|USERPROFILE)\b|\b(?:pwsh|powershell)(?:\.exe)?\s+-|\bcmd(?:\.exe)?\s+\/[cC]\b|(?:^|[\s&])\.?[\\/][\w./\\-]+\.(?:ps1|bat|cmd)\b/i;
+/** A CI workflow line that picks a runner OS or CPU. */
+const WORKFLOW_PLATFORM =
+  /\bruns-on:|\bos:|^[+-]?\s*-\s*(?:windows|macos|ubuntu)-[\w.-]+\s*$|\brunner\.os\b|\bmatrix\.os\b|\bplatform:|\barch:/i;
+const WORKFLOW_FILE = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)azure-pipelines\.ya?ml$/;
+/** A script for Windows shells: the whole file is Windows-specific. */
+const WINDOWS_SCRIPT = /\.(?:ps1|psm1|bat|cmd)$/i;
+/** A script a shell or interpreter runs directly. */
+const SCRIPT_FILE = /\.(?:sh|bash|zsh|ps1|psm1|bat|cmd)$/i;
+
+const addedLines = (h: Row) =>
+  ((h.code as string[]) ?? [])
+    .map(String)
+    .map((l) => (l.includes('⇒') ? l.split('⇒').pop()!.trim() : l))
+    .filter((l) => l.startsWith('+ '))
+    .map((l) => l.slice(2));
+
+/**
+ * The platforms a changed line is specific to: a condition on the running
+ * OS or CPU that names one, a Windows path or shell, a CI runner pick. Never a
+ * line that only maps a platform to a name, nor a file name in a list.
+ */
+export function platformsOfLine(line: string, file: string): string[] {
+  const l = line.replace(/\/\/.*$|#(?![!\s]*if).*$/, '').trim();
+  if (!l) return [];
+  const out = new Set<string>();
+  if (WORKFLOW_FILE.test(file)) {
+    if (WORKFLOW_PLATFORM.test(l))
+      for (const p of PLATFORMS) if (p.re.test(l)) out.add(p.name);
+    return [...out];
+  }
+  if (PLATFORM_TEST.test(l) && CONDITIONAL.test(l) && !MAPPING.test(l))
+    for (const p of PLATFORMS) if (p.re.test(l)) out.add(p.name);
+  if (WINDOWS_ONLY.test(l)) out.add('Windows');
+  return [...out];
+}
+
 /** A test line that replaces a real step with a fake. */
 const FAKE =
   /\b(?:mock\w*|stub\w*|fake\w*|spyOn|jest\.fn|vi\.fn|sinon|nock|msw|monkeypatch|httpretty|responses\.add|patch\(|MagicMock|override\w*)\b/i;
@@ -483,6 +447,11 @@ const FAKED_STEP: [string, RegExp][] = [
     /\b(?:device|hardware|serial|usb|camera|gpio|bluetooth|sensor|robot|printer)\b/i,
   ],
 ];
+/** Names a fake line gives the double or the thing it replaces. */
+const FAKE_NAME =
+  /\b((?:mock|stub|fake)[A-Z_]\w*|\w+(?:Mock|Stub|Fake)\b)|\b(?:vi|jest)\.mock\(\s*['"]([^'"]+)['"]|\bspyOn\(\s*[\w$.]+\s*,\s*['"](\w+)['"]|\bmock\.module\(\s*['"]([^'"]+)['"]/g;
+/** A source file that is itself a test double. */
+const DOUBLE_FILE = /(^|[/_.-])(?:fakes?|mocks?|stubs?)(?=[/_.-]|$)/i;
 const TTY =
   /\b(?:isTTY|setRawMode|tty|pty|readline|inquirer|prompts?\(|stdin|interactive|isatty|raw mode)\b/i;
 
@@ -490,13 +459,19 @@ const hunkText = (h: Row) =>
   [...((h.code as string[]) ?? []), ...((h.conds as string[]) ?? [])]
     .map(String)
     .join('\n');
+const shown = (files: string[], n = 3) =>
+  `${files.slice(0, n).join(', ')}${files.length > n ? ` and ${files.length - n} more` : ''}`;
+const joinNames = (xs: string[]) =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`;
 
 /**
  * Open points about the environment the recorded runs could not reach: code
- * that branches on an OS or architecture other than the session's, added tests
- * that replace the network, an install, a process or hardware with fakes, and
+ * specific to an OS or architecture other than the session's (one row per
+ * change unit, platforms merged), changed scripts and CI workflows no session
+ * command ran, behavior the changed tests reach only through fakes, and
  * changed interactive (TTY) paths. Each says what the evidence shows, never
- * "untested".
+ * "untested". `ran` is the text of every command the included sessions ran;
+ * undefined when no session was matched (no script rows then).
  */
 export function environmentRows(
   hunks: Row[],
@@ -505,35 +480,138 @@ export function environmentRows(
     platform: process.platform,
     arch: process.arch,
   },
+  ran?: string[],
 ): Row[] {
   const role = (f: string) => unitRole(f, fileRole.get(f) ?? pathRole(f));
+  const code = (f: string) =>
+    ['src', 'scripts'].includes(role(f)) || WORKFLOW_FILE.test(f) || SCRIPT_FILE.test(f);
   const src = hunks.filter((h) => role(String(h.file)) === 'src');
   const tests = hunks.filter((h) => role(String(h.file)) === 'tests');
   const out: Row[] = [];
-  for (const p of PLATFORMS) {
-    if (p.host === host.platform || p.host === host.arch) continue;
-    const hs = src.filter((h) => p.re.test(hunkText(h)));
-    if (!hs.length) continue;
-    const files = [...new Set(hs.map((h) => String(h.file)))].sort();
+  const foreign = (name: string) => {
+    const p = PLATFORMS.find((x) => x.name === name)!;
+    return p.host !== host.platform && p.host !== host.arch;
+  };
+  // Per change unit: its platforms, files and one line that shows it.
+  const units = new Map<string, { names: Set<string>; files: Set<string>; line?: string }>();
+  for (const h of hunks) {
+    const file = String(h.file);
+    if (!code(file) || role(file) === 'tests' || DOUBLE_FILE.test(file)) continue;
+    const key = String(h.change ?? '');
+    const names = new Set<string>();
+    let line: string | undefined;
+    if (WINDOWS_SCRIPT.test(file)) names.add('Windows');
+    for (const l of addedLines(h)) {
+      const ps = platformsOfLine(l, file).filter(foreign);
+      if (ps.length && !line) line = l;
+      for (const p of ps) names.add(p);
+    }
+    const kept = [...names].filter(foreign);
+    if (!kept.length) continue;
+    const u = units.get(key) ?? { names: new Set(), files: new Set() };
+    kept.forEach((n) => u.names.add(n));
+    u.files.add(file);
+    u.line ??= line;
+    units.set(key, u);
+  }
+  for (const [change, u] of [...units].slice(0, 3)) {
+    const names = PLATFORMS.map((p) => p.name).filter((n) => u.names.has(n));
+    const files = [...u.files].sort();
     out.push({
-      change: String(hs[0]!.change ?? '') || null,
+      change: change || null,
       kind: 'open',
-      limit: `${files.slice(0, 3).join(', ')} change${files.length === 1 ? 's' : ''} ${p.name}-specific code; the recorded runs were on ${host.platform}/${host.arch}, so none shows the ${p.name} path running.`,
+      limit: `${shown(files)} change${files.length === 1 ? 's' : ''} ${joinNames(names)}-specific code${
+        u.line ? ` (\`${clipLine(u.line, 80)}\`)` : ''
+      }; the recorded runs were on ${host.platform}/${host.arch}, so none shows the ${joinNames(names)} path${names.length > 1 ? 's' : ''} running.`,
     });
   }
+  // Changed scripts and CI workflows no recorded command ran.
+  if (ran) {
+    const said = ran.join('\n').toLowerCase();
+    const base = (f: string) => f.split('/').pop()!.toLowerCase();
+    const scripts = new Map<string, string[]>();
+    const workflows = new Map<string, string[]>();
+    for (const h of hunks) {
+      const f = String(h.file);
+      if (role(f) === 'tests') continue;
+      const ch = String(h.change ?? '');
+      if (WORKFLOW_FILE.test(f)) workflows.set(f, [...(workflows.get(f) ?? []), ch]);
+      else if (
+        (SCRIPT_FILE.test(f) || (role(f) === 'scripts' && /^(?:scripts?|bin|tools?)\//i.test(f))) &&
+        !said.includes(base(f)) &&
+        !said.includes(base(f).replace(/\.[^.]+$/, ''))
+      )
+        scripts.set(f, [...(scripts.get(f) ?? []), ch]);
+    }
+    if (scripts.size) {
+      const files = [...scripts.keys()].sort();
+      out.push({
+        change: scripts.get(files[0]!)![0] || null,
+        kind: 'open',
+        limit: `${shown(files)} ${files.length === 1 ? 'is a changed script' : 'are changed scripts'} no recorded session command ran; only the diff shows ${files.length === 1 ? 'it' : 'them'}.`,
+      });
+    }
+    if (workflows.size) {
+      const files = [...workflows.keys()].sort();
+      out.push({
+        change: workflows.get(files[0]!)![0] || null,
+        kind: 'open',
+        limit: `${shown(files)} change${files.length === 1 ? 's' : ''} CI workflow${files.length === 1 ? '' : 's'}; workflows run in CI, and no run of ${files.length === 1 ? 'it' : 'them'} is in the logs Tracetoon read.`,
+      });
+    }
+  }
+  // Behavior the changed tests reach only through fakes or stubs.
   const faked = new Map<string, Set<string>>();
+  const doubles = new Set<string>();
+  const files = new Set<string>();
   for (const h of tests) {
     const lines = ((h.code as string[]) ?? []).map(String).filter((l) => FAKE.test(l));
+    if (!lines.length) continue;
+    files.add(String(h.file));
     for (const [what, re] of FAKED_STEP)
       if (lines.some((l) => re.test(l)))
         faked.set(what, new Set([...(faked.get(what) ?? []), String(h.file)]));
+    for (const l of lines)
+      for (const m of l.matchAll(FAKE_NAME)) {
+        const n = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '').split('/').pop()!;
+        if (n.length >= 4) doubles.add(n);
+      }
   }
-  if (faked.size) {
-    const files = [...new Set([...faked.values()].flatMap((x) => [...x]))].sort();
+  for (const h of hunks)
+    if (role(String(h.file)) !== 'tests' && DOUBLE_FILE.test(String(h.file)))
+      doubles.add(String(h.file).split('/').pop()!);
+  if (files.size) {
+    const fs = [...files].sort();
+    const what = [...faked.keys()];
+    const names = [...doubles].sort().slice(0, 3).map((n) => `\`${n}\``);
+    // The change units whose code the doubles stand in for, by name.
+    const stem = (n: string) =>
+      n
+        .replace(/\.[^.]+$/, '')
+        .replace(/^(?:mock|stub|fake)[-_]?|[-_]?(?:mock|stub|fake)$/i, '')
+        .toLowerCase();
+    const stems = [...doubles].map(stem).filter((x) => x.length >= 3);
+    const units = [
+      ...new Set(
+        src
+          .filter((h) => !DOUBLE_FILE.test(String(h.file)))
+          .filter((h) =>
+            stems.some(
+              (x) =>
+                String(h.file).toLowerCase().includes(x) ||
+                ((h.symbols as string[]) ?? []).some((s) => String(s).toLowerCase() === x),
+            ),
+          )
+          .map((h) => String(h.change ?? ''))
+          .filter(Boolean),
+      ),
+    ].sort();
     out.push({
-      change: null,
+      change: units[0] ?? null,
       kind: 'open',
-      limit: `The changed tests (${files.slice(0, 3).join(', ')}) replace ${[...faked.keys()].join(', ')} with fakes or stubs: they check the logic around those steps, not the real ${[...faked.keys()].length === 1 ? 'step' : 'steps'}.`,
+      limit: `The changed tests (${shown(fs)}) replace ${what.length ? what.join(', ') : 'collaborators'} with fakes or stubs${
+        names.length ? ` (${names.join(', ')})` : ''
+      }${units.length ? `; ${units.join(', ')} ${units.length === 1 ? 'is' : 'are'} reached that way` : ''}: they check the logic around those steps, not the real ${what.length === 1 ? 'step' : 'steps'}.`,
     });
   }
   const tty = src.filter((h) => TTY.test(hunkText(h)));
@@ -548,38 +626,72 @@ export function environmentRows(
   return out;
 }
 
+const clipLine = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/** Every command text the included sessions ran (checks, others, failures); undefined with none. */
+export function sessionCommands(g: GraphEngine): string[] | undefined {
+  const sessions = g
+    .run(
+      `MATCH (s:Session {band: 'included'})
+       RETURN s.invoked AS invoked, s.lateCmds AS late, s.failedCmds AS failed`,
+    )
+    .rows;
+  if (!sessions.length) return undefined;
+  return [
+    ...sessions.flatMap((s) =>
+      [s.invoked, s.late, s.failed].flatMap((x) => ((x as string[]) ?? []).map(String)),
+    ),
+    ...g
+      .run(
+        `MATCH (r:Run)-[:IN_SESSION]->(:Session {band: 'included'}) RETURN r.cmd AS cmd`,
+      )
+      .rows.map((r) => String(r.cmd ?? '')),
+  ];
+}
+
 /**
- * The session ends at or after a commit or a push: CI on the final head is
- * not in the logs. Null when a check run came after the last commit and no
- * push followed it.
+ * CI on the final head is not in the logs: only when an included session
+ * pushed or opened a PR (`git push`, `gh pr create` that didn't fail). No push
+ * means no CI could exist for this head yet (the session was asked not to
+ * push, or works locally), and with no session matched there is nothing to
+ * pair it with. Names the CI commands run after the last push, if any:
+ * Tracetoon doesn't read their results.
  */
 export function finalHeadRow(g: GraphEngine): Row | null {
-  const last = g
-    .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
-    .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
-  const late = g
-    .run(`MATCH (s:Session {band: 'included'}) RETURN s.lateCmds AS cmds, s.lateT AS ts`)
+  const remote = g
+    .run(
+      `MATCH (s:Session {band: 'included'})
+       RETURN s.remoteCmds AS cmds, s.remoteKinds AS kinds, s.remoteT AS ts, s.remoteFailed AS failed`,
+    )
     .rows.flatMap((r) =>
       ((r.cmds as string[]) ?? []).map((c, i) => ({
         cmd: String(c),
+        kind: String(((r.kinds as string[]) ?? [])[i] ?? ''),
         t: String(((r.ts as string[]) ?? [])[i] ?? ''),
+        failed: ((r.failed as string[]) ?? [])[i] === 'failed',
       })),
-    );
-  const pushed = late.some((x) => /\bgit\s+push\b|\bgh\s+pr\s+create\b/.test(x.cmd));
-  if (!last && !pushed) return null;
-  const runAfter =
-    !!last &&
-    g
-      .run(
-        `MATCH (r:Run)-[:IN_SESSION]->(:Session {band: 'included'}) WHERE r.t IS NOT NULL
-         RETURN r.t AS t`,
-      )
-      .rows.some((r) => String(r.t) > String(last.t));
-  if (!pushed && runAfter) return null;
+    )
+    .sort((a, b) => a.t.localeCompare(b.t));
+  const pushes = remote.filter((x) => x.kind === 'publish' && !x.failed);
+  if (!pushes.length) return null;
+  const lastPush = pushes.at(-1)!;
+  const last = g
+    .run('MATCH (k:Commit) WHERE k.t IS NOT NULL RETURN k.id AS id, k.t AS t')
+    .rows.sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
+  const commitAfter = !!last && !!lastPush.t && String(last.t) > lastPush.t;
+  const ci = remote.filter((x) => x.kind === 'ci' && x.t >= lastPush.t);
+  const ciCmds = [...new Map(ci.map((x) => [`${x.cmd}${x.failed ? ' (failed)' : ''}`, x])).keys()];
+  const did = [...new Set(pushes.map((x) => `\`${x.cmd}\``))].join(', ');
   return {
     change: null,
     kind: 'open',
-    limit: `The session ends at ${pushed ? 'a push' : `commit ${String(last!.id)}`}; CI results for the final head are not in the logs Tracetoon read.`,
+    limit: `The session pushed or opened a PR (${did})${
+      commitAfter ? `; the last commit (${shortSha(last!.id)}) came after the last push` : ''
+    }; CI results for the final head are not in the logs Tracetoon read${
+      ciCmds.length
+        ? ` (afterwards it ran ${ciCmds.slice(0, 3).map((c) => `\`${c.replace(' (failed)', '')}\`${c.endsWith('(failed)') ? ', which failed' : ''}`).join('; ')}; Tracetoon doesn't read CI results)`
+        : ''
+    }.`,
   };
 }
 

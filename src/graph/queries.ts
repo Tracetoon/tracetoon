@@ -17,6 +17,7 @@ import {
   HISTORY_KINDS,
 } from './runHistory.ts';
 import { fileRole as pathRole } from '../digest/build.ts';
+import { PROSE_FILE } from './build.ts';
 import { isNeighborhood, type BriefLayout } from './layout.ts';
 import { addSearchEvidence, fillSearchLinks } from './searchBrief.ts';
 import { markCommitValues } from './codeEvidence.ts';
@@ -30,6 +31,7 @@ import {
   remotePathRows,
   environmentRows,
   finalHeadRow,
+  sessionCommands,
   liveEvidence,
   functionProfiles,
   type FnProfile,
@@ -382,6 +384,75 @@ export function addedFact(hs: Record<string, unknown>[]): string | undefined {
     if (hit) return hit;
   }
   return lines[0];
+}
+
+const MAX_DETAILS = 5;
+const DETAIL_WORD_SKIP = /^(?:i|j|k|n|x|y|id|index|length|count|len|idx|line|row|col|version)$/i;
+/**
+ * Concrete literals the added lines define behavior with: new CLI flags,
+ * defaults and numeric thresholds or timeouts (`minDurationMs = 750`,
+ * `< 500`), CI job and step names, config keys. At most five per change
+ * unit, in patch order: the diff-only details a writer otherwise leaves out.
+ */
+export function detailsOf(
+  hs: Record<string, unknown>[],
+  roleOf: (file: string) => string,
+): string[] {
+  const out: string[] = [];
+  const add = (x: string) => {
+    const v = x.trim().replace(/\s+/g, ' ');
+    if (v.length >= 3 && !out.includes(v)) out.push(v.length > 70 ? `${v.slice(0, 69)}…` : v);
+  };
+  for (const h of hs) {
+    const file = String(h.file);
+    const role = roleOf(file);
+    if (['tests', 'docs', 'generated', 'version'].includes(role)) continue;
+    const workflow = /(^|\/)\.github\/workflows\/|\.gitlab-ci\.ya?ml$/.test(file);
+    const config = role === 'config' && !workflow;
+    for (const raw of ((h.code as string[]) ?? []).map(String)) {
+      const line = raw.includes('⇒') ? raw.split('⇒').pop()!.trim() : raw;
+      if (!line.startsWith('+ ')) continue;
+      const l = line.slice(2).trim();
+      if (/^(?:\/\/|#|\/\*|\*|<!--)/.test(l)) continue;
+      if (workflow) {
+        const step = /^-?\s*name:\s*['"]?(.+?)['"]?\s*$/.exec(l);
+        if (step) add(`step "${step[1]}"`);
+        const job = /^([\w-]+):\s*$/.exec(l);
+        if (job && !/^(?:jobs|steps|on|with|env|permissions|strategy|matrix|outputs|defaults|inputs|secrets|push|pull_request|workflow_dispatch)$/.test(job[1]!))
+          add(`job ${job[1]}`);
+        continue;
+      }
+      if (config) {
+        const kv = /^["']?([\w.-]+)["']?\s*[:=]\s*(["']?[^,{[]+?["']?)\s*,?$/.exec(l);
+        if (kv && kv[2]!.trim()) add(`${kv[1]}: ${kv[2]}`);
+        continue;
+      }
+      for (const m of l.matchAll(/(?<![\w-])--[a-z][\w-]+/g)) add(m[0]);
+      for (const m of l.matchAll(
+        /\b([A-Za-z_$][\w$]*)\s*(?::\s*(?:number\s*=\s*)?|=(?!=|>)\s*)(-?\d[\d_]*(?:\.\d+)?(?:\s*\*\s*\d[\d_]*)*)(?![\w.])/g,
+      ))
+        if (!DETAIL_WORD_SKIP.test(m[1]!) && !/^-?[01]$/.test(m[2]!)) add(`${m[1]} = ${m[2]}`);
+      for (const m of l.matchAll(/([\w$.]+)\s*(<=?|>=?)\s*(\d[\d_]{1,}(?:\.\d+)?)\b/g))
+        if (!DETAIL_WORD_SKIP.test(m[1]!.split('.').pop()!)) add(`${m[1]} ${m[2]} ${m[3]}`);
+      for (const m of l.matchAll(/\bdefault\w*\s*[:=(]\s*((['"`])[^'"`]{1,40}\2|-?\d[\d_.]*|true|false)/gi))
+        add(`default ${m[1]}`);
+      for (const m of l.matchAll(/\?\?\s*((['"`])[^'"`]{1,40}\2|-?\d[\d_.]{1,})/g)) add(`?? ${m[1]}`);
+    }
+  }
+  return out.slice(0, MAX_DETAILS);
+}
+
+/**
+ * A commit sentence kept whole up to `n` characters; a longer one is cut at
+ * the last clause boundary (`;`, `,`, `:`, a dash) before `n`, so the clause
+ * that says what changed isn't cut in half.
+ */
+export function clipClause(text: string, n: number): string {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (t.length <= n) return t;
+  const head = t.slice(0, n - 1);
+  const cut = Math.max(...[';', ',', ':', ' —', ' -', ' ('].map((c) => head.lastIndexOf(c)));
+  return `${(cut > n * 0.6 ? head.slice(0, cut) : head.replace(/\s+\S*$/, '')).trim()}…`;
 }
 
 /** A short prompt that only says to carry out a plan made before it. */
@@ -1344,6 +1415,7 @@ export function briefParts(
       was,
       ...(before.length ? { before } : {}),
       behavior,
+      details: detailsOf(hs, (f) => fileRole.get(f) ?? pathRole(f)),
       added: c.added,
       removed: c.removed,
       diff: refs(
@@ -1732,7 +1804,9 @@ export function briefParts(
     if (Number(c.branches) > 0)
       branchy.push(
         ...hs
-          .filter((h) => Number(h.branches) > 0)
+          // Docs, text and config lines are prose or data: an "if" there is a word.
+          .filter((h) => Number(h.branches) > 0 && !PROSE_FILE.test(String(h.file)))
+          .filter((h) => !/(^|\/)\.[\w.-]*ignore$/.test(String(h.file)))
           .map((h) => String(((h.symbols as string[]) ?? [])[0] ?? h.file)),
       );
   }
@@ -1817,7 +1891,7 @@ export function briefParts(
       // Environment rows first: what no recorded run could reach (another OS,
       // faked steps, a terminal, CI on the final head), above check recognition.
       [
-        ...environmentRows(hunkRows, fileRole),
+        ...environmentRows(hunkRows, fileRole, undefined, sessionCommands(g)),
         ...[finalHeadRow(g)].filter((r): r is Record<string, unknown> => !!r),
         ...limits,
       ],
@@ -1858,7 +1932,7 @@ export function briefParts(
           (hunkLinks[String(m.ref)] ?? []).filter((h) => hunkChange.has(h)).length,
       )
       .slice(0, 2)
-      .map((m) => `${String(m.ref)}: ${clipText(String(m.text ?? ''), 160)}`);
+      .map((m) => `${String(m.ref)}: ${clipClause(String(m.text ?? ''), 300)}`);
     if (said.length) r.said = said;
     // Test titles that name this change's symbols or files.
     const names = uniq(
@@ -1989,6 +2063,7 @@ export function briefParts(
         'was',
         'before',
         'behavior',
+        'details',
         'said',
         'checkedBy',
         'added',

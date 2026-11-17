@@ -661,7 +661,7 @@ export function valuePairs(minus: string[], plus: string[]): string[] {
 }
 
 /** Files whose lines are prose or data, not code: an "if" there is a word. */
-const PROSE_FILE =
+export const PROSE_FILE =
   /\.(md|mdx|txt|rst|adoc|json|jsonc|ya?ml|toml|lock|csv|svg|html?|xml|ini|cfg)$|(^|\/)VERSION$/i;
 /** A line's code with string contents blanked, so an "if" or "??" in a string doesn't count. */
 const codeOnly = (l: string) =>
@@ -1071,6 +1071,11 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       // The last commands other than checks, and (same position) when each last ran.
       lateCmds: (lateBy.get(s.ref) ?? []).map(([c]) => c),
       lateT: (lateBy.get(s.ref) ?? []).map(([, t]) => t),
+      // Pushes, PRs made and looks at CI (same position: kind, time, failed).
+      remoteCmds: (s.remote ?? []).map((x) => x.cmd),
+      remoteKinds: (s.remote ?? []).map((x) => x.kind),
+      remoteT: (s.remote ?? []).map((x) => x.t ?? ''),
+      remoteFailed: (s.remote ?? []).map((x) => (x.failed ? 'failed' : 'ok')),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)

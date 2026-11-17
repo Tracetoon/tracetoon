@@ -74,6 +74,12 @@ export interface DigestSession {
     }[];
   }[];
   commands: { cmd: string; count: number; failures: number; isTest: boolean }[];
+  /**
+   * Commands that reach the remote in this repository: a push or a PR made
+   * (`publish`), or a look at CI (`ci`: `gh run …`, `gh pr checks`), in order,
+   * at most 20. Older digests: absent.
+   */
+  remote?: { cmd: string; kind: 'publish' | 'ci'; t?: string; failed: boolean }[];
   /** Individual verification runs (tests, builds, linters, type checks, evals). */
   runs: Run[];
   milestones: string[];
@@ -841,6 +847,25 @@ export interface Invocation {
   elsewhere?: true;
 }
 
+const PUBLISH_CMD = /^git\s+(?:-C\s+\S+\s+)?push\b|^gh\s+pr\s+(?:create|ready|merge)\b/;
+const CI_CMD = /^gh\s+(?:run\s+(?:view|watch|list|rerun)|pr\s+checks|workflow\s+run)\b/;
+
+/**
+ * The segments of a command that push, open a PR, or look at CI, as their
+ * program and subcommand (`git push`, `gh pr create`, `gh run view`).
+ */
+export function remoteCommands(cmd: string): { cmd: string; kind: 'publish' | 'ci' }[] {
+  const out: { cmd: string; kind: 'publish' | 'ci' }[] = [];
+  for (const raw of splitCommands(cmd)) {
+    const seg = raw.replace(ENV_PREFIX, '').replace(WRAPPER, '').trim();
+    const kind = PUBLISH_CMD.test(seg) ? 'publish' : CI_CMD.test(seg) ? 'ci' : undefined;
+    if (!kind) continue;
+    const words = seg.split(/\s+/).filter((w) => !w.startsWith('-'));
+    out.push({ cmd: seg.startsWith('git') ? 'git push' : words.slice(0, 3).join(' '), kind });
+  }
+  return out;
+}
+
 /** Programs that read, move or inspect files: running one runs none of the project's code. */
 const UTILITY =
   /^(for|while|until|if|then|else|do|done|fi|case|esac|function|\[\[?|cd|pushd|popd|ls|dir|cat|type|sed|awk|grep|egrep|rg|ag|head|tail|less|more|wc|echo|printf|git|gh|find|fd|which|where|whereis|command|test|true|false|sleep|mkdir|rmdir|rm|cp|mv|ln|touch|chmod|chown|diff|cmp|sort|uniq|cut|tr|xargs|tee|jq|yq|curl|wget|tar|zip|unzip|stat|file|du|df|ps|kill|pwd|export|set|unset|source|\.|read|exit|wait|history|clear|date|open|start|explorer|code|vim|nano|python3?\s+-c|node\s+-e|bun\s+-e)(?=\s|$)/;
@@ -929,6 +954,7 @@ function sessionDigest(
   const latest: Invocation[] = [];
   const files = new Set<string>();
   let testFailedEarlier = false;
+  const remote: NonNullable<DigestSession['remote']> = [];
   let current: { ledToEdits: boolean } | undefined;
   // Files a shell command's own diff (Claude Code's `bashEditDiff`) already records.
   const shellDiffed = new Set(
@@ -1097,6 +1123,10 @@ function sessionDigest(
               inferred: true,
             });
           }
+        if (here)
+          for (const x of remoteCommands(r.cmd))
+            if (remote.length < 20)
+              remote.push({ ...x, ...(r.ts ? { t: r.ts } : {}), failed: r.isError === true });
         const seg = testSegment(r.cmd);
         const test = seg !== undefined;
         const key = clip(scrub.text(commandKey(seg ?? r.cmd)), 60);
@@ -1179,6 +1209,7 @@ function sessionDigest(
     artifacts,
     decisions,
     runs,
+    ...(remote.length ? { remote } : {}),
     commands: [...cmdGroups.entries()]
       .map(([cmd, g]) => ({ cmd, ...g }))
       .sort((a, b) => Number(b.isTest) - Number(a.isTest) || b.count - a.count)

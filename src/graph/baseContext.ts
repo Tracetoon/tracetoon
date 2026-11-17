@@ -13,7 +13,7 @@ import { git } from '../util/exec.ts';
 import type { EvidenceGraph } from './model.ts';
 
 const MAX_HUNKS = 16;
-const MAX_LINES = 5;
+const MAX_LINES = 4;
 const MAX_BODY = 80;
 /** A line that decides what the function does. */
 const KEY =
@@ -57,6 +57,7 @@ export function enclosingKeyLines(
   base: string[],
   context: string,
   oldStart: number,
+  prefer: Map<string, number> = new Map(),
 ): string[] {
   const want = context.trim().replace(/…$/, '');
   // The first changed line sits after git's (up to) three context lines.
@@ -99,15 +100,69 @@ export function enclosingKeyLines(
   // The lines at and after the change first (what the new code now precedes
   // or replaces), then the function's opening lines; kept in source order.
   const near = keys.filter(({ i }) => i >= oldStart - 1 && i <= oldStart + 20);
+  // Lines naming what the PR changes or what the session saw failing come
+  // first: the condition a fix is about, not the function's first branch.
+  const score = (l: string) =>
+    [...new Set(tokensOf(l))].reduce((n, w) => n + (prefer.get(w) ?? 0), 0);
   const byRank = (xs: typeof keys) =>
     [...xs].sort((a, b) => rankOf(a.l) - rankOf(b.l) || a.i - b.i);
-  const picked = [...byRank(near), ...byRank(keys.filter((k) => !near.includes(k)))]
+  const ranked = [...byRank(near), ...byRank(keys.filter((k) => !near.includes(k)))];
+  const picked = ranked
+    .map((k, order) => ({ ...k, order, s: score(k.l) }))
+    .sort((a, b) => b.s - a.s || a.order - b.order)
     .slice(0, MAX_LINES)
     .sort((a, b) => a.i - b.i);
   return picked
     .map(({ l }) => l.trim())
     .map((l) => (l.length > 120 ? `${l.slice(0, 119)}…` : l));
 }
+
+/** Words too common in code to tell one condition from another. */
+const COMMON = new Set(
+  'const let var return if else true false null undefined new this await async function the and for not'.split(' '),
+);
+/** Lowercased identifier pieces of a line (`apt-get` → apt, get). */
+export const tokensOf = (l: string): string[] =>
+  (l.toLowerCase().match(/[a-z][a-z0-9]{2,}/g) ?? []).filter((w) => !COMMON.has(w));
+
+/**
+ * Words that point at the condition a PR is about: the hunk's changed lines
+ * (weight 1) and the failure text the session recorded (failed runs' result
+ * lines, failed commands, user prompts quoting an error; weight 2).
+ */
+export function preferredWords(
+  graph: EvidenceGraph,
+  hunkWords: string[],
+  failureWords: Map<string, number> = failureWordsOf(graph),
+): Map<string, number> {
+  const m = new Map(failureWords);
+  for (const w of new Set(hunkWords.flatMap((x) => tokensOf(String(x)))))
+    m.set(w, (m.get(w) ?? 0) + 1);
+  return m;
+}
+
+/** Words of the session's failure text, each weighted 2. */
+export function failureWordsOf(graph: EvidenceGraph): Map<string, number> {
+  const m = new Map<string, number>();
+  const failure: string[] = [];
+  for (const n of graph.nodes) {
+    const p = n.props;
+    if (n.label === 'Run' && p.outcome === 'failed')
+      failure.push(...((p.summary as string[]) ?? []).map(String));
+    if (n.label === 'Session')
+      failure.push(...((p.failedCmds as string[]) ?? []).map(String));
+    if (n.label === 'Prompt' && FAILURE_TEXT.test(String(p.text ?? '')))
+      failure.push(
+        ...String(p.text)
+          .split(/(?<=[.!?\n])\s+/)
+          .filter((x) => FAILURE_TEXT.test(x)),
+      );
+  }
+  for (const w of failure.flatMap(tokensOf)) m.set(w, 2);
+  return m;
+}
+const FAILURE_TEXT =
+  /\b(?:error|fail(?:s|ed|ure)?|not found|cannot|can't|couldn't|exception|denied|read-only|missing|broken|crash(?:es|ed)?)\b/i;
 
 /** Adds `before` (key lines of the enclosing base function) to adding-only hunks. */
 export function addBaseContext(
@@ -127,6 +182,7 @@ export function addBaseContext(
     return files.get(path);
   };
   let n = 0;
+  const failure = failureWordsOf(graph);
   for (const h of graph.nodes) {
     if (n >= MAX_HUNKS) break;
     if (h.label !== 'Hunk') continue;
@@ -141,7 +197,12 @@ export function addBaseContext(
     if (!oldStart) continue;
     const base = read(file);
     if (!base) continue;
-    const lines = enclosingKeyLines(base, String(p.context), oldStart);
+    const lines = enclosingKeyLines(
+      base,
+      String(p.context),
+      oldStart,
+      preferredWords(graph, ((p.words as string[]) ?? []).map(String), failure),
+    );
     if (!lines.length) continue;
     p.before = lines;
     n++;

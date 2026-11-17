@@ -15,6 +15,7 @@
  * Pure over the brief's sections, capped, deterministic.
  */
 import type { Section } from './queries.ts';
+import { PROSE_FILE } from './build.ts';
 
 type Row = Record<string, unknown>;
 const list = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
@@ -145,15 +146,29 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
   // Absence of a run: the brief reads only the attributed turns, so "no
   // hardware/live/test run was recorded" is a session-wide claim the full logs
   // contradicted (live runs and device tests done earlier, or by others).
+  const limitRefs = rowsOf(sections, 'limits').map((r) => String(r.ref));
   const absent = rowsOf(sections, 'limits')
     .filter((r) => ABSENCE.test(String(r.limit ?? '')))
     .map((r) => String(r.ref));
   // Only the session-wide claim: a scoped uncertainty ("verified only with
-  // fakes", "not run on Windows") with a row behind it is an open point.
+  // fakes", "not run on Windows", "the build script was never run") stays,
+  // with a limits row or the change/test rows that show the gap behind it.
+  const span = (xs: string[]) =>
+    xs.length > 2 ? `${xs[0]}–${xs.at(-1)}` : xs.join(', ');
+  const scoped =
+    'a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap';
   out.push({
     kind: 'absence',
-    text: `Never say session-wide that nothing ran or that no test was recorded${absent.length ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}` : ' (no limits row says so)'}; scoped uncertainties with a row behind them stay.`,
-    cites: absent.slice(0, 3),
+    text: `Never say session-wide that nothing ran or that no test was recorded${
+      absent.length
+        ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}`
+        : ''
+    }; ${
+      limitRefs.length && !absent.length
+        ? `the open points in ${span(limitRefs)} stay, and ${scoped}`
+        : scoped
+    }.`,
+    cites: (absent.length ? absent : limitRefs).slice(0, 3),
   });
 
   // Kept short: "new" for existing code is rare in judged errors.
@@ -169,11 +184,16 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     // One quoted condition, from the first symbol's change.
     const shown = branchy.slice(0, 3);
     const mine = new Set(changeOf(shown[0]!));
+    // A behavior line of code that branches, never a docs or config line.
+    const branching = (b: string) =>
+      !PROSE_FILE.test(b.split(': ')[0] ?? '') &&
+      !/^\.[\w.-]*ignore:/.test(b) &&
+      /\b(?:if|elif|else|switch|case|when|unless)\b|\?\?|\?[^:]+:|\|\||&&/.test(b);
     const cond =
       changes
         .filter((r) => mine.has(String(r.change)))
-        .flatMap((r) => list(r.behavior))[0] ??
-      changes.flatMap((r) => list(r.behavior))[0];
+        .flatMap((r) => list(r.behavior))
+        .find(branching) ?? changes.flatMap((r) => list(r.behavior)).find(branching);
     out.push({
       kind: 'conditional code',
       text: `${names(shown, 3)}${branchy.length > 3 ? ` and ${branchy.length - 3} more` : ''} branch or fall back${cond ? ` (${clip(cond, 90)})` : ''}: "always", "only", "every", "no longer" only if every branch does it.`,

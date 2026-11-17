@@ -13,7 +13,6 @@ import {
   failedPublishRows,
   functionProfiles,
   noPassAfterCommitRow,
-  historicalRunLimit,
   remotePathRows,
   environmentRows,
   type LiveEvidence,
@@ -90,29 +89,14 @@ describe('open points promoted into limits', () => {
       limit:
         'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
-    // On a Claude Code host (tests pin it) a pass with no captured edit
-    // between it and the commit is a historical session run: a softer open point.
-    const historical = {
-      change: null,
-      kind: 'open',
-      historical: true,
-      limit:
-        'The last passing run, R1 (test), is a session run from before the last commit (abc123def456); no captured edit came between; it is a historical session run, not re-run on the final content.',
-    };
-    expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toEqual(
-      historical,
-    );
-    // Other hosts (Codex) get no open point for it.
-    expect(
-      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs, false)),
-    ).toBeUndefined();
-    expect(historicalRunLimit('codex')).toBe(false);
-    expect(historicalRunLimit('claude')).toBe(true);
+    // A pass with no captured edit between it and the commit: no open point
+    // (a "historical session run" row beside "nothing changed" invited hedging).
+    expect(withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs))).toBeUndefined();
     expect(
       withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
         noPassAfterCommitRow(e, runs),
       ),
-    ).toEqual(historical);
+    ).toBeUndefined();
     // A pass after the commit closes it; no runs or no commit say nothing.
     expect(
       withGraph(g, (e) =>
@@ -124,46 +108,6 @@ describe('open points promoted into limits', () => {
     ).toBeUndefined();
     expect(withGraph(g, (e) => noPassAfterCommitRow(e, []))).toBeUndefined();
     expect(withGraph(graphOf([]), (e) => noPassAfterCommitRow(e, runs))).toBeUndefined();
-  });
-
-  test('a suite run with its own result line, then the commit in the same turn, is no historical run', () => {
-    // The session ran the suite (a release gate, say) and committed, with no
-    // edit and no user prompt in between.
-    const commit = N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) });
-    const session = N('Session', 'h:a', { band: 'included' });
-    const made = R('MADE', ['Session', 'h:a'], ['Commit', 'abc123def4567']);
-    const prompt = (at: number) => [
-      N('Prompt', 'S2', { t: t(at), text: 'commit it', session: 'h:a' }),
-    ];
-    const promptRel = R('IN_SESSION', ['Prompt', 'S2'], ['Session', 'h:a']);
-    const gate = {
-      id: 'R1',
-      kind: 'test',
-      outcome: 'passed',
-      t: t(3),
-      summary: ['41 pass', '0 fail'],
-    };
-    const row = (nodes: any[], rs: any[], run: Record<string, unknown> = gate) =>
-      withGraph(graphOf([commit, session, ...nodes], rs), (e) =>
-        noPassAfterCommitRow(e, [run], true),
-      );
-    expect(row([], [made])).toBeUndefined();
-    // A prompt before the run doesn't matter.
-    expect(row(prompt(2), [made, promptRel])).toBeUndefined();
-    // A user turn between the run and the commit: history again.
-    expect(row(prompt(4), [made, promptRel])?.historical).toBe(true);
-    // A commit no included session made (by hand, another tool): history.
-    expect(row([], [])?.historical).toBe(true);
-    // No result line of its own (exit status only), or a failure counted: history.
-    expect(row([], [made], { ...gate, summary: ['exit 0'] })?.historical).toBe(true);
-    expect(row([], [made], { ...gate, summary: ['40 pass', '1 fail'] })?.historical).toBe(
-      true,
-    );
-    // A later test run in another recognized form (a script's own result
-    // lines, after the commit) closes it like any run.
-    expect(
-      row(prompt(4), [made, promptRel], { ...gate, t: t(6), cmd: 'bun run release' }),
-    ).toBeUndefined();
   });
 
   test('a failed publishing command is an open point; other failures are not', () => {
@@ -292,7 +236,7 @@ describe('open points promoted into limits', () => {
     ];
     const rows = environmentRows(hunks, roles, { platform: 'linux', arch: 'x64' });
     expect(rows.map((r) => r.limit)).toEqual([
-      'src/launch.ts changes Windows-specific code; the recorded runs were on linux/x64, so none shows the Windows path running.',
+      "src/launch.ts changes Windows-specific code (`if (process.platform === 'win32') return runCmd(exe);`); the recorded runs were on linux/x64, so none shows the Windows path running.",
       'The changed tests (tests/launch.test.ts) replace spawned processes with fakes or stubs: they check the logic around those steps, not the real step.',
       'src/ui.ts changes interactive (terminal/TTY) handling; recorded checks run without a terminal, so none shows that path with a user at the keyboard.',
     ]);
@@ -302,6 +246,98 @@ describe('open points promoted into limits', () => {
         /Windows/.test(String(r.limit)),
       ),
     ).toBe(false);
+  });
+});
+
+describe('platform, script and fake rows', () => {
+  const host = { platform: 'linux', arch: 'x64' };
+  const roles = new Map([
+    ['src/a.ts', 'behavior'],
+    ['src/b.ts', 'behavior'],
+    ['src/digest.ts', 'behavior'],
+    ['packaging/signing.xml', 'config'],
+    ['scripts/build-win.ps1', 'behavior'],
+    ['scripts/build.sh', 'behavior'],
+    ['.github/workflows/release.yml', 'config'],
+    ['tests/a.test.ts', 'tests'],
+    ['src/run/fake-gh.ts', 'behavior'],
+  ]);
+  const h = (change: string, file: string, code: string[]) => ({ change, file, code, conds: [] });
+
+  test('only lines that test the platform count; one row per change unit, merged', () => {
+    const rows = environmentRows(
+      [
+        // A platform name mapped to an asset suffix is not a branch.
+        h('CH1', 'src/a.ts', ["+ const os = win ? 'windows' : platform === 'darwin' ? 'darwin' : 'linux';"]),
+        h('CH1', 'src/a.ts', ['+ return platform === "win32" ? "windows" : platform;']),
+        // A `.cmd` property and a config file naming a platform are not either.
+        h('CH2', 'src/digest.ts', ['+ const key = commandKey(r.cmd);', '+ if (run.cmd) out.push(x);']),
+        h('CH3', 'packaging/signing.xml', ['+ <file path="app-windows-arm64.exe" />']),
+        // Real branches, two platforms in one unit: one row.
+        h('CH4', 'src/b.ts', [
+          "+ if (process.platform === 'win32') return spawnWin(cmd);",
+          "+ if (process.arch === 'arm64') flags.push('--arm');",
+        ]),
+      ],
+      roles,
+      host,
+    );
+    expect(rows.map((r) => [r.change, r.limit])).toEqual([
+      [
+        'CH4',
+        "src/b.ts changes Windows and arm64-specific code (`if (process.platform === 'win32') return spawnWin(cmd);`); the recorded runs were on linux/x64, so none shows the Windows and arm64 paths running.",
+      ],
+    ]);
+  });
+
+  test('a Windows script and a workflow runner pick are platform-specific', () => {
+    const rows = environmentRows(
+      [
+        h('CH1', 'scripts/build-win.ps1', ['+ if ($LASTEXITCODE -ne 0) { exit 1 }']),
+        h('CH2', '.github/workflows/release.yml', ['+ runs-on: windows-latest', '+ name: Sign']),
+      ],
+      roles,
+      host,
+    );
+    expect(rows.map((r) => r.change)).toEqual(['CH1', 'CH2']);
+    expect(String(rows[0]!.limit)).toStartWith('scripts/build-win.ps1 changes Windows-specific code;');
+    expect(String(rows[1]!.limit)).toContain('(`runs-on: windows-latest`)');
+  });
+
+  test('changed scripts and workflows no session command ran', () => {
+    const hunks = [
+      h('CH1', 'scripts/build-win.ps1', ['+ Write-Host done']),
+      h('CH1', 'scripts/build.sh', ['+ echo done']),
+      h('CH2', '.github/workflows/release.yml', ['+ name: Publish']),
+    ];
+    const limits = (ran?: string[]) =>
+      environmentRows(hunks, roles, host, ran)
+        .map((r) => String(r.limit))
+        .filter((l) => !/-specific/.test(l));
+    expect(limits(['bash scripts/build.sh', 'bun test'])).toEqual([
+      'scripts/build-win.ps1 is a changed script no recorded session command ran; only the diff shows it.',
+      '.github/workflows/release.yml changes CI workflow; workflows run in CI, and no run of it is in the logs Tracetoon read.',
+    ]);
+    // No session matched: nothing to compare with, no script rows.
+    expect(limits(undefined)).toEqual([]);
+  });
+
+  test('fakes are named, with the change unit they stand in for', () => {
+    const rows = environmentRows(
+      [
+        h('CH1', 'src/run/fake-github.ts', ['+ export function fakeGithub() {}']),
+        { change: 'CH2', file: 'src/github.ts', code: ['+ export function github() {}'], conds: [], symbols: ['github'] },
+        h('CH3', 'tests/a.test.ts', ['+ const runner = fakeRunner({ exit: 0 });']),
+      ],
+      new Map([...roles, ['src/github.ts', 'behavior'], ['src/run/fake-github.ts', 'behavior']]),
+      host,
+    );
+    expect(rows.map((r) => [r.change, r.limit])).toEqual([
+      [
+        'CH2',
+        'The changed tests (tests/a.test.ts) replace collaborators with fakes or stubs (`fake-github.ts`, `fakeRunner`); CH2 is reached that way: they check the logic around those steps, not the real steps.',
+      ],
+    ]);
   });
 });
 
@@ -1072,5 +1108,58 @@ describe('tested behaviors attributed to the file whose titles show them', () =>
       b,
     );
     expect(r.flags.map((f) => f.severity)).toEqual(['check']);
+  });
+});
+
+describe('remote commands and change details', () => {
+  test('pushes, PRs made and CI looks are read from a command', async () => {
+    const { remoteCommands } = await import('../src/digest/build.ts');
+    expect(remoteCommands('git add -A && git commit -m x && git push -u origin feat')).toEqual([
+      { cmd: 'git push', kind: 'publish' },
+    ]);
+    expect(remoteCommands('gh pr create --fill; gh run view 123 --log-failed')).toEqual([
+      { cmd: 'gh pr create', kind: 'publish' },
+      { cmd: 'gh run view', kind: 'ci' },
+    ]);
+    expect(remoteCommands('git status && gh pr view 3')).toEqual([]);
+  });
+
+  test('details: flags, thresholds, defaults, workflow steps, config keys', async () => {
+    const { detailsOf, clipClause } = await import('../src/graph/queries.ts');
+    const roles: Record<string, string> = {
+      'src/cli.ts': 'behavior',
+      '.github/workflows/ci.yml': 'config',
+      'config/app.json': 'config',
+      'docs/a.md': 'docs',
+    };
+    const d = detailsOf(
+      [
+        {
+          file: 'src/cli.ts',
+          code: [
+            "+ .option('--no-timeout', 'wait for the reader')",
+            '+ const MIN_DURATION_MS = 750;',
+            '+ if (elapsed < 1500) return;',
+            "+ const mode = opts.mode ?? 'fast';",
+            '+ for (let i = 0; i < n; i++) {}',
+          ],
+        },
+        { file: '.github/workflows/ci.yml', code: ['+ publish:', '+ - name: Upload SBOM'] },
+        { file: 'docs/a.md', code: ['+ Use --verbose for more.'] },
+      ],
+      (f) => roles[f] ?? 'behavior',
+    );
+    expect(d).toEqual([
+      '--no-timeout',
+      'MIN_DURATION_MS = 750',
+      'elapsed < 1500',
+      "?? 'fast'",
+      'job publish',
+    ]);
+    const long = `Readers answer at their own pace, so the final interactive command runs with no watchdog timeout, while compile and build commands keep the existing execution timeout policy for every run of a sample input and every other path that does not wait on a reader at all`;
+    const c = clipClause(long, 200);
+    expect(c.length).toBeLessThanOrEqual(200);
+    expect(c.endsWith('…')).toBe(true);
+    expect(c).toContain('no watchdog timeout');
   });
 });

@@ -65,6 +65,28 @@ describe('base code of adding-only hunks (`before`)', () => {
     expect(lines.some((l) => l.startsWith('which:'))).toBe(false);
   });
 
+  test('the condition the failure text names wins over the first branch', () => {
+    const base = [
+      'export function plan(deps: string[]): Plan | undefined {',
+      '  if (deps.length === 0) return undefined;',
+      '  if (!deps.every((d) => d === "tool")) return undefined;',
+      '  if (platform === "darwin" && which("brew")) return brewPlan();',
+      '  if (platform === "win32" && which("winget")) return wingetPlan();',
+      '  if (which("apt-get")) return aptPlan();',
+      '  if (which("dnf")) return dnfPlan();',
+      '  return undefined;',
+      '}',
+    ];
+    const prefer = new Map([
+      ['dnf', 2],
+      ['apt', 2],
+    ]);
+    const lines = enclosingKeyLines(base, 'export function plan(', 1, prefer);
+    expect(lines).toContain('if (which("dnf")) return dnfPlan();');
+    expect(lines).toContain('if (which("apt-get")) return aptPlan();');
+    expect(lines.length).toBeLessThanOrEqual(4);
+  });
+
   test('old starts per file and new start', () => {
     const patch =
       'diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -3,2 +3,4 @@ export function pick\n';

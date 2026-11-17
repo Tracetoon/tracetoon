@@ -393,7 +393,7 @@ describe('do not say', () => {
       'files in this diff',
     ]);
     expect(rows[1]!.text).toBe(
-      'Never say session-wide that nothing ran or that no test was recorded (no limits row says so); scoped uncertainties with a row behind them stay.',
+      'Never say session-wide that nothing ran or that no test was recorded; a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap.',
     );
     expect(rows[2]!.text).toBe('`load`: changed, not "new" or "added".');
     expect(String(rows[3]!.text)).toContain('(a.ts: + if (!cfg) return;)');
@@ -421,9 +421,45 @@ describe('do not say', () => {
     ];
     expect(doNotSayRows(withLimit).find((r) => r.kind === 'absence')).toEqual({
       kind: 'absence',
-      text: 'Never say session-wide that nothing ran or that no test was recorded, beyond what L1 says; scoped uncertainties with a row behind them stay.',
+      text: 'Never say session-wide that nothing ran or that no test was recorded, beyond what L1 says; a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap.',
       cites: ['L1'],
     });
+  });
+
+  test('absence: limits rows that say no absence are referenced, never "no limits row"', () => {
+    const withLimits = [
+      ...sections(),
+      {
+        title: 'limits',
+        columns: [],
+        rows: ['L1', 'L2', 'L3'].map((ref) => ({
+          ref,
+          kind: 'open',
+          limit: 'a.ts changes Windows-specific code.',
+        })),
+      },
+    ];
+    const row = doNotSayRows(withLimits).find((r) => r.kind === 'absence')!;
+    expect(String(row.text)).toContain('the open points in L1–L3 stay');
+    expect(String(row.text)).not.toContain('no limits row');
+    expect(row.cites).toEqual(['L1', 'L2', 'L3']);
+  });
+
+  test('conditional code: a docs or ignore-file line is never the quoted branch', () => {
+    const s = sections().map((x) =>
+      x.title === 'changes'
+        ? {
+            ...x,
+            rows: x.rows.map((r) => ({
+              ...r,
+              behavior: ['.gitignore: + .claude/', 'SKILL.md: + if you need it, ask', ...((r.behavior as string[]) ?? [])],
+            })),
+          }
+        : x,
+    );
+    const row = doNotSayRows(s, ['load']).find((r) => r.kind === 'conditional code')!;
+    expect(String(row.text)).not.toContain('.gitignore');
+    expect(String(row.text)).not.toContain('SKILL.md');
   });
 
   test('recorded requests, plans and decisions: never "none was recorded"', () => {

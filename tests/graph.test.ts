@@ -1804,8 +1804,8 @@ describe('the brief states recorded process and behavior', () => {
     expect(limits.some((l) => /historical session run/.test(String(l.limit)))).toBe(
       false,
     );
-    // A user turn between the pass and the commit: on a Claude Code host an
-    // open point says the pass is history.
+    // A user turn between the pass and the commit: no captured edit came
+    // between, so still no "historical session run" point (it invited hedging).
     g.nodes.push(
       N('Prompt', 'S4', {
         t: '2026-01-01T00:00:03.700Z',
@@ -1817,12 +1817,10 @@ describe('the brief states recorded process and behavior', () => {
     g.rels.push(R('IN_SESSION', ['Prompt', 'S4'], ['Session', 'h:s']));
     const later = withGraph(g, (e) => briefParts(e));
     expect(
-      later.sections.find((x) => x.title === 'limits')!.rows.map((l) => String(l.limit)),
-    ).toContainEqual(
-      expect.stringMatching(
-        /^The last passing run, R2 \(test\), is a session run from before the last commit .*a historical session run, not re-run on the final content\.$/,
-      ),
-    );
+      later.sections
+        .find((x) => x.title === 'limits')!
+        .rows.some((l) => /historical session run/.test(String(l.limit))),
+    ).toBe(false);
   });
 
   test("requests are this PR's turns only; a cut-off record is marked", () => {
@@ -1973,20 +1971,32 @@ describe('the brief states recorded process and behavior', () => {
     expect(planRow?.ref).toBe('P1');
   });
 
-  test('limits: a session that ends at a push leaves CI on the final head open', () => {
+  test('limits: CI on the final head is open only after a push or a PR made', () => {
     const lim = (x: EvidenceGraph) =>
       withGraph(x, (g) => briefParts(g))
         .sections.find((s) => s.title === 'limits')!
         .rows.map((r) => String(r.limit));
-    // Checks ran after the last commit and nothing was pushed: no row.
+    // Nothing pushed (asked not to, or local work): no CI could exist, no row.
     expect(lim(graph).some((l) => /CI results/.test(l))).toBe(false);
     const pushed: EvidenceGraph = structuredClone(graph);
     const s = pushed.nodes.find((n) => n.label === 'Session')!;
-    s.props.lateCmds = ['git push origin feature'];
-    s.props.lateT = [t(6)];
+    s.props.remoteCmds = ['git push', 'gh pr create', 'gh run rerun'];
+    s.props.remoteKinds = ['publish', 'publish', 'ci'];
+    s.props.remoteT = [t(6), t(7), t(8)];
+    s.props.remoteFailed = ['ok', 'ok', 'failed'];
     expect(lim(pushed)).toContain(
-      'The session ends at a push; CI results for the final head are not in the logs Tracetoon read.',
+      "The session pushed or opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the logs Tracetoon read (afterwards it ran `gh run rerun`, which failed; Tracetoon doesn't read CI results).",
     );
+    // A push that failed reached nothing.
+    s.props.remoteCmds = ['git push'];
+    s.props.remoteKinds = ['publish'];
+    s.props.remoteT = [t(6)];
+    s.props.remoteFailed = ['failed'];
+    expect(lim(pushed).some((l) => /CI results/.test(l))).toBe(false);
+    // No session matched: no row, whatever the commits.
+    const none: EvidenceGraph = structuredClone(graph);
+    for (const n of none.nodes) if (n.label === 'Session') n.props.band = 'ambiguous';
+    expect(lim(none).some((l) => /CI results/.test(l))).toBe(false);
   });
 
   test('housekeeping: binary artifacts and checksum files get a row', () => {
