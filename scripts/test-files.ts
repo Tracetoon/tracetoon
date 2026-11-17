@@ -120,17 +120,36 @@ export function parseShard(
 }
 
 /**
+ * `TRACETOON_TEST_SHARD_PRELOAD=ms[,ms...]`: work each shard already does
+ * outside the source tests, in test-file milliseconds (shard 1 first; missing
+ * entries are 0). Every shard must see the same value to agree on the split.
+ */
+export function parsePreload(value: string | undefined): number[] {
+  if (!value?.trim()) return [];
+  return value.split(',').map((part) => {
+    const ms = Number(part.trim() || '0');
+    if (!Number.isFinite(ms) || ms < 0)
+      throw new Error(
+        `TRACETOON_TEST_SHARD_PRELOAD must be comma-separated milliseconds, not "${value}"`,
+      );
+    return ms;
+  });
+}
+
+/**
  * One shard's files, longest first. Every file goes, longest first, to the
- * shard with the least total so far, so CI machines finish at about the same
- * time and every shard computes the same split from the same inputs.
+ * shard with the least total so far (starting from `preload`), so CI machines
+ * finish at about the same time and every shard computes the same split from
+ * the same inputs.
  */
 export function shardFiles(
   root: string,
   files: string[],
   times: TestTimes,
   shard: { index: number; count: number },
+  preload: number[] = [],
 ): string[] {
-  const totals = Array.from({ length: shard.count }, () => 0);
+  const totals = Array.from({ length: shard.count }, (_, i) => preload[i] ?? 0);
   const mine: string[] = [];
   for (const { file, cost } of byCost(root, files, times)) {
     const least = totals.indexOf(Math.min(...totals));

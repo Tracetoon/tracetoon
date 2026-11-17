@@ -127,7 +127,10 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   size for files it doesn't list. Refresh that file from a CI log when the
   slowest files change a lot; stale numbers only make the order and shards less
   even. `TRACETOON_TEST_SHARD=i/n` runs the i-th of n balanced shares, so CI can
-  split the suite across machines. `bun run typecheck && bun run test`
+  split the suite across machines; `TRACETOON_TEST_SHARD_PRELOAD=ms[,ms...]`
+  counts work a shard does besides the source tests (CI's shard 1 also runs the
+  typecheck and packaged suites), and every shard must get the same value.
+  `bun run typecheck && bun run test`
   macOS scales with the machine: the pinned Bun version's subprocess-heavy suites
   fail intermittently when the box is oversubscribed, so a CI runner (3-4 cores)
   still runs one file at a time, while a Mac with 8 or more cores runs four, as
