@@ -12,6 +12,7 @@ import {
   numberConflict,
   plusTokens,
   orderConflict,
+  conflictRows,
   orderAgrees,
   stateConflict,
 } from '../src/graph/codeEvidence.ts';
@@ -277,6 +278,36 @@ describe('commit vs code conflicts', () => {
     expect(orderConflict(s, '# rc.10 sorts after rc.2')).toBe(false);
     expect(orderConflict(s, '# rc.11 lands before rc.3')).toBe(false);
     expect(orderConflict(s, '# pick the newest by date')).toBe(false);
+  });
+  test("a comment giving another party's order is the problem, not a conflict", () => {
+    const rows = conflictRows(
+      {
+        run: () => ({
+          rows: [
+            {
+              id: 'H1',
+              diff: 'diff:1-9',
+              file: 'src/release.ts',
+              keyLines: [
+                '+ // GitHub lists by tag name (rc.10 before rc.2), so order by date',
+              ],
+              literals: [],
+            },
+          ],
+        }),
+      } as any,
+      [
+        {
+          title: 'commitMessages',
+          columns: [],
+          rows: [
+            { ref: 'abc1234#1', text: 'A comparator that orders rc.2 before rc.10.' },
+          ],
+        },
+      ],
+      { 'abc1234#1': ['H1'] },
+    );
+    expect(rows).toEqual([]);
   });
   test('a test title or added line stating the same order supports the message', () => {
     const s = 'Pick rc.10 after rc.2 when choosing the newest release.';

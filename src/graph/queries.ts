@@ -1301,7 +1301,13 @@ export function briefParts(
       ),
     ]).slice(0, 5);
     // What the enclosing function did at the base, when no removed line shows it.
-    const before = was.length
+    // (A moved docs line or a test's old value says nothing about the code.)
+    const codeWas = hs.some(
+      (h) =>
+        !['tests', 'docs', 'generated'].includes(fileRole.get(String(h.file)) ?? '') &&
+        ((h.pairs as string[]) ?? []).length > 0,
+    );
+    const before = codeWas
       ? []
       : uniq(
           hs
@@ -1312,7 +1318,7 @@ export function briefParts(
                   `${String(h.file).split('/').pop()}${h.scope ? ` ${String(h.scope)}` : ''} (base): ${l}`,
               ),
             ),
-        ).slice(0, 3);
+        ).slice(0, 4);
     const behavior = behaviorOf(
       hs.filter(
         (h) =>

@@ -456,7 +456,7 @@ const PLATFORMS: { name: string; host: string; re: RegExp }[] = [
   {
     name: 'macOS',
     host: 'darwin',
-    re: /\bdarwin\b|\bmacos\b|\bisMac\b|\bIS_MAC\b|cfg\(\s*target_os\s*=\s*"macos"|\/Library\/|\/Applications\/|\bbrew\b|\bhomebrew\b/i,
+    re: /\bdarwin\b|\bmacos\b|\bisMac\b|\bIS_MAC\b|cfg\(\s*target_os\s*=\s*"macos"|\/Library\/|\/Applications\//i,
   },
   { name: 'arm64', host: 'arm64', re: /\barm64\b|\baarch64\b/i },
   { name: 'x64', host: 'x64', re: /\bx64\b|\bx86_64\b|\bamd64\b/i },

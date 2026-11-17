@@ -578,6 +578,10 @@ export function orderTriples(text: string): Triple[] {
 }
 
 /** The sentence and the code say opposite things about the same two anchors. */
+/** Words that give an order to someone other than the code: the problem it fixes. */
+const THIRD_PARTY =
+  /\b(?:github|gitlab|the api|api|upstream|server|registry|npm|pypi|crates\.io|lexical(?:ly)?|naive(?:ly)?|by default|otherwise|would)\b/i;
+
 /** The code or a test title states the sentence's order the same way. */
 export function orderAgrees(sentence: string, code: string): boolean {
   const s = orderTriples(sentence);
@@ -712,9 +716,15 @@ export function conflictRows(
             : body;
         if (!added) continue;
         const comment = isComment(added);
+        // A comment giving another party's order (the API, GitHub, a naive
+        // sort) states the problem the code fixes, not what the code does,
+        // unless the commit sentence speaks of that party too.
+        const party = THIRD_PARTY.exec(added)?.[0]?.toLowerCase().replace(/^the /, '');
+        const problem = !!party && !text.toLowerCase().includes(party);
         if (
           (comment &&
-            (orderConflict(text, added) || stateConflict(text, added, false))) ||
+            ((!problem && orderConflict(text, added)) ||
+              stateConflict(text, added, false))) ||
           (!comment && stateConflict(text, added, true)) ||
           numberConflict(text, added, h.literals)
         ) {

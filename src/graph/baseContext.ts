@@ -13,7 +13,7 @@ import { git } from '../util/exec.ts';
 import type { EvidenceGraph } from './model.ts';
 
 const MAX_HUNKS = 16;
-const MAX_LINES = 4;
+const MAX_LINES = 5;
 const MAX_BODY = 80;
 /** A line that decides what the function does. */
 const KEY =
@@ -68,18 +68,28 @@ export function enclosingKeyLines(
       }
   if (at < 0) return [];
   const indent = indentOf(base[at]!);
-  const body: string[] = [];
+  const body: { l: string; i: number }[] = [];
   for (let i = at + 1; i < base.length && body.length < MAX_BODY; i++) {
     const l = base[i]!;
     if (l.trim() && indentOf(l) <= indent && !/^\s*[)}\]]/.test(l)) break;
-    body.push(l);
+    body.push({ l, i });
     if (l.trim() && indentOf(l) <= indent) break;
   }
-  return body
-    .filter((l) => KEY.test(l) && !/^\s*(?:\/\/|#|\*)/.test(l))
-    .map((l) => l.trim())
-    .filter((l) => l.length > 3 && !/^[{}()[\];,]+$/.test(l))
+  const keys = body.filter(
+    ({ l }) =>
+      KEY.test(l) &&
+      !/^\s*(?:\/\/|#|\*)/.test(l) &&
+      l.trim().length > 3 &&
+      !/^[{}()[\];,]+$/.test(l.trim()),
+  );
+  // The lines at and after the change first (what the new code now precedes
+  // or replaces), then the function's opening lines; kept in source order.
+  const near = keys.filter(({ i }) => i >= oldStart - 1 && i <= oldStart + 20);
+  const picked = [...near, ...keys.filter((k) => !near.includes(k))]
     .slice(0, MAX_LINES)
+    .sort((a, b) => a.i - b.i);
+  return picked
+    .map(({ l }) => l.trim())
     .map((l) => (l.length > 120 ? `${l.slice(0, 119)}…` : l));
 }
 
