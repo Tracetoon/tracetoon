@@ -1,4 +1,4 @@
-<!doctype html><html><head><title>Tracetoon Evidence Results</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon's evidence-graph PR descriptions to its original multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR."><link rel="icon" href="favicon.svg" type="image/svg+xml"><meta property="og:title" content="An embedded Relate graph made our PR writer better and cheaper"><meta property="og:image" content="https://tracetoon.ai/img/comic-cost.webp"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
+<!doctype html><html><head><title>Tracetoon Evidence Results</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon's evidence-graph PR descriptions to its original multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR."><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta property="og:title" content="An embedded Relate graph made our PR writer better and cheaper"><meta property="og:image" content="https://tracetoon.ai/img/comic-cost.webp"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
   :root { --sh-bg:#fffdf6; --sh-fg:#1b1913; --sh-ink:#1b1913; --sh-accent:#c2410c; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; } }
   :root[data-theme="dark"] { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; }
@@ -6,19 +6,19 @@
   .site-top .site-wrap { max-width:1120px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
   .site-brand { display:flex; align-items:center; gap:.45rem; text-decoration:none; color:var(--sh-fg); }
   .site-brand img { width:36px; height:36px; display:block; }
-  .site-brand span { font-family:Bangers,"Comic Neue",system-ui,sans-serif; font-weight:400; letter-spacing:.03em; font-size:1.75rem; line-height:1; }
+  .site-brand .site-wordmark { height:30px; width:auto; display:block; }
   .site-top nav { margin-left:auto; display:flex; gap:1.1rem; }
   .site-top nav a { color:var(--sh-fg); text-decoration:none; font-weight:600; font-size:.95rem; }
   .site-top nav a:hover, .site-top nav a[aria-current="page"] { color:var(--sh-accent); }
   .site-top nav a.ext { display:inline-flex; align-items:center; gap:.2em; }
   .site-top nav a.ext svg { width:.8em; height:.8em; }
   .site-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  @media (max-width:600px) { .site-top nav a.opt { display:none; } .site-top nav { gap:.85rem; } .site-brand span { font-size:1.5rem; } }
+  @media (max-width:600px) { .site-top nav a.opt { display:none; } .site-top nav { gap:.85rem; } .site-brand .site-wordmark { height:26px; } }
 html{scroll-padding-top:70px} .toc{top:calc(env(safe-area-inset-top,0px) + 82px) !important}</style><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><header class="site-top">
   <div class="site-wrap">
     <a class="site-brand" href="./" aria-label="Tracetoon home">
       <img src="favicon.svg" alt="" width="36" height="36">
-      <span>Tracetoon</span>
+      <img class="site-wordmark" src="img/tracetoon-wordmark.svg" alt="Tracetoon" width="128" height="30">
     </a>
     <nav aria-label="Site">
       <a href="./#install">Install</a>
