@@ -9,9 +9,9 @@ instructions. These rules are for you: never copy their wording into the PR.
 ## Reading the brief
 
 - `limits`: open points (kind `open`) and caveats (no pass after the last
-  commit, a failed push or `gh` command, remote paths no run shows live, no
-  push or tag in the session logs, code no test names). `render` writes every
-  open point under the Validation section itself: don't restate them.
+  commit, a failed push or `gh` command, remote paths no run shows live).
+  Turn each one that matters to a reviewer into a clause of your own, but
+  only those the evidence supports; skip a row you can't back.
 - `changes`: change units with `where` (files and symbols), `newSymbols`, `was`
   (old values; "moved or reflowed, text unchanged" means only moved: never
   describe those lines as removed, changed or a new rule; "extracted into
@@ -40,7 +40,8 @@ instructions. These rules are for you: never copy their wording into the PR.
   conditional code, results only a commit message states, the files in the
   diff). Check every sentence against it before you finish.
 - `behaviors`: one row per behavior of a change unit (a commit sentence or a
-  behavior line), B refs. Cover each behavior of the units you describe;
+  behavior line), B refs. Cover each behavior of every change row you cite,
+  one clause each (what it now does, for whom, under which condition);
   `render` lists those of cited units the body never mentions.
 - `commitMessages`: each sentence, with `implementedBy` naming its file (a
   `~` after a file: linked by text search or at hunk level, less certain; read
@@ -113,7 +114,9 @@ section-per-topic template down as "inventory-like".
   (turns, edits, runs, plans).
 - **The changes**, as connected prose or a few bullets grouped by behavior
   (never a file-by-file inventory, never an inventory of helpers or
-  variants), covering every commit-message sentence. Describe behavior from
+  variants), covering every commit-message sentence and each behavior
+  (`behavior` lines, `behaviors` rows) of the change rows you cite: a unit
+  with three behaviors gets three clauses, not one summary. Describe behavior from
   the code (change rows, `details`, `behavior`), not from the plan: a plan
   says what was intended, and a `plan, not code` doNotSay row marks a plan
   sentence to check against the code before repeating it. A commit a
@@ -143,12 +146,20 @@ section-per-topic template down as "inventory-like".
   publishes, what now fails fast or is refused, what a caller must now pass.
   Then, if worth it, the riskiest part or what is deliberately left alone.
   Skip what is obvious.
-- **Open points**: `render` writes every open `limits` row under the
-  Validation section (session history, push/CI and tag status, other
-  platforms, fakes, code no test names). Don't repeat what that section
-  states. Keep another open point in prose only when it matters to a
-  reviewer and no limits row says it (a plan step left undone, a command
-  that kept failing, from `process`), as one clause.
+- **Open points** from open `limits` rows and `process` facts (a plan step left
+  undone, a command that kept failing), each a clause in your own words,
+  folded in where they belong or in one short paragraph. Keep only the ones
+  you can support and that matter to a reviewer; leave out a row you can't
+  back. `render` itself writes two kinds under Validation (the session's last
+  run older than the final edits beside a fresh check, and a failed push):
+  don't repeat those. If you ran `tracetoon check` and it passed, don't
+  repeat a "no passing run after the last commit" limit. When a limit calls
+  a pass a historical session run, say it that way, not re-run on the final
+  content (never "the last commit passed"). Don't turn it into a claim that
+  coverage is missing ("not proven to cover", "does not establish
+  coverage").
+- **CI and push status**: at most one sentence in all, from the `limits`
+  row that says it.
 - **Where to start** (required): one line, "Where to start: `fn` in
   `file` …", the function and file the `entry` process row names (when it
   names only a file, or there is none, give a file from `changes.where` and
@@ -173,8 +184,8 @@ commit message or the Validation section, cut it.
 
 Put `<!-- tracetoon:validation -->` on its own line where the Validation
 section belongs (usually after the changes); `render` writes it from the
-validation rows: fresh checks (passes on one line), session runs, then every
-open `limits` row as plain sentences. A validation row's `earlier` column names an earlier failure
+validation rows: fresh checks (passes on one line), session runs, then at
+most two open points (stale session run, failed push). A validation row's `earlier` column names an earlier failure
 of that check; render mentions it there, so don't repeat it in prose.
 
 ## Tagging

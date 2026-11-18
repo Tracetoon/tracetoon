@@ -404,6 +404,13 @@ const PLATFORMS: { name: string; host: string; re: RegExp }[] = [
   { name: 'arm64', host: 'arm64', re: /\barm64\b|\baarch64\b/i },
   { name: 'x64', host: 'x64', re: /\bx64\b|\bx86_64\b|\bamd64\b/i },
 ];
+/** A platform as a value a test can pass in (`platform: 'win32'`). */
+const PLATFORM_VALUE: Record<string, RegExp> = {
+  Windows: /^(?:win32|win64|windows(?:_nt)?)$/i,
+  macOS: /^(?:darwin|macos|osx)$/i,
+  arm64: /^(?:arm64|aarch64)$/i,
+  x64: /^(?:x64|x86_64|amd64)$/i,
+};
 /** A test of the running OS or CPU: what makes a line platform-specific. */
 const PLATFORM_TEST =
   /\bprocess\.(?:platform|arch)\b|\bos\.(?:platform|arch|type)\(\)|\bsys\.platform\b|\bplatform\.(?:system|machine)\(\)|\bos\.name\b|\bruntime\.GOOS\b|\bruntime\.GOARCH\b|\bcfg!?\(\s*(?:windows|unix|target_os|target_arch)|#\s*if(?:def)?\s+_WIN32|\$Is(?:Windows|MacOS|Linux)\b|\$env:OS\b|\$\(?uname\b|\bRUNNER_OS\b|\brunner\.os\b|\bOSTYPE\b|\bis(?:Windows|Mac\w*|Linux)\b|\bIS_(?:WINDOWS|MAC|LINUX)\b|\b(?:platform|arch|os|hostOs|targetOs)\s*(?:[!=]==?|-eq|-ne)\s*['"]|['"]\w+['"]\s*[!=]==?\s*(?:platform|arch|os)\b/;
@@ -480,8 +487,23 @@ const FAKE_NAME =
   /\b((?:mock|stub|fake)[A-Z_]\w*|\w+(?:Mock|Stub|Fake)\b)|\b(?:vi|jest)\.mock\(\s*['"]([^'"]+)['"]|\bspyOn\(\s*[\w$.]+\s*,\s*['"](\w+)['"]|\bmock\.module\(\s*['"]([^'"]+)['"]/g;
 /** A source file that is itself a test double. */
 const DOUBLE_FILE = /(^|[/_.-])(?:fakes?|mocks?|stubs?)(?=[/_.-]|$)/i;
-const TTY =
-  /\b(?:isTTY|setRawMode|tty|pty|readline|inquirer|prompts?\(|stdin|interactive|isatty|raw mode)\b/i;
+/**
+ * Terminal code: a TTY test, raw mode, termios or a pseudo-terminal API. Words
+ * like "interactive", "prompt" or "stdin" in prose, prompts or instructions
+ * are not terminal handling.
+ */
+const TTY_CODE =
+  /\.isTTY\b|\bisatty\b|\bsetRawMode\b|\btermios\b|\btc[gs]etattr\b|\b(?:open|fork)pty\b|\bpty\.(?:spawn|fork|openpty)\b|\btty\.(?:ReadStream|WriteStream|isatty|setraw|setcbreak)\b|\bIsTerminal\b|\bterm\.MakeRaw\b|\b(?:enable|disable)_raw_mode\b|\bGetConsoleMode\b|\bSetConsoleMode\b/;
+/** Added code lines with string literals and line comments removed. */
+export function ttyCodeLines(lines: string[]): string[] {
+  return lines.filter((l) => {
+    if (/^\s*(?:\/\/|#|\*|\/\*|--|<!--)/.test(l)) return false;
+    const code = l
+      .replace(/`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""')
+      .replace(/\s\/\/.*$|\s#.*$/, '');
+    return TTY_CODE.test(code);
+  });
+}
 
 const hunkText = (h: Row) =>
   [...((h.code as string[]) ?? []), ...((h.conds as string[]) ?? [])]
@@ -589,6 +611,11 @@ export function environmentRows(
         );
     wfOs.set(wfBase(f), set);
   }
+  const testLiterals = tests.flatMap((h) =>
+    [...hunkText(h).matchAll(/(['"`])([\w.-]{2,20})\1/g)].map((m) => m[2]!),
+  );
+  const testsPassPlatform = (n: string) =>
+    testLiterals.some((x) => PLATFORM_VALUE[n]?.test(x));
   const viaWorkflow = (x: CiRun, n: string) =>
     (x.workflows ?? []).filter((w) => wfOs.get(w.toLowerCase())?.has(n));
   const ranOn = (x: CiRun, n: string) =>
@@ -609,7 +636,11 @@ export function environmentRows(
     const after = (x: CiRun) => !edited || x.t >= edited;
     const all = PLATFORMS.map((p) => p.name).filter((n) => u.names.has(n));
     // A platform passed in CI after the unit's last edit: a run there.
-    const names = all.filter((n) => !ci.some((x) => passedOn(x, n) && after(x)));
+    // A changed test that passes the platform in as a value ('win32') runs
+    // that path on any host: no "none shows the path" point for it.
+    const names = all.filter(
+      (n) => !ci.some((x) => passedOn(x, n) && after(x)) && !testsPassPlatform(n),
+    );
     if (!names.length) continue;
     const clauses: string[] = [];
     const none: string[] = [];
@@ -833,7 +864,13 @@ export function environmentRows(
         : `The changed tests (${shown(fs)}) replace ${what.length ? what.join(', ') : 'collaborators'} with fakes or stubs${shownNames}${reachedBy}: they check the logic around those steps, not the real ${what.length === 1 ? 'step' : 'steps'}.`,
     });
   }
-  const tty = src.filter((h) => TTY.test(hunkText(h)));
+  // Only real terminal code in shipped (non-prose) files: a TTY test, raw
+  // mode, termios, a pseudo-terminal; never prompt or instruction text.
+  const tty = src.filter(
+    (h) =>
+      !/\.(?:md|mdx|rst|txt|adoc|json|ya?ml|toml)$/i.test(String(h.file)) &&
+      ttyCodeLines(addedLines(h)).length > 0,
+  );
   if (tty.length) {
     const files = [...new Set(tty.map((h) => String(h.file)))].sort();
     out.push({
@@ -1839,101 +1876,6 @@ export function ownerRows(
   );
 }
 
-/** A command that tags, releases or publishes a package. */
-const RELEASING =
-  /\bgit\s+tag\b|\bgit\s+push\b[^;&|]*(?:--tags|\brefs\/tags\/|\sv?\d+\.\d+\.\d+)|\bgh\s+release\b|\b(?:npm|pnpm|yarn|bun|cargo|poetry|gem)\s+(?:publish|push)\b|\btwine\s+upload\b/i;
-const CHANGELOG_FILE =
-  /(^|\/)(changelog|changes|history|news|releases?)(\.(?:md|txt|rst|adoc))?$/i;
-const RELEASE_WORKFLOW =
-  /(^|\/)\.github\/workflows\/[^/]*(?:release|publish|deploy)[^/]*\.ya?ml$/i;
-const VERSION_FILE =
-  /(^|\/)(?:package\.json|Cargo\.toml|pyproject\.toml|setup\.(?:py|cfg)|[^/]+\.gemspec|build\.gradle(?:\.kts)?|pom\.xml|VERSION(?:\.txt)?|version\.\w+|plugin\.json|manifest\.json)$/i;
-const VERSION_BUMP = /\b\d+\.\d+\.\d+(?:-[\w.]+)?\b.*→.*\b\d+\.\d+\.\d+/;
-
-/**
- * Where the session's own record stops short of shipping the change: no push
- * of this PR's commits in the session logs (so no CI on its head either), and
- * a diff that prepares a release (a version bump, a changelog entry, a release
- * workflow) with no tag, release or publish command in them. Only with a
- * matched session and at least one commit; each row is worded in the scope
- * of the session logs.
- */
-export function sessionEndRows(g: GraphEngine, hunks: Row[]): Row[] {
-  const cmds = sessionCommands(g);
-  if (!cmds) return [];
-  const commits = prCommits(g);
-  const first = commits.at(-1);
-  if (!first) return [];
-  const remote = remoteEvents(g);
-  const out: Row[] = [];
-  // A failed push has its own row (failedPublishRows): what reached the remote isn't recorded.
-  const pushed = remote.some(
-    (x) => x.kind === 'publish' && (!x.t || x.t >= String(first.t)),
-  );
-  if (!pushed && !failedPublishRows(g).length)
-    out.push({
-      change: null,
-      kind: 'open',
-      limit:
-        'The session logs show no push of these commits, so push and CI results for the final head are not in them.',
-    });
-  const files = [...new Set(hunks.map((h) => String(h.file)))];
-  // Changelog hunks whose changed lines say "Unreleased" (headings aren't in `code`).
-  const unreleased = new Set(
-    g
-      .run('MATCH (h:Hunk) RETURN h.id AS id, h.words AS words')
-      .rows.filter((h) =>
-        ((h.words as string[]) ?? []).map(String).includes('unreleased'),
-      )
-      .map((h) => String(h.id)),
-  );
-  // A version pair of a manifest or version file, or one that names a version:
-  // a docs line requiring another tool's version is no bump of this one.
-  const SEMVER = /\d+\.\d+\.\d+(?:-[\w.]+)?/;
-  const bump = [
-    ...new Set(
-      hunks.flatMap((h) =>
-        ((h.pairs as string[]) ?? [])
-          .map(String)
-          .filter(
-            (p) =>
-              VERSION_BUMP.test(p) &&
-              (VERSION_FILE.test(String(h.file)) || /version/i.test(p)) &&
-              !/\.(?:md|mdx|rst|txt|adoc)$/i.test(String(h.file)),
-          )
-          .map((p) => {
-            const [a, b] = p.split(' → ');
-            return `${SEMVER.exec(a ?? '')?.[0]} → ${SEMVER.exec(b ?? '')?.[0]}`;
-          }),
-      ),
-    ),
-  ][0];
-  const what = bump
-    ? `bumps the version (${bump})`
-    : // A changelog entry under "Unreleased" announces no release.
-      hunks.some(
-          (h) =>
-            CHANGELOG_FILE.test(String(h.file)) &&
-            !((h.code as string[]) ?? []).some((l) =>
-              /^\+\s*#+\s*\[?unreleased\b/i.test(String(l)),
-            ) &&
-            !unreleased.has(String(h.hunk ?? h.id)),
-        )
-      ? 'adds a changelog entry'
-      : files.some((f) => RELEASE_WORKFLOW.test(f))
-        ? 'changes a release workflow'
-        : '';
-  const released =
-    cmds.some((c) => RELEASING.test(c)) || remote.some((x) => RELEASING.test(x.cmd));
-  if (what && !released)
-    out.push({
-      change: null,
-      kind: 'open',
-      limit: `The diff ${what}, but no tag or release appears in the session logs.`,
-    });
-  return out;
-}
-
 /**
  * The session's last check run when it came before the last commit with a
  * captured edit of a PR file in between: which run, and the files edited
@@ -1961,63 +1903,4 @@ export function lastRunBeforeFinalCommit(
     files,
     commit: shortSha(last.id),
   };
-}
-
-const orNames = (xs: string[]) =>
-  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs.at(-1)}`;
-/** A unit's file is code a test can exercise: not docs, config, CI or prose. */
-const TESTABLE = /\.(?:[cm]?[jt]sx?|py|go|rs|rb|java|kt|swift|cs|php|sh|ps1)$/i;
-
-/**
- * A changed behavior no test names: a change unit of shipped code (no test,
- * docs or config files) whose symbols and file stems a head-tree scan looked
- * for in every test file and found in none, and that no changed test's title
- * names (`checkedBy`). Never claimed when the scan didn't run or didn't look
- * for every term of the unit.
- */
-export function untestedRows(
-  g: GraphEngine,
-  changes: Row[],
-  hunks: Row[],
-  fileRole: Map<string, string>,
-): Row[] {
-  const scan = g.run(
-    `MATCH (x:HeadRef) WHERE x.kind = 'test scan' RETURN x.terms AS terms, x.tested AS tested`,
-  ).rows[0];
-  if (!scan) return [];
-  const looked = new Set(((scan.terms as string[]) ?? []).map(String));
-  const tested = new Set(((scan.tested as string[]) ?? []).map(String));
-  const out: Row[] = [];
-  for (const c of changes) {
-    if (Array.isArray(c.checkedBy) && c.checkedBy.length) continue;
-    const hs = hunks.filter((h) => h.change === c.change);
-    const files = [...new Set(hs.map((h) => String(h.file)))];
-    if (!files.length) continue;
-    if (!files.every((f) => fileRole.get(f) === 'behavior' && TESTABLE.test(f))) continue;
-    // Generated code isn't tested by name; Rust keeps unit tests inside the
-    // source file, where a scan of test files can't see them.
-    if (files.some((f) => /(^|[./_-])generated([./_-]|$)/i.test(f) || /\.rs$/.test(f)))
-      continue;
-    const terms = new Set<string>();
-    for (const f of files) {
-      const stem = (f.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
-      if (stem.length >= 4) terms.add(stem);
-    }
-    for (const h of hs)
-      for (const s of [
-        ...((h.fresh as string[]) ?? []),
-        ...((h.symbols as string[]) ?? []),
-      ].map(String))
-        if (/^[A-Za-z_$][\w$]{3,}$/.test(s)) terms.add(s);
-    if (!terms.size) continue;
-    if (![...terms].every((t) => looked.has(t))) continue;
-    if ([...terms].some((t) => tested.has(t))) continue;
-    const names = [...terms].filter((t) => !files.some((f) => f.includes(t))).slice(0, 3);
-    out.push({
-      change: c.change,
-      kind: 'open',
-      limit: `No test file names ${orNames([...files.slice(0, 2), ...names.map((n) => `\`${n}\``)])}, so no changed or existing test refers to this code by name or import.`,
-    });
-  }
-  return out;
 }

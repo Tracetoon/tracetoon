@@ -48,6 +48,11 @@ export interface BriefApplied {
   unbackedNames: { sentence: string; names: string[] }[];
   /** Brief rows no tag cites: change units, commit sentences, tests, housekeeping, the goal. */
   uncovered: string[];
+  /**
+   * Open `limits` rows no tag cites and render doesn't write itself: the
+   * writer's to state where the evidence backs them. Advisory, never blocking.
+   */
+  openLimits: string[];
   /** Sentences that overstate what the brief backs, with what to fix. */
   flags: { sentence: string; problem: string; severity: 'fix' | 'check' }[];
 }
@@ -67,6 +72,10 @@ export function shownCommand(cmd: unknown): string {
       .trim()
   );
 }
+
+/** `shownCommand` with `<repo>/` path prefixes kept: tells an absolute path from a relative one. */
+const keepRepoPrefix = (cmd: string) =>
+  shownCommand(cmd.replace(/<repo>\//g, '\u0000')).replace(/\u0000/g, '<repo>/');
 
 const plain = (s: unknown) =>
   String(s ?? '')
@@ -167,8 +176,9 @@ export function limitSentence(
 ): string | undefined {
   let t = String(limit ?? '').trim();
   if (!t) return undefined;
-  const claim = /^"(.+)" comes only from commit ([0-9a-f]{7,40})'s message\b/.exec(t);
-  if (claim) t = `Only commit ${claim[2]}'s message reports "${claim[1]}".`;
+  // A commit-message claim is the writer's to attribute: its source may be a
+  // doc or skill file the brief doesn't see, so render never words it.
+  if (/^".+" comes only from commit [0-9a-f]{7,40}'s message\b/.test(t)) return undefined;
   t = t
     .replace(/the logs Tracetoon read/g, 'the session logs')
     .replace(/\bTracetoon can't tell whether\b/g, "the session logs don't show whether")
@@ -191,22 +201,39 @@ export function limitSentence(
   return /[.!?]$/.test(t) ? t : `${t}.`;
 }
 
+/** Most open points render writes under the Validation section. */
+const MAX_OPEN_POINTS = 2;
+
 /**
- * Open `limits` rows render writes under the Validation section, as plain
- * sentences: every open row except a "no pass after the last edit" point a
- * passing fresh check already answers.
+ * An open `limits` row render may state itself: one the evidence shows
+ * directly, not an inference from what partial logs lack. The session's last
+ * run older than the final edits beside a fresh pass (`history`), and a
+ * failed push. Every other row stays in the brief for the writer to judge.
+ */
+export function reliableOpenPoint(r: Record<string, unknown>): boolean {
+  if (r.kind !== 'open') return false;
+  const t = String(r.limit ?? '');
+  if (
+    (r.history === true || /^The session's last \w+ run\b/.test(t)) &&
+    /\bcame before the final edits\b/.test(t) &&
+    /\bfresh check\b/.test(t)
+  )
+    return true;
+  const failed = /^`([^`]+)` failed\b[^;]*\bsession; .*\bpushed\b/.exec(t);
+  return !!failed && /\bgit\s+push\b/.test(failed[1]!);
+}
+
+/**
+ * Open points render writes under the Validation section, as plain
+ * sentences: at most two, and only reliable rows (`reliableOpenPoint`).
+ * Failing or timed-out fresh checks have lines of their own above them.
  */
 export function openPointLines(b: BriefParts): string[] {
-  const receiptPassed =
-    !!b.freshPass ||
-    rowsOf(b, 'validation').some(
-      (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'passed',
-    );
   const paths = repoPathsOf(b);
   const out: string[] = [];
   for (const r of rowsOf(b, 'limits')) {
-    if (r.kind !== 'open') continue;
-    if (receiptPassed && PASS_LIMIT.test(String(r.limit ?? ''))) continue;
+    if (out.length >= MAX_OPEN_POINTS) break;
+    if (!reliableOpenPoint(r)) continue;
     const line = limitSentence(r.limit, paths);
     if (line && !out.includes(line)) out.push(line);
   }
@@ -249,12 +276,27 @@ export function validationSection(b: BriefParts): string {
   const receipts = rows.filter((r) => /^V\d/.test(String(r.check ?? '')));
   const logRuns = rows.filter((r) => !/^V\d/.test(String(r.check ?? '')));
   // Every receipt is listed, each command once: a later receipt for the same
-  // command (a rerun under another check name) replaces the earlier one.
-  const latest = new Map<string, (typeof receipts)[number]>();
+  // command (a rerun under another check name) replaces the earlier one. Keyed
+  // by the command as run: two commands that read alike once `<repo>/` is
+  // dropped (an absolute and a relative path) are different runs, and a pass
+  // of one must never hide a failure of the other.
+  const byRaw = new Map<string, (typeof receipts)[number]>();
   for (const r of receipts) {
+    const raw = String(r.cmd ?? '').trim();
     const cmd = shownCommand(r.cmd);
     if (!cmd || /‹withheld›|<withheld>/.test(cmd)) continue;
-    latest.delete(cmd);
+    byRaw.delete(raw);
+    byRaw.set(raw, r);
+  }
+  const shownCount = new Map<string, number>();
+  for (const raw of byRaw.keys())
+    shownCount.set(shownCommand(raw), (shownCount.get(shownCommand(raw)) ?? 0) + 1);
+  // Shown command -> receipt; a colliding variant keeps its `<repo>/` prefix.
+  const latest = new Map<string, (typeof receipts)[number]>();
+  for (const [raw, r] of byRaw) {
+    let cmd = shownCommand(raw);
+    if ((shownCount.get(cmd) ?? 0) > 1) cmd = keepRepoPrefix(raw);
+    if (latest.has(cmd)) cmd = raw;
     latest.set(cmd, r);
   }
   const changed = new Set(
@@ -443,8 +485,8 @@ export function validationSection(b: BriefParts): string {
   const fresh = shown.some((x) => /submitted content|fresh/i.test(x.when));
   if (predates && !fresh)
     lines.push("- The session logs don't show whether these runs saw the final commit.");
-  // Every open point the brief lists, as plain sentences: the writer doesn't
-  // restate them, and a reader finds the checks and their limits together.
+  // The reliable open points (at most two), as plain sentences; the other
+  // limits rows are the writer's to turn into clauses where it can.
   const open = openPointLines(b).filter(
     (o) => !lines.some((l) => l.includes(o.replace(/[.]$/, ''))),
   );
@@ -634,6 +676,7 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
       validationClaims: [],
       unbackedNames: [],
       uncovered: [],
+      openLimits: [],
       flags: [],
     };
   const known = briefRefs(b);
@@ -954,16 +997,20 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     rowsOf(b, 'validation').some(
       (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'passed',
     );
-  // With the Validation marker, render writes every open point there itself.
+  // With the Validation marker, render writes the reliable open points there
+  // itself; the rest are the writer's to state, where it can support them.
   const marker = body.includes(VALIDATION_MARKER);
+  // The writer judges them: listed, never required (unreliable rows stated
+  // whole were judged noise and errors).
+  const openLimits: string[] = [];
   for (const r of rowsOf(b, 'limits'))
     if (
-      !marker &&
+      !(marker && reliableOpenPoint(r)) &&
       r.kind === 'open' &&
       !cited(r.ref) &&
       !(receiptPassed && PASS_LIMIT.test(String(r.limit ?? '')))
     )
-      uncovered.push(`${String(r.ref)} (open point): ${clipped(String(r.limit ?? ''))}`);
+      openLimits.push(`${String(r.ref)}: ${clipped(String(r.limit ?? ''))}`);
 
   for (const r of rowsOf(b, 'requests'))
     if (String(r.kind ?? '').startsWith('goal') && !cited(r.ref))
@@ -992,6 +1039,7 @@ export function applyBrief(body: string, b: BriefParts | undefined): BriefApplie
     validationClaims,
     unbackedNames,
     uncovered,
+    openLimits,
     flags,
   };
 }

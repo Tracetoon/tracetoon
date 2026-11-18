@@ -36,10 +36,7 @@ import {
   sessionCommands,
   liveEvidence,
   functionProfiles,
-  sessionEndRows,
   lastRunBeforeFinalCommit,
-  untestedRows,
-  MAX_LIMITS,
   type FnProfile,
 } from './briefExtras.ts';
 
@@ -2325,8 +2322,9 @@ export function briefParts(
       [
         ...(noPass ? [noPass] : []),
         ...failedPublishRows(g),
-        // Where the session's record stops: no push, no tag or release.
-        ...(matchedSession ? sessionEndRows(g, hunkRows) : []),
+        // No "no push" or "no tag or release" rows: the session logs are
+        // partial, so an absence there was contradicted by a push or tag the
+        // full logs held.
       ],
       // With no session matched there is no record to say a path never ran live.
       matchedSession
@@ -2409,21 +2407,8 @@ export function briefParts(
     hunkLinks,
     hunkRows,
   );
-  // A changed behavior no changed or existing test names (needs checkedBy).
-  {
-    const room = MAX_LIMITS - limits.length;
-    if (room > 0 && matchedSession) {
-      limits.push(
-        ...untestedRows(
-          g,
-          changeRows as Record<string, unknown>[],
-          hunkRows,
-          fileRole,
-        ).slice(0, Math.min(room, 2)),
-      );
-      limits.forEach((l, i) => (l.ref = `L${i + 1}`));
-    }
-  }
+  // No "no test names this code" rows: a name scan can't show what a test
+  // exercises, so readers could never verify the claim.
 
   // Version bumps and generated files: one sentence covers them.
   const housekeeping: Record<string, unknown>[] = [];

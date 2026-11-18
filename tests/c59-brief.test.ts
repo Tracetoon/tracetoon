@@ -377,14 +377,20 @@ describe('drafting guidance', () => {
     expect(next).not.toContain('10 min');
   });
   test('session-history caveats, environment-only failures and economy', () => {
-    // Session history, push/CI and tag status are written under Validation by render.
+    // The writer turns the limits it can back into clauses; render writes
+    // only the stale session run and a failed push under Validation.
     expect(drafting).toMatch(
-      /`render` writes every open `limits` row under the\s+Validation section/,
+      /only those the evidence supports; skip a row you can't back/,
     );
+    expect(drafting).toMatch(/a failed push\):\s+don't repeat those/);
+    expect(drafting).toMatch(/each behavior\s+\(`behavior` lines, `behaviors` rows\)/);
     expect(drafting).toContain('could not run as pinned here');
     expect(drafting).toMatch(/lockfiles, rebuilt bundles/);
     expect(DRAFTING_RULES).toMatch(
-      /Render writes every open `limits` row under the Validation section/,
+      /skip a row you can't support/,
+    );
+    expect(DRAFTING_RULES).toMatch(
+      /Render writes only a stale session run and a failed push/,
     );
     expect(drafting).not.toMatch(/logs Tracetoon read|Tracetoon kept/);
   });

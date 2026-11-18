@@ -756,11 +756,9 @@ describe('a fresh receipt covers a missing-pass open point', () => {
     ],
     unchecked: [],
   });
-  test('the no-pass row is not left to cover once a receipt passed', () => {
+  test('the no-pass row is not listed once a receipt passed', () => {
     const open = (receipt: boolean) =>
-      applyBrief('Some text here for the body.', parts(receipt) as any).uncovered.filter(
-        (u) => u.includes('open point'),
-      );
+      applyBrief('Some text here for the body.', parts(receipt) as any).openLimits;
     expect(open(false).map((u) => u.slice(0, 2))).toEqual(['L1', 'L2']);
     expect(open(true).map((u) => u.slice(0, 2))).toEqual(['L2']);
   });

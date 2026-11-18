@@ -749,11 +749,13 @@ describe('evidence graph', () => {
       'The shell module changes how commands split. [CH1]\n\n<!-- tracetoon:validation -->',
       b,
     );
-    // With the marker, render writes the open point itself: nothing left to cover.
+    // A commit-message result is the writer's to attribute: listed for the writer,
+    // never written into Validation by render.
     expect(r.uncovered).toEqual([]);
-    expect(r.text).toContain(
-      '- Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
-    );
+    expect(r.openLimits).toEqual([
+      'L1: Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
+    ]);
+    expect(r.text).not.toContain('Open points:');
     expect(r.text).toContain(
       '- `bun test`: passed (9 pass, 0 fail) in the session logs.',
     );

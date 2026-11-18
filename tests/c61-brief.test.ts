@@ -11,7 +11,7 @@ import {
   VALIDATION_MARKER,
   type BriefParts,
 } from '../src/graph/briefRender.ts';
-import { entryRow, sessionEndRows, untestedRows } from '../src/graph/briefExtras.ts';
+import { entryRow, environmentRows, ttyCodeLines } from '../src/graph/briefExtras.ts';
 import { patchHunks } from '../src/graph/build.ts';
 import { testScanNode } from '../src/graph/headScan.ts';
 import { withGraph } from '../src/graph/engine.ts';
@@ -58,13 +58,14 @@ describe('the Validation section carries the checks, the open points and history
     },
     { check: 'V3', kind: 'lint', outcome: 'passed', result: '', cmd: 'bun run lint' },
   ];
-  test('passes collapse to one line; every open limit follows as a plain sentence', () => {
+  test('passes collapse to one line; only reliable open points follow, at most two', () => {
     const b = parts([
       sec('limits', [
         {
           ref: 'L1',
           change: null,
           kind: 'open',
+          history: true,
           limit:
             "The session's last test run (R4) came before the final edits to src/a.ts; the fresh check on the submitted content came after it.",
         },
@@ -82,6 +83,20 @@ describe('the Validation section carries the checks, the open points and history
           limit:
             'Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of src/a.ts.',
         },
+        {
+          ref: 'L4',
+          change: null,
+          kind: 'open',
+          limit:
+            "`git push origin feat` failed 2 of 3 times in the claude-code session; which attempt published or pushed what isn't recorded.",
+        },
+        {
+          ref: 'L5',
+          change: null,
+          kind: 'open',
+          limit:
+            "`gh pr create` failed in the codex session; whether or how the work was then published or pushed isn't recorded.",
+        },
       ]),
       sec('validation', receipts),
     ]);
@@ -94,14 +109,29 @@ describe('the Validation section carries the checks, the open points and history
       "- The session's last test run came before the final edits to src/a.ts; the fresh check on the submitted content came after it.",
     );
     expect(out).toContain(
-      '- The session pushed (`git push`); CI results for the final head are not in the session logs.',
+      "- `git push origin feat` failed 2 of 3 times in the claude-code session; which attempt published or pushed what isn't recorded.",
     );
-    // A "no pass after the last edit" point a fresh pass answers is not repeated.
+    // Inferences and other kinds stay in the brief for the writer to judge.
+    expect(out).not.toContain('CI results for the final head');
+    expect(out).not.toContain('gh pr create');
     expect(out).not.toContain('recognized no passing');
     expect(out).not.toMatch(/\bR4\b|Tracetoon/);
+    expect(out.split('\n').filter((l) => l.startsWith('- ')).length).toBe(3);
   });
 
-  test('open points render even when no check result can be stated', () => {
+  test('never more than two open-point lines', () => {
+    const stale = (n: number) => ({
+      ref: `L${n}`,
+      change: null,
+      kind: 'open',
+      history: true,
+      limit: `The session's last test run (R${n}) came before the final edits to src/f${n}.ts; the fresh check on the submitted content came after it.`,
+    });
+    const out = validationSection(parts([sec('limits', [stale(1), stale(2), stale(3)])]));
+    expect(out.split('\n').filter((l) => l.startsWith('- ')).length).toBe(2);
+  });
+
+  test('unreliable open points are not rendered; with none left, no section', () => {
     const b = parts([
       sec('limits', [
         {
@@ -111,11 +141,81 @@ describe('the Validation section carries the checks, the open points and history
           limit:
             'The diff bumps the version (1.2.0 → 1.3.0), but no tag or release appears in the session logs.',
         },
+        {
+          ref: 'L2',
+          change: null,
+          kind: 'open',
+          limit:
+            "\"Full suite passed\" comes only from commit abc1234def56's message: attribute it to that message, and don't say what any run did or didn't show.",
+        },
       ]),
     ]);
-    expect(validationSection(b)).toBe(
-      '## Validation\n\nOpen points:\n\n- The diff bumps the version (1.2.0 → 1.3.0), but no tag or release appears in the session logs.',
+    expect(validationSection(b)).toBe('');
+  });
+
+  test('a pass of an absolute-path command never hides a failing relative-path one', () => {
+    const b = parts([
+      sec('validation', [
+        {
+          check: 'V1',
+          kind: 'test',
+          outcome: 'failed',
+          result: '7 pass; 11 fail',
+          cmd: 'env CLI=dist/app.mjs bun test tests/flow.test.ts',
+        },
+        {
+          check: 'V2',
+          kind: 'test',
+          outcome: 'passed',
+          result: '18 pass; 0 fail',
+          cmd: 'env CLI=<repo>/dist/app.mjs bun test tests/flow.test.ts',
+        },
+      ]),
+    ]);
+    const out = validationSection(b);
+    expect(out).toContain(
+      '- `env CLI=dist/app.mjs bun test tests/flow.test.ts`: failed (7 pass, 11 fail), run on the submitted content.',
     );
+    expect(out).toContain(
+      '`env CLI=<repo>/dist/app.mjs bun test tests/flow.test.ts`: passed (18 pass, 0 fail)',
+    );
+    // With no relative twin, the prefix is still dropped.
+    const one = validationSection(
+      parts([
+        sec('validation', [
+          {
+            check: 'V1',
+            kind: 'test',
+            outcome: 'passed',
+            result: '1 pass',
+            cmd: 'bun test <repo>/tests/a.test.ts',
+          },
+        ]),
+      ]),
+    );
+    expect(one).toContain('`bun test tests/a.test.ts`: passed');
+    // A rerun of the very same command still replaces the earlier receipt.
+    const rerun = validationSection(
+      parts([
+        sec('validation', [
+          {
+            check: 'V1',
+            kind: 'test',
+            outcome: 'failed',
+            result: '1 fail',
+            cmd: 'bun test',
+          },
+          {
+            check: 'V2',
+            kind: 'test',
+            outcome: 'passed',
+            result: '1 pass',
+            cmd: 'bun test',
+          },
+        ]),
+      ]),
+    );
+    expect(rerun).not.toContain('failed');
   });
 
   test('a failure keeps its counts but not quoted source lines or local paths', () => {
@@ -138,12 +238,12 @@ describe('the Validation section carries the checks, the open points and history
     );
   });
 
-  test('limit sentences: no refs, commit-message results attributed', () => {
+  test('limit sentences: no refs; commit-message results are never worded by render', () => {
     expect(
       limitSentence(
         "\"Full suite passed\" comes only from commit abc1234def56's message: attribute it to that message, and don't say what any run did or didn't show.",
       ),
-    ).toBe('Only commit abc1234def56\'s message reports "Full suite passed".');
+    ).toBeUndefined();
     expect(
       limitSentence(
         'The changed tests (tests/u.test.ts) replace collaborators with fakes or stubs (`fakeRelease`); CH1 is reached that way: they check the logic around those steps, not the real steps.',
@@ -160,16 +260,28 @@ describe('the Validation section carries the checks, the open points and history
     );
   });
 
-  test('with the marker, open limits are not left for the writer to cover', () => {
+  test('open limits are listed for the writer to judge, never required', () => {
     const b = parts([
       sec('limits', [
-        { ref: 'L1', change: null, kind: 'open', limit: 'No test file names src/a.ts.' },
+        { ref: 'L1', change: null, kind: 'open', limit: 'src/a.ts changes scripts.' },
+        {
+          ref: 'L2',
+          change: null,
+          kind: 'open',
+          history: true,
+          limit:
+            "The session's last test run (R4) came before the final edits to src/a.ts; the fresh check on the submitted content came after it.",
+        },
       ]),
     ]);
-    expect(applyBrief(`Adds a. [L1]\n\n${VALIDATION_MARKER}\n`, b).uncovered).toEqual([]);
-    expect(applyBrief('Adds a thing here now.', b).uncovered).toEqual([
-      'L1 (open point): No test file names src/a.ts.',
-    ]);
+    const marked = applyBrief(`Adds a thing here now.\n\n${VALIDATION_MARKER}\n`, b);
+    expect(marked.uncovered).toEqual([]);
+    // Render writes L2 itself; L1 is the writer's call.
+    expect(marked.openLimits).toEqual(['L1: src/a.ts changes scripts.']);
+    expect(applyBrief(`Adds a. [L1]\n\n${VALIDATION_MARKER}\n`, b).openLimits).toEqual(
+      [],
+    );
+    expect(applyBrief('Adds a thing here now.', b).openLimits.length).toBe(2);
   });
 });
 
@@ -358,84 +470,71 @@ describe('new limit generators', () => {
     file: 'src/a.ts',
     ...props,
   });
-  test('no push and no tag for a version bump, in the session logs', () => {
-    const rows = withGraph(graphOf(base), (g) =>
-      sessionEndRows(g, [
-        hunk({ file: 'package.json', pairs: ['"version": "1.2.0" → "1.3.0"'] }),
-      ]),
+  test('terminal rows need terminal code, not prompt or instruction text', () => {
+    expect(ttyCodeLines(['if (!process.stdout.isTTY) return plain(text);'])).toHaveLength(
+      1,
     );
-    expect(rows.map((r) => r.limit)).toEqual([
-      'The session logs show no push of these commits, so push and CI results for the final head are not in them.',
-      'The diff bumps the version (1.2.0 → 1.3.0), but no tag or release appears in the session logs.',
+    expect(ttyCodeLines(['if sys.stdin.isatty():'])).toHaveLength(1);
+    expect(ttyCodeLines(['old = termios.tcgetattr(fd)'])).toHaveLength(1);
+    expect(
+      ttyCodeLines([
+        "const msg = 'Run this in an interactive terminal (isTTY) and answer the prompt';",
+        '// interactive prompts read stdin here',
+        'prompt: `Ask the user before continuing; stdin is interactive`,',
+        'const answer = await prompts({ type: "confirm" });',
+        'readline.createInterface({ input: fs.createReadStream(file) });',
+      ]),
+    ).toEqual([]);
+    const roles = new Map([
+      ['src/agent.ts', 'behavior'],
+      ['src/ui.ts', 'behavior'],
     ]);
-  });
-  test("a docs line requiring another tool's version is no bump", () => {
-    const rows = withGraph(graphOf(base), (g) =>
-      sessionEndRows(g, [
-        hunk({
-          file: 'README.md',
-          pairs: ['Requires examplelib 0.5.0 → Requires examplelib 0.5.1'],
-        }),
-      ]),
+    const rows = environmentRows(
+      [
+        {
+          hunk: 'H1',
+          change: 'CH1',
+          file: 'src/agent.ts',
+          code: ["+ const text = 'Ask before running interactive commands on stdin';"],
+        },
+      ],
+      roles,
+      { platform: 'linux', arch: 'x64' },
     );
-    expect(rows.map((r) => r.limit).join('\n')).not.toContain('tag or release');
+    expect(rows.some((r) => /TTY/.test(String(r.limit)))).toBe(false);
   });
-  test('a changelog entry under "Unreleased" announces no release', () => {
-    const rows = withGraph(graphOf(base), (g) =>
-      sessionEndRows(g, [
-        hunk({ file: 'CHANGELOG.md', code: ['+ ## Unreleased', '+ - adds x'] }),
-      ]),
-    );
-    expect(rows.map((r) => r.limit).join('\n')).not.toContain('tag or release');
-  });
-  test('no session: no rows', () => {
-    expect(withGraph(graphOf([base[1]!]), (g) => sessionEndRows(g, [hunk({})]))).toEqual(
-      [],
-    );
-  });
-  test('code no test file names, only when the scan looked for every term', () => {
-    const scan = (tested: string[]) =>
-      N('HeadRef', 'HR1', {
-        kind: 'test scan',
-        terms: ['retryUpload', 'uploader'],
-        tested,
-      });
-    const changes = [{ change: 'CH1' }];
-    const hunks = [
-      {
-        hunk: 'H1',
-        change: 'CH1',
-        file: 'src/uploader.ts',
-        fresh: ['retryUpload'],
-        symbols: [],
-      },
-    ];
-    const role = new Map([['src/uploader.ts', 'behavior']]);
-    const rows = withGraph(graphOf([scan([])]), (g) =>
-      untestedRows(g, changes, hunks, role),
-    );
-    expect(rows.map((r) => r.limit)).toEqual([
-      'No test file names src/uploader.ts or `retryUpload`, so no changed or existing test refers to this code by name or import.',
+  test('no platform row when a changed test passes the platform in as a value', () => {
+    const roles = new Map([
+      ['src/paths.ts', 'behavior'],
+      ['tests/paths.test.ts', 'tests'],
     ]);
+    const src = {
+      hunk: 'H1',
+      change: 'CH1',
+      file: 'src/paths.ts',
+      code: ["+ if (platform === 'win32') return winPath(p);"],
+    };
+    const host = { platform: 'linux', arch: 'x64' };
+    const windowsRow = (rows: { limit?: unknown }[]) =>
+      rows.some((r) => /Windows/.test(String(r.limit)));
+    expect(windowsRow(environmentRows([src], roles, host))).toBe(true);
     expect(
-      withGraph(graphOf([scan(['uploader'])]), (g) =>
-        untestedRows(g, changes, hunks, role),
+      windowsRow(
+        environmentRows(
+          [
+            src,
+            {
+              hunk: 'H2',
+              change: 'CH1',
+              file: 'tests/paths.test.ts',
+              code: ["+ expect(toPath('a/b', 'win32')).toBe('a\\\\b');"],
+            },
+          ],
+          roles,
+          host,
+        ),
       ),
-    ).toEqual([]);
-    // A term the scan didn't look for: no claim.
-    const more = [{ ...hunks[0]!, fresh: ['retryUpload', 'backoffDelay'] }];
-    expect(
-      withGraph(graphOf([scan([])]), (g) => untestedRows(g, changes, more, role)),
-    ).toEqual([]);
-    // No scan: no claim; a unit a changed test names: none.
-    expect(withGraph(graphOf([]), (g) => untestedRows(g, changes, hunks, role))).toEqual(
-      [],
-    );
-    expect(
-      withGraph(graphOf([scan([])]), (g) =>
-        untestedRows(g, [{ change: 'CH1', checkedBy: ['T1: retries'] }], hunks, role),
-      ),
-    ).toEqual([]);
+    ).toBe(false);
   });
   test('the test scan records terms looked for and those test files name', () => {
     const g = graphOf([

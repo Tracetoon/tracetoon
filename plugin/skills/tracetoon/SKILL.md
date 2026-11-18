@@ -96,7 +96,8 @@ not switch to another run.
       first, no fixed section list, about 250–450 words, factual sentences
       tagged with brief refs (`[CH1, commit:<sha>#2]`),
       `<!-- tracetoon:validation -->` where Validation belongs (render writes
-      the checks and every open limit there). End with a "Where to start" line
+      the checks there; open limits are yours to state where you can back
+      them). End with a "Where to start" line
       and a "Feedback wanted" line (one concrete question for reviewers). Start
       from an existing description and keep it; edit `body.md` in place on
       requests.

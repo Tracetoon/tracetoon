@@ -293,6 +293,7 @@ const briefCheckSummary = (b: BriefApplied) => ({
   validationClaims: b.validationClaims,
   unbackedNames: b.unbackedNames,
   uncovered: b.uncovered,
+  openLimits: b.openLimits,
   flags: b.flags,
   /** Sentences the writer must fix before publishing (coverage gaps are counted apart). */
   open: openProblems(b),
@@ -355,6 +356,13 @@ function briefCheckLines(b: BriefApplied): string {
         .join(
           '\n',
         )}${b.uncovered.length > 12 ? `\n  - …and ${b.uncovered.length - 12} more` : ''}`,
+    );
+  if (b.openLimits.length)
+    out.push(
+      `Open points not in the description (optional: state one in your own words, tagged with its ref, only where the diff or logs back it; leave out any you can't):\n${b.openLimits
+        .slice(0, 9)
+        .map((u) => `  - ${u}`)
+        .join('\n')}`,
     );
   if (b.tags) {
     const open = openProblems(b);
