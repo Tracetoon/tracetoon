@@ -97,6 +97,7 @@ describe('agent surfaces', () => {
       'docs/agents/install.md',
       'docs/agents/faq.md',
       'docs/agents/use-cases.md',
+      'docs/agents/submissions.md',
       'docs/agents/errors.md',
       'docs/agents/cli.md',
     ];
@@ -140,6 +141,9 @@ describe('agent surfaces', () => {
     );
     expect(server.name).toBe(MCP_NAME);
     expect(server.name).toMatch(/^[a-zA-Z0-9.-]+\/[a-zA-Z0-9._-]+$/);
+    // The registry grants io.github.<owner>/* with the owner's exact GitHub casing.
+    const owner = /github\.com\/([^/]+)\//.exec(server.repository.url)?.[1];
+    expect(server.name.startsWith(`io.github.${owner}/`)).toBe(true);
     expect((pkg as { mcpName?: string }).mcpName).toBe(MCP_NAME);
     expect(server.description.length).toBeLessThanOrEqual(MCP_DESCRIPTION_MAX);
     expect(server.version).toBe(pkg.version);
@@ -313,14 +317,14 @@ describe('vendor catalog manifests', () => {
     expect(existsSync(join(root, e.metadata.repoPath))).toBe(true);
   });
 
-  test('listings.md names files that exist and marks every catalog unsubmitted', () => {
+  test('listings.md names files that exist and gives every catalog a status', () => {
     const text = read('docs/agents/listings.md');
     const rows = text
       .split('\n')
       .filter((l) => /^\| [^-]/.test(l) && !l.startsWith('| Catalog'));
     expect(rows.length).toBeGreaterThanOrEqual(10);
     for (const row of rows) {
-      expect(row).toMatch(/\| not (submitted|applicable)/);
+      expect(row).toMatch(/\| (not (submitted|applicable)|PR open|submitted|listed)\b/);
       const backed = row.split(' | ')[1] ?? '';
       for (const [, path = ''] of backed.matchAll(/`([^`\s]+)`/g))
         expect(existsSync(join(root, path))).toBe(true);

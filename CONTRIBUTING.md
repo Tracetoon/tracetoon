@@ -147,10 +147,11 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   scripts/packaged-contracts.ts. Their JUnit results must contain every selected
   contract; renamed, skipped, failed, or empty selections cannot pass silently.
   All source tests still run on each supported CI platform; on Windows they are
-  split across three machines (`TRACETOON_TEST_SHARD`). Publication itself
-  reuses current validation; it never launches these suites at publish.
-  CI runs both packaged suites on every PR, on every platform, and is their
-  gate before merge: any change to shipped code (`src/`, assets, the launchers,
+  split across three machines (`TRACETOON_TEST_SHARD`). Pull requests run on
+  Linux and Windows; macOS, the slowest job, runs in the merge queue and on
+  `main`. Publication itself reuses current validation; it never launches these
+  suites at publish. CI runs both packaged suites on every platform before
+  merge and is their gate: any change to shipped code (`src/`, assets, the launchers,
   dependencies) can affect them. Locally they are optional and take about two
   minutes. Run them when you want that signal before CI, especially for
   packaging changes such as `scripts/bundle.ts`, `scripts/build*.ts`,
@@ -245,7 +246,12 @@ only fast-forwards and is never forced. Keep
 `.claude-plugin/marketplace.json` free of a `version` field: the plugin version
 comes from `plugin.json`, which the build stamps from `package.json`.
 
-Push the matching `vX.Y.Z` tag after merging the validated changes. The release
+Push the matching `vX.Y.Z` tag after merging the validated changes, on the
+head of the release PR's branch (the commit with `release-promotion.json`), not
+on `main`: the merge queue squashes, so the candidate commit is never an
+ancestor of `main`'s commit and verification would fail. That commit carries
+`release.yml` as of the branch's base, so workflow changes merged later apply
+from the next release. The release
 workflow verifies the successful originating CI run, artifact identity, source
 build identity, the recorded release basis and every asset checksum, then publishes
 those exact bytes. It does not build replacement release files. Install from

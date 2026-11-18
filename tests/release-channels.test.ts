@@ -114,14 +114,23 @@ describe('release workflow', () => {
     // Tags promote; they never compile.
     expect(wf).not.toMatch(/scripts\/build\.ts|bun run (build|bundle)|bun build/);
   });
-  test('without an NPM_TOKEN secret the npm steps are skipped with a notice', () => {
-    expect(wf).toContain("HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}");
+  test('without the NPM_PUBLISH variable the npm steps are skipped with a notice', () => {
+    expect(wf).toContain('NPM_PUBLISH: ${{ vars.NPM_PUBLISH }}');
     const publish = wf.slice(at('- name: Publish the npm packages'), at('\n  channels:'));
-    expect(publish).toContain("if: env.HAS_NPM_TOKEN == 'true'");
-    expect(publish).toContain('NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}');
+    expect(publish).toContain("if: env.NPM_PUBLISH != ''");
     const skip = wf.slice(at('- name: Skip npm'), at('- uses: actions/setup-node'));
-    expect(skip).toContain("if: env.HAS_NPM_TOKEN != 'true'");
+    expect(skip).toContain("if: env.NPM_PUBLISH == ''");
     expect(skip).toContain('::notice');
+  });
+  test('npm publishes by trusted publishing: OIDC, a new enough npm, a GitHub-hosted runner', () => {
+    const release = wf.slice(at('\n  release:'), at('\n  channels:'));
+    expect(release).toContain('runs-on: ubuntu-latest');
+    expect(wf).toMatch(/^permissions:[\s\S]*?id-token: write/m);
+    const npm = release.match(/npm install -g npm@(\d+\.\d+\.\d+)/)?.[1] ?? '0.0.0';
+    // npm 11.5.1 is the first release that supports trusted publishing.
+    expect(Bun.semver.order(npm, '11.5.1')).toBeGreaterThanOrEqual(0);
+    expect(at('npm install -g npm@')).toBeLessThan(at('npm publish "$dir"'));
+    expect(release).toMatch(/node-version: (2[4-9]|[3-9]\d)/);
   });
   test('Homebrew and winget files are generated from the published checksums and attached, not pushed', () => {
     const channels = wf.slice(at('\n  channels:'));
