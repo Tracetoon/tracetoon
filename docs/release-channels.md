@@ -21,7 +21,9 @@ to the `latest` dist-tag. A release candidate goes to `latest` too until a
 final version is on npm, so `npx tracetoon@latest` gets it without anyone
 moving the tag; after that, release candidates go to `next`
 (`.github/scripts/npm-dist-tag.ts`). Trusted publishing can't change a
-dist-tag after publishing, so the tag is chosen at publish time. Versions
+dist-tag after publishing, so the tag is chosen at publish time; if npm's
+list of versions can't be read (anything but the package not existing yet),
+the publish step stops rather than guess. Versions
 already on npm are skipped, so rerunning the job finishes a partial publish.
 Without the `NPM_PUBLISH` repository variable the steps are skipped with a
 notice and the release still succeeds.

@@ -96,7 +96,9 @@ jobs:
         run: |
           # Release candidates go to `next` once a final version is on npm; until then
           # to `latest`, which the install docs use (.github/scripts/npm-dist-tag.ts).
-          published=$(npm view tracetoon versions --json 2>/dev/null) || published='[]'
+          # npm view fails for a package that doesn't exist yet; the script reads its
+          # E404 as "nothing published" and stops the release on any other failure.
+          published=$(npm view tracetoon versions --json 2>/dev/null) || true
           dist_tag=$(bun .github/scripts/npm-dist-tag.ts "${GITHUB_REF_NAME#v}" "$published")
           echo "Publishing to the npm dist-tag $dist_tag"
           while read -r dir; do

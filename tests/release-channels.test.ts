@@ -101,14 +101,17 @@ describe('npm dist-tag', () => {
     expect(npmDistTag('1.0.0', ['1.0.0-rc.35'])).toBe('latest');
     expect(npmDistTag('1.0.1', ['1.0.0'])).toBe('latest');
   });
-  test('reads npm view --json output: an array, one bare version, or nothing', () => {
+  test('reads npm view --json output, and fails on anything but a missing package', () => {
     expect(parsePublished('["1.0.0-rc.34","1.0.0-rc.35"]')).toEqual([
       '1.0.0-rc.34',
       '1.0.0-rc.35',
     ]);
     expect(parsePublished('"1.0.0-rc.34"')).toEqual(['1.0.0-rc.34']);
-    expect(parsePublished('')).toEqual([]);
-    expect(() => parsePublished('{"error":{"code":"E404"}}')).toThrow();
+    // A package that doesn't exist yet: npm prints an E404 error object.
+    expect(parsePublished('{"error":{"code":"E404","summary":"Not Found"}}')).toEqual([]);
+    // Any other failure must not pass for "no final version yet".
+    expect(() => parsePublished('{"error":{"code":"ETIMEDOUT"}}')).toThrow();
+    expect(() => parsePublished('')).toThrow();
   });
 });
 
