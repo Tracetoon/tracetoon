@@ -10,6 +10,10 @@ import {
   root,
   stale,
   supportedLabels,
+  listingDescription,
+  npmDescription,
+  RESULTS,
+  BENEFITS,
 } from '../scripts/agent-surfaces.ts';
 import pkg from '../package.json';
 import { git } from '../src/util/exec.ts';
@@ -55,7 +59,7 @@ describe('agent surfaces', () => {
       expect(llms).toContain(label);
       expect(market.plugins[0].description).toContain(label);
     }
-    expect(market.plugins[0].description).toBe(pitch());
+    expect(market.plugins[0].description).toBe(listingDescription());
     expect(supportedLabels().length).toBe(
       INTEGRATIONS.filter((i) => i.status === 'supported').length,
     );
@@ -193,7 +197,7 @@ describe('vendor catalog manifests', () => {
   ];
   const plugin = (p: string) => join(root, 'plugin', p);
 
-  test('every manifest parses and carries the shared pitch and package version', () => {
+  test('every manifest parses and carries the shared description and package version', () => {
     for (const path of MANIFESTS) expect(() => json(path)).not.toThrow();
     for (const path of [
       'plugin/plugin.json',
@@ -204,11 +208,11 @@ describe('vendor catalog manifests', () => {
     ]) {
       expect(json(path).name).toBe('tracetoon');
       expect(json(path).version).toBe(pkg.version);
-      expect(json(path).description).toBe(pitch());
+      expect(json(path).description).toBe(listingDescription());
     }
     expect(json('.cursor-plugin/marketplace.json').metadata.version).toBe(pkg.version);
     expect(json('catalog/agentfinder/Tracetoon/tracetoon.json').description).toBe(
-      pitch(),
+      listingDescription(),
     );
   });
 
@@ -330,5 +334,24 @@ describe('vendor catalog manifests', () => {
         expect(existsSync(join(root, path))).toBe(true);
     }
     for (const path of MANIFESTS) expect(text).toContain(`\`${path}\``);
+  });
+});
+
+describe('public listings sell the project', () => {
+  test('long descriptions open with the pitch and quote the latest published results', () => {
+    expect(listingDescription().startsWith(pitch())).toBe(true);
+    expect(listingDescription()).toContain(RESULTS.sentence);
+    // The comparison is with Tracetoon's earlier workflow; listings must say so.
+    expect(RESULTS.sentence).toContain('earlier multi-agent workflow');
+    expect(RESULTS.url).toStartWith('https://tracetoon.ai/');
+  });
+  test('the npm README lists every benefit and the results, and npm leads with the benefit', () => {
+    const readme = read('.github/scripts/npm/README.md');
+    for (const [lead] of BENEFITS) expect(readme).toContain(`**${lead}.**`);
+    for (const [figure] of RESULTS.table) expect(readme).toContain(figure);
+    expect(readme).toContain(RESULTS.url);
+    expect(readme).toContain('npx tracetoon@latest setup');
+    expect(npmDescription()).toContain('checked against the evidence');
+    expect(npmDescription()).toEndWith('Run: npx tracetoon@latest setup');
   });
 });

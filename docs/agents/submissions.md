@@ -11,6 +11,16 @@ Shared facts:
 
 - **Name:** Tracetoon
 - **One line:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic.
+- **Description:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.
+- **Why use it:**
+  - **Written from what happened.** Your agent already logged what you asked for, what it changed and which commands ran; Tracetoon writes the description from that record, so it can say why the change was made and what was tested, not just what the diff shows.
+  - **Every claim checked.** Each factual sentence has to trace back to the session evidence, independent reviewers check the draft, and the Validation section comes from recorded test and build runs instead of being typed by the model.
+  - **Cheaper to write.** A compact, cited evidence brief built in an embedded graph database lets the agent draft without rereading raw logs.
+  - **Safe to post.** Private paths and secrets are redacted from the evidence, a leak scan runs before anything is posted, and you approve the PR first.
+  - **Follows the house rules.** It reads the repository's PR template, contribution guide and AI-disclosure policy and writes to them.
+  - **Works with your agents.** Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, as an agent skill, a CLI or an MCP server.
+  - **A comic on top.** An optional one-off comic about the change, which reviewers actually read.
+- **Results:** On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
 - **Repository:** https://github.com/Tracetoon/tracetoon (install from the `release` branch: https://github.com/Tracetoon/tracetoon/tree/release)
 - **Website:** https://tracetoon.ai
 - **Licence:** Apache-2.0
@@ -47,7 +57,7 @@ OpenAI org owner, identity verification and a video):
    PRs written from agent logs. Category: Developer Tools.
 4. Long description:
 
-   > Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. It reads the session logs your coding agents keep on disk, checks every claim in the description against that evidence, and creates or updates the PR with the GitHub CLI. Needs git and gh signed in. Comic images go to an image service only after you approve one.
+   > Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
 
 5. Test cases. Should start Tracetoon:
    1. "Open a PR for this branch."
