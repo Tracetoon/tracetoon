@@ -8,15 +8,15 @@ on:
 permissions:
   contents: write
   actions: read
-  # npm provenance: the registry checks this run's OIDC token.
+  # npm trusted publishing and provenance: the registry checks this run's OIDC token.
   id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      # Step conditions can't read secrets; this says whether NPM_TOKEN is set.
-      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+      # Publishing to npm is on when the repository variable NPM_PUBLISH is set.
+      NPM_PUBLISH: ${{ vars.NPM_PUBLISH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,19 +70,27 @@ jobs:
       # Never forced: the previous release head is a parent, so `release` only fast-forwards.
       - name: Publish the plugin bundle on the release branch
         run: bun .github/scripts/release-branch.ts release release-promotion.json "$GITHUB_REF_NAME" --push
-      # npm is optional: without the NPM_TOKEN secret the release still succeeds.
-      - name: Skip npm (no NPM_TOKEN secret)
-        if: env.HAS_NPM_TOKEN != 'true'
-        run: echo "::notice title=npm publish skipped::Set the NPM_TOKEN repository secret to publish tracetoon and @tracetoon/cli-* to npm (docs/release-channels.md)."
+      # npm is optional: without the NPM_PUBLISH variable the release still succeeds.
+      - name: Skip npm (no NPM_PUBLISH variable)
+        if: env.NPM_PUBLISH == ''
+        run: echo "::notice title=npm publish skipped::Set the NPM_PUBLISH repository variable to publish tracetoon and @tracetoon/cli-* to npm (docs/release-channels.md)."
       - uses: actions/setup-node@v4
-        if: env.HAS_NPM_TOKEN == 'true'
+        if: env.NPM_PUBLISH != ''
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
+      # Trusted publishing (OIDC) needs npm 11.5.1 or later.
+      - name: Install npm for trusted publishing
+        if: env.NPM_PUBLISH != ''
+        run: npm install -g npm@11.12.1
       # Platform packages first, so the wrapper's pinned optionalDependencies exist when it lands.
       # A version already on npm is skipped, so a rerun finishes a partial publish.
+      # Authenticates by trusted publishing: npm trades this run's OIDC token for a
+      # one-off publish token, so no long-lived secret is needed. NPM_TOKEN is only the
+      # bootstrap for the first publish (npm can trust only packages that already exist);
+      # delete it once every package trusts this workflow (docs/release-channels.md).
       - name: Publish the npm packages
-        if: env.HAS_NPM_TOKEN == 'true'
+        if: env.NPM_PUBLISH != ''
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
