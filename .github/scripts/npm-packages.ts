@@ -20,6 +20,7 @@ import {
 import { join, resolve } from 'node:path';
 import { SUPPORTED_TARGETS, verifyCandidateInputs } from './release-assets.ts';
 import rootPkg from '../../package.json';
+import { npmDescription } from '../../scripts/agent-surfaces.ts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const TEMPLATES = join(import.meta.dir, 'npm');
@@ -113,8 +114,7 @@ export function buildNpmPackages(
   writeJson(join(dir, 'package.json'), {
     name: 'tracetoon',
     version: manifest.version,
-    description:
-      'Write pull request descriptions from the AI agent session logs already on your machine. Run: npx tracetoon@latest setup',
+    description: npmDescription(),
     ...COMMON,
     keywords: [
       'pull-request',

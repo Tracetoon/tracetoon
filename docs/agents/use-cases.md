@@ -13,7 +13,7 @@ Coding agents (Claude Code, Codex, Copilot, Cursor, Antigravity and others) alre
 
 ## AI-generated PR descriptions are vague, padded, or say tests passed when nobody ran them. How do I fix that?
 
-Tracetoon writes only from evidence and checks every sentence before posting: a claim check marks sentences the logs contradict or do not establish, then two independent reviewers compare the draft with the diff. It never says "all tests pass" unless a run showed it, and a run that passed before the last edits is described that way.
+Tracetoon writes only from evidence and checks every sentence before posting: a claim check marks sentences the logs contradict or do not establish, then independent reviewers (two in the shipped skill) compare the draft with the diff. It never says "all tests pass" unless a run showed it, and a run that passed before the last edits is described that way.
 
 ## How can reviewers see what an AI agent was asked to do and what it actually did?
 

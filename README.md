@@ -22,19 +22,17 @@ changed, what actually ran. **Tracetoon turns them into a pull request reviewers
 can trust.** Every claim is checked against the evidence, it costs less to
 write, and there's a comic on top.
 
+<!-- results:start -->
 <div align="center">
 
-|                       **18–1**                        |                 **0**                  |          **−41%**           |
-| :---------------------------------------------------: | :------------------------------------: | :-------------------------: |
-| head-to-head wins over the no-graph workflow (Claude) | factual errors in 25 Codex-written PRs | cost per PR: $0.41 vs $0.69 |
+| **83–34** | **69–17** | **−46% / −31%** |
+| :---: | :---: | :---: |
+| judges preferred the evidence-graph PR on Codex | judges preferred it on Claude Code | cost per PR on Codex / Claude Code |
 
-<sub>From prbench: 5 real PRs from Tracetoon's own development, 5 drafts per PR
-per setup, scored by AI judges. The sample is small and scores vary by about ±3
-points between runs, so read these as development numbers. See the
-<a href="https://tracetoon.ai/evidence-graph.html">full results</a>, methods
-and caveats.</sub>
+<sub>prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. See the <a href="https://tracetoon.ai/evidence-graph-61.html">full results</a>, methods and caveats.</sub>
 
 </div>
+<!-- results:end -->
 
 > [!NOTE]
 > **For AI agents:** start with [AGENTS.md](AGENTS.md) (how to run Tracetoon,
@@ -175,7 +173,8 @@ them into a redacted evidence brief your agent writes from.
 - **Your words stay yours.** Text you write in the PR, or edit on GitHub later,
   is kept on the next update. Tracetoon only owns a marked region of the body.
 
-Here is one real PR, written three ways and scored 0–100 by the same judges:
+Here is one real PR from the earlier 5-PR study, written three ways and scored
+0–100 by the same judges:
 
 | Who wrote it                   | Score  |
 | ------------------------------ | :----: |
@@ -183,9 +182,10 @@ Here is one real PR, written three ways and scored 0–100 by the same judges:
 | Tracetoon, old workflow        |   65   |
 | **Tracetoon + evidence graph** | **80** |
 
-Head to head, Tracetoon with the graph beat its own no-graph workflow
-**18–1** on Claude and **12–1** on Codex. A win only counts when two judges each
-read both orders and all four readings agree.
+Across 61 real PRs from 12 repositories, judges preferred Tracetoon with the
+graph over its own no-graph workflow **83–34** on Codex and **69–17** on Claude
+Code. A pick only counts when two judges each read both orders and agree. On
+the 36 PRs the brief was never tuned on, the picks were 51–14 and 43–11.
 
 ---
 
@@ -212,7 +212,9 @@ flowchart LR
   from the test and build runs on the final code. The model never gets to type
   "all tests pass".
 - **The why, not just the what.** Plans, decisions and the original request
-  come along with the code. In the evaluation, context coverage rose 5–7 points.
+  come along with the code. On 61 real PRs, Codex drafts with the graph conveyed
+  82% of the expert fact sheet's claims, against 72% without it (on Claude Code
+  it was about even: 75% and 76%).
 - **Relevance, not recency.** The graph decides what the digest keeps when it
   has to trim, and names the files a cited test run didn't see.
 
@@ -280,12 +282,15 @@ model runs. Then:
    are no repeat review rounds, and `publish` refuses until both passes are
    imported.
 
-| Setup              | Cost per PR |
-| ------------------ | ----------: |
-| Claude, no graph   |       $0.69 |
-| **Claude + graph** |   **$0.41** |
-| Codex, no graph    |       $0.32 |
-| **Codex + graph**  |   **$0.21** |
+| Setup (61 real PRs)     | Cost per PR |
+| ----------------------- | ----------: |
+| Claude Code, no graph   |      $0.654 |
+| **Claude Code + graph** |  **$0.415** |
+| Codex, no graph         |      $0.447 |
+| **Codex + graph**       |  **$0.225** |
+
+Averages per PR; the typical paired saving is 31% on Claude Code and 46% on
+Codex ([how cost is measured](https://tracetoon.ai/evidence-graph-61.html)).
 
 <details>
 <summary><b>Tuning the review plan</b></summary>
@@ -804,7 +809,7 @@ dark backgrounds, as SVG and PNG.
 
 <p align="center">
 <a href="https://tracetoon.ai">tracetoon.ai</a> ·
-<a href="https://tracetoon.ai/evidence-graph.html">Evidence graph results</a> ·
+<a href="https://tracetoon.ai/evidence-graph-61.html">Evidence graph results</a> ·
 <a href="https://github.com/relatedb/relate">Built on Relate</a> ·
 <a href="https://github.com/Tingsters/Showtail/tree/main/packages/agent-traces"><code>@showtail/agent-traces</code></a>
 </p>

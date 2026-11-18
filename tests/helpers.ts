@@ -62,6 +62,10 @@ function baseRepo(): string {
   g('config', 'user.email', 'dev@example.com');
   g('config', 'user.name', 'Dev');
   g('config', 'commit.gpgsign', 'false');
+  // Each commit otherwise starts a detached `git maintenance run --auto`, which
+  // creates and deletes .git/objects/maintenance.lock after git has returned;
+  // a copy taken at that moment fails with ENOENT. Copies inherit this setting.
+  g('config', 'maintenance.auto', 'false');
   writeFileSync(join(root, 'README.md'), '# demo\n');
   g('add', '.');
   g('commit', '-q', '-m', 'base');
