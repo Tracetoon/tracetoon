@@ -147,10 +147,11 @@ core modules (`src/trace`, `src/hook`, `src/util`), never another host's folder;
   scripts/packaged-contracts.ts. Their JUnit results must contain every selected
   contract; renamed, skipped, failed, or empty selections cannot pass silently.
   All source tests still run on each supported CI platform; on Windows they are
-  split across three machines (`TRACETOON_TEST_SHARD`). Publication itself
-  reuses current validation; it never launches these suites at publish.
-  CI runs both packaged suites on every PR, on every platform, and is their
-  gate before merge: any change to shipped code (`src/`, assets, the launchers,
+  split across three machines (`TRACETOON_TEST_SHARD`). Pull requests run on
+  Linux and Windows; macOS, the slowest job, runs in the merge queue and on
+  `main`. Publication itself reuses current validation; it never launches these
+  suites at publish. CI runs both packaged suites on every platform before
+  merge and is their gate: any change to shipped code (`src/`, assets, the launchers,
   dependencies) can affect them. Locally they are optional and take about two
   minutes. Run them when you want that signal before CI, especially for
   packaging changes such as `scripts/bundle.ts`, `scripts/build*.ts`,

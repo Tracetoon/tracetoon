@@ -112,6 +112,8 @@ describe('evidence graph', () => {
     g.close();
   });
 
+  // Twelve CLI processes (a digest, then queries); under test:compiled on
+  // Windows that alone came close to the 60 s default and timed out four times.
   test('digest links files to prompts and checks, and names later edits', () => {
     const { repo, cli } = scenario();
     const r = cli(repo.root, '--json', 'digest', '--offline');
@@ -224,7 +226,7 @@ describe('evidence graph', () => {
     expect(outline.stdout).toMatch(
       /\n  src\/manual\.ts,behavior,1,0,1,1,"",("?)[0-9a-f]{12}\1,no captured edit\n/,
     );
-  });
+  }, 180_000);
 
   test('with no run on the final code, the brief keeps the latest run of each kind', () => {
     const { claudeHome, cli } = setup();
