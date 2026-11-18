@@ -1,18 +1,26 @@
 /**
  * Relate, compiled to WebAssembly, as Tracetoon's in-process graph engine.
  * Like resvg it needs no native module: the .wasm ships in the skill's assets
- * and works in Bun, Node and the compiled binary. Each run's graph is small
+ * (gzipped, since plugin directories cap file size) and works in Bun, Node and
+ * the compiled binary. Each run's graph is small
  * (hundreds to a few thousand nodes) and is loaded into memory from
  * `evidence-graph.json` per command, so there is no database file to manage.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 import { RelateDb, initSync } from './vendor/relate.js';
 import { assetsDir } from '../util/assets.ts';
 import { measured } from '../util/profile.ts';
 import type { EvidenceGraph, NodeLabel, Value } from './model.ts';
 
-export const WASM_FILE = 'relate.wasm';
+export const WASM_FILE = 'relate.wasm.gz';
+
+/** The module's bytes; an override may point at an uncompressed .wasm. */
+function moduleBytes(path: string): Buffer {
+  const bytes = readFileSync(path);
+  return bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzipSync(bytes) : bytes;
+}
 
 /** An explicit engine module path; the pre-Relate variable name still works (deprecated). */
 function wasmOverride(): string | undefined {
@@ -51,7 +59,7 @@ function init(): void {
     throw initialized;
   }
   try {
-    initSync({ module: readFileSync(path) });
+    initSync({ module: moduleBytes(path) });
     initialized = true;
   } catch (e) {
     initialized = new GraphError(

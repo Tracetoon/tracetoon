@@ -31,9 +31,10 @@ verified copy without network access. Don't symlink `.tracetoon-deps` into a
 worktree: agent sandboxes refuse paths that resolve outside the worktree. `build.config.json` records the required Bun version and build recipe.
 
 The evidence graph engine is [Relate](https://github.com/relatedb/relate)
-compiled to WebAssembly, vendored as `plugin/skills/tracetoon/assets/relate.wasm`
-plus its glue in `src/graph/vendor/`, pinned by tag, revision and SHA-256 in
-`build-dependencies.json`. Builds refuse mismatched bytes
+compiled to WebAssembly, vendored gzipped as
+`plugin/skills/tracetoon/assets/relate.wasm.gz` (plugin directories refuse files
+over 5 MiB) plus its glue in `src/graph/vendor/`, pinned by tag, revision and
+SHA-256 (of the uncompressed module) in `build-dependencies.json`. Builds refuse mismatched bytes
 (`bun scripts/relate.ts check`). To reproduce or bump it, install Relate's
 WebAssembly toolchain (Rust per its `rust-toolchain.toml` with the
 `wasm32-unknown-unknown` target, `wasm-bindgen-cli` at the version in its
