@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.35",
-  "buildId": "424332ac238a5a6270a70ce51488734868cabfe8381f7efb9198f2e31a387dae",
+  "version": "1.0.0-rc.36",
+  "buildId": "c0045bdb8cb1f52c58c604c7bd047ac4c859905d3aec5133bacde214faa8372e",
   "artifact": {
-    "runId": 44272482066,
-    "id": 14413801381,
-    "name": "tracetoon-candidate-d8f854709196b05d9dec172ea6c1889cd24b68ca-attempt-1",
-    "digest": "sha256:174106d6afc68305ac0e621c3de72462e39d2882eda65eb409b0812691cc28ff"
+    "runId": 44295667373,
+    "id": 14423702110,
+    "name": "tracetoon-candidate-c549db768d317db8dfdc3ee7bbec625428e7b35a-attempt-1",
+    "digest": "sha256:2e195044db3b469d28ed0c6a918fef40dd696fa66753d35073344d88382b1b2b"
   },
   "expected": {
-    "manifestSha256": "30a6bfa834b4e1f300ced3bfaef2774b5943a51644039539e4c0369ad4e2f1a4",
-    "checksumsSha256": "5dcf9db1d758817b3c81dafc337e6a21a7d075214ddcc33cf4e8a195c49d6ea6",
-    "windowsSha256": "c7249454ababed0f7ae6487f4765c328ce11d97ab024c05d3aa8d1433074cb90",
-    "bundleSha256": "d8f052986d3ec2728d846fa8db7691021190283cb8021dce9cb43b2d944cb594"
+    "manifestSha256": "e2b25341822db1ab7168620865bc02e4e52489ed6094cc64e095a69918fc4d97",
+    "checksumsSha256": "1ad44e99e7b0cbb1aa17681bf94889414956e9e5fa688d9cfc35e279a0c5e1fe",
+    "windowsSha256": "e713ed0cc67c9f634fafdcfd6396dedd70fe4db50c42d1ec6fefea92a24a4a7f",
+    "bundleSha256": "73a8ce3ae3659981a1c285b4aa182134ad0b8ece47cc40519be1c492a47a6343"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-18T08:57:00.000Z",
-    "reason": "The user asked to cut rc.35 without a benchmark round so the first release with the corrected MCP Registry name (#151) publishes the npm packages by trusted publishing and lists Tracetoon in the MCP Registry, within npm's 48-hour window for the newly created trusted-publisher configurations. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-18T11:20:00.000Z",
+    "reason": "The user approved a plan to cut rc.36 without a benchmark round and asked for it to be done overnight, so the benefit-led npm README and description and the catalog manifests with the published 61-PR results (#159) reach npm and the plugin catalogs, and so the first release with release candidates on npm's latest tag and the MCP Registry waiting for npm (#158) runs end to end. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
