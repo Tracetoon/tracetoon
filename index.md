@@ -7,6 +7,16 @@ changed, what actually ran. **Tracetoon turns them into a pull request reviewers
 can trust.** Every claim is checked against the evidence, it costs less to
 write, and there's a comic on top.
 
+## Results
+
+| | |
+| --- | --- |
+| **83–34** | judges preferred the evidence-graph PR on Codex |
+| **69–17** | judges preferred it on Claude Code |
+| **−46% / −31%** | cost per PR on Codex / Claude Code |
+
+prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. Full results: https://tracetoon.ai/evidence-graph-61.html
+
 > **For AI agents:** start with [agents.md](https://tracetoon.ai/agents.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
 > [install.md](https://tracetoon.ai/docs/agents/install.md). [use-cases.md](https://tracetoon.ai/docs/agents/use-cases.md)
@@ -53,7 +63,6 @@ Left out: 1 session that may not belong to this PR.
 Comics: tracetoon config set comic off|allowed|always (now: allowed)
 ```
 
-<!-- hosts:start (generated from the integration registry) -->
 Tracetoon works across a broad range of coding agents and IDEs. Recommended integrations are actively maintained and continuously compatibility-tested. Community Supported integrations are available on a best-effort basis.
 
 **Recommended:** retested on every new release of the agent.
@@ -90,7 +99,6 @@ on a best-effort basis.
 
 Hook files, skill folders, verification results and the notes:
 [supported agents](https://tracetoon.ai/docs/agents/support.md).
-<!-- hosts:end -->
 
 > [!TIP]
 > Already installed? Ask your agent: _"Update Tracetoon."_ It works for the
