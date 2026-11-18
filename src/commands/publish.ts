@@ -494,7 +494,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   };
   const block = managedBlock(content, meta);
   const body = mergeIntoBody(ctx.existingPr?.body, block);
-  const findings = scanComment(
+  const findings = scanPrText(
     `${title}\n${body.replace(/<!-- tracetoon:meta [\s\S]*? -->/, '')}`,
   );
   const findingAt = findings.length ? leakLocations(title, body) : [];
@@ -1407,12 +1407,28 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
   );
 }
 
+/**
+ * An image GitHub hosts for the PR (`publish` attaches the comic this way, and an
+ * update keeps the earlier upload). The random UUID in its path is not a secret,
+ * but the opaque-token filter can't tell it from one. Signed links such as
+ * private-user-images URLs still go through the scan.
+ */
+const GITHUB_ATTACHMENT =
+  /https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![0-9a-zA-Z_-])/g;
+
+/** The leak scan of PR text, with GitHub attachment links set aside. */
+export function scanPrText(text: string): ReturnType<typeof scanComment> {
+  return scanComment(
+    text.replace(GITHUB_ATTACHMENT, 'https://github.com/user-attachments/assets/'),
+  );
+}
+
 /** Lines of the rendered PR text where the leak scan finds something. */
 function leakLocations(title: string, body: string): string[] {
   const at: string[] = [];
-  if (scanComment(title).length) at.push('title');
+  if (scanPrText(title).length) at.push('title');
   body.split(/\r?\n/).forEach((line, i) => {
-    if (!line.startsWith('<!-- tracetoon:meta') && scanComment(line).length)
+    if (!line.startsWith('<!-- tracetoon:meta') && scanPrText(line).length)
       at.push(`final-body.md:${i + 1}`);
   });
   return at;
