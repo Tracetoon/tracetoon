@@ -13,6 +13,7 @@
 // revision is exported from it with git archive and built in a temp directory,
 // so the clone is never modified.
 import { createHash } from 'node:crypto';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 import {
   copyFileSync,
@@ -37,7 +38,9 @@ interface Lock {
   files: Record<string, string>;
 }
 
-const WASM = 'plugin/skills/tracetoon/assets/relate.wasm';
+// Shipped gzipped: the Claude plugin directory refuses files over 5 MiB, and the
+// module is about 6.5 MiB raw. Its pinned hash is of the uncompressed module.
+const WASM = 'plugin/skills/tracetoon/assets/relate.wasm.gz';
 const VENDOR = 'src/graph/vendor/';
 
 /** Where a vendored file comes from in Relate's wasm-bindgen output. */
@@ -57,6 +60,14 @@ function builtFiles(out: string): string[] {
 const sha = (path: string) =>
   createHash('sha256').update(readFileSync(path)).digest('hex');
 
+/** The pinned hash of a vendored file: the uncompressed bytes for the gzipped module. */
+const vendoredSha = (file: string, path: string) =>
+  file === WASM
+    ? createHash('sha256')
+        .update(gunzipSync(readFileSync(path)))
+        .digest('hex')
+    : sha(path);
+
 function lock(): Lock {
   const l = JSON.parse(readFileSync(lockPath, 'utf8')).relate as Lock | undefined;
   if (!l || !/^[a-f0-9]{40}$/.test(l.revision) || !l.files)
@@ -70,7 +81,7 @@ export function verifyRelate(): Lock {
   for (const [file, want] of Object.entries(l.files)) {
     const path = join(root, file);
     if (!existsSync(path)) throw new Error(`Vendored Relate file missing: ${file}`);
-    const got = sha(path);
+    const got = vendoredSha(file, path);
     if (got !== want)
       throw new Error(
         `Vendored Relate file ${file} differs from build-dependencies.json (${got.slice(0, 12)} != ${want.slice(0, 12)}). Run bun scripts/relate.ts rebuild.`,
@@ -146,16 +157,16 @@ function rebuild(source: string | undefined, update: boolean): void {
           `Rebuilt ${from} does not match the pinned hash; the build is not reproducible here.`,
         );
       mkdirSync(dirname(join(root, file)), { recursive: true });
-      copyFileSync(built, join(root, file));
+      if (file === WASM)
+        writeFileSync(join(root, file), gzipSync(readFileSync(built), { level: 9 }));
+      else copyFileSync(built, join(root, file));
     }
     if (update) {
       const all = JSON.parse(readFileSync(lockPath, 'utf8'));
       all.relate.files = files;
       writeFileSync(lockPath, JSON.stringify(all, null, 2) + '\n');
     }
-    console.log(
-      `Relate ${l.tag} (${l.revision.slice(0, 12)}) vendored and verified.`,
-    );
+    console.log(`Relate ${l.tag} (${l.revision.slice(0, 12)}) vendored and verified.`);
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
@@ -169,9 +180,7 @@ if (import.meta.main) {
   };
   if (cmd === 'check') {
     const l = verifyRelate();
-    console.log(
-      `Relate ${l.tag}: ${Object.keys(l.files).length} vendored files match.`,
-    );
+    console.log(`Relate ${l.tag}: ${Object.keys(l.files).length} vendored files match.`);
   } else if (cmd === 'rebuild') rebuild(flag('--source'), rest.includes('--update'));
   else {
     console.error(

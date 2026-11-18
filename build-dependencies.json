@@ -18,7 +18,7 @@
       "binaryen": "133"
     },
     "files": {
-      "plugin/skills/tracetoon/assets/relate.wasm": "eedb5e5323a7809b43995e8a15d256254c4d1f6a0df08eab7b58d0ec0686fdd4",
+      "plugin/skills/tracetoon/assets/relate.wasm.gz": "eedb5e5323a7809b43995e8a15d256254c4d1f6a0df08eab7b58d0ec0686fdd4",
       "src/graph/vendor/relate.js": "3f96727c1ea76d95bdf6e376806be391d5b964c363f6f06f2f4b11095d6d5a38",
       "src/graph/vendor/relate.d.ts": "1b230dcd8edbeacd4e6e8e24d161dde93c732bbe8a5f48a891f03fa941c03640",
       "src/graph/vendor/snippets/relate-wasm-7487af8b11cb0efe/js/opfs.js": "493a1c8d8a761ead191addd9701a2dd15276db250cda2323ad3659c1c9c7474e"

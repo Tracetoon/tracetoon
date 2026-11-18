@@ -2,6 +2,7 @@
 *.cmd -text
 *.mjs binary
 *.wasm binary
+*.gz binary
 *.ttf binary
 *.png binary
 *.ico binary
