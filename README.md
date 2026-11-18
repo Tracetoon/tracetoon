@@ -12,6 +12,19 @@ This branch is the website at https://tracetoon.ai. The code and docs live on `m
 - `index.html`: the landing page. Plain HTML with inline CSS and one small inline script for the install tabs and copy buttons. The page still works with JavaScript off. No build step.
 - `evidence-graph.html`: the evidence graph results write-up, linked from the landing page as "Results". It is an export of the article with a site nav bar added. Mermaid loads from jsDelivr.
 
+## Agent files
+
+These come from the `tracetoon-site-kit.zip` attached to each Tracetoon release (`scripts/site-kit.ts` on `main`); this copy is from 1.0.0-rc.35. Don't edit them here; after a release, download the kit and copy the same files over.
+
+- `llms.txt`, `llms-full.txt`: the index agents read first, and the same pages inlined.
+- `index.md`, `agents.md`, `skill.md`, `docs/agents/*.md`: markdown versions of the pages, for agents.
+- `robots.txt`, `sitemap-agents.xml`: welcome AI crawlers by name and list the files above.
+- `.well-known/agent-skills/`: the experimental skill index and the skill archive it names (`.nojekyll` lets GitHub Pages serve the dot folder).
+- `brand/tracetoon-icon-512.png`, `brand/tracetoon-social.png`: the images the JSON-LD names.
+- In `index.html`'s `<head>`: the `llms.txt` and `index.md` alternate links and the two JSON-LD blocks from the kit's `head.html` (`SoftwareApplication` and `FAQPage`). The "Problems it solves" section shows the same questions and answers as the `FAQPage` block, as search engines require; change them together.
+
+GitHub Pages can't answer `Accept: text/markdown`, so agents find the markdown through the alternate links and `llms.txt`.
+
 ## Edit a page
 
 1. Open the file on this branch in the GitHub web editor (pencil icon), or clone the repo and `git checkout gh-pages`.

@@ -17,6 +17,121 @@
 <link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#fffdf6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14130f" media="(prefers-color-scheme: dark)">
+<!-- Agent files from the release site kit (tracetoon-site-kit.zip); see README.md. -->
+<link rel="alternate" type="text/plain" title="llms.txt" href="https://tracetoon.ai/llms.txt">
+<link rel="alternate" type="text/markdown" href="https://tracetoon.ai/index.md">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": [
+    "SoftwareApplication",
+    "SoftwareSourceCode"
+  ],
+  "name": "Tracetoon",
+  "description": "Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS, Linux, Windows",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "softwareVersion": "1.0.0-rc.35",
+  "url": "https://tracetoon.ai",
+  "downloadUrl": "https://github.com/Tracetoon/tracetoon/releases/tag/v1.0.0-rc.35",
+  "codeRepository": "https://github.com/Tracetoon/tracetoon",
+  "programmingLanguage": "TypeScript",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "keywords": "pull request description generator, AI pull request description, coding agent session logs, AI code provenance, code review, GitHub CLI, MCP server",
+  "image": "https://tracetoon.ai/brand/tracetoon-social.png",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Tracetoon",
+    "url": "https://tracetoon.ai",
+    "logo": "https://tracetoon.ai/brand/tracetoon-icon-512.png"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I write a pull request description from my AI coding agent's session?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Coding agents (Claude Code, Codex, Copilot, Cursor, Antigravity and others) already keep session logs on disk. Tracetoon finds the sessions that produced the current branch and writes the PR from them: what the user asked for, what changed and what actually ran. Ask the agent \"Open a PR for this branch with Tracetoon\", or run tracetoon prepare --json yourself."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "AI-generated PR descriptions are vague, padded, or say tests passed when nobody ran them. How do I fix that?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tracetoon writes only from evidence and checks every sentence before posting: a claim check marks sentences the logs contradict or do not establish, then two independent reviewers compare the draft with the diff. It never says \"all tests pass\" unless a run showed it, and a run that passed before the last edits is described that way."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can reviewers see what an AI agent was asked to do and what it actually did?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The PR covers the request, the plan the user approved, the decisions made along the way, and each test, build and lint run with its result. Anything the logs did not capture is reported as \"not captured\", not \"not done\"."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which lines in a diff came from the AI agent, and which prompt led to them?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tracetoon builds an evidence graph (evidence-graph.json) that links each hunk in the diff to the agent edit and the request that produced it, and to the test runs after it. The match is evidence, not proof of authorship."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I keep secrets and private conversation out of a PR written from agent logs?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Logs are read on your machine. Secrets, personal data, your home path and your username are redacted from the evidence, and a leak scan runs before anything is published. Only the rendered PR text (and a comic, if you approve one) leaves the machine."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I make AI-written PRs follow my repository's PR template, AGENTS.md and AI disclosure policy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tracetoon reads each repository's AI policies, AGENTS.md, PR templates and contribution guides, adds any disclosure the repository asks for, and reports a policy against AI contributions."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can my agent create or update a GitHub PR without overwriting what I edited by hand?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "tracetoon publish pushes the branch and creates or updates the PR with the GitHub CLI (gh). Tracetoon owns only a marked region of the body; text you write or edit on GitHub is kept on the next update. It never merges."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "My agent has no shell or skills support. Can it still write PRs from its logs?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, over MCP: tracetoon mcp serves the same flow on stdio (tracetoon_status, tracetoon_prepare_pr, tracetoon_publish_pr). For example: claude mcp add tracetoon -- tracetoon mcp."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I get reviewers to actually read a pull request?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Lead with the problem and the result, keep it short, and skip file-by-file lists, which is how Tracetoon writes. It can also add a one-off comic about the change. Comic images go to an image service only after the user approves that route."
+      }
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
@@ -153,6 +268,14 @@
   .steps b { display:block; margin-bottom:.25rem; font-size:.98rem; }
   @media (max-width:880px) { .steps { grid-template-columns:1fr 1fr; } }
   @media (max-width:520px) { .steps { grid-template-columns:1fr; } }
+
+  /* problems it solves (the same questions as the FAQPage JSON-LD in <head>) */
+  .faq { padding:1rem 0 3rem; }
+  .faq-list { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; margin-top:1.2rem; align-items:start; }
+  .faq-list details { background:var(--card); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--ink); }
+  .faq-list summary { line-height:1.35; }
+  .faq-list p { color:var(--muted); font-size:.92rem; margin:.6rem 0 0; }
+  @media (max-width:880px) { .faq-list { grid-template-columns:1fr; } }
 
   /* fine print */
   .fine { padding:0 0 3rem; }
@@ -414,6 +537,51 @@
     </div>
   </section>
 
+  <section class="faq" id="faq">
+    <div class="wrap">
+      <span class="kicker">Problems it solves</span>
+      <h2 class="big display">Questions people ask their agents</h2>
+      <div class="faq-list">
+        <details>
+          <summary>How do I write a pull request description from my AI coding agent's session?</summary>
+          <p>Coding agents (Claude Code, Codex, Copilot, Cursor, Antigravity and others) already keep session logs on disk. Tracetoon finds the sessions that produced the current branch and writes the PR from them: what the user asked for, what changed and what actually ran. Ask the agent "Open a PR for this branch with Tracetoon", or run tracetoon prepare --json yourself.</p>
+        </details>
+        <details>
+          <summary>AI-generated PR descriptions are vague, padded, or say tests passed when nobody ran them. How do I fix that?</summary>
+          <p>Tracetoon writes only from evidence and checks every sentence before posting: a claim check marks sentences the logs contradict or do not establish, then two independent reviewers compare the draft with the diff. It never says "all tests pass" unless a run showed it, and a run that passed before the last edits is described that way.</p>
+        </details>
+        <details>
+          <summary>How can reviewers see what an AI agent was asked to do and what it actually did?</summary>
+          <p>The PR covers the request, the plan the user approved, the decisions made along the way, and each test, build and lint run with its result. Anything the logs did not capture is reported as "not captured", not "not done".</p>
+        </details>
+        <details>
+          <summary>Which lines in a diff came from the AI agent, and which prompt led to them?</summary>
+          <p>Tracetoon builds an evidence graph (evidence-graph.json) that links each hunk in the diff to the agent edit and the request that produced it, and to the test runs after it. The match is evidence, not proof of authorship.</p>
+        </details>
+        <details>
+          <summary>How do I keep secrets and private conversation out of a PR written from agent logs?</summary>
+          <p>Logs are read on your machine. Secrets, personal data, your home path and your username are redacted from the evidence, and a leak scan runs before anything is published. Only the rendered PR text (and a comic, if you approve one) leaves the machine.</p>
+        </details>
+        <details>
+          <summary>How do I make AI-written PRs follow my repository's PR template, AGENTS.md and AI disclosure policy?</summary>
+          <p>Tracetoon reads each repository's AI policies, AGENTS.md, PR templates and contribution guides, adds any disclosure the repository asks for, and reports a policy against AI contributions.</p>
+        </details>
+        <details>
+          <summary>Can my agent create or update a GitHub PR without overwriting what I edited by hand?</summary>
+          <p>tracetoon publish pushes the branch and creates or updates the PR with the GitHub CLI (gh). Tracetoon owns only a marked region of the body; text you write or edit on GitHub is kept on the next update. It never merges.</p>
+        </details>
+        <details>
+          <summary>My agent has no shell or skills support. Can it still write PRs from its logs?</summary>
+          <p>Yes, over MCP: tracetoon mcp serves the same flow on stdio (tracetoon_status, tracetoon_prepare_pr, tracetoon_publish_pr). For example: claude mcp add tracetoon -- tracetoon mcp.</p>
+        </details>
+        <details>
+          <summary>How do I get reviewers to actually read a pull request?</summary>
+          <p>Lead with the problem and the result, keep it short, and skip file-by-file lists, which is how Tracetoon writes. It can also add a one-off comic about the change. Comic images go to an image service only after the user approves that route.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
   <section class="fine" id="method">
     <div class="wrap">
       <details>
@@ -473,6 +641,8 @@
     <span>Tracetoon is open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
     <a href="evidence-graph-61.html">Evidence graph results</a>
+    <a href="#faq">Problems it solves</a>
+    <a href="llms.txt">llms.txt (for agents)</a>
     <a href="https://github.com/relatedb/relate">Built on Relate</a>
   </div>
 </footer>
