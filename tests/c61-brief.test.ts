@@ -17,6 +17,7 @@ import { testScanNode } from '../src/graph/headScan.ts';
 import { withGraph } from '../src/graph/engine.ts';
 import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import { behaviorRows, markGoal } from '../src/graph/queries.ts';
+import { receiptEvidence } from '../src/workflow/checks.ts';
 
 const N = (label: any, id: string, props: Record<string, any>) => ({ label, id, props });
 const R = (type: any, from: [any, string], to: [any, string], props?: any) => ({
@@ -669,5 +670,30 @@ describe('entry row: the decision logic, not a callback inside it', () => {
       (g) => entryRow(g),
     );
     expect(String(row?.fact)).toMatch(/^Start at `maybeOffer` in src\/upgrade\.ts/);
+  });
+});
+
+describe('receipts of commands that differ only by an absolute path', () => {
+  const receipt = (command: string[], outcome: string) =>
+    ({
+      command,
+      current: true,
+      outcome,
+      kind: 'test',
+      summary: [],
+      startedAt: t(1),
+      durationMs: 1,
+    }) as any;
+  test('both keep `<repo>/` apart; a lone command still drops it', () => {
+    const ev = receiptEvidence('/nowhere', {} as any, [
+      receipt(['env', 'CLI=dist/app.mjs', 'bun', 'test'], 'failed'),
+      receipt(['env', 'CLI=<repo>/dist/app.mjs', 'bun', 'test'], 'passed'),
+      receipt(['bun', 'test', '<repo>/tests/a.test.ts'], 'passed'),
+    ]);
+    expect(ev.map((e) => [e.cmd, e.outcome])).toEqual([
+      ['env CLI=dist/app.mjs bun test', 'failed'],
+      ['env CLI=<repo>/dist/app.mjs bun test', 'passed'],
+      ['bun test tests/a.test.ts', 'passed'],
+    ]);
   });
 });

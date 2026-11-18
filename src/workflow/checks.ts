@@ -830,25 +830,36 @@ export function receiptEvidence(
   // Reuse a report the caller already computed (fingerprinting walks every file).
   report: ReturnType<typeof checkReport> = checkReport(root, run),
 ): EvidenceRun[] {
-  return report
-    .filter((c) => c.current && ['passed', 'failed'].includes(c.outcome))
-    .map((c, i) => ({
-      id: `V${i + 1}`,
-      cmd: shellJoin(repoRelative(c.command)),
-      kind: c.kind,
-      // A timeout is incomplete: no outcome, its own result line.
-      outcome: c.timedOut ? ('unknown' as const) : (c.outcome as 'passed' | 'failed'),
-      basis: 'exit status',
-      // A check that could not start here says why, in place of result lines.
-      summary: c.timedOut
-        ? [timedOutText(c.durationMs)]
-        : c.outcome === 'failed' && c.couldNotRun
-          ? [`${COULD_NOT_RUN}${c.couldNotRun}`]
-          : c.summary,
-      t: c.startedAt,
-      revision: 'no later edits seen',
-      verificationBasis: 'exact-content-receipt',
-    }));
+  const current = report.filter(
+    (c) => c.current && ['passed', 'failed'].includes(c.outcome),
+  );
+  // Two distinct commands that read alike once `<repo>/` is dropped (an
+  // absolute-path retry of a relative-path run) keep the prefix, so a pass of
+  // one never reads as, or replaces, a failure of the other.
+  const relative = (c: (typeof current)[number]) => shellJoin(repoRelative(c.command));
+  const variants = new Map<string, Set<string>>();
+  for (const c of current)
+    variants.set(
+      relative(c),
+      (variants.get(relative(c)) ?? new Set()).add(shellJoin(c.command)),
+    );
+  return current.map((c, i) => ({
+    id: `V${i + 1}`,
+    cmd: (variants.get(relative(c))?.size ?? 0) > 1 ? shellJoin(c.command) : relative(c),
+    kind: c.kind,
+    // A timeout is incomplete: no outcome, its own result line.
+    outcome: c.timedOut ? ('unknown' as const) : (c.outcome as 'passed' | 'failed'),
+    basis: 'exit status',
+    // A check that could not start here says why, in place of result lines.
+    summary: c.timedOut
+      ? [timedOutText(c.durationMs)]
+      : c.outcome === 'failed' && c.couldNotRun
+        ? [`${COULD_NOT_RUN}${c.couldNotRun}`]
+        : c.summary,
+    t: c.startedAt,
+    revision: 'no later edits seen',
+    verificationBasis: 'exact-content-receipt',
+  }));
 }
 
 /** package.json scripts that check the code (not `pretest`-style hooks). */
