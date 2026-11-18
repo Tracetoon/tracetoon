@@ -140,6 +140,9 @@ describe('agent surfaces', () => {
     );
     expect(server.name).toBe(MCP_NAME);
     expect(server.name).toMatch(/^[a-zA-Z0-9.-]+\/[a-zA-Z0-9._-]+$/);
+    // The registry grants io.github.<owner>/* with the owner's exact GitHub casing.
+    const owner = /github\.com\/([^/]+)\//.exec(server.repository.url)?.[1];
+    expect(server.name.startsWith(`io.github.${owner}/`)).toBe(true);
     expect((pkg as { mcpName?: string }).mcpName).toBe(MCP_NAME);
     expect(server.description.length).toBeLessThanOrEqual(MCP_DESCRIPTION_MAX);
     expect(server.version).toBe(pkg.version);

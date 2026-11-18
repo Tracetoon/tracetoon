@@ -381,8 +381,11 @@ function readmeMd(text: string): string {
   return between(out, 'skill-folders', readmeSkillTable(), 'README.md');
 }
 
-/** The MCP Registry name; package.json `mcpName` must match it for npm validation. */
-export const MCP_NAME = 'io.github.tracetoon/tracetoon';
+/**
+ * The MCP Registry name; package.json `mcpName` must match it for npm validation.
+ * The registry grants `io.github.<owner>/*` with the owner's exact GitHub casing.
+ */
+export const MCP_NAME = 'io.github.Tracetoon/tracetoon';
 /** The MCP Registry caps a server description at 100 characters. */
 export const MCP_DESCRIPTION_MAX = 100;
 
