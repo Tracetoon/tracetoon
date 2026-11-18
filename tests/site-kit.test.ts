@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pkg from '../package.json';
 import { unzip } from '../src/update/apply.ts';
-import { PROBLEMS, pitch } from '../scripts/agent-surfaces.ts';
+import { PROBLEMS, RESULTS, pitch } from '../scripts/agent-surfaces.ts';
 import { AI_AGENTS, PAGES, writeSiteKit, zip } from '../scripts/site-kit.ts';
 
 const work = mkdtempSync(join(tmpdir(), 'tracetoon-site-kit-test-'));
@@ -80,6 +80,10 @@ describe('site kit', () => {
       }
     expect(read('index.md')).not.toContain('<p');
     expect(read('index.md')).toContain('## ⚡ Quick start');
+    // The README's generated blocks leave no markers behind, and the results come through.
+    expect(read('index.md')).not.toContain('<!--');
+    for (const [figure] of RESULTS.table) expect(read('index.md')).toContain(figure);
+    expect(read('index.md')).toContain(RESULTS.url);
   });
 
   test('robots.txt allows every listed AI agent and names the sitemap', () => {

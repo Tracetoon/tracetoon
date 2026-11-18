@@ -33,6 +33,7 @@ import {
   llmsTxt,
   pitch,
   PROBLEMS,
+  RESULTS,
   root,
   surfaces,
 } from './agent-surfaces.ts';
@@ -118,14 +119,29 @@ export function indexMd(readme: string): string {
     if (start < 0 || end < 0) throw new Error(`README no longer has "${from}"`);
     return readme.slice(start, end).trim();
   };
-  const intro = between('Your coding agent already kept', '<div');
-  const quick = between('## ⚡ Quick start', '\n---');
+  const intro = between('Your coding agent already kept', '<!-- results:start');
+  const results = [
+    '## Results',
+    '',
+    '| | |',
+    '| --- | --- |',
+    ...RESULTS.table.map(([n, what]) => `| **${n}** | ${what} |`),
+    '',
+    `${RESULTS.method} Full results: ${RESULTS.url}`,
+  ].join('\n');
+  // The README's generated-block markers (<!-- hosts:start -->) mean nothing on the site.
+  const quick = between('## ⚡ Quick start', '\n---').replace(
+    /<!-- [a-z-]+:(?:start|end)[^>]*-->\n?/g,
+    '',
+  );
   return relink(
     `# Tracetoon
 
 **PRs with receipts. And comics.**
 
 ${intro}
+
+${results}
 
 > **For AI agents:** start with [agents.md](AGENTS.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
