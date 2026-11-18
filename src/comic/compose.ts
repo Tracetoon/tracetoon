@@ -6,6 +6,7 @@
  *    with Tracetoon's exact footer bar underneath.
  */
 import type { ComicScript, Dialogue, Panel } from './types.ts';
+import { iconSvg, nest, prefixIds } from '../brand/index.ts';
 import {
   aspectRatio,
   pageAspect,
@@ -271,10 +272,16 @@ function lookOf(script: ComicScript): { caption: string; sfx: string; paper: str
 }
 
 /** The footer bar: "made with Tracetoon", drawn by Tracetoon, never by the model. */
+/** The Tracetoon icon for the dark footer bar, with ids that can't clash with the page's. */
+const FOOTER_ICON = prefixIds(iconSvg('dark'), 'tt-footer-');
+const FOOTER_ICON_SIZE = 38;
+
 function footerBar(y: number, width: number): string {
   const ty = y + FOOTER_BAR / 2 + 9;
+  const ix = width - 22 - FOOTER_ICON_SIZE;
   return `<rect x="0" y="${y}" width="${width}" height="${FOOTER_BAR}" fill="#111114"/>
-<text x="${width - 28}" y="${ty}" text-anchor="end" font-family="${FONT}" font-weight="700" font-size="24" fill="#C9C9D3">made with Tracetoon</text>`;
+${nest(FOOTER_ICON, ix, y + (FOOTER_BAR - FOOTER_ICON_SIZE) / 2, FOOTER_ICON_SIZE, FOOTER_ICON_SIZE)}
+<text x="${ix - 10}" y="${ty}" text-anchor="end" font-family="${FONT}" font-weight="700" font-size="24" fill="#C9C9D3">made with Tracetoon</text>`;
 }
 
 /** Width and height of a PNG or JPEG, from its header. */

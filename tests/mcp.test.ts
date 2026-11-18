@@ -127,11 +127,29 @@ const ghCalls = (): { args: string[] }[] =>
     : [];
 
 describe('MCP server', () => {
+  test('mcp server sends its icons and website to 2025-11-25 clients', async () => {
+    const repo = makeRepo();
+    const s = server(repo.root);
+    const init = await s.request('initialize', {
+      protocolVersion: '2025-11-25',
+      capabilities: {},
+      clientInfo: { name: 'test', version: '1' },
+    });
+    expect(init.result.protocolVersion).toBe('2025-11-25');
+    expect(init.result.serverInfo.websiteUrl).toBe('https://tracetoon.ai');
+    const icons = init.result.serverInfo.icons as { src: string; mimeType: string }[];
+    expect(icons.map((i) => i.mimeType)).toContain('image/png');
+    for (const i of icons) expect(i.src).toMatch(/^https:\/\/.+\/docs\/brand\//);
+    await s.close();
+  });
+
   test('mcp server lists its tools and skill resources and answers status', async () => {
     const repo = makeRepo();
     const { s, init } = await started(repo.root);
     expect(init.result.protocolVersion).toBe('2025-06-18');
     expect(init.result.serverInfo.name).toBe('tracetoon');
+    // icons arrived in protocol 2025-11-25; older clients don't get them.
+    expect(init.result.serverInfo.icons).toBeUndefined();
     expect(init.result.capabilities.tools).toBeDefined();
     expect(init.result.capabilities.resources).toBeDefined();
     expect((await s.request('ping')).result).toEqual({});

@@ -1,4 +1,9 @@
-<h1 align="center">💥 Tracetoon</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/tracetoon-lockup-dark.svg">
+    <img src="docs/brand/tracetoon-lockup.svg" alt="Tracetoon" height="96">
+  </picture>
+</h1>
 
 <p align="center"><b>PRs with receipts. And comics.</b></p>
 
@@ -35,7 +40,9 @@ and caveats.</sub>
 > **For AI agents:** start with [AGENTS.md](AGENTS.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
 > [docs/agents/install.md](docs/agents/install.md) (install routes an agent can
-> run, per host). [llms.txt](llms.txt) indexes both.
+> run, per host). [docs/agents/use-cases.md](docs/agents/use-cases.md) lists
+> the problems it solves, in the words users ask them. [llms.txt](llms.txt)
+> indexes all three.
 
 **Contents:** [Quick start](#-quick-start) ·
 [Better PRs](#-better-prs-judged-blind-picked-almost-every-time) ·
@@ -788,6 +795,10 @@ Then ask your agent: _"Open a PR for this branch with Tracetoon."_
 
 [CONTRIBUTING.md](CONTRIBUTING.md) has the code layout, how to add an agent,
 evaluation scripts, the Relate WebAssembly pin and the release process.
+
+Writing about Tracetoon, or adding "made with Tracetoon" to your project? The
+[logo kit](docs/brand/README.md) has the icon, wordmark and logos for light and
+dark backgrounds, as SVG and PNG.
 
 ---
 

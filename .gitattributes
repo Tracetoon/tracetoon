@@ -4,3 +4,5 @@
 *.wasm binary
 *.ttf binary
 *.png binary
+*.ico binary
+*.woff2 binary
