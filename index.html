@@ -6,7 +6,7 @@
 <title>Tracetoon: PRs with receipts. And comics.</title>
 <meta name="description" content="Tracetoon writes pull requests from the AI agent session logs already on your machine. An embedded evidence graph makes them more accurate and cheaper to write, and it follows each repo's rules, comics included.">
 <meta property="og:title" content="Tracetoon: PRs with receipts. And comics.">
-<meta property="og:description" content="Pull requests written from what your agent actually did. Judged better, 35–41% cheaper, and each one can come with a comic.">
+<meta property="og:description" content="Pull requests written from what your agent actually did. Judged better on 61 real PRs, 31–46% cheaper, and each one can come with a comic.">
 <meta property="og:image" content="https://tracetoon.ai/img/og-image.png">
 <meta property="og:url" content="https://tracetoon.ai/">
 <meta name="twitter:card" content="summary_large_image">
@@ -407,9 +407,9 @@
         <ul>
           <li><strong>Credit goes to the right code.</strong> The brief names the function that owns each behavior and marks what's new and what only changed. It also flags code where a word like "always" would be wrong.</li>
           <li><strong>Validation comes from receipts.</strong> Tracetoon writes the Validation section from the test and build runs on the final code. The model never gets to type "all tests pass."</li>
-          <li><strong>The why, not just the what.</strong> Plans, decisions and the original request come along with the code, so context coverage rose 5–7 points.</li>
+          <li><strong>The why, not just the what.</strong> Plans, decisions and the original request come along with the code. On Codex, graph drafts conveyed 82% of the expert fact sheet's claims, against 72% without it.</li>
         </ul>
-        <div class="stat"><b>¾ fewer</b><span>unsupported claims on Claude, and zero factual errors across all 25 Codex drafts.</span></div>
+        <div class="stat"><b>82% vs 72%</b><span>of the expert fact sheet's key facts conveyed on Codex, with and without the graph, across 61 real PRs (about even on Claude Code: 75% vs 76%).</span></div>
       </div>
     </div>
   </section>
