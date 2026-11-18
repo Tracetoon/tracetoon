@@ -56,8 +56,9 @@ describe('site kit', () => {
     const llms = read('llms.txt');
     const links = [...llms.matchAll(/\]\(([^)]+)\)/g)].map((m) => m[1] ?? '');
     const site = links.filter((l) => l.startsWith(SITE));
-    // Everything but the GitHub releases page lives on the site.
+    // Everything but the brand folder and the releases page lives on the site.
     expect(links.filter((l) => !l.startsWith(SITE))).toEqual([
+      'https://github.com/Tracetoon/tracetoon/tree/main/docs/brand',
       'https://github.com/Tracetoon/tracetoon/releases',
     ]);
     for (const link of site)
@@ -205,8 +206,11 @@ describe('site kit release workflow', () => {
     expect(wf).toContain('workflows: [release]');
     expect(wf).toContain('sha256sum -c');
     expect(wf).toContain('--skill-zip release/tracetoon-skill.zip');
-    expect(wf).toContain('gh release upload "$TAG" tracetoon-site-kit.zip --clobber');
-    // Only the kit is uploaded; the verified assets are only downloaded.
+    expect(wf).toContain('bun scripts/brand.ts --check --zip tracetoon-brand-kit.zip');
+    expect(wf).toContain(
+      'gh release upload "$TAG" tracetoon-site-kit.zip tracetoon-brand-kit.zip --clobber',
+    );
+    // Only the kits are uploaded; the verified assets are only downloaded.
     expect(wf.match(/gh release upload/g)).toHaveLength(1);
     expect(wf).not.toContain('gh release create');
   });

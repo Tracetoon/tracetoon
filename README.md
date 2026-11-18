@@ -1,4 +1,9 @@
-<h1 align="center">💥 Tracetoon</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/tracetoon-lockup-dark.svg">
+    <img src="docs/brand/tracetoon-lockup.svg" alt="Tracetoon" height="96">
+  </picture>
+</h1>
 
 <p align="center"><b>PRs with receipts. And comics.</b></p>
 
@@ -790,6 +795,10 @@ Then ask your agent: _"Open a PR for this branch with Tracetoon."_
 
 [CONTRIBUTING.md](CONTRIBUTING.md) has the code layout, how to add an agent,
 evaluation scripts, the Relate WebAssembly pin and the release process.
+
+Writing about Tracetoon, or adding "made with Tracetoon" to your project? The
+[logo kit](docs/brand/README.md) has the icon, wordmark and logos for light and
+dark backgrounds, as SVG and PNG.
 
 ---
 

@@ -15,6 +15,7 @@ import upstream from '../compat/upstream.json';
 import { ERROR_CODES, EXIT_CODES } from '../src/commands/exitCodes.ts';
 import { buildProgram, commandTree, type CommandSpec } from '../src/program.ts';
 import pkg from '../package.json';
+import { MCP_ICONS } from '../src/brand/index.ts';
 
 export const root = resolve(import.meta.dir, '..');
 const REPO = 'Tracetoon/tracetoon';
@@ -402,6 +403,7 @@ function serverJson(): string {
     title: 'Tracetoon',
     description: registryDescription(),
     websiteUrl: 'https://tracetoon.ai',
+    icons: MCP_ICONS,
     repository: { url: `https://github.com/${REPO}`, source: 'github' },
     version: pkg.version,
     packages: [
@@ -449,6 +451,7 @@ export interface LlmsLinks {
   readme: string;
   support: string;
   useCases: string;
+  brand: string;
 }
 
 export const RAW_LINKS: LlmsLinks = {
@@ -461,6 +464,7 @@ export const RAW_LINKS: LlmsLinks = {
   readme: `${RAW}/README.md`,
   support: `${RAW}/docs/agents/support.md`,
   useCases: `${RAW}/docs/agents/use-cases.md`,
+  brand: `${RAW}/docs/brand/README.md`,
 };
 
 export function llmsTxt(links: LlmsLinks = RAW_LINKS): string {
@@ -499,6 +503,7 @@ ${PROBLEMS.map((p) => `- ${p.q}`).join('\n')}
 ## Optional
 
 - [README](${links.readme}): features, benchmarks and settings
+- [Brand assets](${links.brand}): the Tracetoon icon, wordmark and logo files, for light and dark backgrounds
 - [Releases](https://github.com/${REPO}/releases)
 `;
 }
@@ -866,7 +871,7 @@ export const SITE = 'https://tracetoon.ai';
 export const REPO_URL = `https://github.com/${REPO}`;
 const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
 const AUTHOR = { name: 'Tracetoon', url: SITE };
-/** Plugin-relative path of the square icon catalogs show (placeholder art). */
+/** Plugin-relative path of the square icon catalogs show: the dark app tile from the logo kit (scripts/brand.ts). */
 export const ICON = 'assets/tracetoon.svg';
 
 /**

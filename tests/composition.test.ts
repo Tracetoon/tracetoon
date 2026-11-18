@@ -108,7 +108,11 @@ describe('story-led compositions', () => {
       expect(size.w).toBe(800);
       if (item.id === 'vertical' || item.id === 'asymmetric')
         expect(size.h).toBeGreaterThan(size.w);
-      if (item.id === 'diagonal') expect(svg.match(/<polygon/g)).toHaveLength(4);
+      if (item.id === 'diagonal')
+        // Panel shapes only: the footer's Tracetoon icon is drawn with polygons too.
+        expect(
+          svg.replace(/<svg x=[\s\S]*?<\/svg>/g, '').match(/<polygon/g),
+        ).toHaveLength(4);
     }
     const final = resolveComposition(example('asymmetric'))!.frames;
     expect(final.at(-1)!.h).toBeGreaterThan(final[0]!.h);
