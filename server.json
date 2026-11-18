@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.tracetoon/tracetoon",
+  "name": "io.github.Tracetoon/tracetoon",
   "title": "Tracetoon",
   "description": "Writes GitHub PR descriptions from your coding agents' session logs, checked against them.",
   "websiteUrl": "https://tracetoon.ai",
