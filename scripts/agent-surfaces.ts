@@ -503,9 +503,25 @@ function between(text: string, name: string, body: string, file: string): string
   return `${text.slice(0, at)}\n${body}\n${indent}${text.slice(end)}`;
 }
 
-/** README.md with its generated host lists refreshed. */
+/** The README's headline results, from RESULTS (the same numbers every listing quotes). */
+function readmeResults(): string {
+  const cells = (f: (row: readonly [string, string]) => string) =>
+    `| ${RESULTS.table.map(f).join(' | ')} |`;
+  return `<div align="center">
+
+${cells(([n]) => `**${n}**`)}
+| ${RESULTS.table.map(() => ':---:').join(' | ')} |
+${cells(([, what]) => what)}
+
+<sub>${RESULTS.method} See the <a href="${RESULTS.url}">full results</a>, methods and caveats.</sub>
+
+</div>`;
+}
+
+/** README.md with its generated host lists and headline results refreshed. */
 function readmeMd(text: string): string {
-  let out = between(text, 'hosts', readmeTable(), 'README.md');
+  let out = between(text, 'results', readmeResults(), 'README.md');
+  out = between(out, 'hosts', readmeTable(), 'README.md');
   out = between(out, 'host-names', readmeIntro(), 'README.md');
   return between(out, 'skill-folders', readmeSkillTable(), 'README.md');
 }
