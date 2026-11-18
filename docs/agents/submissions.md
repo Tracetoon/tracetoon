@@ -30,8 +30,10 @@ Shared facts:
 ## Anthropic plugin directory
 
 1. Sign in at https://claude.ai/directory/manage.
-2. Submit the marketplace repository `Tracetoon/tracetoon`; the plugin is `tracetoon`,
-   served from the `release` branch (`.claude-plugin/marketplace.json`).
+2. Submit the plugin, not the marketplace: repository `Tracetoon/tracetoon`, branch
+   `release` (`main` has no skill bundle), plugin folder `plugin`
+   (`plugin/.claude-plugin/plugin.json`). As one URL:
+   https://github.com/Tracetoon/tracetoon/tree/release/plugin
 3. Category: productivity. Description: the one line above.
 4. After it is listed, set `CLAUDE_CODE_HINT_ENABLED = true` and `HINT_PLUGIN`
    in `src/util/claudeHint.ts`.
