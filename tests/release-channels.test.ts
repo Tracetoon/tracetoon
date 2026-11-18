@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { homebrewFormula } from '../.github/scripts/homebrew-formula.ts';
 import { readChecksums, SUPPORTED_TARGETS } from '../.github/scripts/release-assets.ts';
 import { IDENTIFIER, wingetManifests } from '../.github/scripts/winget-manifest.ts';
+import { npmDistTag, parsePublished } from '../.github/scripts/npm-dist-tag.ts';
 
 const TAG = 'v1.2.3-rc.4';
 const BASE = `https://github.com/Tracetoon/tracetoon/releases/download/${TAG}`;
@@ -90,6 +91,27 @@ describe('winget manifests', () => {
   });
 });
 
+describe('npm dist-tag', () => {
+  test('release candidates go to latest until a final version is on npm, then to next', () => {
+    expect(npmDistTag('1.0.0-rc.36', [])).toBe('latest');
+    expect(npmDistTag('1.0.0-rc.36', ['0.0.0-stage', '1.0.0-rc.34', '1.0.0-rc.35'])).toBe(
+      'latest',
+    );
+    expect(npmDistTag('1.0.1-rc.1', ['1.0.0-rc.35', '1.0.0'])).toBe('next');
+    expect(npmDistTag('1.0.0', ['1.0.0-rc.35'])).toBe('latest');
+    expect(npmDistTag('1.0.1', ['1.0.0'])).toBe('latest');
+  });
+  test('reads npm view --json output: an array, one bare version, or nothing', () => {
+    expect(parsePublished('["1.0.0-rc.34","1.0.0-rc.35"]')).toEqual([
+      '1.0.0-rc.34',
+      '1.0.0-rc.35',
+    ]);
+    expect(parsePublished('"1.0.0-rc.34"')).toEqual(['1.0.0-rc.34']);
+    expect(parsePublished('')).toEqual([]);
+    expect(() => parsePublished('{"error":{"code":"E404"}}')).toThrow();
+  });
+});
+
 describe('release workflow', () => {
   const wf = readFileSync(
     join(import.meta.dir, '..', '.github/workflows/release.yml'),
@@ -109,7 +131,9 @@ describe('release workflow', () => {
     expect(wf).toContain(
       'npm publish "$dir" --provenance --access public --tag "$dist_tag"',
     );
-    expect(wf).toMatch(/case "\$GITHUB_REF_NAME" in \*-\*\) dist_tag=next;; esac/);
+    expect(wf).toContain(
+      'dist_tag=$(bun .github/scripts/npm-dist-tag.ts "${GITHUB_REF_NAME#v}" "$published")',
+    );
     expect(wf).toContain('id-token: write');
     // Tags promote; they never compile.
     expect(wf).not.toMatch(/scripts\/build\.ts|bun run (build|bundle)|bun build/);
@@ -121,6 +145,13 @@ describe('release workflow', () => {
     const skip = wf.slice(at('- name: Skip npm'), at('- uses: actions/setup-node'));
     expect(skip).toContain("if: env.NPM_PUBLISH == ''");
     expect(skip).toContain('::notice');
+  });
+  test('the MCP Registry job waits for the npm version before publishing', () => {
+    const mcp = wf.slice(at('\n  mcp-registry:'));
+    expect(mcp.indexOf('npm view "tracetoon@$version" version')).toBeGreaterThan(0);
+    expect(mcp.indexOf('npm view "tracetoon@$version" version')).toBeLessThan(
+      mcp.indexOf('./mcp-publisher publish'),
+    );
   });
   test('npm publishes by trusted publishing: OIDC, a new enough npm, a GitHub-hosted runner', () => {
     const release = wf.slice(at('\n  release:'), at('\n  channels:'));

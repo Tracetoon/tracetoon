@@ -16,8 +16,12 @@ Every channel below repackages those exact bytes; none compiles anything.
 The release job builds the packages from the verified assets before
 `gh release create`, so a bad set fails before anything is public, and
 publishes them after it: the five platform packages first, then the wrapper
-whose `optionalDependencies` pin them to the same version. Tags with a `-`
-(release candidates) go to the `next` dist-tag, others to `latest`. Versions
+whose `optionalDependencies` pin them to the same version. Final versions go
+to the `latest` dist-tag. A release candidate goes to `latest` too until a
+final version is on npm, so `npx tracetoon@latest` gets it without anyone
+moving the tag; after that, release candidates go to `next`
+(`.github/scripts/npm-dist-tag.ts`). Trusted publishing can't change a
+dist-tag after publishing, so the tag is chosen at publish time. Versions
 already on npm are skipped, so rerunning the job finishes a partial publish.
 Without the `NPM_PUBLISH` repository variable the steps are skipped with a
 notice and the release still succeeds.
@@ -94,9 +98,10 @@ verified release assets, so for Tracetoon only steps 4 to 6 remain:
    "Require two-factor authentication and disallow tokens", so only this
    workflow can publish.
 6. After the first publish, `npx tracetoon@latest setup` works; the agent docs
-   (`docs/agents/install.md`) already list it first. Release candidates go to
-   the `next` dist-tag; if `npm view tracetoon dist-tags` shows no `latest`,
-   run `npm dist-tag add tracetoon@<version> latest`.
+   (`docs/agents/install.md`) already list it first. Releases before rc.36
+   went to `next`, so their `latest` was moved by hand
+   (`npm dist-tag add tracetoon@<version> latest --auth-type=web`); from
+   rc.36 the workflow publishes to `latest` until the first final version.
 
 A package added later (a new platform) must be published once by hand, or with
 a token again, before it can be trusted.
