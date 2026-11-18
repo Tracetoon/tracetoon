@@ -160,6 +160,7 @@ svg .mono{font-family:var(--mono)}
 
 <main>
 <header id="tldr">
+  <div class="callout" style="margin:0 0 24px"><p><b>Updated results, November 16, 2026:</b> a larger test on 61 real pull requests, with expert-reviewed fact sheets. <a href="evidence-graph-61.html">Read the current results →</a> This page is the earlier 5-PR report.</p></div>
   <div class="kicker">Tracetoon · evidence graph results · November 2026</div>
   <h1>An embedded Relate graph made our PR writer better and cheaper</h1>
   <p class="lede">Tracetoon writes pull-request descriptions from the AI agent session logs already on disk. We put a deterministic evidence graph, built in Relate, an embedded graph database written in Rust, between those logs and the writing model. In the build that ships, a mid-size model with the graph beat Tracetoon's own full multi-agent workflow in head-to-head judging, 18–1 on Claude and 12–1 on Codex, at 59% and 65% of the token cost.</p>
