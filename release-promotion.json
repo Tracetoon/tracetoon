@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.36",
-  "buildId": "c0045bdb8cb1f52c58c604c7bd047ac4c859905d3aec5133bacde214faa8372e",
+  "version": "1.0.0-rc.37",
+  "buildId": "060da6295acdf20495efada145899bce6c74a6c045f797b4544abc4b0596a645",
   "artifact": {
-    "runId": 44295667373,
-    "id": 14423702110,
-    "name": "tracetoon-candidate-c549db768d317db8dfdc3ee7bbec625428e7b35a-attempt-1",
-    "digest": "sha256:2e195044db3b469d28ed0c6a918fef40dd696fa66753d35073344d88382b1b2b"
+    "runId": 44373048008,
+    "id": 14460451603,
+    "name": "tracetoon-candidate-a6320f5ab507e10d6bc1f8c0c15c00fc76a82883-attempt-1",
+    "digest": "sha256:56ff44d3d53f4526c0e15d1155d7296b1d35430e2dd365cbbf83e8cc70368c9f"
   },
   "expected": {
-    "manifestSha256": "e2b25341822db1ab7168620865bc02e4e52489ed6094cc64e095a69918fc4d97",
-    "checksumsSha256": "1ad44e99e7b0cbb1aa17681bf94889414956e9e5fa688d9cfc35e279a0c5e1fe",
-    "windowsSha256": "e713ed0cc67c9f634fafdcfd6396dedd70fe4db50c42d1ec6fefea92a24a4a7f",
-    "bundleSha256": "73a8ce3ae3659981a1c285b4aa182134ad0b8ece47cc40519be1c492a47a6343"
+    "manifestSha256": "3ee1c0a2cd01bd1903ec6a4a63a943514b90d27e8aecb9a9c39408585f02e696",
+    "checksumsSha256": "c98a4e5a4bd098b8e667b7f878bd7c1866f8fd1222e15b134d683cc040ec0335",
+    "windowsSha256": "ef8042d9c839b93793c1cb805ea319bbb85d4418dad22defb74def78126db6d6",
+    "bundleSha256": "b4bd6da06066d429f51ba9911f4207c5c132f29b1ce30cbb7aaae957011a911c"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-18T11:20:00.000Z",
-    "reason": "The user approved a plan to cut rc.36 without a benchmark round and asked for it to be done overnight, so the benefit-led npm README and description and the catalog manifests with the published 61-PR results (#159) reach npm and the plugin catalogs, and so the first release with release candidates on npm's latest tag and the MCP Registry waiting for npm (#158) runs end to end. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-18T19:20:00.000Z",
+    "reason": "The user asked to cut rc.37 without a benchmark round so the release branch carries the .gitattributes change from #165 (*.cmd -text, the Windows launcher stored with CRLF) and the Claude plugin directory submission can be validated again. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
