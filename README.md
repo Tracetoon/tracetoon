@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/tracetoon-lockup-dark.svg">
+  <img src="https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/tracetoon-lockup.svg" alt="Tracetoon" height="64">
+</picture>
+
 # tracetoon.ai site (gh-pages branch)
 
 This branch is the website at https://tracetoon.ai. The code and docs live on `main`; do not put site files there.
@@ -19,8 +24,12 @@ Every number on the landing page comes from `evidence-graph.html` (round 23, the
 
 - `img/hero.webp`: the "No more PR slop" top image (from `docs/tracetoon-hero.png` on `main`).
 - `img/comic-*.webp`: one comic per section (quality, graph, embedded, cost, workflow, pr17). To swap one, keep the file name, or update the `src`, `width`, `height` and `alt` in `index.html`. Use WebP at about 1400 px wide and under 250 KB: `cwebp -q 80 -resize 1400 0 in.png -o img/comic-x.webp`.
-- `img/og-image.png`: the 1200×630 card shown when the link is shared.
-- `favicon.svg`: the receipt logo, also used in the top bar.
+- `img/og-image.png`: the 1200×630 card shown when the link is shared, with the Tracetoon logo on a comic panel.
+- `img/tracetoon-wordmark.svg`: the "Tracetoon" wordmark in the top bar.
+- `favicon.svg`: the logo icon (a POW burst with a checkmark), also used in the top bar. Its impact lines turn cream in dark mode.
+- `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `site.webmanifest`: the browser tab, iOS home screen and app install icons.
+
+Every logo file comes from the logo kit in [`docs/brand`](https://github.com/Tracetoon/tracetoon/tree/main/docs/brand) on `main`, which `bun scripts/brand.ts` generates. To change one, regenerate it there and copy it here; don't edit it on this branch.
 
 ## Do not delete
 
