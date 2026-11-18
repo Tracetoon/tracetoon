@@ -47,49 +47,59 @@ bun .github/scripts/npm-packages.ts release /tmp/skill/tracetoon /tmp/npm
 ```
 
 Owner setup, once. npm can only trust a package that already exists, so the
-first release publishes with a short-lived token and trusted publishing takes
-over from the second:
+first release publishes another way and trusted publishing takes over after.
+The six packages first went out with rc.34, published by hand from the
+verified release assets, so for Tracetoon only steps 4 to 6 remain:
 
 1. Create the npm organization `tracetoon` (for the `@tracetoon` scope) and
    make sure the unscoped name `tracetoon` is still free (it was in Nov 2026).
    Turn on two-factor authentication for your npm account (`npm trust` needs
    it).
-2. Bootstrap token: on npmjs.com, create a granular access token with read and
-   write access to all packages and the `tracetoon` organization, a 7-day
-   expiry and "bypass two-factor authentication" ticked. Add it as the
-   `NPM_TOKEN` repository secret
-   (`gh secret set NPM_TOKEN --repo Tracetoon/tracetoon`), and set the
-   variable: `gh variable set NPM_PUBLISH --body 1 --repo Tracetoon/tracetoon`.
-3. Tag the release. The job publishes the six packages with the token.
-4. Trust the workflow for each package (npm 11.10 or later, signed in with
-   `npm login`):
+2. First publish: either a granular access token with read and write access
+   to all packages and the `tracetoon` organization, a 7-day expiry and
+   "bypass two-factor authentication" ticked (without it the job fails with
+   `EOTP`), added as the `NPM_TOKEN` repository secret; or publish the
+   packages by hand from the release assets (the commands above, then
+   `npm publish <dir> --access public --tag next` for each, platform
+   packages first). Set the variable either way:
+   `gh variable set NPM_PUBLISH --body 1 --repo Tracetoon/tracetoon`.
+   A brand-new package can show only a `0.0.0-stage` placeholder for a few
+   minutes after its first publish; wait before retrying.
+3. Tag the release.
+4. On the day you tag the next release, trust the workflow for each package.
+   A new trust configuration expires 48 hours after it is created unless a
+   publish uses it, and an expired one can only be deleted and recreated, so
+   don't set it up ahead of time. It needs npm 11.15 or later
+   (`npm i -g npm@latest`) and `npm login`:
 
    ```sh
    for p in tracetoon @tracetoon/cli-linux-x64 @tracetoon/cli-linux-arm64 \
             @tracetoon/cli-darwin-x64 @tracetoon/cli-darwin-arm64 @tracetoon/cli-win32-x64; do
-     npm trust github "$p" --repo Tracetoon/tracetoon --file release.yml --yes
+     npm trust github "$p" --repo Tracetoon/tracetoon --file release.yml --allow-publish --yes
      sleep 2
    done
    ```
 
-   The first call asks for two-factor authentication; tick "skip for the next
-   5 minutes" so the rest go through. `npm trust list <package>` shows each
+   `--allow-publish` is required: the workflow runs `npm publish`, and npm
+   refuses to create a configuration without a permission flag. The first
+   call asks for two-factor authentication; tick "skip for the next 5
+   minutes" so the rest go through. `npm trust list <package>` shows each
    one. (The same form is under each package's Settings → Trusted publishing:
-   GitHub Actions, `Tracetoon`, `tracetoon`, `release.yml`, no environment.)
-   On that page, check that direct `npm publish` is an allowed action, since
-   the workflow runs `npm publish` rather than `npm stage publish`.
+   GitHub Actions, `Tracetoon`, `tracetoon`, `release.yml`, no environment,
+   direct publish allowed.)
 
-5. Delete the token: `gh secret delete NPM_TOKEN --repo Tracetoon/tracetoon`,
-   and revoke it on npmjs.com. Then, for each package, Settings → Publishing
-   access → "Require two-factor authentication and disallow tokens", so only
-   this workflow can publish.
+5. Remove any token: `gh secret delete NPM_TOKEN --repo Tracetoon/tracetoon`
+   and revoke it on npmjs.com (done for Tracetoon after rc.34). After the
+   first trusted publish, for each package, Settings → Publishing access →
+   "Require two-factor authentication and disallow tokens", so only this
+   workflow can publish.
 6. After the first publish, `npx tracetoon@latest setup` works; the agent docs
    (`docs/agents/install.md`) already list it first. Release candidates go to
    the `next` dist-tag; if `npm view tracetoon dist-tags` shows no `latest`,
    run `npm dist-tag add tracetoon@<version> latest`.
 
 A package added later (a new platform) must be published once by hand, or with
-a bootstrap token again, before it can be trusted.
+a token again, before it can be trusted.
 
 ## Homebrew
 
