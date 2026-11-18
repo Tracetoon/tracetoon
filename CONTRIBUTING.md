@@ -245,7 +245,12 @@ only fast-forwards and is never forced. Keep
 `.claude-plugin/marketplace.json` free of a `version` field: the plugin version
 comes from `plugin.json`, which the build stamps from `package.json`.
 
-Push the matching `vX.Y.Z` tag after merging the validated changes. The release
+Push the matching `vX.Y.Z` tag after merging the validated changes, on the
+head of the release PR's branch (the commit with `release-promotion.json`), not
+on `main`: the merge queue squashes, so the candidate commit is never an
+ancestor of `main`'s commit and verification would fail. That commit carries
+`release.yml` as of the branch's base, so workflow changes merged later apply
+from the next release. The release
 workflow verifies the successful originating CI run, artifact identity, source
 build identity, the recorded release basis and every asset checksum, then publishes
 those exact bytes. It does not build replacement release files. Install from
