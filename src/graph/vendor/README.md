@@ -1,6 +1,7 @@
 # Vendored: Relate (WebAssembly)
 
-These files, together with `plugin/skills/tracetoon/assets/relate.wasm`, are
+These files, together with `plugin/skills/tracetoon/assets/relate.wasm.gz`
+(the module, gzipped; its pinned hash is of the uncompressed bytes), are
 the wasm-bindgen output of [Relate](https://github.com/relatedb/relate)
 (Apache-2.0), built from the tag, revision and toolchain pinned in
 `build-dependencies.json` with Relate's own `scripts/build-wasm.sh --mode release`.

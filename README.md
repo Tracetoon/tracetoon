@@ -241,7 +241,7 @@ Named queries also include `verified`, `unexplained`, `turn <S#>`, `dead-ends`,
 
 The graph runs on [Relate](https://github.com/relatedb/relate), an open-source
 embedded graph database written in Rust. Tracetoon ships it compiled to
-WebAssembly (`assets/relate.wasm`) inside the CLI.
+WebAssembly (`assets/relate.wasm.gz`) inside the CLI.
 
 - **No server, no setup.** It runs in-process on Linux, macOS and Windows, with
   no native modules and no database file. It works offline and builds a fresh

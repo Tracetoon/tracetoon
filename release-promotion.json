@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.37",
-  "buildId": "060da6295acdf20495efada145899bce6c74a6c045f797b4544abc4b0596a645",
+  "version": "1.0.0-rc.38",
+  "buildId": "9a5692cd890ea5cfa00c89091672b1ddf41963214aec4594f19caf399e14888f",
   "artifact": {
-    "runId": 44373048008,
-    "id": 14460451603,
-    "name": "tracetoon-candidate-a6320f5ab507e10d6bc1f8c0c15c00fc76a82883-attempt-1",
-    "digest": "sha256:56ff44d3d53f4526c0e15d1155d7296b1d35430e2dd365cbbf83e8cc70368c9f"
+    "runId": 44386339652,
+    "id": 14466986917,
+    "name": "tracetoon-candidate-ae3ee063fda151ac8c5ad6f8b5fd8b94ac22f987-attempt-1",
+    "digest": "sha256:4d1017a9de0653f2c858869977f9ede3566765185035af3e7d26535887dde459"
   },
   "expected": {
-    "manifestSha256": "3ee1c0a2cd01bd1903ec6a4a63a943514b90d27e8aecb9a9c39408585f02e696",
-    "checksumsSha256": "c98a4e5a4bd098b8e667b7f878bd7c1866f8fd1222e15b134d683cc040ec0335",
-    "windowsSha256": "ef8042d9c839b93793c1cb805ea319bbb85d4418dad22defb74def78126db6d6",
-    "bundleSha256": "b4bd6da06066d429f51ba9911f4207c5c132f29b1ce30cbb7aaae957011a911c"
+    "manifestSha256": "b94eb744cdf83a7e737d33d93842e991511c00fdd54fdbfe7dc5837f4269f243",
+    "checksumsSha256": "9881be18f0f66559531e5506e2586ee073e73f1e3b0eaeef52fd82d8142f0f5a",
+    "windowsSha256": "efb2143f6513663e389a41163d738098393cf2b88bc86bdb1c94e66794b88b94",
+    "bundleSha256": "5248d67761ca5c8f57f06c4c2f60c331753b9612325775a8f5c849c25f7460e4"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-18T19:20:00.000Z",
-    "reason": "The user asked to cut rc.37 without a benchmark round so the release branch carries the .gitattributes change from #165 (*.cmd -text, the Windows launcher stored with CRLF) and the Claude plugin directory submission can be validated again. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-18T20:20:00.000Z",
+    "reason": "The user asked to cut rc.38 without a benchmark round so the release branch carries the gzipped Relate module from #167 and every file in the plugin folder is under the Claude plugin directory's 5 MiB limit, so the submission can be validated again. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
