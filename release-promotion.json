@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.33",
-  "buildId": "181ee4161893b7483a0a3466ac748b48288149071348a93452425f765f8c094f",
+  "version": "1.0.0-rc.34",
+  "buildId": "2782fe445ed357ae73b04a1217f0ad0546eedecdecdbd27ef7effdf286036d73",
   "artifact": {
-    "runId": 44015012738,
-    "id": 14298996346,
-    "name": "tracetoon-candidate-e8c41b6256365b3212444782e0db6e7889c5b8b6-attempt-1",
-    "digest": "sha256:b91647ff86dcd7983be1fe6a487ce8b55e1f3c32c23a5c9c27a6c35d5356c43e"
+    "runId": 44216970240,
+    "id": 14388378397,
+    "name": "tracetoon-candidate-366dc52b074ef16aff5c3f2b964785a847b4089c-attempt-1",
+    "digest": "sha256:0f233df2a965260e19e373f612a4ebce501af6c516ca9fcf5e4e4d27f85792b4"
   },
   "expected": {
-    "manifestSha256": "0bf9291721856af2fde144a5f2408f621bab8fa51311326e976e8dab359d66ea",
-    "checksumsSha256": "27a6b83528723c154fbbc65bb0166e7083b8dce120b7b2822eaa091896558316",
-    "windowsSha256": "c5c0d7ffe84ef84067bd18f210c801a7dbffe36135cc885ba143345b8c14724d",
-    "bundleSha256": "9f76fdb6f631beac5a580681cf34c3c063439970d3f134f32a1909b3e03e316e"
+    "manifestSha256": "1b201ff563cdb31c7b0808af07930d6f066845669c4651d879da528c035b3cf5",
+    "checksumsSha256": "811b0e3deb22224441a8552180bdce4a665d89594a59fb7ef61522464cd91fb2",
+    "windowsSha256": "8ab866adf167bb84ab29c2dd11952e641546f93d8fcedd58468bf858d694ec76",
+    "bundleSha256": "61cd83536fc83c53b96ada41256080a3c64fbffa7ef70ae30022c7882c7dbabc"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-17T05:00:00.000Z",
-    "reason": "The user asked to merge the comic quality loop (#139) and release it, so that comics are judged by fresh AI readers, checked at phone width and repaired without rewriting the joke. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-18T01:20:00.000Z",
+    "reason": "The user asked to cut rc.34 without a benchmark round so the release branch, which every plugin catalog installs from, carries the logo kit (#143), the problems-it-solves agent surfaces (#142) and MCP icons before Tracetoon is submitted to those catalogs. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

@@ -42,13 +42,13 @@
     "url": "https://github.com/Tracetoon/tracetoon",
     "source": "github"
   },
-  "version": "1.0.0-rc.33",
+  "version": "1.0.0-rc.34",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "tracetoon",
-      "version": "1.0.0-rc.33",
+      "version": "1.0.0-rc.34",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
