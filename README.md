@@ -14,7 +14,7 @@ This branch is the website at https://tracetoon.ai. The code and docs live on `m
 
 ## Agent files
 
-These come from the `tracetoon-site-kit.zip` attached to each Tracetoon release (`scripts/site-kit.ts` on `main`); this copy is from 1.0.0-rc.35. Don't edit them here; after a release, download the kit and copy the same files over.
+These come from the `tracetoon-site-kit.zip` attached to each Tracetoon release (`scripts/site-kit.ts` on `main`); this copy is from 1.0.0-rc.36. Don't edit them here; after a release, download the kit and copy the same files over.
 
 - `llms.txt`, `llms-full.txt`: the index agents read first, and the same pages inlined.
 - `index.md`, `agents.md`, `skill.md`, `docs/agents/*.md`: markdown versions of the pages, for agents.

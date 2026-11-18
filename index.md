@@ -7,6 +7,8 @@ changed, what actually ran. **Tracetoon turns them into a pull request reviewers
 can trust.** Every claim is checked against the evidence, it costs less to
 write, and there's a comic on top.
 
+<!-- results:start -->
+
 > **For AI agents:** start with [agents.md](https://tracetoon.ai/agents.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
 > [install.md](https://tracetoon.ai/docs/agents/install.md). [use-cases.md](https://tracetoon.ai/docs/agents/use-cases.md)
