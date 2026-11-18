@@ -1,3 +1,5 @@
 src/graph/vendor/
 src/commands/guideText.ts
 evals/aeo/results/
+docs/brand/
+src/brand/sources.ts

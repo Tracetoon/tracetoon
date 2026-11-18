@@ -16,6 +16,7 @@ import { buildProgram } from '../program.ts';
 import { errorEnvelope } from '../commands/output.ts';
 import { skillDir } from '../contribution/skillSettings.ts';
 import { TOOL_VERSION } from '../version.ts';
+import { MCP_ICONS } from '../brand/index.ts';
 
 /** Newest first; the first is offered when the client asks for one we don't know. */
 export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
@@ -421,16 +422,23 @@ export async function handle(msg: Request): Promise<object | undefined> {
     switch (msg.method) {
       case 'initialize': {
         const asked = msg.params?.protocolVersion;
+        const version = PROTOCOL_VERSIONS.includes(asked) ? asked : PROTOCOL_VERSIONS[0];
         return reply({
           result: {
-            protocolVersion: PROTOCOL_VERSIONS.includes(asked)
-              ? asked
-              : PROTOCOL_VERSIONS[0],
+            protocolVersion: version,
             capabilities: {
               tools: { listChanged: false },
               resources: { listChanged: false },
             },
-            serverInfo: { name: 'tracetoon', title: 'Tracetoon', version: TOOL_VERSION },
+            serverInfo: {
+              name: 'tracetoon',
+              title: 'Tracetoon',
+              version: TOOL_VERSION,
+              // icons and websiteUrl arrived in protocol 2025-11-25.
+              ...(version >= '2025-11-25'
+                ? { icons: MCP_ICONS, websiteUrl: 'https://tracetoon.ai' }
+                : {}),
+            },
             instructions: INSTRUCTIONS,
           },
         });

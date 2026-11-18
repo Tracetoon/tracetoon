@@ -4,6 +4,40 @@
   "title": "Tracetoon",
   "description": "Writes GitHub PR descriptions from your coding agents' session logs, checked against them.",
   "websiteUrl": "https://tracetoon.ai",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/png/tracetoon-icon-512.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ],
+      "theme": "light"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/png/tracetoon-icon-dark-512.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ],
+      "theme": "dark"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/tracetoon-icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ],
+      "theme": "light"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Tracetoon/tracetoon/main/docs/brand/tracetoon-icon-dark.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ],
+      "theme": "dark"
+    }
+  ],
   "repository": {
     "url": "https://github.com/Tracetoon/tracetoon",
     "source": "github"
