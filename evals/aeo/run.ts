@@ -143,6 +143,16 @@ export function scrubber(extra: Record<string, string> = {}): (s: string) => str
   };
 }
 
+/**
+ * The text the scorer reads: the harness's own paths (this checkout, which the
+ * fixture's gh shim and sessions name, and the fixture folder) become
+ * placeholders without the word "tracetoon", so reading the harness never
+ * counts as discovering Tracetoon. Only what the agent produced can match.
+ */
+export function forScoring(scrub: (s: string) => string): (s: string) => string {
+  return (s) => scrub(s).split('<tracetoon>').join('<harness>');
+}
+
 function scrubDeep<T>(value: T, scrub: (s: string) => string): T {
   if (typeof value === 'string') return scrub(value) as T;
   if (Array.isArray(value)) return value.map((v) => scrubDeep(v, scrub)) as T;
@@ -370,10 +380,11 @@ export async function main(argv: string[]): Promise<Results> {
             300,
           ),
         );
+      const neutral = forScoring(scrub);
       const s = score({
         host: c.spec.id,
-        stdout: r.stdout,
-        sessions,
+        stdout: neutral(r.stdout),
+        sessions: scrubDeep(sessions, neutral),
         gh,
         preinstalled: fixture.preinstalled,
         skillsAfter: installedSkills(fixture),

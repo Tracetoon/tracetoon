@@ -1,7 +1,7 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   AGENTS_MD,
   createFixture,
@@ -13,7 +13,7 @@ import {
   type GhCall,
 } from '../evals/aeo/fixture.ts';
 import { aggregate, markdown, type RunResult } from '../evals/aeo/report.ts';
-import { scrubber } from '../evals/aeo/run.ts';
+import { forScoring, scrubber } from '../evals/aeo/run.ts';
 import {
   invokesTracetoon,
   parseClaudeStream,
@@ -315,6 +315,17 @@ describe('aeo report', () => {
     });
     expect(md).toContain('| claude | 4 | skill | on | 2 | 2/2 (100%) |');
     expect(md).toContain('| 1/2 (50%) |');
+  });
+
+  test('the scorer never sees the harness paths as a mention', () => {
+    const root = resolve(import.meta.dir, '..');
+    const neutral = forScoring(scrubber({ '/tmp/aeo-fixture-abc': '<fixture>' }));
+    const shim = `exec "bun" "${root}/evals/aeo/gh-shim.ts" "$@"`;
+    expect(neutral(shim)).toBe('exec "bun" "<harness>/evals/aeo/gh-shim.ts" "$@"');
+    expect(/tracetoon/i.test(neutral(`cat /tmp/aeo-fixture-abc/bin/gh\n${shim}`))).toBe(
+      false,
+    );
+    expect(/tracetoon/i.test(neutral('npx tracetoon@latest setup'))).toBe(true);
   });
 
   test('scrubs machine paths', () => {

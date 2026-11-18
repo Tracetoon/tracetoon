@@ -286,7 +286,7 @@ export function createFixture(opts: FixtureOptions): Fixture {
   if (opts.condition === 'mcp')
     throw new Error('condition "mcp" is reserved and not implemented yet');
   const dir = realpathSync.native(
-    mkdtempSync(join(opts.parent ?? tmpdir(), 'tracetoon-aeo-')),
+    mkdtempSync(join(opts.parent ?? tmpdir(), 'aeo-fixture-')),
   );
   const home = join(dir, 'home');
   const repo = join(dir, 'repo');
