@@ -22,7 +22,7 @@ Then install Tracetoon from /plugins and trust its hooks in /hooks.
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.38`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
   The first run downloads it from npm; later runs use npm's cache.
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
 - macOS, Linux or Windows.
@@ -31,8 +31,8 @@ Then install Tracetoon from /plugins and trust its hooks in /hooks.
 
 - **Skill:** `skills/tracetoon`. Your agent follows it when you ask it to open or describe a PR.
 - **Hooks:** Before a shell command it asks the runtime whether the command creates a PR and should go through the skill; at session start it records the session.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.38, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.38, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.39, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.39, published from GitHub Actions with npm provenance.
 
 What it reads, writes and sends, and how to check it: [REVIEW.md](REVIEW.md).
 

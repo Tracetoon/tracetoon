@@ -1,36 +1,28 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.38",
-  "buildId": "9a5692cd890ea5cfa00c89091672b1ddf41963214aec4594f19caf399e14888f",
+  "version": "1.0.0-rc.39",
+  "buildId": "7f6ce9ec1a7273249e1d982f01d25f1c0ad58c3109898875850111a35eb3a65f",
   "artifact": {
-    "runId": 44386339652,
-    "id": 14466986917,
-    "name": "tracetoon-candidate-ae3ee063fda151ac8c5ad6f8b5fd8b94ac22f987-attempt-1",
-    "digest": "sha256:4d1017a9de0653f2c858869977f9ede3566765185035af3e7d26535887dde459"
+    "runId": 44483188650,
+    "id": 14509537999,
+    "name": "tracetoon-candidate-adf1f54f98bba9f969c61e8bd29f0d70e9ee960c-attempt-1",
+    "digest": "sha256:6fbd6da79dc687231f7e1509cdde879f23fba3f1236599b4691f1e0969326627"
   },
   "expected": {
-    "manifestSha256": "b94eb744cdf83a7e737d33d93842e991511c00fdd54fdbfe7dc5837f4269f243",
-    "checksumsSha256": "9881be18f0f66559531e5506e2586ee073e73f1e3b0eaeef52fd82d8142f0f5a",
-    "windowsSha256": "efb2143f6513663e389a41163d738098393cf2b88bc86bdb1c94e66794b88b94",
-    "bundleSha256": "5248d67761ca5c8f57f06c4c2f60c331753b9612325775a8f5c849c25f7460e4"
+    "manifestSha256": "e4ebf941349b043b2d1df0001f479867e70f9bc8bccee79765147d4acbcf99b3",
+    "checksumsSha256": "302ae50641020e9f129e0d165bf09f749d821cf71cac5a806ff4a0d3ec2652f8",
+    "windowsSha256": "aab1be564fcff7eb8160362ca2fddd01b15a82e5b2a564699b5348aede73fc2c",
+    "bundleSha256": "12e2d3abdcf227175b043b93cf128e8855fcec01d51dd34b18beb76f9f00f3b3"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-18T20:20:00.000Z",
-    "reason": "The user asked to cut rc.38 without a benchmark round so the release branch carries the gzipped Relate module from #167 and every file in the plugin folder is under the Claude plugin directory's 5 MiB limit, so the submission can be validated again. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-19T08:03:03.000Z",
+    "reason": "The user asked to cut rc.39 without a benchmark round so the release publishes the per-catalog plugin packages from #169 on the plugins branch, which the Anthropic plugin directory submission names. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
-    "calibration": {
-      "status": "not-run"
-    },
-    "admission": {
-      "status": "not-run"
-    },
-    "development": {
-      "status": "not-run"
-    },
-    "heldout": {
-      "status": "not-run"
-    }
+    "calibration": { "status": "not-run" },
+    "admission": { "status": "not-run" },
+    "development": { "status": "not-run" },
+    "heldout": { "status": "not-run" }
   }
 }
