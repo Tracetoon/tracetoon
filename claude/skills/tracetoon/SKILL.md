@@ -20,14 +20,14 @@ or updates the PR.
 ## The tool
 
 Tracetoon's runtime comes from npm, at the version this plugin was reviewed
-with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.39` (exactly that
+with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.40` (exactly that
 version). Run it from inside the user's repository. Every command accepts
 `--json`. The first run downloads the runtime; later runs use npm's cache.
 
 If `npx` is not found (Tracetoon needs Node.js 18 or later), or the command
 exits with code **3**, the runtime can't start. Tell the user: they can install
-Node.js, or install the standalone binary as described in https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
-(then `tracetoon` on their PATH replaces the npx command). Don't install
+Node.js, or install the standalone binary (the install guide is linked from
+this plugin's README) (then `tracetoon` on their PATH replaces the npx command). Don't install
 anything yourself unless they ask. If they decline, follow
 [references/manual-mode.md](references/manual-mode.md).
 
@@ -59,8 +59,8 @@ research/drafting/review restrictions confined to those PR roles.
 Tracetoon can be turned off. `tracetoon status` says whether it is on here and
 which setting decided. If it is off, tell the user why (for example "this repo
 turns it off in .github/tracetoon.json") and open the PR the normal way. If the
-user explicitly asks for a plain PR without Tracetoon, prefix the `gh` command
-with `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh pr create ...`). Never use
+user explicitly asks for a plain PR without Tracetoon, use the
+one-command bypass that `tracetoon status` prints. Never use
 that bypass on your own initiative.
 
 ## Workflow
@@ -94,7 +94,7 @@ reviewer separate.
    `fix`), tell the user; you can still prepare everything.
    - If `push.canPush` is false, tell the user now: their gh account can't push
      to this repo, so publishing will fail. They can switch accounts
-     (`gh auth switch`) or use a fork.
+     (in the GitHub CLI) or use a fork.
    - The `comic` setting is `off`, `allowed` (default: include a comic unless
      the repo's rules forbid images in PRs) or `always` (ignore that).
      Tracetoon decides whether this PR gets one: `prepare --json` returns
@@ -113,7 +113,7 @@ reviewer separate.
      - `fix`: the route is installed but can't draw (e.g. Codex not signed in
        with ChatGPT, or set to another model provider); pass on the fix.
      - `setup`: no route; pass on how to add one (they'll need to restart the
-       agent after setting a key).
+       agent after adding the setting).
      - Either way, offer "skip comics for this PR" and, if they never want
        them, `tracetoon config set comic off`. If they say no to setup, run
        `tracetoon images --dismiss` so they aren't asked again on this machine.
