@@ -35,7 +35,6 @@ import {
   SITE,
   codexInterface,
   json,
-  listingDescription,
   root,
 } from './agent-surfaces.ts';
 
@@ -367,10 +366,42 @@ const HOSTS: Host[] = [
   },
 ];
 
+/**
+ * The listing line for one package. Someone installing a Claude Code plugin
+ * doesn't need the list of every agent Tracetoon reads, so each package names
+ * its own host and, where prbench measured that host, its own result.
+ */
+const HOST_COPY: Record<string, { agent: string; result?: string }> = {
+  claude: {
+    agent: 'Claude Code',
+    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+  },
+  'claude-directory': {
+    agent: 'Claude Code',
+    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+  },
+  codex: { agent: 'Codex', result: '83 to 34 on Codex, at 46% lower cost per PR' },
+  'codex-directory': {
+    agent: 'Codex',
+    result: '83 to 34 on Codex, at 46% lower cost per PR',
+  },
+  cursor: { agent: 'Cursor' },
+  agent: { agent: 'GitHub Copilot CLI or Kiro' },
+};
+
+export function description(dir: string): string {
+  const copy = HOST_COPY[dir];
+  if (!copy) throw new Error(`no listing copy for plugins/${dir}`);
+  const result = copy.result
+    ? `On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
+    : RESULTS.sentence;
+  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. ${result}`;
+}
+
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
-${listingDescription()}
+${description(h.dir)}
 
 ## Why use it
 
@@ -502,7 +533,7 @@ function claudePackage(files: Files) {
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('claude'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -532,7 +563,7 @@ function claudeDirectoryPackage(files: Files) {
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('claude-directory'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -552,7 +583,7 @@ function cursorPackage(files: Files) {
       name: 'tracetoon',
       displayName: 'Tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('cursor'),
       author: { name: 'Tracetoon' },
       homepage: SITE,
       repository: REPO_URL,
@@ -566,12 +597,12 @@ function cursorPackage(files: Files) {
 }
 
 /** Agent Plugins 1.0.0 (agentplugins/agent-plugins-spec): a closed set of fields. */
-function agentManifest(extensions: Record<string, unknown>) {
+function agentManifest(dir: string, extensions: Record<string, unknown>) {
   return {
     $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
     name: 'tracetoon',
     version: pkg.version,
-    description: listingDescription(),
+    description: description(dir),
     author: AUTHOR,
     homepage: SITE,
     repository: REPO_URL,
@@ -590,14 +621,14 @@ function codexPackage(files: Files) {
   common(files, dir, host('codex'));
   files.set(
     `${dir}/plugin.json`,
-    json(agentManifest({ 'com.openai': { interface: codexInterfaceFor() } })),
+    json(agentManifest('codex', { 'com.openai': { interface: codexInterfaceFor() } })),
   );
   files.set(
     `${dir}/.codex-plugin/plugin.json`,
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('codex'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -617,14 +648,18 @@ function codexDirectoryPackage(files: Files) {
   common(files, dir, host('codex-directory'));
   files.set(
     `${dir}/plugin.json`,
-    json(agentManifest({ 'com.openai': { interface: codexInterfaceFor() } })),
+    json(
+      agentManifest('codex-directory', {
+        'com.openai': { interface: codexInterfaceFor() },
+      }),
+    ),
   );
   files.set(
     `${dir}/.codex-plugin/plugin.json`,
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('codex-directory'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -640,7 +675,7 @@ function codexDirectoryPackage(files: Files) {
 function agentPackage(files: Files) {
   const dir = `${OUT}/agent`;
   common(files, dir, host('agent'));
-  files.set(`${dir}/plugin.json`, json(agentManifest({})));
+  files.set(`${dir}/plugin.json`, json(agentManifest('agent', {})));
   files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
   files.set(`${dir}/com.github.copilot/hooks/hooks.json`, json(copilotHooks()));
 }

@@ -209,6 +209,13 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
     expect(skill).not.toMatch(/https?:\/\//);
     expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
   });
+  test('its listing names Claude Code alone, with the Claude Code result', () => {
+    const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
+    expect(description).toContain('Claude Code session logs');
+    expect(description).toContain('69 to 17 on Claude Code');
+    for (const other of ['Codex', 'Cursor', 'Antigravity', 'Copilot', 'Kiro'])
+      expect(description).not.toContain(other);
+  });
   test('its README and REVIEW say there is no hook, and how to get one', () => {
     expect(text(`${dir}/README.md`)).toContain(
       '/plugin marketplace add Tracetoon/tracetoon',

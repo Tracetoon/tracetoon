@@ -50,7 +50,8 @@ writes and sends, and how to check it.
 
 1. Sign in at https://claude.ai/directory/manage.
 2. Repository `Tracetoon/tracetoon`, branch or tag `plugins`, plugin path `claude-directory`.
-3. Category: productivity. Description: the one line above.
+3. Category: productivity. Description: the `description` in
+   `claude-directory/.claude-plugin/plugin.json`, which names Claude Code alone.
 4. The directory accepts hooks, local (stdio) MCP servers and manifest fields
    outside its lists only from Verified organizations, so this package is the
    skill alone. Its skill tells the user, once, that the standalone install adds
@@ -68,7 +69,8 @@ writes and sends, and how to check it.
 1. Open https://cursor.com/marketplace/publish and submit https://github.com/Tracetoon/tracetoon.
 2. In the notes: the plugin is the `cursor` folder on the `plugins` branch
    (`main` holds source); it ships no binaries and runs `npx -y tracetoon@<version>`.
-3. Description: the one line above. Logo: `cursor/assets/tracetoon.png`.
+3. Description: the `description` in `cursor/.cursor-plugin/plugin.json`.
+   Logo: `cursor/assets/tracetoon.png`.
 
 ## OpenAI Codex plugin directory
 
