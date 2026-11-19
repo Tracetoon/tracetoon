@@ -97,6 +97,21 @@ describe('every package', () => {
     }
   });
 
+  test('every README links the install guide the packaged skill points at', () => {
+    for (const d of [
+      'claude',
+      'claude-directory',
+      'cursor',
+      'codex',
+      'codex-directory',
+      'agent',
+    ]) {
+      expect(text(`${OUT}/${d}/skills/tracetoon/SKILL.md`)).toContain(
+        "linked from\nthis plugin's README",
+      );
+      expect(text(`${OUT}/${d}/README.md`)).toContain('docs/agents/install.md');
+    }
+  });
   test('each package carries the same thin skill, pinned to this version', () => {
     const skills = ['claude', 'cursor', 'codex', 'agent'].map((d) =>
       text(`${OUT}/${d}/skills/tracetoon/SKILL.md`),
@@ -202,6 +217,19 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
     expect(
       pkgFiles('claude-directory').filter((p) => p.includes('/.claude-plugin/')),
     ).toEqual([`${dir}/.claude-plugin/plugin.json`]);
+  });
+  test('its skill names no environment variable, key or URL (the directory holds those)', () => {
+    // MCP_FORWARDS_CREDENTIAL_ENV: an env reference or "key" beside a remote URL is held for review.
+    const skill = text(`${dir}/skills/tracetoon/SKILL.md`);
+    expect(skill).not.toMatch(/https?:\/\//);
+    expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
+  });
+  test('its listing names Claude Code alone, with the Claude Code result', () => {
+    const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
+    expect(description).toContain('Claude Code session logs');
+    expect(description).toContain('69 to 17 on Claude Code');
+    for (const other of ['Codex', 'Cursor', 'Antigravity', 'Copilot', 'Kiro'])
+      expect(description).not.toContain(other);
   });
   test('its README and REVIEW say there is no hook, and how to get one', () => {
     expect(text(`${dir}/README.md`)).toContain(

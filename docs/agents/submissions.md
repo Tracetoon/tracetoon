@@ -31,7 +31,7 @@ Shared facts:
 
 Catalogs that review plugins get a text-only package from the `plugins` branch:
 Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
-release's exact version (`npx -y tracetoon@1.0.0-rc.39`). The release workflow
+release's exact version (`npx -y tracetoon@1.0.0-rc.40`). The release workflow
 publishes that branch, and tags it `plugins/v<version>`, once npm serves the
 version. Each package's README.md and REVIEW.md say what runs, what it reads,
 writes and sends, and how to check it.
@@ -50,7 +50,8 @@ writes and sends, and how to check it.
 
 1. Sign in at https://claude.ai/directory/manage.
 2. Repository `Tracetoon/tracetoon`, branch or tag `plugins`, plugin path `claude-directory`.
-3. Category: productivity. Description: the one line above.
+3. Category: productivity. Description: the `description` in
+   `claude-directory/.claude-plugin/plugin.json`, which names Claude Code alone.
 4. The directory accepts hooks, local (stdio) MCP servers and manifest fields
    outside its lists only from Verified organizations, so this package is the
    skill alone. Its skill tells the user, once, that the standalone install adds
@@ -68,7 +69,8 @@ writes and sends, and how to check it.
 1. Open https://cursor.com/marketplace/publish and submit https://github.com/Tracetoon/tracetoon.
 2. In the notes: the plugin is the `cursor` folder on the `plugins` branch
    (`main` holds source); it ships no binaries and runs `npx -y tracetoon@<version>`.
-3. Description: the one line above. Logo: `cursor/assets/tracetoon.png`.
+3. Description: the `description` in `cursor/.cursor-plugin/plugin.json`.
+   Logo: `cursor/assets/tracetoon.png`.
 
 ## OpenAI Codex plugin directory
 
@@ -83,7 +85,7 @@ needs the OpenAI org owner, identity verification and a video:
    PRs written from agent logs. Category: Developer Tools.
 4. Long description:
 
-   > Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
+   > Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex, at 46% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
 
 5. Test cases. Should start Tracetoon:
    1. "Open a PR for this branch."

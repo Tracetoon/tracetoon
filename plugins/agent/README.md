@@ -1,6 +1,6 @@
 # Tracetoon for GitHub Copilot CLI and Kiro
 
-Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.
+Creates your PR with a description written from your GitHub Copilot CLI or Kiro session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.
 
 ## Why use it
 
@@ -22,8 +22,9 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
-  The first run downloads it from npm; later runs use npm's cache.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.40`.
+  The first run downloads it from npm; later runs use npm's cache. Without
+  Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
 - macOS, Linux or Windows.
 
@@ -31,8 +32,8 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 - **Skill:** `skills/tracetoon`. Your agent follows it when you ask it to open or describe a PR.
 - **Hooks:** Copilot CLI: before a shell command it asks the runtime whether the command creates a PR; at session start it records the session. Kiro runs the skill and MCP server only.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.39, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.39, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.40, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.40, published from GitHub Actions with npm provenance.
 
 What it reads, writes and sends, and how to check it: [REVIEW.md](REVIEW.md).
 
