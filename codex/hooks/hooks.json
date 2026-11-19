@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent codex --event PreToolUse",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.39 hook plugin --agent codex --event PreToolUse",
             "timeout": 60
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent codex --event SessionStart",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.39 hook plugin --agent codex --event SessionStart",
             "timeout": 300
           }
         ]
