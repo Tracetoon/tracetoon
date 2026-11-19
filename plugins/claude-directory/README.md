@@ -19,7 +19,8 @@ Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customiz
 ## What it needs
 
 - Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
-  The first run downloads it from npm; later runs use npm's cache.
+  The first run downloads it from npm; later runs use npm's cache. Without
+  Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
 - macOS, Linux or Windows.
 

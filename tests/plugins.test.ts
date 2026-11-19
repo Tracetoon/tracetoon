@@ -97,6 +97,21 @@ describe('every package', () => {
     }
   });
 
+  test('every README links the install guide the packaged skill points at', () => {
+    for (const d of [
+      'claude',
+      'claude-directory',
+      'cursor',
+      'codex',
+      'codex-directory',
+      'agent',
+    ]) {
+      expect(text(`${OUT}/${d}/skills/tracetoon/SKILL.md`)).toContain(
+        "linked from\nthis plugin's README",
+      );
+      expect(text(`${OUT}/${d}/README.md`)).toContain('docs/agents/install.md');
+    }
+  });
   test('each package carries the same thin skill, pinned to this version', () => {
     const skills = ['claude', 'cursor', 'codex', 'agent'].map((d) =>
       text(`${OUT}/${d}/skills/tracetoon/SKILL.md`),

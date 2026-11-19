@@ -85,7 +85,7 @@ needs the OpenAI org owner, identity verification and a video:
    PRs written from agent logs. Category: Developer Tools.
 4. Long description:
 
-   > Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
+   > Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex, at 46% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
 
 5. Test cases. Should start Tracetoon:
    1. "Open a PR for this branch."

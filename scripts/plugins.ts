@@ -34,6 +34,7 @@ import {
   RESULTS,
   SITE,
   codexInterface,
+  description,
   json,
   root,
 } from './agent-surfaces.ts';
@@ -366,38 +367,6 @@ const HOSTS: Host[] = [
   },
 ];
 
-/**
- * The listing line for one package. Someone installing a Claude Code plugin
- * doesn't need the list of every agent Tracetoon reads, so each package names
- * its own host and, where prbench measured that host, its own result.
- */
-const HOST_COPY: Record<string, { agent: string; result?: string }> = {
-  claude: {
-    agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
-  },
-  'claude-directory': {
-    agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
-  },
-  codex: { agent: 'Codex', result: '83 to 34 on Codex, at 46% lower cost per PR' },
-  'codex-directory': {
-    agent: 'Codex',
-    result: '83 to 34 on Codex, at 46% lower cost per PR',
-  },
-  cursor: { agent: 'Cursor' },
-  agent: { agent: 'GitHub Copilot CLI or Kiro' },
-};
-
-export function description(dir: string): string {
-  const copy = HOST_COPY[dir];
-  if (!copy) throw new Error(`no listing copy for plugins/${dir}`);
-  const result = copy.result
-    ? `On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
-    : RESULTS.sentence;
-  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. ${result}`;
-}
-
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
@@ -414,7 +383,8 @@ ${h.install.map((l) => (/^[a-z/]/.test(l) ? `\`\`\`\n${l}\n\`\`\`` : l)).join('\
 ## What it needs
 
 - Node.js 18 or later: the plugin runs Tracetoon with \`npx -y tracetoon@${pkg.version}\`.
-  The first run downloads it from npm; later runs use npm's cache.
+  The first run downloads it from npm; later runs use npm's cache. Without
+  Node.js, install the standalone runtime instead: ${INSTALL_DOC}
 - \`git\`, and the GitHub CLI (\`gh\`) signed in, to publish the PR.
 - macOS, Linux or Windows.
 
@@ -612,8 +582,12 @@ function agentManifest(dir: string, extensions: Record<string, unknown>) {
   };
 }
 
-function codexInterfaceFor(): Record<string, unknown> {
-  return { ...codexInterface(), composerIcon: `./${ICON}`, logo: `./${ICON}` };
+function codexInterfaceFor(dir: string): Record<string, unknown> {
+  return {
+    ...codexInterface(description(dir)),
+    composerIcon: `./${ICON}`,
+    logo: `./${ICON}`,
+  };
 }
 
 function codexPackage(files: Files) {
@@ -621,7 +595,9 @@ function codexPackage(files: Files) {
   common(files, dir, host('codex'));
   files.set(
     `${dir}/plugin.json`,
-    json(agentManifest('codex', { 'com.openai': { interface: codexInterfaceFor() } })),
+    json(
+      agentManifest('codex', { 'com.openai': { interface: codexInterfaceFor('codex') } }),
+    ),
   );
   files.set(
     `${dir}/.codex-plugin/plugin.json`,
@@ -635,7 +611,7 @@ function codexPackage(files: Files) {
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       skills: './skills/',
-      interface: codexInterfaceFor(),
+      interface: codexInterfaceFor('codex'),
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(codexHooks()));
@@ -650,7 +626,7 @@ function codexDirectoryPackage(files: Files) {
     `${dir}/plugin.json`,
     json(
       agentManifest('codex-directory', {
-        'com.openai': { interface: codexInterfaceFor() },
+        'com.openai': { interface: codexInterfaceFor('codex-directory') },
       }),
     ),
   );
@@ -666,7 +642,7 @@ function codexDirectoryPackage(files: Files) {
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       skills: './skills/',
-      interface: codexInterfaceFor(),
+      interface: codexInterfaceFor('codex-directory'),
     }),
   );
 }
