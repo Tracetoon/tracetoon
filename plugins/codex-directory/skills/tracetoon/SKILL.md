@@ -20,7 +20,7 @@ or updates the PR.
 ## The tool
 
 Tracetoon's runtime comes from npm, at the version this plugin was reviewed
-with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.41` (exactly that
+with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.42` (exactly that
 version). Run it from inside the user's repository. Every command accepts
 `--json`. The first run downloads the runtime; later runs use npm's cache.
 
