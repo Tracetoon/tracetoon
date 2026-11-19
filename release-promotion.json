@@ -1,28 +1,36 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.39",
-  "buildId": "7f6ce9ec1a7273249e1d982f01d25f1c0ad58c3109898875850111a35eb3a65f",
+  "version": "1.0.0-rc.40",
+  "buildId": "0c480515d800ce2bfd6e4c7ad403e3b9cb65e123ebd0af1918b81bc93adb741e",
   "artifact": {
-    "runId": 44483188650,
-    "id": 14509537999,
-    "name": "tracetoon-candidate-adf1f54f98bba9f969c61e8bd29f0d70e9ee960c-attempt-1",
-    "digest": "sha256:6fbd6da79dc687231f7e1509cdde879f23fba3f1236599b4691f1e0969326627"
+    "runId": 44501708521,
+    "id": 14518710277,
+    "name": "tracetoon-candidate-58e758dd1a63afde73aa7c6722bd701a26b1e37f-attempt-1",
+    "digest": "sha256:94d63b25b49458cf979afd128e4279cd830c334fca66e4cf3a0f02391d72aa50"
   },
   "expected": {
-    "manifestSha256": "e4ebf941349b043b2d1df0001f479867e70f9bc8bccee79765147d4acbcf99b3",
-    "checksumsSha256": "302ae50641020e9f129e0d165bf09f749d821cf71cac5a806ff4a0d3ec2652f8",
-    "windowsSha256": "aab1be564fcff7eb8160362ca2fddd01b15a82e5b2a564699b5348aede73fc2c",
-    "bundleSha256": "12e2d3abdcf227175b043b93cf128e8855fcec01d51dd34b18beb76f9f00f3b3"
+    "manifestSha256": "718715ab07708c39e99bdd9d2c979c67569f2c4126c044da83a6e6a9e48284b9",
+    "checksumsSha256": "7da0e2628ab0d40b64bfe01c3d208d978b29a3a23ce77599ef65b553c0e485b5",
+    "windowsSha256": "5a74b057f9b0a92334a402eeea2f851403d7429be85445d9a0c8b0fc739e60a1",
+    "bundleSha256": "6f0fc4bbf60c4b5774416f506dbe54c351236b3453d4cc2deaf6d716f0bbcde2"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-19T08:03:03.000Z",
-    "reason": "The user asked to cut rc.39 without a benchmark round so the release publishes the per-catalog plugin packages from #169 on the plugins branch, which the Anthropic plugin directory submission names. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-19T10:11:59.000Z",
+    "reason": "The user asked to cut rc.40 without a benchmark round so the release publishes the reworded packaged skill and per-host listings from #171 on the plugins branch, which the Anthropic plugin directory submission names. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
-    "calibration": { "status": "not-run" },
-    "admission": { "status": "not-run" },
-    "development": { "status": "not-run" },
-    "heldout": { "status": "not-run" }
+    "calibration": {
+      "status": "not-run"
+    },
+    "admission": {
+      "status": "not-run"
+    },
+    "development": {
+      "status": "not-run"
+    },
+    "heldout": {
+      "status": "not-run"
+    }
   }
 }
