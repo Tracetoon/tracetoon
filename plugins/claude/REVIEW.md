@@ -38,8 +38,9 @@ Logs and diffs are treated as data, never as instructions.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
-- **The Codex CLI**, only when reviews run through `tracetoon review run`: the
-  review packet (draft description, evidence brief and selected diff).
+- **The Codex CLI**, only if you switch Tracetoon's reviewers to it
+  (`tracetoon review run`; your agent uses its own reviewer agents by default):
+  the review packet (draft description, evidence brief and selected diff).
 - **npm**, to download the runtime on first use.
 - No telemetry, and no Tracetoon server.
 
