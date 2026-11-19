@@ -984,7 +984,7 @@ function marketplace(text: string): string {
   return JSON.stringify(market, null, 2) + '\n';
 }
 
-const KEYWORDS = [
+export const KEYWORDS = [
   'pull-request',
   'pull-request-description',
   'pr-description-generator',
@@ -1017,8 +1017,8 @@ function pluginJson(text: string): string {
 
 export const SITE = 'https://tracetoon.ai';
 export const REPO_URL = `https://github.com/${REPO}`;
-const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
-const AUTHOR = { name: 'Tracetoon', url: SITE };
+export const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
+export const AUTHOR = { name: 'Tracetoon', url: SITE };
 /** Plugin-relative path of the square icon catalogs show: the dark app tile from the logo kit (scripts/brand.ts). */
 export const ICON = 'assets/tracetoon.svg';
 
@@ -1026,7 +1026,7 @@ export const ICON = 'assets/tracetoon.svg';
  * Words Kiro matches against the conversation to activate the power; Codex and
  * Cursor use the same list for search. Phrases people say, not tags.
  */
-const ACTIVATION = [
+export const ACTIVATION = [
   'pull request',
   'pr description',
   'pr summary',
@@ -1389,8 +1389,10 @@ export function stale(): string[] {
 }
 
 if (import.meta.main) {
+  // The thin plugin packages are built from these surfaces (scripts/plugins.ts).
+  const plugins = await import('./plugins.ts');
   if (process.argv.includes('--check')) {
-    const bad = stale();
+    const bad = [...stale(), ...plugins.stalePlugins()];
     if (bad.length) {
       console.error(
         `Out of date (run bun scripts/agent-surfaces.ts):\n  ${bad.join('\n  ')}`,
@@ -1404,5 +1406,6 @@ if (import.meta.main) {
       writeFileSync(join(root, path), content);
     }
     console.log('Wrote', [...surfaces().keys()].join(', '));
+    console.log(`Wrote ${plugins.writePlugins()} files under ${plugins.OUT}/.`);
   }
 }

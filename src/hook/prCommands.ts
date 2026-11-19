@@ -310,3 +310,21 @@ export function parseAliases(yaml: string): Record<string, string> {
   }
   return out;
 }
+
+/**
+ * Coarse substrings that every PR-creating command above contains, as
+ * permission-rule globs. Host plugins (Claude Code's hook `if`) start the
+ * runtime only for commands matching one of these, so ordinary commands never
+ * pay for it; the runtime then decides precisely with writesPr. A test checks
+ * every recognized creation matches one.
+ */
+export const PR_COMMAND_GLOBS = [
+  '*gh *', // gh pr create/new, gh api …/pulls, gh aliases
+  '*pr create*', // gh called by its full path ("C:/…/gh.exe" pr create)
+  '*pr new*',
+  '*hub *', // hub pull-request, hub api
+  '*pull-request*', // git pull-request (git-extras)
+  '*propose*', // git town propose
+  '*pulls*', // REST calls through curl, wget, HTTPie or PowerShell
+  '*createPullRequest*', // GraphQL mutations
+] as const;
