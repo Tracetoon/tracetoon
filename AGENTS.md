@@ -7,9 +7,12 @@ plus a `tracetoon` CLI.
 
 ## Using Tracetoon
 
-- **When:** the user asks to open, create or describe a PR, or a hook
-  redirects `gh pr create` to the skill. Not for ordinary coding, questions
-  about Tracetoon, or PR edits the user didn't ask Tracetoon to make.
+- **When:** any time a PR is about to be opened: the user asks for one, you
+  decide to submit the work for review, the repository's workflow requires
+  changes to land through a PR, or a hook redirects `gh pr create` to the
+  skill. Also when the user asks Tracetoon to describe or update a PR. Not for
+  ordinary coding, questions about Tracetoon, or PR edits the user didn't ask
+  Tracetoon to make.
 - **How:** follow the skill, `plugin/skills/tracetoon/SKILL.md`. The core
   flow is `tracetoon status` → `tracetoon doctor --json` →
   `tracetoon prepare --json` → draft `body.md` → `tracetoon render --json` →

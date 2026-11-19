@@ -1,0 +1,408 @@
+{
+  "name": "ab-crowded-C-2026-11-19",
+  "startedAt": "2026-11-19T12:38:46.412Z",
+  "tracetoon": {
+    "version": "1.0.0-rc.39",
+    "commit": "390f2de"
+  },
+  "agents": {
+    "claude": {
+      "version": "2.1.328 (Claude Code)"
+    }
+  },
+  "matrix": {
+    "agents": [
+      "claude"
+    ],
+    "tiers": [
+      1,
+      6,
+      8
+    ],
+    "conditions": [
+      "plugin"
+    ],
+    "web": [
+      true
+    ],
+    "trials": 3,
+    "timeoutMs": 600000
+  },
+  "runs": [
+    {
+      "agent": "claude",
+      "tier": 1,
+      "condition": "plugin",
+      "web": true,
+      "trial": 1,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 20,
+        "turns": 3,
+        "tokens": {
+          "input": 8,
+          "output": 1235,
+          "cacheRead": 205400,
+          "cacheWrite": 2998
+        },
+        "costUsd": 0.7979860049999997,
+        "wallMs": 123100,
+        "sessionId": "73e6423f-15cf-427f-bcc7-0546564a04b5",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 1,
+      "condition": "plugin",
+      "web": true,
+      "trial": 2,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 17,
+        "turns": 17,
+        "tokens": {
+          "input": 30,
+          "output": 8449,
+          "cacheRead": 730593,
+          "cacheWrite": 59316
+        },
+        "costUsd": 0.80052596,
+        "wallMs": 117382,
+        "sessionId": "77389421-458f-4539-b64e-b478f62e4ccc",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 1,
+      "condition": "plugin",
+      "web": true,
+      "trial": 3,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": false,
+        "prCreated": false,
+        "skillTrigger": true,
+        "tracetoonCommands": 2,
+        "tracetoonCommandsOk": 2,
+        "webCalls": 0,
+        "toolCalls": 21,
+        "turns": 5,
+        "tokens": {
+          "input": 12,
+          "output": 1756,
+          "cacheRead": 377274,
+          "cacheWrite": 5007
+        },
+        "costUsd": 1.006941215,
+        "wallMs": 139997,
+        "sessionId": "20cbe2de-3af5-455e-b0bb-90ac418c0d34",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 6,
+      "condition": "plugin",
+      "web": true,
+      "trial": 1,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": false,
+        "prCreated": false,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 21,
+        "turns": 19,
+        "tokens": {
+          "input": 36,
+          "output": 8197,
+          "cacheRead": 800595,
+          "cacheWrite": 59177
+        },
+        "costUsd": 0.81397487,
+        "wallMs": 137539,
+        "sessionId": "3fa5912e-147b-4aa8-9b71-c35fb7d5a7be",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 6,
+      "condition": "plugin",
+      "web": true,
+      "trial": 2,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "text",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 19,
+        "turns": 4,
+        "tokens": {
+          "input": 10,
+          "output": 1706,
+          "cacheRead": 290636,
+          "cacheWrite": 4287
+        },
+        "costUsd": 0.9273452650000001,
+        "wallMs": 135502,
+        "sessionId": "f48be281-5947-4fa0-b3b3-5a8607df0d0f",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 6,
+      "condition": "plugin",
+      "web": true,
+      "trial": 3,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 29,
+        "turns": 6,
+        "tokens": {
+          "input": 14,
+          "output": 2528,
+          "cacheRead": 440009,
+          "cacheWrite": 5116
+        },
+        "costUsd": 1.02305491,
+        "wallMs": 179004,
+        "sessionId": "3295c056-648a-42bd-9c0b-3ab8eafb10dc",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 8,
+      "condition": "plugin",
+      "web": true,
+      "trial": 1,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 27,
+        "turns": 5,
+        "tokens": {
+          "input": 12,
+          "output": 2200,
+          "cacheRead": 341777,
+          "cacheWrite": 5630
+        },
+        "costUsd": 0.8763224149999999,
+        "wallMs": 155246,
+        "sessionId": "edbe01f7-bd10-41b9-8c15-3bc032d667be",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 8,
+      "condition": "plugin",
+      "web": true,
+      "trial": 2,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 26,
+        "turns": 6,
+        "tokens": {
+          "input": 14,
+          "output": 2060,
+          "cacheRead": 432726,
+          "cacheWrite": 4959
+        },
+        "costUsd": 0.9441664550000002,
+        "wallMs": 131504,
+        "sessionId": "29dfdc60-f685-44e7-8851-7d6163ed9b93",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    },
+    {
+      "agent": "claude",
+      "tier": 8,
+      "condition": "plugin",
+      "web": true,
+      "trial": 3,
+      "exitCode": 0,
+      "timedOut": false,
+      "score": {
+        "discover": true,
+        "discoverVia": "tool",
+        "suggest": true,
+        "install": true,
+        "installVia": "preinstalled",
+        "run": true,
+        "prCreated": true,
+        "skillTrigger": true,
+        "tracetoonCommands": 0,
+        "tracetoonCommandsOk": 0,
+        "webCalls": 0,
+        "toolCalls": 31,
+        "turns": 8,
+        "tokens": {
+          "input": 18,
+          "output": 3472,
+          "cacheRead": 581490,
+          "cacheWrite": 8521
+        },
+        "costUsd": 1.0013784600000002,
+        "wallMs": 165973,
+        "sessionId": "b60302d9-e451-476f-8122-4424b80e2391",
+        "sessionsOnDisk": 3
+      },
+      "notes": []
+    }
+  ],
+  "summary": [
+    {
+      "agent": "claude",
+      "tier": 1,
+      "condition": "plugin",
+      "web": true,
+      "n": 3,
+      "discover": 3,
+      "suggest": 3,
+      "install": 3,
+      "agentInstall": 0,
+      "run": 2,
+      "prCreated": 2,
+      "skillTrigger": 3,
+      "timedOut": 0,
+      "errors": 0,
+      "meanWallMs": 126826.33333333333,
+      "meanCostUsd": 0.8684843933333332,
+      "meanTokens": 464026
+    },
+    {
+      "agent": "claude",
+      "tier": 6,
+      "condition": "plugin",
+      "web": true,
+      "n": 3,
+      "discover": 3,
+      "suggest": 3,
+      "install": 3,
+      "agentInstall": 0,
+      "run": 2,
+      "prCreated": 2,
+      "skillTrigger": 3,
+      "timedOut": 0,
+      "errors": 0,
+      "meanWallMs": 150681.66666666666,
+      "meanCostUsd": 0.9214583483333333,
+      "meanTokens": 537437
+    },
+    {
+      "agent": "claude",
+      "tier": 8,
+      "condition": "plugin",
+      "web": true,
+      "n": 3,
+      "discover": 3,
+      "suggest": 3,
+      "install": 3,
+      "agentInstall": 0,
+      "run": 3,
+      "prCreated": 3,
+      "skillTrigger": 3,
+      "timedOut": 0,
+      "errors": 0,
+      "meanWallMs": 150907.66666666666,
+      "meanCostUsd": 0.9406224433333334,
+      "meanTokens": 460959.6666666667
+    }
+  ],
+  "finishedAt": "2026-11-19T13:00:12.557Z"
+}

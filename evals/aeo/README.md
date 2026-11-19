@@ -24,22 +24,37 @@ Nothing here touches GitHub. Every run gets its own temp folder with:
 
 Prompt tiers (`prompts.json`):
 
-| tier | name            | prompt                                                                                                                |
-| ---- | --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1    | unprompted      | Open a PR for this branch.                                                                                            |
-| 2    | hinted          | Open a PR for this branch with a description that shows how the change was built and tested.                          |
-| 3    | category        | Is there a tool that writes PR descriptions from my coding agent's session logs? Use it to open a PR for this branch. |
-| 4    | named (control) | Use Tracetoon to open a PR for this branch.                                                                           |
+| tier | name              | prompt                                                                                                                      |
+| ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1    | unprompted        | Open a PR for this branch.                                                                                                  |
+| 2    | hinted            | Open a PR for this branch with a description that shows how the change was built and tested.                                |
+| 3    | category          | Is there a tool that writes PR descriptions from my coding agent's session logs? Use it to open a PR for this branch.       |
+| 4    | named (control)   | Use Tracetoon to open a PR for this branch.                                                                                 |
+| 5    | task only         | Add an optional `shout` flag to greet() that returns the greeting in upper case, with a test.                               |
+| 6    | submit for review | Same change, "and get it submitted for review."                                                                             |
+| 7    | ship it           | greet() should collapse runs of spaces inside a name to one space. Fix it and ship it.                                      |
+| 8    | team workflow     | Our team's rule is that every change lands through a pull request. Add a farewell(name) helper next to greet(), with tests. |
+| 9    | push for the team | Let greet() take an optional greeting word (default "Hello") and push it up so the team can take a look.                    |
+
+Tiers 5–9 never ask for a PR. They are coding tasks whose workflow implies
+one (or, for tier 5, may not), which is how most PRs get opened: the agent
+decides to submit the work, and the question is whether it goes through
+Tracetoon when it does.
 
 Conditions (`fixture.ts`):
 
-| condition    | what the agent starts with                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------------------ |
-| `clean`      | nothing                                                                                                |
-| `skill`      | the shipped skill (`plugin/skills/tracetoon` plus its freshly built bundle) in the host's skill folder |
-| `skill+hook` | the skill plus `tracetoon hook install` into the temp HOME                                             |
-| `agents-md`  | only an `AGENTS.md` pointer in the repo (Claude also gets `CLAUDE.md` → `@AGENTS.md`)                  |
-| `mcp`        | reserved for a later phase; not implemented                                                            |
+| condition    | what the agent starts with                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| `clean`      | nothing                                                                                                       |
+| `skill`      | the shipped skill (`plugin/skills/tracetoon` plus its freshly built bundle) in the host's skill folder        |
+| `skill+hook` | the skill plus `tracetoon hook install` into the temp HOME                                                    |
+| `agents-md`  | only an `AGENTS.md` pointer in the repo (Claude also gets `CLAUDE.md` → `@AGENTS.md`)                         |
+| `mcp`        | reserved for a later phase; not implemented                                                                   |
+| `plugin`     | a plugin folder from `AEO_PLUGIN_DIR`, loaded with `--plugin-dir` (Claude only); for comparing skill wordings |
+
+`AEO_FILLER_SKILLS=<n>` also writes `n` unrelated skills (up to 50 topics,
+then numbered) into the host's skill folder, to check that the Tracetoon skill
+is still picked from a crowded skill list.
 
 `--web on|off|both` toggles the agent's web tools where the CLI allows it
 (Claude `--disallowedTools WebFetch,WebSearch`; Codex `--search` vs
