@@ -31,6 +31,13 @@ Node.js, or install the standalone binary as described in https://github.com/Tra
 anything yourself unless they ask. If they decline, follow
 [references/manual-mode.md](references/manual-mode.md).
 
+This copy of the skill came without hooks (the catalog it was listed in
+doesn't allow them). So a plain `gh pr create` isn't routed here, and
+`prepare` matches sessions from the agent's own logs. In step 1, if
+`tracetoon doctor --json` reports the `pr-hook` check failing, tell the user
+once that the standalone install (https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md) adds the hook, then carry on.
+Install it only if they ask.
+
 ## Updating Tracetoon
 
 This plugin pins the runtime version, and the agent's plugin manager updates
