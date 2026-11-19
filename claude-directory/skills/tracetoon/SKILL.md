@@ -67,8 +67,8 @@ research/drafting/review restrictions confined to those PR roles.
 Tracetoon can be turned off. `tracetoon status` says whether it is on here and
 which setting decided. If it is off, tell the user why (for example "this repo
 turns it off in .github/tracetoon.json") and open the PR the normal way. If the
-user explicitly asks for a plain PR without Tracetoon, prefix the `gh` command
-with `TRACETOON=0` (in PowerShell, set TRACETOON to 0 first). Never use
+user explicitly asks for a plain PR without Tracetoon, use the
+one-command bypass that `tracetoon status` prints. Never use
 that bypass on your own initiative.
 
 ## Workflow
@@ -102,7 +102,7 @@ reviewer separate.
    `fix`), tell the user; you can still prepare everything.
    - If `push.canPush` is false, tell the user now: their gh account can't push
      to this repo, so publishing will fail. They can switch accounts
-     (`gh auth switch`) or use a fork.
+     (in the GitHub CLI) or use a fork.
    - The `comic` setting is `off`, `allowed` (default: include a comic unless
      the repo's rules forbid images in PRs) or `always` (ignore that).
      Tracetoon decides whether this PR gets one: `prepare --json` returns
