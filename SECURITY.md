@@ -9,10 +9,10 @@ public place (pull requests). Its defaults:
   `@showtail/agent-traces` redactor, which also masks the real secret values
   found in your environment and credential files. Home paths and the username
   are scrubbed, and paths outside the repo become `<outside-repo>`.
-- A PR is created only when you ask your agent for one (or the agent's own PR
-  write, by `gh`, hub, git-extras, Git Town, the pulls API or a GitHub
-  connector, is redirected to Tracetoon); finishing a task doesn't post
-  anything. Code that calls the API from inside a script or program, or a
+- A PR is created only when one is being opened: you ask your agent for one,
+  the agent submits its work for review, or its own PR write (by `gh`, hub,
+  git-extras, Git Town, the pulls API or a GitHub connector) is redirected to
+  Tracetoon. Finishing a task doesn't post anything by itself. Code that calls the API from inside a script or program, or a
   GraphQL mutation read from a file, can't be recognized from the command line.
 - A second, independent scanner checks the final title and body. A possible
   secret sends the text back to be rewritten and rescanned; nothing is posted

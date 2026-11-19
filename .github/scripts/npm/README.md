@@ -21,7 +21,7 @@ agent afterwards.
 - **Written from what happened.** Your agent already logged what you asked for, what it changed and which commands ran; Tracetoon writes the description from that record, so it can say why the change was made and what was tested, not just what the diff shows.
 - **Every claim checked.** Each factual sentence has to trace back to the session evidence, independent reviewers check the draft, and the Validation section comes from recorded test and build runs instead of being typed by the model.
 - **Cheaper to write.** A compact, cited evidence brief built in an embedded graph database lets the agent draft without rereading raw logs.
-- **Safe to post.** Private paths and secrets are redacted from the evidence, a leak scan runs before anything is posted, and you approve the PR first.
+- **Safe to post.** Private paths and secrets are redacted from the evidence, and a leak scan runs before anything is posted.
 - **Follows the house rules.** It reads the repository's PR template, contribution guide and AI-disclosure policy and writes to them.
 - **Works with your agents.** Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, as an agent skill, a CLI or an MCP server.
 - **A comic on top.** An optional one-off comic about the change, which reviewers actually read.
@@ -30,8 +30,8 @@ agent afterwards.
 
 | | |
 | --- | --- |
-| **83–34** | judges preferred the evidence-graph PR on Codex |
-| **69–17** | judges preferred it on Claude Code |
+| **83–34** | both judges preferred the evidence-graph PR on Codex |
+| **69–17** | both judges preferred it on Claude Code |
 | **−46% / −31%** | cost per PR on Codex / Claude Code |
 
 prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. Full results, methods and caveats: https://tracetoon.ai/evidence-graph-61.html

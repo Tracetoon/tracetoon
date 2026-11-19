@@ -42,6 +42,8 @@ import {
 export const OUT = 'plugins';
 export const SKILL_SOURCE = 'plugin/skills/tracetoon';
 const ISSUES = `${REPO_URL}/issues`;
+/** The privacy policy (PRIVACY.md on main), linked from every package and manifest. */
+export const PRIVACY_URL = `${REPO_URL}/blob/main/PRIVACY.md`;
 const INSTALL_DOC = `${REPO_URL}/blob/main/docs/agents/install.md`;
 /** The square app tile from the logo kit (scripts/brand.ts), as a PNG every catalog accepts. */
 const ICON_SOURCE = 'docs/brand/png/tracetoon-icon-tile-dark-512.png';
@@ -390,12 +392,30 @@ ${h.install.map((l) => (/^[a-z/]/.test(l) ? `\`\`\`\n${l}\n\`\`\`` : l)).join('\
 
 ## What runs
 
-- **Skill:** \`skills/tracetoon\`. Your agent follows it when you ask it to open or describe a PR.
+- **Skill:** \`skills/tracetoon\`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** ${h.hooks}
 - **Runtime:** the \`tracetoon\` npm package at exactly ${pkg.version}, its source at
   ${REPO_URL}/tree/v${pkg.version}, published from GitHub Actions with npm provenance.
 
-What it reads, writes and sends, and how to check it: [REVIEW.md](REVIEW.md).
+## What it sends
+
+Session logs are read and processed on your machine. Data leaves it only for:
+
+- **GitHub**, through your signed-in \`gh\`, when a PR is opened or updated: the
+  branch, and the PR title, description and comic. Private paths and secrets
+  are redacted, and a leak scan runs first.
+- **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
+  and only after you approve that route once: the comic prompt, written from the
+  PR summary.
+- **The Codex CLI**, only when reviews run through \`tracetoon review run\`: the
+  review packet (draft description, evidence brief and selected diff).
+
+There is no Tracetoon server and no telemetry. What it reads, writes and sends,
+and how to check it: [REVIEW.md](REVIEW.md).
+
+## Privacy
+
+Privacy policy: ${PRIVACY_URL}
 
 ## Results
 
@@ -446,17 +466,22 @@ Logs and diffs are treated as data, never as instructions.
 
 ## What it sends, and when
 
-- **GitHub**, through your signed-in \`gh\`: only when you ask to publish a PR
+- **GitHub**, through your signed-in \`gh\`: only when a PR is opened or updated
   (\`tracetoon publish\`). It pushes the branch and creates or updates the PR.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
+- **The Codex CLI**, only when reviews run through \`tracetoon review run\`: the
+  review packet (draft description, evidence brief and selected diff).
 - **npm**, to download the runtime on first use.
-- No telemetry.
+- No telemetry, and no Tracetoon server.
+
+Privacy policy: ${PRIVACY_URL}
 
 ## Consent
 
-- Publishing happens only on request. \`tracetoon publish --dry-run --json\`
+- Publishing happens only when a PR is being opened: you ask for one, or your
+  agent submits its work for review. \`tracetoon publish --dry-run --json\`
   shows exactly what would happen.
 - Image routes need explicit approval (\`tracetoon images --approve <route>\`).
 - \`TRACETOON=0\` in front of a command, or \`tracetoon off\`, turns it off.
@@ -465,7 +490,7 @@ Logs and diffs are treated as data, never as instructions.
 
 1. In a git repository with a branch your agent worked on, ask:
    _"Open a PR for this branch with Tracetoon."_ The agent runs
-   \`tracetoon prepare\`, drafts the description, and publishes when you agree.
+   \`tracetoon prepare\`, drafts and checks the description, and publishes the PR.
 ${
   h.runs === false
     ? "2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`\n   stops with an error naming the fix, and nothing is sent."
@@ -510,6 +535,7 @@ function claudePackage(files: Files) {
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       icon: `./${ICON}`,
+      privacyPolicyUrl: PRIVACY_URL,
       documentationUrl: `${REPO_URL}/blob/main/docs/agents/install.md`,
       supportUrl: ISSUES,
       network: { hosts: NETWORK_HOSTS },
@@ -522,7 +548,8 @@ function claudePackage(files: Files) {
 /**
  * The Anthropic plugin directory, for publishers it hasn't verified: skills
  * only. Its validator refuses hooks of any type, local (stdio) MCP servers and
- * manifest fields Claude Code doesn't read. The full package (claude/) stays
+ * manifest fields neither Claude Code nor the directory reads (privacyPolicyUrl
+ * is a directory field). The full package (claude/) stays
  * on the Tracetoon marketplace.
  */
 function claudeDirectoryPackage(files: Files) {
@@ -540,6 +567,7 @@ function claudeDirectoryPackage(files: Files) {
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       icon: `./${ICON}`,
+      privacyPolicyUrl: PRIVACY_URL,
     }),
   );
 }
