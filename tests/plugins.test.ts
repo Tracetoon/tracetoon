@@ -47,6 +47,9 @@ describe('privacy and data handling', () => {
   });
   test.each(ALL)('%s README says what leaves the machine and links the policy', (dir) => {
     const readme = text(`${OUT}/${dir}/README.md`);
+    expect(readme).toContain('## What it reads');
+    expect(readme).toMatch(/names and email addresses/);
+    expect(readme).toContain('.git/tracetoon/runs/');
     expect(readme).toContain('## What it sends');
     expect(readme).toContain('## Privacy');
     expect(readme).toContain(PRIVACY_URL);

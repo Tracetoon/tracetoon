@@ -31,7 +31,7 @@ Shared facts:
 
 Catalogs that review plugins get a text-only package from the `plugins` branch:
 Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
-release's exact version (`npx -y tracetoon@1.0.0-rc.42`). The release workflow
+release's exact version (`npx -y tracetoon@1.0.0-rc.43`). The release workflow
 publishes that branch, and tags it `plugins/v<version>`, once npm serves the
 version. Each package's README.md and REVIEW.md say what runs, what it reads,
 writes and sends, and how to check it.

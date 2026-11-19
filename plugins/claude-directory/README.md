@@ -18,7 +18,7 @@ Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customiz
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.42`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.43`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,16 @@ Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customiz
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** None: the directory accepts hooks and local MCP servers only from verified publishers, so the skill starts when you ask for a PR. For the hook that routes a plain `gh pr create` here, add the standalone install (https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md), or install from the Tracetoon marketplace instead: `/plugin marketplace add Tracetoon/tracetoon`.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.42, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.42, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.43, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.43, published from GitHub Actions with npm provenance.
+
+## What it reads
+
+On your machine: your agents' session logs, which hold whatever you typed,
+and the repository's git history, including names and email addresses in
+commit trailers such as `Co-Authored-By`. It also reads your GitHub login
+through `gh`. Each PR's redacted digest, evidence brief and draft stay in
+`.git/tracetoon/runs/` until you delete them.
 
 ## What it sends
 
