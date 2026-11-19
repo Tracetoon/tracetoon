@@ -34,8 +34,8 @@ import {
   RESULTS,
   SITE,
   codexInterface,
+  description,
   json,
-  listingDescription,
   root,
 } from './agent-surfaces.ts';
 
@@ -81,8 +81,8 @@ version). Run it from inside the user's repository. Every command accepts
 
 If \`npx\` is not found (Tracetoon needs Node.js 18 or later), or the command
 exits with code **3**, the runtime can't start. Tell the user: they can install
-Node.js, or install the standalone binary as described in ${INSTALL_DOC}
-(then \`tracetoon\` on their PATH replaces the npx command). Don't install
+Node.js, or install the standalone binary (the install guide is linked from
+this plugin's README) (then \`tracetoon\` on their PATH replaces the npx command). Don't install
 anything yourself unless they ask. If they decline, follow
 [references/manual-mode.md](references/manual-mode.md).`;
 
@@ -106,7 +106,8 @@ const SKILL_ONLY = `This copy of the skill came without hooks (the catalog it wa
 doesn't allow them). So a plain \`gh pr create\` isn't routed here, and
 \`prepare\` matches sessions from the agent's own logs. In step 1, if
 \`tracetoon doctor --json\` reports the \`pr-hook\` check failing, tell the user
-once that the standalone install (${INSTALL_DOC}) adds the hook, then carry on.
+once that the standalone install (linked from this plugin's README) adds the
+hook, then carry on.
 Install it only if they ask.`;
 
 function swap(text: string, name: string, body: string): string {
@@ -131,6 +132,20 @@ export function thinSkill(hooks = true): Map<string, string> {
       "(the launcher's full path if `tracetoon` isn't on their PATH)",
       '(the pinned npx command)',
     );
+  // The Anthropic directory holds a skill that names an environment variable
+  // or a key beside a remote URL (MCP_FORWARDS_CREDENTIAL_ENV), so the packaged
+  // skill says these in words and leaves URLs to the README.
+  for (const [from, to] of [
+    [
+      "prefix the `gh` command\nwith `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh pr create ...`). Never use",
+      'use the\none-command bypass that `tracetoon status` prints. Never use',
+    ],
+    ['(`gh auth switch`)', '(in the GitHub CLI)'],
+    ['agent after setting a key)', 'agent after adding the setting)'],
+  ]) {
+    if (!skill.includes(from!)) throw new Error(`SKILL.md no longer has: ${from}`);
+    skill = skill.replace(from!, to!);
+  }
   out.set('SKILL.md', skill);
   for (const name of readdirSync(join(src, 'references')).sort()) {
     if (!name.endsWith('.md')) continue;
@@ -355,7 +370,7 @@ const HOSTS: Host[] = [
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
-${listingDescription()}
+${description(h.dir)}
 
 ## Why use it
 
@@ -368,7 +383,8 @@ ${h.install.map((l) => (/^[a-z/]/.test(l) ? `\`\`\`\n${l}\n\`\`\`` : l)).join('\
 ## What it needs
 
 - Node.js 18 or later: the plugin runs Tracetoon with \`npx -y tracetoon@${pkg.version}\`.
-  The first run downloads it from npm; later runs use npm's cache.
+  The first run downloads it from npm; later runs use npm's cache. Without
+  Node.js, install the standalone runtime instead: ${INSTALL_DOC}
 - \`git\`, and the GitHub CLI (\`gh\`) signed in, to publish the PR.
 - macOS, Linux or Windows.
 
@@ -487,7 +503,7 @@ function claudePackage(files: Files) {
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('claude'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -517,7 +533,7 @@ function claudeDirectoryPackage(files: Files) {
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('claude-directory'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
@@ -537,7 +553,7 @@ function cursorPackage(files: Files) {
       name: 'tracetoon',
       displayName: 'Tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('cursor'),
       author: { name: 'Tracetoon' },
       homepage: SITE,
       repository: REPO_URL,
@@ -551,12 +567,12 @@ function cursorPackage(files: Files) {
 }
 
 /** Agent Plugins 1.0.0 (agentplugins/agent-plugins-spec): a closed set of fields. */
-function agentManifest(extensions: Record<string, unknown>) {
+function agentManifest(dir: string, extensions: Record<string, unknown>) {
   return {
     $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
     name: 'tracetoon',
     version: pkg.version,
-    description: listingDescription(),
+    description: description(dir),
     author: AUTHOR,
     homepage: SITE,
     repository: REPO_URL,
@@ -566,8 +582,12 @@ function agentManifest(extensions: Record<string, unknown>) {
   };
 }
 
-function codexInterfaceFor(): Record<string, unknown> {
-  return { ...codexInterface(), composerIcon: `./${ICON}`, logo: `./${ICON}` };
+function codexInterfaceFor(dir: string): Record<string, unknown> {
+  return {
+    ...codexInterface(description(dir)),
+    composerIcon: `./${ICON}`,
+    logo: `./${ICON}`,
+  };
 }
 
 function codexPackage(files: Files) {
@@ -575,21 +595,23 @@ function codexPackage(files: Files) {
   common(files, dir, host('codex'));
   files.set(
     `${dir}/plugin.json`,
-    json(agentManifest({ 'com.openai': { interface: codexInterfaceFor() } })),
+    json(
+      agentManifest('codex', { 'com.openai': { interface: codexInterfaceFor('codex') } }),
+    ),
   );
   files.set(
     `${dir}/.codex-plugin/plugin.json`,
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('codex'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       skills: './skills/',
-      interface: codexInterfaceFor(),
+      interface: codexInterfaceFor('codex'),
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(codexHooks()));
@@ -602,21 +624,25 @@ function codexDirectoryPackage(files: Files) {
   common(files, dir, host('codex-directory'));
   files.set(
     `${dir}/plugin.json`,
-    json(agentManifest({ 'com.openai': { interface: codexInterfaceFor() } })),
+    json(
+      agentManifest('codex-directory', {
+        'com.openai': { interface: codexInterfaceFor('codex-directory') },
+      }),
+    ),
   );
   files.set(
     `${dir}/.codex-plugin/plugin.json`,
     json({
       name: 'tracetoon',
       version: pkg.version,
-      description: listingDescription(),
+      description: description('codex-directory'),
       author: AUTHOR,
       homepage: SITE,
       repository: REPO_URL,
       license: 'Apache-2.0',
       keywords: KEYWORDS,
       skills: './skills/',
-      interface: codexInterfaceFor(),
+      interface: codexInterfaceFor('codex-directory'),
     }),
   );
 }
@@ -625,7 +651,7 @@ function codexDirectoryPackage(files: Files) {
 function agentPackage(files: Files) {
   const dir = `${OUT}/agent`;
   common(files, dir, host('agent'));
-  files.set(`${dir}/plugin.json`, json(agentManifest({})));
+  files.set(`${dir}/plugin.json`, json(agentManifest('agent', {})));
   files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
   files.set(`${dir}/com.github.copilot/hooks/hooks.json`, json(copilotHooks()));
 }

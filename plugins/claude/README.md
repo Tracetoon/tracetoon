@@ -1,6 +1,6 @@
 # Tracetoon for Claude Code
 
-Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.
+Creates your PR with a description written from your Claude Code session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 69 to 17 on Claude Code, at 31% lower cost per PR.
 
 ## Why use it
 
@@ -25,7 +25,8 @@ Creates your PR with a description written from the session logs of Claude Code,
 ## What it needs
 
 - Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
-  The first run downloads it from npm; later runs use npm's cache.
+  The first run downloads it from npm; later runs use npm's cache. Without
+  Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
 - macOS, Linux or Windows.
 
