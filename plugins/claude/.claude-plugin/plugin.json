@@ -25,5 +25,15 @@
   ],
   "icon": "./assets/tracetoon.png",
   "documentationUrl": "https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md",
-  "supportUrl": "https://github.com/Tracetoon/tracetoon/issues"
+  "supportUrl": "https://github.com/Tracetoon/tracetoon/issues",
+  "network": {
+    "hosts": [
+      "registry.npmjs.org",
+      "github.com",
+      "api.github.com",
+      "uploads.github.com",
+      "api.openai.com",
+      "generativelanguage.googleapis.com"
+    ]
+  }
 }

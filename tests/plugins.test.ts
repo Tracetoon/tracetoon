@@ -117,6 +117,7 @@ describe('Claude Code (Anthropic plugin directory)', () => {
       'icon',
       'documentationUrl',
       'supportUrl',
+      'network',
     ];
     const manifest = parse(`${dir}/.claude-plugin/plugin.json`);
     expect(Object.keys(manifest).filter((k) => !allowed.includes(k))).toEqual([]);

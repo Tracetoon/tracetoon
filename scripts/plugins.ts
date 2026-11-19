@@ -56,6 +56,20 @@ const mcpEntry = () => ({ command: 'npx', args: [...NPX_ARGS, 'mcp'] });
 
 export type Files = Map<string, string | Buffer>;
 
+/**
+ * Every host the plugin's parts can reach (REVIEW.md says when): npm for the
+ * runtime, GitHub when the user publishes, and an image service only after the
+ * user approves that comic route.
+ */
+export const NETWORK_HOSTS = [
+  'registry.npmjs.org',
+  'github.com',
+  'api.github.com',
+  'uploads.github.com',
+  'api.openai.com',
+  'generativelanguage.googleapis.com',
+];
+
 // ---------------------------------------------------------------------------
 // The skill, with its runtime and update sections rewritten for npm.
 // ---------------------------------------------------------------------------
@@ -452,6 +466,7 @@ function claudePackage(files: Files) {
       icon: `./${ICON}`,
       documentationUrl: `${REPO_URL}/blob/main/docs/agents/install.md`,
       supportUrl: ISSUES,
+      network: { hosts: NETWORK_HOSTS },
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(claudeHooks()));
