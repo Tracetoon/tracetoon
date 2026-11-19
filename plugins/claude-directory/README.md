@@ -18,7 +18,7 @@ Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customiz
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.40`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,8 @@ Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customiz
 
 - **Skill:** `skills/tracetoon`. Your agent follows it when you ask it to open or describe a PR.
 - **Hooks:** None: the directory accepts hooks and local MCP servers only from verified publishers, so the skill starts when you ask for a PR. For the hook that routes a plain `gh pr create` here, add the standalone install (https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md), or install from the Tracetoon marketplace instead: `/plugin marketplace add Tracetoon/tracetoon`.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.39, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.39, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.40, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.40, published from GitHub Actions with npm provenance.
 
 What it reads, writes and sends, and how to check it: [REVIEW.md](REVIEW.md).
 
