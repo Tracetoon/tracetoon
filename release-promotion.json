@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.42",
-  "buildId": "a396e2a95374b78609db1361aa4b64c44e42fe5f1d3613360ff8e70b17a7a27a",
+  "version": "1.0.0-rc.43",
+  "buildId": "b5dc050615439b38aeae8805d623fb56c3a5851cd0b33ca2bb7db804fb8efcf9",
   "artifact": {
-    "runId": 44604713693,
-    "id": 14568718889,
-    "name": "tracetoon-candidate-5bd2e6c8021fa740d8d5280a67febfd91498fda5-attempt-1",
-    "digest": "sha256:8f8785fdd366c1c22474e89851e81abdafb5c009a7f19fee2a7e4431f8510a5d"
+    "runId": 44616257734,
+    "id": 14576605208,
+    "name": "tracetoon-candidate-0dd5a6ffcf554619c1724a12b8e818b805eed115-attempt-1",
+    "digest": "sha256:99e58a1f0d917722ac7b4275b3d88efa49ada0281f4f567fbe1e16fc219d75b5"
   },
   "expected": {
-    "manifestSha256": "d27ff894169d68ef05dd17a1b2e85e7477f02d6e3d946dfbcdb3c950030e51ca",
-    "checksumsSha256": "26ad34820025eb0361b83fe34c5edd9c80e432885cd39a545f046c24aa9ed582",
-    "windowsSha256": "c47899df2c5e0d4e55a2658e82cdfece5f9570cd15ab141625aa96345bb3f6a8",
-    "bundleSha256": "457738703d77451b4651db9772ab6ee8f66e3b9361120ff88e91a49b4afeb3ca"
+    "manifestSha256": "17e5781fe2d7dbc37779ab34b0f64cbaadae75ef7e154f14691305f5c39b7137",
+    "checksumsSha256": "4533f9fcea8b02f4b36db34bc1a02876b5b54a4220c7abf70d52261e84893cfc",
+    "windowsSha256": "0b57f0ceb77f66e260634f9f705cc2690dd32a96a4261b369522b3fb543e4b56",
+    "bundleSha256": "9313fb22ce6365e33bcd122e5f74928b303ff15d582eea6017e9cb53d4e4646b"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-19T20:15:02.000Z",
-    "reason": "The user asked for the next round of plugin-directory fixes (privacy policy, What it sends sections, listing copy) to be merged and released, so the plugins branch carries them for the Anthropic plugin directory submission. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-19T21:22:05.000Z",
+    "reason": "The user asked for a new release with the What it reads README section so the Anthropic plugin directory's personal-data answer is listed in the README itself. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

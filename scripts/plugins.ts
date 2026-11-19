@@ -397,6 +397,14 @@ ${h.install.map((l) => (/^[a-z/]/.test(l) ? `\`\`\`\n${l}\n\`\`\`` : l)).join('\
 - **Runtime:** the \`tracetoon\` npm package at exactly ${pkg.version}, its source at
   ${REPO_URL}/tree/v${pkg.version}, published from GitHub Actions with npm provenance.
 
+## What it reads
+
+On your machine: your agents' session logs, which hold whatever you typed,
+and the repository's git history, including names and email addresses in
+commit trailers such as \`Co-Authored-By\`. It also reads your GitHub login
+through \`gh\`. Each PR's redacted digest, evidence brief and draft stay in
+\`.git/tracetoon/runs/\` until you delete them.
+
 ## What it sends
 
 Session logs are read and processed on your machine. Data leaves it only for:
