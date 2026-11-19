@@ -430,6 +430,15 @@ the agent hook that routes PRs through Tracetoon
 | `--agent <agent>` | claude, codex, antigravity, factory, copilot, cursor, opencode, kilo, kiro, cline, junie, goose, qwen, crush, amp (required) |
 | `--event <event>` | SessionStart, PreToolUse, PostToolUse or Stop (required) |
 
+## `tracetoon hook plugin`
+
+called by Tracetoon host plugins: the PR check and session observation in one process
+
+| Option | Description |
+| --- | --- |
+| `--agent <agent>` | claude, codex, antigravity, factory, copilot, cursor, opencode, kilo, kiro, cline, junie, goose, qwen, crush, amp (required) |
+| `--event <event>` | SessionStart, PreToolUse or PostToolUse (required) |
+
 ## `tracetoon hook pre-pr`
 
 called by agents before shell commands; routes PR creation through Tracetoon

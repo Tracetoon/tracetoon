@@ -50,14 +50,14 @@ function fakeBinary(): string {
   const script = join(dir, 'fake');
   writeFileSync(
     script,
-    '#!/bin/sh\necho "args: $*"\necho "skill=$TRACETOON_SKILL_DIR"\nexit 7\n',
+    '#!/bin/sh\necho "args: $*"\necho "skill=$TRACETOON_SKILL_DIR"\necho "launcher=$TRACETOON_LAUNCHER"\nexit 7\n',
     { mode: 0o755 },
   );
   return script;
 }
 const FAKE_ARGS = [
   '-e',
-  'console.log("args: " + process.argv.slice(1).join(" ")); console.log("skill=" + process.env.TRACETOON_SKILL_DIR); process.exit(7)',
+  'console.log("args: " + process.argv.slice(1).join(" ")); console.log("skill=" + process.env.TRACETOON_SKILL_DIR); console.log("launcher=" + process.env.TRACETOON_LAUNCHER); process.exit(7)',
 ];
 
 function build(binaries?: Record<string, string>) {
@@ -181,12 +181,14 @@ describe('npm packages from the verified release', () => {
           [join(wrapper, 'bin', 'tracetoon.js'), ...FAKE_ARGS],
           {
             encoding: 'utf8',
-            env: { ...process.env, TRACETOON_SKILL_DIR: '' },
+            env: { ...process.env, TRACETOON_SKILL_DIR: '', TRACETOON_LAUNCHER: '' },
           },
         );
         expect(r.stderr).toBe('');
         expect(r.status).toBe(7);
         expect(r.stdout).toContain('args: ');
+        // Installed with npm (not under npx's cache): the runtime is told so.
+        expect(r.stdout).toContain('launcher=npm:1.2.3-rc.4');
         expect(r.stdout).toContain(
           `skill=${join(wrapper, 'bin', '..', 'skill', 'tracetoon')}`,
         );

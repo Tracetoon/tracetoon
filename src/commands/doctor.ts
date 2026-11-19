@@ -5,7 +5,12 @@ import { join, dirname } from 'node:path';
 import { hostHome } from '@showtail/agent-traces/paths/hostHome';
 import { hookStatus } from '../hook/install.ts';
 import { switchState } from '../hook/switches.ts';
-import { ADAPTERS, PLANNED, allSkillDirs } from '../integrations/registry.ts';
+import {
+  ADAPTERS,
+  INTEGRATIONS,
+  PLANNED,
+  allSkillDirs,
+} from '../integrations/registry.ts';
 import { gh, git, run } from '../util/exec.ts';
 import { TOOL_VERSION, BUILD_INFO, FROM_SOURCE } from '../version.ts';
 import { loadConfig, userConfigPath } from '../config.ts';
@@ -201,27 +206,30 @@ export const DOCTOR_STRICT_EXIT = 6;
 export function doctorReport(cwd: string, opts: { probe?: boolean } = {}) {
   const runtime = describeRuntime();
   const hooks = hookStatus().filter((h) => h.present);
-  const hookRuntimes = hooks.map((h) => {
-    const prefix = h.command?.split(/\s+hook pre-pr\b/)[0];
-    const argv = prefix
-      ?.match(/"[^"]*"|'[^']*'|[^\s]+/g)
-      ?.map((s) => s.replace(/^["']|["']$/g, ''));
-    const result = argv?.length
-      ? run(argv[0]!, [...argv.slice(1), 'build-info', '--json'], { timeoutMs: 2000 })
-      : undefined;
-    let build: typeof BUILD_INFO | null = null;
-    try {
-      if (result?.ok) build = JSON.parse(result.stdout);
-    } catch {
-      /* legacy runtime */
-    }
-    return {
-      agent: h.agent,
-      command: h.command ?? null,
-      build,
-      matchesRuntime: build?.buildId === BUILD_INFO.buildId,
-    };
-  });
+  // A plugin's hooks run the runtime the plugin pins (npx), not a command to probe.
+  const hookRuntimes = hooks
+    .filter((h) => !h.command?.startsWith('plugin:'))
+    .map((h) => {
+      const prefix = h.command?.split(/\s+hook pre-pr\b/)[0];
+      const argv = prefix
+        ?.match(/"[^"]*"|'[^']*'|[^\s]+/g)
+        ?.map((s) => s.replace(/^["']|["']$/g, ''));
+      const result = argv?.length
+        ? run(argv[0]!, [...argv.slice(1), 'build-info', '--json'], { timeoutMs: 2000 })
+        : undefined;
+      let build: typeof BUILD_INFO | null = null;
+      try {
+        if (result?.ok) build = JSON.parse(result.stdout);
+      } catch {
+        /* legacy runtime */
+      }
+      return {
+        agent: h.agent,
+        command: h.command ?? null,
+        build,
+        matchesRuntime: build?.buildId === BUILD_INFO.buildId,
+      };
+    });
   const installs = skillInstalls();
   const gitV = version(git(cwd, ['--version']).stdout);
   const ghOut = gh(cwd, ['--version']);
@@ -275,6 +283,9 @@ export function doctorReport(cwd: string, opts: { probe?: boolean } = {}) {
     repo: top.ok ? top.stdout.trim() : null,
     agents: [...agents, ...planned],
     installs,
+    plugins: INTEGRATIONS.filter((i) => i.plugin?.(homedir(), process.env)).map(
+      (i) => i.label,
+    ),
     switch: switchState(cwd),
     prHook: hooks,
     ...(opts.probe ? { unknownRecordTypes: probe() } : {}),
@@ -305,6 +316,8 @@ type Found = {
   repo: string | null;
   push: { canPush: boolean } | null;
   prHook: { label: string; installed: boolean; problem?: string }[];
+  /** Hosts whose Tracetoon plugin is enabled (it brings the skill and hooks). */
+  plugins: string[];
   update: { available: boolean; latest: string | null };
   evidenceGraph: { ok: boolean; reason?: string };
   unknownRecordTypes?: Record<string, ProbeResult>;
@@ -367,16 +380,25 @@ function doctorChecks(
         : { fix: 'gh auth switch (or push to a fork)', humanRequired: true }),
     });
   const stale = FROM_SOURCE ? [] : installs.filter((i) => !i.matchesRuntime);
+  const plugins = report.plugins;
+  const viaPlugin = plugins.length
+    ? `the Tracetoon plugin brings the skill for ${plugins.join(', ')}`
+    : '';
   add({
     id: 'skill-installed',
-    ok: installs.length > 0 && !stale.length,
+    ok: (installs.length > 0 || plugins.length > 0) && !stale.length,
     severity: 'warn',
     message: !installs.length
-      ? 'the skill is not installed for any agent'
+      ? viaPlugin || 'the skill is not installed for any agent'
       : stale.length
         ? `the skill for ${stale.map((i) => i.agent).join(', ')} is from a different build`
-        : `the skill is installed for ${installs.map((i) => i.agent).join(', ')}`,
-    ...(!installs.length
+        : [
+            `the skill is installed for ${installs.map((i) => i.agent).join(', ')}`,
+            viaPlugin,
+          ]
+            .filter(Boolean)
+            .join('; '),
+    ...(!installs.length && !plugins.length
       ? { fix: 'tracetoon setup' }
       : stale.length
         ? { fix: 'tracetoon update', humanRequired: true }

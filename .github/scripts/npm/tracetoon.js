@@ -65,6 +65,14 @@ if (existsSync(path.join(skill, 'SKILL.md'))) {
   if (!env.TRACETOON_ASSETS) env.TRACETOON_ASSETS = path.join(skill, 'assets');
 }
 
+// Tell the runtime npm started it, so it suggests the same command and leaves
+// updates to npm or to the plugin that pins this version.
+if (!env.TRACETOON_LAUNCHER) {
+  const own = require(path.join(__dirname, '..', 'package.json')).version;
+  const viaNpx = /[\\/]_npx[\\/]/.test(__dirname);
+  env.TRACETOON_LAUNCHER = (viaNpx ? 'npx:' : 'npm:') + own;
+}
+
 const child = spawn(binary, process.argv.slice(2), { stdio: 'inherit', env });
 const forward = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 const relay = {};

@@ -22,6 +22,8 @@ export interface HookTarget {
   file: string;
   /** The agent is installed on this machine. */
   present: boolean;
+  /** The agent's Tracetoon plugin is enabled and brings its own hooks. */
+  plugin?: boolean;
 }
 
 export function hookTargets(
@@ -33,6 +35,7 @@ export function hookTargets(
     label: i.label,
     file: i.hook!.file(home, env),
     present: i.hook!.present(home, env),
+    plugin: i.plugin?.(home, env) ?? false,
   }));
 }
 
@@ -84,6 +87,8 @@ export interface HookChange {
   note?: string;
 }
 
+const PLUGIN_NOTE = 'the Tracetoon plugin runs this hook';
+
 export function installHooks(
   program: string | string[],
   targets = hookTargets(),
@@ -91,6 +96,15 @@ export function installHooks(
   return targets.map((t) => {
     const base = { agent: t.agent, label: t.label, file: t.file };
     if (!t.present) return { ...base, result: 'skipped', note: 'not installed' };
+    if (t.plugin) {
+      // The plugin's own hooks do this; user-level copies would run twice.
+      const [removed] = uninstallHooks([t]);
+      return {
+        ...base,
+        result: removed?.result === 'removed' ? 'removed' : 'unchanged',
+        note: PLUGIN_NOTE,
+      };
+    }
     const owned = hookOf(t).text;
     if (owned) {
       const commands = commandsFor(t.agent, program);
@@ -206,6 +220,16 @@ export interface HookState {
 /** Whether each agent currently has the Tracetoon hook, and whether it will actually run. */
 export function hookStatus(targets = hookTargets()): HookState[] {
   return targets.map((t) => {
+    if (t.plugin)
+      return {
+        agent: t.agent,
+        label: t.label,
+        present: t.present,
+        installed: true,
+        file: t.file,
+        command: `plugin: ${PLUGIN_NOTE}`,
+        coverage: COVERAGE,
+      };
     const owned = hookOf(t).text;
     if (owned) {
       const command = (() => {
