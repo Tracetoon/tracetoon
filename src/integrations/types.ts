@@ -137,6 +137,8 @@ export interface Integration {
    * setup leaves the host's skill folder and user-level hooks alone.
    */
   plugin?(home: string, env: Env): boolean;
+  /** That plugin also runs Tracetoon's hooks (a skills-only listing doesn't). Defaults to `plugin`. */
+  pluginHooks?(home: string, env: Env): boolean;
   /** Environment variables that hold the current session id, most specific first. */
   sessionEnv?: string[];
   /**

@@ -97,6 +97,18 @@ own, and never while a PR is being made. \`tracetoon update --check --json\`
 reports whether a newer release exists; \`tracetoon update\` doesn't replace a
 plugin's runtime and says so.`;
 
+/**
+ * Packages for catalogs that accept no hooks (the Anthropic directory for
+ * unverified publishers, the OpenAI directory) say so, and point at the
+ * standalone install, which adds the hook with a fast local binary.
+ */
+const SKILL_ONLY = `This copy of the skill came without hooks (the catalog it was listed in
+doesn't allow them). So a plain \`gh pr create\` isn't routed here, and
+\`prepare\` matches sessions from the agent's own logs. In step 1, if
+\`tracetoon doctor --json\` reports the \`pr-hook\` check failing, tell the user
+once that the standalone install (${INSTALL_DOC}) adds the hook, then carry on.
+Install it only if they ask.`;
+
 function swap(text: string, name: string, body: string): string {
   const re = new RegExp(`<!-- ${name}:start -->[\\s\\S]*?<!-- ${name}:end -->`);
   if (!re.test(text)) throw new Error(`SKILL.md has no ${name} markers`);
@@ -104,11 +116,11 @@ function swap(text: string, name: string, body: string): string {
 }
 
 /** The skill's files as the packages ship them (path relative to the skill folder). */
-export function thinSkill(): Map<string, string> {
+export function thinSkill(hooks = true): Map<string, string> {
   const out = new Map<string, string>();
   const src = join(root, SKILL_SOURCE);
   let skill = readFileSync(join(src, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
-  skill = swap(skill, 'runtime', RUNTIME);
+  skill = swap(skill, 'runtime', hooks ? RUNTIME : `${RUNTIME}\n\n${SKILL_ONLY}`);
   skill = swap(skill, 'update', UPDATE);
   skill = skill
     .replace(
@@ -279,6 +291,8 @@ interface Host {
   label: string;
   install: string[];
   hooks: string;
+  /** False for skills-only packages: no hooks and no local MCP server. */
+  runs?: false;
 }
 
 const HOSTS: Host[] = [
@@ -291,6 +305,15 @@ const HOSTS: Host[] = [
     ],
     hooks:
       'Before a shell command that could create a PR (or a GitHub connector call that would), it asks the runtime whether to route it through the skill. After file edits and shell commands, and at session start, it records which repositories the session works in, without blocking.',
+  },
+  {
+    dir: 'claude-directory',
+    label: 'the Claude plugin directory (skills only)',
+    install: [
+      'Install Tracetoon from the plugin directory: /plugin in Claude Code, or Customize → Plugins in Claude Desktop.',
+    ],
+    hooks: `None: the directory accepts hooks and local MCP servers only from verified publishers, so the skill starts when you ask for a PR. For the hook that routes a plain \`gh pr create\` here, add the standalone install (${INSTALL_DOC}), or install from the Tracetoon marketplace instead: \`/plugin marketplace add Tracetoon/tracetoon\`.`,
+    runs: false,
   },
   {
     dir: 'cursor',
@@ -315,6 +338,7 @@ const HOSTS: Host[] = [
     install: ['Install Tracetoon from the ChatGPT or Codex plugin directory.'],
     hooks:
       'None: the directory accepts no lifecycle hooks or local MCP servers, so the skill starts when you ask for a PR.',
+    runs: false,
   },
   {
     dir: 'agent',
@@ -367,7 +391,11 @@ Questions and bugs: ${ISSUES}. Website: ${SITE}. License: Apache-2.0.
 `;
 }
 
-function review(): string {
+function review(h: Host): string {
+  const parts =
+    h.runs === false
+      ? "the skill's commands run that exact\n  npm version."
+      : "the hooks, the MCP server and the skill's\n  commands all run that exact npm version.";
   return `# Reviewing Tracetoon
 
 What this plugin runs, reads, writes and sends, for catalog reviewers and
@@ -375,8 +403,7 @@ security-minded users.
 
 ## What runs
 
-- Only \`npx -y tracetoon@${pkg.version}\`: the hooks, the MCP server and the skill's
-  commands all run that exact npm version. The package (\`tracetoon\`, plus one
+- Only \`npx -y tracetoon@${pkg.version}\`: ${parts} The package (\`tracetoon\`, plus one
   platform package \`@tracetoon/cli-<os>-<arch>\` holding the prebuilt binary)
   is published from ${REPO_URL} by GitHub Actions trusted publishing, with npm
   provenance tying each file to the tagged source (\`v${pkg.version}\`). It has
@@ -423,8 +450,11 @@ Logs and diffs are treated as data, never as instructions.
 1. In a git repository with a branch your agent worked on, ask:
    _"Open a PR for this branch with Tracetoon."_ The agent runs
    \`tracetoon prepare\`, drafts the description, and publishes when you agree.
-2. Safe failure: run \`gh pr create\` directly. The hook stops it and tells the
-   agent to use the skill; \`TRACETOON=0 gh pr create\` goes through untouched.
+${
+  h.runs === false
+    ? "2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`\n   stops with an error naming the fix, and nothing is sent."
+    : '2. Safe failure: run `gh pr create` directly. The hook stops it and tells the\n   agent to use the skill; `TRACETOON=0 gh pr create` goes through untouched.'
+}
 3. \`npx -y tracetoon@${pkg.version} doctor --json\` lists every check and its fix.
 
 ## Licenses
@@ -439,11 +469,11 @@ Tracetoon is Apache-2.0. The runtime includes Comic Neue (SIL OFL 1.1), resvg
 // ---------------------------------------------------------------------------
 
 function common(files: Files, dir: string, host: Host) {
-  for (const [path, text] of thinSkill())
+  for (const [path, text] of thinSkill(host.runs !== false))
     files.set(`${dir}/skills/tracetoon/${path}`, text);
   files.set(`${dir}/${ICON}`, readFileSync(join(root, ICON_SOURCE)));
   files.set(`${dir}/README.md`, readme(host));
-  files.set(`${dir}/REVIEW.md`, review());
+  files.set(`${dir}/REVIEW.md`, review(host));
   files.set(`${dir}/LICENSE`, readFileSync(join(root, 'LICENSE'), 'utf8'));
 }
 
@@ -471,6 +501,31 @@ function claudePackage(files: Files) {
   );
   files.set(`${dir}/hooks/hooks.json`, json(claudeHooks()));
   files.set(`${dir}/.mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+}
+
+/**
+ * The Anthropic plugin directory, for publishers it hasn't verified: skills
+ * only. Its validator refuses hooks of any type, local (stdio) MCP servers and
+ * manifest fields Claude Code doesn't read. The full package (claude/) stays
+ * on the Tracetoon marketplace.
+ */
+function claudeDirectoryPackage(files: Files) {
+  const dir = `${OUT}/claude-directory`;
+  common(files, dir, host('claude-directory'));
+  files.set(
+    `${dir}/.claude-plugin/plugin.json`,
+    json({
+      name: 'tracetoon',
+      version: pkg.version,
+      description: listingDescription(),
+      author: AUTHOR,
+      homepage: SITE,
+      repository: REPO_URL,
+      license: 'Apache-2.0',
+      keywords: KEYWORDS,
+      icon: `./${ICON}`,
+    }),
+  );
 }
 
 function cursorPackage(files: Files) {
@@ -592,6 +647,7 @@ export function pluginFiles(): Files {
   const files: Files = new Map();
   files.set(`${OUT}/README.md`, indexReadme());
   claudePackage(files);
+  claudeDirectoryPackage(files);
   cursorPackage(files);
   codexPackage(files);
   codexDirectoryPackage(files);

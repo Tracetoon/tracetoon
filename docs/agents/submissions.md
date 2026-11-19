@@ -38,7 +38,8 @@ writes and sends, and how to check it.
 
 | Catalog | Package (on `plugins`) | What the catalog allows |
 | --- | --- | --- |
-| Anthropic plugin directory | `claude/` | Skill, hooks, MCP; a pinned `npx` is held for a reviewer |
+| Anthropic plugin directory | `claude-directory/` | Skill only, until Tracetoon is a Verified organization: no hooks, no local MCP |
+| Claude Code (Tracetoon marketplace) | `claude/` | Skill, hooks, MCP; no review |
 | Cursor Marketplace | `cursor/` | Skill, hooks, MCP; every update is reviewed |
 | Codex (repo marketplace) | `codex/` | Skill, hooks (after the user trusts them), MCP |
 | OpenAI plugin directory | `codex-directory/` (ZIP on each release) | Skill only: no lifecycle hooks, no local MCP |
@@ -48,12 +49,17 @@ writes and sends, and how to check it.
 ## Anthropic plugin directory
 
 1. Sign in at https://claude.ai/directory/manage.
-2. Repository `Tracetoon/tracetoon`, branch or tag `plugins`, plugin path `claude`.
+2. Repository `Tracetoon/tracetoon`, branch or tag `plugins`, plugin path `claude-directory`.
 3. Category: productivity. Description: the one line above.
-4. Expect a reviewer hold on the pinned `npx` hooks and MCP server: the directory
-   holds any launcher whose dependencies resolve at install time. REVIEW.md
+4. The directory accepts hooks, local (stdio) MCP servers and manifest fields
+   outside its lists only from Verified organizations, so this package is the
+   skill alone. Its skill tells the user, once, that the standalone install adds
+   the PR hook. The full package (`claude/`, with hooks and MCP) stays on the
+   Tracetoon marketplace: `/plugin marketplace add Tracetoon/tracetoon`. Once Tracetoon is
+   verified, submit `claude` instead.
+5. Expect reviewer holds on the skill's pinned `npx` commands. REVIEW.md
    answers what the reviewer checks.
-5. A directory listing installs as `tracetoon@synced`, which Claude Code's
+6. A directory listing installs as `tracetoon@synced`, which Claude Code's
    `<claude-code-hint />` doesn't recommend; leave `CLAUDE_CODE_HINT_ENABLED` off
    unless Tracetoon joins an official marketplace.
 

@@ -3,8 +3,16 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pluginAnswer } from '../src/hook/pluginHook.ts';
 import { DENY_REASON } from '../src/hook/prHook.ts';
-import { hookStatus, installHooks, type HookTarget } from '../src/hook/install.ts';
-import { claudePluginEnabled } from '../src/integrations/claude-code/plugin.ts';
+import {
+  NPX_HOOK_NOTE,
+  hookStatus,
+  installHooks,
+  type HookTarget,
+} from '../src/hook/install.ts';
+import {
+  claudePluginEnabled,
+  claudePluginHooks,
+} from '../src/integrations/claude-code/plugin.ts';
 import { skillTargets } from '../src/integrations/registry.ts';
 import { launcher, pinnedUpdateHint, pluginHost } from '../src/util/launcher.ts';
 import { installLayout, updatable } from '../src/update/layout.ts';
@@ -23,14 +31,16 @@ const env = { ...process.env, CI: '', TRACETOON: '' };
 const claude = (command: string, cwd = tempDir()) => ({ tool_input: { command }, cwd });
 
 /** A Claude config folder with the plugin installed (and optionally disabled). */
-function claudeHome(plugin: string | null, enabled?: boolean) {
+function claudeHome(plugin: string | null, enabled?: boolean, installPath?: string) {
   const dir = tempDir('tracetoon-claude-');
   mkdirSync(join(dir, 'plugins'), { recursive: true });
   writeFileSync(
     join(dir, 'plugins', 'installed_plugins.json'),
     JSON.stringify({
       version: 2,
-      plugins: plugin ? { [plugin]: [{ scope: 'user', version: '1.0.0' }] } : {},
+      plugins: plugin
+        ? { [plugin]: [{ scope: 'user', version: '1.0.0', installPath }] }
+        : {},
     }),
   );
   writeFileSync(
@@ -71,6 +81,43 @@ describe('Claude Code plugin detection', () => {
     expect(claudePluginEnabled(claudeHome('other@market'))).toBe(false);
     expect(claudePluginEnabled(claudeHome(null))).toBe(false);
     expect(claudePluginEnabled(tempDir('tracetoon-empty-'))).toBe(false);
+  });
+  test('a skills-only plugin leaves the user-level hooks to setup', () => {
+    const withHooks = tempDir('tracetoon-plugin-');
+    mkdirSync(join(withHooks, 'hooks'), { recursive: true });
+    writeFileSync(join(withHooks, 'hooks', 'hooks.json'), '{}');
+    const skillsOnly = tempDir('tracetoon-plugin-');
+    expect(claudePluginHooks(claudeHome('tracetoon@tracetoon', true, withHooks))).toBe(
+      true,
+    );
+    expect(claudePluginHooks(claudeHome('tracetoon@synced', true, skillsOnly))).toBe(
+      false,
+    );
+    expect(claudePluginEnabled(claudeHome('tracetoon@synced', true, skillsOnly))).toBe(
+      true,
+    );
+    // Older entries without an install path came from the plugin with hooks.
+    expect(claudePluginHooks(claudeHome('tracetoon@tracetoon'))).toBe(true);
+    expect(claudePluginHooks(claudeHome('tracetoon@tracetoon', false, withHooks))).toBe(
+      false,
+    );
+  });
+  test('setup run from npx adds no user-level hooks', () => {
+    const changes = installHooks(
+      ['/tmp/_npx/x/tracetoon'],
+      [
+        {
+          agent: 'claude-code',
+          label: 'Claude Code',
+          file: '/nonexistent/settings.json',
+          present: true,
+        },
+      ],
+      { TRACETOON_LAUNCHER: 'npx:1.2.3' },
+    );
+    expect(changes).toEqual([
+      expect.objectContaining({ result: 'skipped', note: NPX_HOOK_NOTE }),
+    ]);
   });
   test('setup leaves the skill folder alone when the plugin brings the skill', () => {
     const home = tempDir('tracetoon-home-');

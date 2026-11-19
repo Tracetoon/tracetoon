@@ -30,7 +30,14 @@ test('plugins/ matches the generator', () => {
 });
 
 describe('every package', () => {
-  test.each(['claude', 'cursor', 'codex', 'codex-directory', 'agent'])(
+  test.each([
+    'claude',
+    'claude-directory',
+    'cursor',
+    'codex',
+    'codex-directory',
+    'agent',
+  ])(
     '%s holds only Markdown, JSON, a PNG icon and the licence, and executes nothing',
     (dir) => {
       const paths = pkgFiles(dir);
@@ -91,10 +98,17 @@ describe('every package', () => {
   });
 
   test('each package carries the same thin skill, pinned to this version', () => {
-    const skills = ['claude', 'cursor', 'codex', 'codex-directory', 'agent'].map((d) =>
+    const skills = ['claude', 'cursor', 'codex', 'agent'].map((d) =>
       text(`${OUT}/${d}/skills/tracetoon/SKILL.md`),
     );
     expect(new Set(skills).size).toBe(1);
+    // Skills-only packages carry the same skill plus one paragraph about the hook.
+    const skillOnly = ['claude-directory', 'codex-directory'].map((d) =>
+      text(`${OUT}/${d}/skills/tracetoon/SKILL.md`),
+    );
+    expect(new Set(skillOnly).size).toBe(1);
+    expect(skillOnly[0]).toContain('came without hooks');
+    expect(skills[0]).not.toContain('came without hooks');
     expect(skills[0]).toContain(`npx -y tracetoon@${pkg.version}`);
     expect(skills[0]).not.toContain('bin/tracetoon');
     expect(skills[0]).not.toContain('<!-- runtime:');
@@ -156,6 +170,44 @@ describe('Claude Code (Anthropic plugin directory)', () => {
 
   test('a top-level bin/ (which stops claude.ai and Cowork installs) is absent', () => {
     expect(pkgFiles('claude').some((p) => p.startsWith(`${dir}/bin/`))).toBe(false);
+  });
+});
+
+describe('Anthropic plugin directory (unverified publisher)', () => {
+  const dir = `${OUT}/claude-directory`;
+  test('skills only: no hooks, no MCP server, no bin/', () => {
+    // The directory refuses hooks of any type and local (stdio) MCP servers
+    // from organizations it hasn't verified.
+    const paths = pkgFiles('claude-directory');
+    expect(paths.some((p) => /\/(hooks|bin)\//.test(p))).toBe(false);
+    expect(paths.some((p) => /\/\.?mcp\.json$/.test(p))).toBe(false);
+    expect(paths).toContain(`${dir}/skills/tracetoon/SKILL.md`);
+  });
+  test('plugin.json has only the fields Claude Code reads, plus the listing icon', () => {
+    const manifest = parse(`${dir}/.claude-plugin/plugin.json`);
+    expect(Object.keys(manifest).sort()).toEqual(
+      [
+        'author',
+        'description',
+        'homepage',
+        'icon',
+        'keywords',
+        'license',
+        'name',
+        'repository',
+        'version',
+      ].sort(),
+    );
+    expect(manifest.version).toBe(pkg.version);
+    expect(
+      pkgFiles('claude-directory').filter((p) => p.includes('/.claude-plugin/')),
+    ).toEqual([`${dir}/.claude-plugin/plugin.json`]);
+  });
+  test('its README and REVIEW say there is no hook, and how to get one', () => {
+    expect(text(`${dir}/README.md`)).toContain(
+      '/plugin marketplace add Tracetoon/tracetoon',
+    );
+    expect(text(`${dir}/REVIEW.md`)).not.toContain('The hook stops it');
   });
 });
 

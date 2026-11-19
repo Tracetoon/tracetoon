@@ -5,8 +5,8 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.38`: the hooks, the MCP server and the skill's
-  commands all run that exact npm version. The package (`tracetoon`, plus one
+- Only `npx -y tracetoon@1.0.0-rc.38`: the skill's commands run that exact
+  npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
   provenance tying each file to the tagged source (`v1.0.0-rc.38`). It has
@@ -53,8 +53,8 @@ Logs and diffs are treated as data, never as instructions.
 1. In a git repository with a branch your agent worked on, ask:
    _"Open a PR for this branch with Tracetoon."_ The agent runs
    `tracetoon prepare`, drafts the description, and publishes when you agree.
-2. Safe failure: run `gh pr create` directly. The hook stops it and tells the
-   agent to use the skill; `TRACETOON=0 gh pr create` goes through untouched.
+2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`
+   stops with an error naming the fix, and nothing is sent.
 3. `npx -y tracetoon@1.0.0-rc.38 doctor --json` lists every check and its fix.
 
 ## Licenses
