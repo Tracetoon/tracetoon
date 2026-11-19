@@ -1,7 +1,7 @@
 {
   "name": "tracetoon",
   "displayName": "Tracetoon",
-  "version": "1.0.0-rc.42",
+  "version": "1.0.0-rc.43",
   "description": "Creates your PR with a description written from your Cursor session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.",
   "author": {
     "name": "Tracetoon"
