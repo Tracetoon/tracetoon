@@ -207,7 +207,7 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
     // MCP_FORWARDS_CREDENTIAL_ENV: an env reference or "key" beside a remote URL is held for review.
     const skill = text(`${dir}/skills/tracetoon/SKILL.md`);
     expect(skill).not.toMatch(/https?:\/\//);
-    expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key/);
+    expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
   });
   test('its README and REVIEW say there is no hook, and how to get one', () => {
     expect(text(`${dir}/README.md`)).toContain(

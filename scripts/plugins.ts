@@ -137,9 +137,10 @@ export function thinSkill(hooks = true): Map<string, string> {
   // skill says these in words and leaves URLs to the README.
   for (const [from, to] of [
     [
-      "(PowerShell: `$env:TRACETOON='0'; gh pr create ...`)",
-      '(in PowerShell, set TRACETOON to 0 first)',
+      "prefix the `gh` command\nwith `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh pr create ...`). Never use",
+      'use the\none-command bypass that `tracetoon status` prints. Never use',
     ],
+    ['(`gh auth switch`)', '(in the GitHub CLI)'],
     ['agent after setting a key)', 'agent after adding the setting)'],
   ]) {
     if (!skill.includes(from!)) throw new Error(`SKILL.md no longer has: ${from}`);
