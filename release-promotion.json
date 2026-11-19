@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.40",
-  "buildId": "0c480515d800ce2bfd6e4c7ad403e3b9cb65e123ebd0af1918b81bc93adb741e",
+  "version": "1.0.0-rc.41",
+  "buildId": "fc98e46f5810809bba3b58e4db1c03e5079e05f73e788037b422754efed04a8b",
   "artifact": {
-    "runId": 44501708521,
-    "id": 14518710277,
-    "name": "tracetoon-candidate-58e758dd1a63afde73aa7c6722bd701a26b1e37f-attempt-1",
-    "digest": "sha256:94d63b25b49458cf979afd128e4279cd830c334fca66e4cf3a0f02391d72aa50"
+    "runId": 44537322125,
+    "id": 14536334551,
+    "name": "tracetoon-candidate-6973525986708b91b0131b6e8f0aebc769cac522-attempt-1",
+    "digest": "sha256:63df0de0ab591d9e67d8b3612d5cd884463474e9aa3ce8edd9e89a4a46be6aed"
   },
   "expected": {
-    "manifestSha256": "718715ab07708c39e99bdd9d2c979c67569f2c4126c044da83a6e6a9e48284b9",
-    "checksumsSha256": "7da0e2628ab0d40b64bfe01c3d208d978b29a3a23ce77599ef65b553c0e485b5",
-    "windowsSha256": "5a74b057f9b0a92334a402eeea2f851403d7429be85445d9a0c8b0fc739e60a1",
-    "bundleSha256": "6f0fc4bbf60c4b5774416f506dbe54c351236b3453d4cc2deaf6d716f0bbcde2"
+    "manifestSha256": "ad14aba52b4825c5ede6f857ff40225c3af14e1f86d6b1e23f6547bffb558259",
+    "checksumsSha256": "ac084d4a749fb72a432f9c689c42d350261c794276075bb831926edb9c456f09",
+    "windowsSha256": "69446306bb1f22205ca681bf198ba90a4c4e4916245e46632c65bc8dc8fb6cd3",
+    "bundleSha256": "506c1a50b33eed3fa5450350c07526e28816dbdafa29c45554d41b76a585bdfa"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-19T10:11:59.000Z",
-    "reason": "The user asked to cut rc.40 without a benchmark round so the release publishes the reworded packaged skill and per-host listings from #171 on the plugins branch, which the Anthropic plugin directory submission names. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-19T14:02:02.000Z",
+    "reason": "The user asked to cut a new release once #173 merged, so the plugins branch publishes the broader skill trigger and the rule never to hold a PR for comic setup ahead of the Anthropic plugin directory submission. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
