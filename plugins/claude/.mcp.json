@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "tracetoon": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--prefer-offline",
+        "tracetoon@1.0.0-rc.38",
+        "mcp"
+      ]
+    }
+  }
+}

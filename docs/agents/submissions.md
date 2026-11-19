@@ -5,7 +5,7 @@
 Text and steps for the catalogs that need a person: an account, a web form or
 an attestation. [listings.md](listings.md) says which file backs each listing
 and tracks status; update its Status column after each submission. Submit only
-after a release, so the `release` branch carries the current manifests.
+after a release, so the `plugins` branch carries the current packages.
 
 Shared facts:
 
@@ -21,39 +21,63 @@ Shared facts:
   - **Works with your agents.** Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, as an agent skill, a CLI or an MCP server.
   - **A comic on top.** An optional one-off comic about the change, which reviewers actually read.
 - **Results:** On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
-- **Repository:** https://github.com/Tracetoon/tracetoon (install from the `release` branch: https://github.com/Tracetoon/tracetoon/tree/release)
+- **Repository:** https://github.com/Tracetoon/tracetoon (plugin packages on the `plugins` branch: https://github.com/Tracetoon/tracetoon/tree/plugins)
 - **Website:** https://tracetoon.ai
 - **Licence:** Apache-2.0
-- **Icon:** `plugin/assets/tracetoon.svg` (square app tile); more sizes in [docs/brand](../brand/README.md)
-- **Requirements:** git, and the GitHub CLI (`gh`) signed in; macOS, Linux or Windows
+- **Icon:** `assets/tracetoon.png` in each package (square app tile); more sizes in [docs/brand](../brand/README.md)
+- **Requirements:** Node.js 18 or later (npx), git, and the GitHub CLI (`gh`) signed in; macOS, Linux or Windows
+
+## Which package goes where
+
+Catalogs that review plugins get a text-only package from the `plugins` branch:
+Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
+release's exact version (`npx -y tracetoon@1.0.0-rc.38`). The release workflow
+publishes that branch, and tags it `plugins/v<version>`, once npm serves the
+version. Each package's README.md and REVIEW.md say what runs, what it reads,
+writes and sends, and how to check it.
+
+| Catalog | Package (on `plugins`) | What the catalog allows |
+| --- | --- | --- |
+| Anthropic plugin directory | `claude-directory/` | Skill only, until Tracetoon is a Verified organization: no hooks, no local MCP |
+| Claude Code (Tracetoon marketplace) | `claude/` | Skill, hooks, MCP; no review |
+| Cursor Marketplace | `cursor/` | Skill, hooks, MCP; every update is reviewed |
+| Codex (repo marketplace) | `codex/` | Skill, hooks (after the user trusts them), MCP |
+| OpenAI plugin directory | `codex-directory/` (ZIP on each release) | Skill only: no lifecycle hooks, no local MCP |
+| Copilot CLI (awesome-copilot) | `agent/` | Skill, hooks, MCP |
+| Kiro Powers | `agent/` | Skill and MCP |
 
 ## Anthropic plugin directory
 
 1. Sign in at https://claude.ai/directory/manage.
-2. Submit the plugin, not the marketplace: repository `Tracetoon/tracetoon`, branch
-   `release` (`main` has no skill bundle), plugin folder `plugin`
-   (`plugin/.claude-plugin/plugin.json`). As one URL:
-   https://github.com/Tracetoon/tracetoon/tree/release/plugin
+2. Repository `Tracetoon/tracetoon`, branch or tag `plugins`, plugin path `claude-directory`.
 3. Category: productivity. Description: the one line above.
-4. After it is listed, set `CLAUDE_CODE_HINT_ENABLED = true` and `HINT_PLUGIN`
-   in `src/util/claudeHint.ts`.
+4. The directory accepts hooks, local (stdio) MCP servers and manifest fields
+   outside its lists only from Verified organizations, so this package is the
+   skill alone. Its skill tells the user, once, that the standalone install adds
+   the PR hook. The full package (`claude/`, with hooks and MCP) stays on the
+   Tracetoon marketplace: `/plugin marketplace add Tracetoon/tracetoon`. Once Tracetoon is
+   verified, submit `claude` instead.
+5. Expect reviewer holds on the skill's pinned `npx` commands. REVIEW.md
+   answers what the reviewer checks.
+6. A directory listing installs as `tracetoon@synced`, which Claude Code's
+   `<claude-code-hint />` doesn't recommend; leave `CLAUDE_CODE_HINT_ENABLED` off
+   unless Tracetoon joins an official marketplace.
 
 ## Cursor Marketplace
 
 1. Open https://cursor.com/marketplace/publish and submit https://github.com/Tracetoon/tracetoon.
-2. Plugin folder: `plugin` (`plugin/.cursor-plugin/plugin.json`). In the notes, ask
-   the reviewers to take it from the `release` branch: `main` holds source only and
-   its skill has no bundle.
-3. Description: the one line above. Logo: `plugin/assets/tracetoon.svg`.
+2. In the notes: the plugin is the `cursor` folder on the `plugins` branch
+   (`main` holds source); it ships no binaries and runs `npx -y tracetoon@<version>`.
+3. Description: the one line above. Logo: `cursor/assets/tracetoon.png`.
 
 ## OpenAI Codex plugin directory
 
-The repo marketplace already works without review:
-`codex plugin marketplace add Tracetoon/tracetoon`. For the public directory (needs the
-OpenAI org owner, identity verification and a video):
+The repo marketplace works without review: `codex plugin marketplace add Tracetoon/tracetoon`
+(package `codex/`, with hooks). The public directory accepts no lifecycle hooks,
+and local MCP servers only from approved partners, so it gets the skill alone;
+needs the OpenAI org owner, identity verification and a video:
 
-1. Build the ZIP from `release`:
-   `git archive --format=zip -o tracetoon-plugin.zip origin/release:plugin`.
+1. Download `tracetoon-codex-directory.zip` from the latest release.
 2. Upload it at https://platform.openai.com/plugins and choose **Skills only**.
 3. Display name: Tracetoon. Short description (30 characters):
    PRs written from agent logs. Category: Developer Tools.
@@ -73,20 +97,27 @@ OpenAI org owner, identity verification and a video):
    2. "What does Tracetoon do?"
    3. "Review this pull request for bugs."
 6. Video walkthrough (about 2 minutes): ask Codex to open a PR on a small branch;
-   show the hook sending `gh pr create` to Tracetoon, the brief, the reviewed
-   description and the created PR with its comic; end on `tracetoon off` to show
-   it can be turned off.
+   show the brief, the reviewed description and the created PR with its comic;
+   end on `tracetoon off` to show it can be turned off.
+
+## GitHub Copilot (awesome-copilot)
+
+Submit through the issue form at https://github.com/github/awesome-copilot (not a
+PR to `plugins/external.json`), naming a release tag and its full commit SHA:
+
+- **Repository:** https://github.com/Tracetoon/tracetoon, path `agent`
+- **Ref:** `plugins/v<version>` and the 40-character SHA it points at
+  (`git rev-parse plugins/v<version>^{commit}`)
+- Checks it runs: the Agent Plugins 1.0 manifest, `vally lint` and a Copilot CLI
+  install smoke test.
 
 ## Kiro Powers
 
-Kiro documents no public submission. Users add it today with Powers → **Add
-Custom Power** → **Import power from GitHub**, folder `plugin` on `release`. Ask
-Kiro before opening a PR to `kirodotdev/powers`:
-
-> Hi, we maintain Tracetoon (https://github.com/Tracetoon/tracetoon), an Agent Plugin that writes pull
-> request descriptions from coding agents' session logs. Its `plugin/plugin.json`
-> follows the Agent Plugins format. Can a listing in kirodotdev/powers track our
-> `release` branch (which carries the built bundle), and would you accept a PR?
+Submit at https://kiro.dev/registry/submit/?type=power once a final (non-rc)
+version is out: the form asks for generally available MCP servers. Repository
+https://github.com/Tracetoon/tracetoon, folder `agent` on the `plugins` branch; the 3–4 word use case:
+"PR descriptions from logs". Users can already add it with Powers → **Add
+Custom Power** → **Import power from GitHub**.
 
 ## awesome-claude-code
 

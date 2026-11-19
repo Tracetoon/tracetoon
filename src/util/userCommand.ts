@@ -3,6 +3,7 @@ import { onPath } from '../comic/providers.ts';
 import { describeRuntime } from '../commands/doctor.ts';
 import { run } from './exec.ts';
 import { BUILD_INFO } from '../version.ts';
+import { launcher } from './launcher.ts';
 
 export function terminalCommand(parts: string[], platform = process.platform): string {
   const quote = (part: string) =>
@@ -32,6 +33,10 @@ export function userCommand(): { onPath: boolean; run: string } {
       /* Don't suggest an old command just because it is on PATH. */
     }
   }
+  // Started by npx (a host plugin): the same pinned command works in a terminal.
+  const started = launcher();
+  if (started.kind === 'npx' || started.kind === 'npm')
+    return { onPath: false, run: `npx -y tracetoon@${started.version}` };
   const assets = process.env.TRACETOON_ASSETS;
   const parts = assets
     ? [

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "bash|powershell|.*pull_request.*",
+        "hooks": [
+          {
+            "type": "command",
+            "exec": "npx",
+            "args": [
+              "-y",
+              "--prefer-offline",
+              "tracetoon@1.0.0-rc.38",
+              "hook",
+              "plugin",
+              "--agent",
+              "copilot",
+              "--event",
+              "PreToolUse"
+            ],
+            "timeoutSec": 60
+          }
+        ]
+      }
+    ],
+    "sessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "exec": "npx",
+            "args": [
+              "-y",
+              "--prefer-offline",
+              "tracetoon@1.0.0-rc.38",
+              "hook",
+              "plugin",
+              "--agent",
+              "copilot",
+              "--event",
+              "SessionStart"
+            ],
+            "timeoutSec": 60
+          }
+        ]
+      }
+    ]
+  }
+}

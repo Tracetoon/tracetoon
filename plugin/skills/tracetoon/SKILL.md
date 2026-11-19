@@ -19,6 +19,7 @@ or updates the PR.
 
 ## The tool
 
+<!-- runtime:start -->
 The launcher is `bin/tracetoon` in this skill's folder (the folder containing
 this file). On Windows use `bin\tracetoon.cmd`. Below, `tracetoon` means that
 path. Run it from inside the user's repository. Every command accepts `--json`.
@@ -27,7 +28,9 @@ If the launcher exits with code **3**, no runtime was found. Ask the user whethe
 to download the prebuilt binary from the Tracetoon GitHub release. If yes,
 re-run with the environment variable `TRACETOON_ALLOW_DOWNLOAD=1`. If no, follow
 [references/manual-mode.md](references/manual-mode.md).
+<!-- runtime:end -->
 
+<!-- update:start -->
 ## Updating Tracetoon
 
 Only when the user asks to update or upgrade Tracetoon, or a session notice says
@@ -48,6 +51,7 @@ auto-update is off by default for third-party marketplaces), a source checkout
 with `git pull`, and the binary comes from the installer. `tracetoon update --to <version>` rolls back.
 `tracetoon config set autoUpdate off|notify|install` controls the session
 notice and background installs; change it only when the user asks.
+<!-- update:end -->
 
 ## When this skill is used
 

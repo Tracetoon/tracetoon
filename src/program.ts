@@ -53,6 +53,7 @@ import { HOOK_IDS, INTEGRATIONS, skillTargets } from './integrations/registry.ts
 import { TOOL_VERSION, BUILD_INFO } from './version.ts';
 import { taskCmd, checkCmd } from './commands/workflow.ts';
 import { runLifecycle, type LifecycleEvent } from './hook/lifecycle.ts';
+import { runPluginHook } from './hook/pluginHook.ts';
 import { assertRunOwner, findRun } from './run.ts';
 import { repository } from './workflow/state.ts';
 import { recordTiming } from './workflow/publication.ts';
@@ -627,6 +628,21 @@ export function buildProgram(cwd: string = process.cwd()): {
       )
         throw new UserError('Unknown host lifecycle event.');
       await runLifecycle(o.agent, o.event as LifecycleEvent);
+    });
+  hook
+    .command('plugin')
+    .description(
+      'called by Tracetoon host plugins: the PR check and session observation in one process',
+    )
+    .requiredOption('--agent <agent>', HOOK_IDS.join(', '))
+    .requiredOption('--event <event>', 'SessionStart, PreToolUse or PostToolUse')
+    .action(async (o) => {
+      if (
+        !HOOK_IDS.includes(o.agent) ||
+        !['SessionStart', 'PreToolUse', 'PostToolUse'].includes(o.event)
+      )
+        throw new UserError('Unknown host plugin event.');
+      await runPluginHook(o.agent, o.event as LifecycleEvent);
     });
   hook
     .command('pre-pr')

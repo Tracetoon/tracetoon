@@ -10,6 +10,7 @@ import {
 import { onPath } from '../../util/onPath.ts';
 import type { Env, Integration } from '../types.ts';
 import { claudeAdapter } from './trace.ts';
+import { claudePluginEnabled, claudePluginHooks } from './plugin.ts';
 
 const home = (h: string, env: Env) => env.CLAUDE_CONFIG_DIR || join(h, '.claude');
 
@@ -32,6 +33,8 @@ export const integration: Integration = {
     present: existsSync(home(h, env)) || !!onPath('claude', env),
     dir: join(home(h, env), 'skills', 'tracetoon'),
   }),
+  plugin: (h, env) => claudePluginEnabled(home(h, env)),
+  pluginHooks: (h, env) => claudePluginHooks(home(h, env)),
   sessionEnv: ['CLAUDE_CODE_SESSION_ID', 'CLAUDE_SESSION_ID'],
   hostEnv:
     /^(CLAUDE_EFFORT|CLAUDE_PID|CLAUDE_CODE_SESSION_ID|CLAUDE_CODE_SESSION_ATTENDED|CLAUDE_CODE_CHILD_SESSION|CLAUDE_CODE_MESSAGING_\w+)$/,
