@@ -1,0 +1,147 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(*gh *)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*pr create*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*pr new*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*hub *)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*pull-request*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*propose*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*pulls*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(*createPullRequest*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "PowerShell(*gh *)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*pr create*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*pr new*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*hub *)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*pull-request*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*propose*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*pulls*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(*createPullRequest*)",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*(create_pull_request|create_pr)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PreToolUse",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event PostToolUse",
+            "async": true,
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent claude --event SessionStart",
+            "async": true,
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent cursor --event PreToolUse",
+        "matcher": "gh |pr create|pr new|hub |pull-request|propose|pulls|createPullRequest",
+        "timeout": 60
+      }
+    ],
+    "sessionStart": [
+      {
+        "command": "npx -y --prefer-offline tracetoon@1.0.0-rc.38 hook plugin --agent cursor --event SessionStart",
+        "timeout": 300
+      }
+    ]
+  }
+}
