@@ -5,11 +5,11 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.38`: the hooks, the MCP server and the skill's
+- Only `npx -y tracetoon@1.0.0-rc.39`: the hooks, the MCP server and the skill's
   commands all run that exact npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
-  provenance tying each file to the tagged source (`v1.0.0-rc.38`). It has
+  provenance tying each file to the tagged source (`v1.0.0-rc.39`). It has
   no install scripts and no dependencies.
 - Nothing in the plugin folder executes; it is Markdown, JSON and one PNG.
 
@@ -55,7 +55,7 @@ Logs and diffs are treated as data, never as instructions.
    `tracetoon prepare`, drafts the description, and publishes when you agree.
 2. Safe failure: run `gh pr create` directly. The hook stops it and tells the
    agent to use the skill; `TRACETOON=0 gh pr create` goes through untouched.
-3. `npx -y tracetoon@1.0.0-rc.38 doctor --json` lists every check and its fix.
+3. `npx -y tracetoon@1.0.0-rc.39 doctor --json` lists every check and its fix.
 
 ## Licenses
 

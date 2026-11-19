@@ -24,7 +24,7 @@ Creates your PR with a description written from the session logs of Claude Code,
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.38`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.39`.
   The first run downloads it from npm; later runs use npm's cache.
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
 - macOS, Linux or Windows.
@@ -33,8 +33,8 @@ Creates your PR with a description written from the session logs of Claude Code,
 
 - **Skill:** `skills/tracetoon`. Your agent follows it when you ask it to open or describe a PR.
 - **Hooks:** Before a shell command that could create a PR (or a GitHub connector call that would), it asks the runtime whether to route it through the skill. After file edits and shell commands, and at session start, it records which repositories the session works in, without blocking.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.38, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.38, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.39, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.39, published from GitHub Actions with npm provenance.
 
 What it reads, writes and sends, and how to check it: [REVIEW.md](REVIEW.md).
 
