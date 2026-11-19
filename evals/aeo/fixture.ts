@@ -7,6 +7,7 @@
  *   clean       nothing installed
  *   skill       the shipped skill copied into the host's skill folder, with its bundle
  *   skill+hook  the skill plus `tracetoon hook install` into the temp HOME
+ *   plugin      a plugin folder (AEO_PLUGIN_DIR) loaded with --plugin-dir (Claude Code)
  *   agents-md   only an AGENTS.md pointer in the repo
  *   mcp         reserved; not implemented yet
  */
@@ -41,7 +42,14 @@ export const START_MARKER = '<!-- tracetoon:start -->';
 export const SEED_SESSION_ID = '00000000-aeo0-4000-8000-000000000001';
 export const FEATURE_BRANCH = 'feature/greeting';
 
-export const CONDITIONS = ['clean', 'skill', 'skill+hook', 'agents-md', 'mcp'] as const;
+export const CONDITIONS = [
+  'clean',
+  'skill',
+  'skill+hook',
+  'plugin',
+  'agents-md',
+  'mcp',
+] as const;
 export type Condition = (typeof CONDITIONS)[number];
 
 /** Host ids from src/integrations/registry.ts. */
@@ -73,6 +81,8 @@ export interface Fixture {
   skillDir: string;
   /** Tracetoon was put there before the agent started. */
   preinstalled: boolean;
+  /** The plugin folder the agent loads (condition plugin). */
+  pluginDir?: string;
   cleanup(): void;
 }
 
@@ -361,6 +371,19 @@ export function createFixture(opts: FixtureOptions): Fixture {
     if (process.platform !== 'win32')
       chmodSync(join(skill.dir, 'bin', 'tracetoon'), 0o755);
   }
+  // Condition plugin: a copy of AEO_PLUGIN_DIR, loaded by the agent with --plugin-dir.
+  let pluginDir: string | undefined;
+  if (opts.condition === 'plugin') {
+    const source = process.env.AEO_PLUGIN_DIR;
+    if (!source || !existsSync(source))
+      throw new Error('condition "plugin" needs AEO_PLUGIN_DIR (a plugin folder)');
+    pluginDir = join(dir, 'plugin');
+    cpSync(source, pluginDir, { recursive: true });
+  }
+  // AEO_FILLER_SKILLS=N: N unrelated skills in the host's skill folder, so the
+  // skill listing is crowded the way a real user's is.
+  const filler = Number(process.env.AEO_FILLER_SKILLS ?? 0);
+  if (filler > 0) writeFillerSkills(dirname(skill.dir), filler);
   if (opts.condition === 'skill+hook') {
     const r = spawnSync(
       process.execPath,
@@ -382,7 +405,8 @@ export function createFixture(opts: FixtureOptions): Fixture {
     condition: opts.condition,
     host: opts.host,
     skillDir: skill.dir,
-    preinstalled,
+    preinstalled: preinstalled || opts.condition === 'plugin',
+    pluginDir,
     cleanup() {
       try {
         rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
@@ -391,6 +415,80 @@ export function createFixture(opts: FixtureOptions): Fixture {
       }
     },
   };
+}
+
+const FILLER_TOPICS = [
+  ['docker-compose', 'Write and debug docker-compose files and multi-container setups'],
+  [
+    'k8s-manifests',
+    'Create and validate Kubernetes manifests, Helm charts and kustomize overlays',
+  ],
+  ['terraform', 'Plan and apply Terraform changes, write modules and fix state drift'],
+  [
+    'sql-tuning',
+    'Explain and speed up slow SQL queries, add indexes and read query plans',
+  ],
+  ['api-docs', 'Generate OpenAPI specs and reference docs from route handlers'],
+  ['unit-tests', 'Write unit tests for new or changed functions and raise coverage'],
+  ['e2e-tests', 'Write Playwright end-to-end tests and fix flaky browser tests'],
+  ['lint-fix', 'Run linters and formatters and fix the reported problems'],
+  ['dep-upgrade', 'Upgrade dependencies, read changelogs and fix breaking changes'],
+  ['security-audit', 'Review code for injection, auth and secret-handling issues'],
+  ['perf-profile', 'Profile CPU and memory use and suggest optimizations'],
+  ['ci-pipeline', 'Write and fix GitHub Actions, GitLab CI and CircleCI pipelines'],
+  ['release-notes', 'Draft release notes and changelog entries from merged work'],
+  ['commit-message', 'Write conventional commit messages for staged changes'],
+  ['code-review', 'Review a diff for bugs, style issues and missing tests'],
+  ['refactor', 'Refactor code for readability without changing behavior'],
+  ['migrations', 'Write and check database schema migrations'],
+  ['graphql', 'Design GraphQL schemas and resolvers'],
+  ['react-components', 'Build accessible React components with tests and stories'],
+  ['css-layout', 'Fix CSS layout, responsive design and theming issues'],
+  ['i18n', 'Extract strings and add translations and locale handling'],
+  ['logging', 'Add structured logging, tracing and metrics'],
+  ['error-handling', 'Improve error handling, retries and user-facing messages'],
+  ['cli-tools', 'Build command-line tools with argument parsing and help text'],
+  ['data-pipeline', 'Write ETL jobs, batch pipelines and data validation'],
+  ['notebooks', 'Clean up Jupyter notebooks and turn them into scripts'],
+  ['regex', 'Write, explain and test regular expressions'],
+  ['shell-scripts', 'Write portable, safe shell scripts'],
+  ['aws', 'Work with AWS services, IAM policies and the AWS CLI'],
+  ['gcp', 'Work with Google Cloud services, IAM and gcloud'],
+  ['azure', 'Work with Azure resources, RBAC and the az CLI'],
+  ['monorepo', 'Manage monorepo tooling, workspaces and build graphs'],
+  ['caching', 'Add HTTP, application and build caching'],
+  ['auth', 'Implement OAuth, sessions, JWTs and permission checks'],
+  ['payments', 'Integrate payment providers and handle webhooks'],
+  ['email', 'Build transactional email templates and sending'],
+  ['search', 'Add full-text search and relevance tuning'],
+  ['queues', 'Use message queues, background jobs and workers'],
+  ['websockets', 'Build realtime features with WebSockets and server-sent events'],
+  ['mobile', 'Fix React Native and Flutter build and runtime issues'],
+  ['accessibility', 'Audit and fix accessibility issues against WCAG'],
+  ['seo', 'Improve page metadata, sitemaps and structured data'],
+  ['incident', 'Investigate production incidents from logs and metrics'],
+  ['onboarding', 'Explain an unfamiliar codebase and its architecture'],
+  ['benchmarks', 'Write micro-benchmarks and compare results'],
+  ['feature-flags', 'Add and clean up feature flags'],
+  ['config', 'Manage configuration files, environment variables and secrets'],
+  ['backup', 'Set up database backups and restores'],
+  ['observability', 'Build dashboards and alerts'],
+  ['typescript', 'Fix TypeScript type errors and tighten types'],
+] as const;
+
+/** Unrelated skills that crowd the listing (AEO_FILLER_SKILLS). */
+function writeFillerSkills(skillsRoot: string, n: number) {
+  for (let i = 0; i < n; i++) {
+    const [name, what] = FILLER_TOPICS[i % FILLER_TOPICS.length]!;
+    const id =
+      i < FILLER_TOPICS.length
+        ? name
+        : `${name}-${Math.floor(i / FILLER_TOPICS.length) + 1}`;
+    write(
+      join(skillsRoot, id, 'SKILL.md'),
+      `---\nname: ${id}\ndescription: ${what}. Use when the user asks for this or the task clearly involves it; not for unrelated work.\n---\n\n# ${id}\n\n${what}.\n`,
+    );
+  }
 }
 
 /** Every place any host could read a Tracetoon skill from inside this fixture's HOME. */

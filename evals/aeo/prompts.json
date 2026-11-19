@@ -19,6 +19,31 @@
       "tier": 4,
       "name": "named",
       "prompt": "Use Tracetoon to open a PR for this branch."
+    },
+    {
+      "tier": 5,
+      "name": "task only",
+      "prompt": "Add an optional `shout` flag to greet() that returns the greeting in upper case, with a test."
+    },
+    {
+      "tier": 6,
+      "name": "submit for review",
+      "prompt": "Add an optional `shout` flag to greet() that returns the greeting in upper case, with a test, and get it submitted for review."
+    },
+    {
+      "tier": 7,
+      "name": "ship it",
+      "prompt": "greet() should collapse runs of spaces inside a name to one space. Fix it and ship it."
+    },
+    {
+      "tier": 8,
+      "name": "team workflow",
+      "prompt": "Our team's rule is that every change lands through a pull request. Add a farewell(name) helper next to greet(), with tests."
+    },
+    {
+      "tier": 9,
+      "name": "push for the team",
+      "prompt": "Let greet() take an optional greeting word (default \"Hello\") and push it up so the team can take a look."
     }
   ]
 }

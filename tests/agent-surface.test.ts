@@ -50,6 +50,15 @@ describe('agent surfaces', () => {
     expect(fm.compatibility).toContain('gh');
   });
 
+  test('the skill description covers PRs the agent opens on its own', () => {
+    // evals/aeo/results/ab-*-2026-11-19: this wording loaded the skill on
+    // "ship it" and workflow-required PRs, where a request-only one did not.
+    const d = frontmatter(read('plugin/skills/tracetoon/SKILL.md')).description;
+    expect(d).toContain('about to open, create or submit a pull request');
+    expect(d).toContain("repository's workflow requires");
+    expect(d).toContain('whether or not anyone mentions Tracetoon');
+  });
+
   test('every supported host is named wherever agents and people look', () => {
     const readme = read('README.md');
     const llms = read('llms.txt');

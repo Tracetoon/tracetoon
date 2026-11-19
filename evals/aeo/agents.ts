@@ -46,12 +46,13 @@ export const AGENTS: Record<HostId, AgentSpec> = {
     keys: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
     credentials: [{ from: '.claude/.credentials.json', to: '.claude/.credentials.json' }],
     webToggle: true,
-    args({ prompt, web }) {
+    args({ prompt, web, fixture }) {
       const a = ['-p', prompt, '--output-format', 'stream-json', '--verbose'];
       // The fixture is a throwaway temp world, so no permission prompts at all;
       // anything else would measure the permission system, not discovery.
       a.push('--permission-mode', 'bypassPermissions');
       if (!web) a.push('--disallowedTools', 'WebFetch,WebSearch');
+      if (fixture.pluginDir) a.push('--plugin-dir', fixture.pluginDir);
       if (process.env.AEO_CLAUDE_MODEL) a.push('--model', process.env.AEO_CLAUDE_MODEL);
       return a;
     },
