@@ -1038,6 +1038,7 @@ function pluginJson(text: string): string {
   plugin.description = listingDescription();
   plugin.homepage = SITE;
   plugin.keywords = KEYWORDS;
+  plugin.author = AUTHOR;
   return JSON.stringify(plugin, null, 2) + '\n';
 }
 
@@ -1051,7 +1052,7 @@ function pluginJson(text: string): string {
 export const SITE = 'https://tracetoon.ai';
 export const REPO_URL = `https://github.com/${REPO}`;
 export const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
-export const AUTHOR = { name: 'Tracetoon', url: SITE };
+export const AUTHOR = { name: 'Cassandra Chin', url: SITE };
 /** Plugin-relative path of the square icon catalogs show: the dark app tile from the logo kit (scripts/brand.ts). */
 export const ICON = 'assets/tracetoon.svg';
 
@@ -1162,7 +1163,7 @@ function cursorPlugin(): string {
     displayName: 'Tracetoon',
     version: pkg.version,
     description: listingDescription(),
-    author: { name: 'Tracetoon' },
+    author: { name: AUTHOR.name },
     homepage: SITE,
     repository: REPO_URL,
     license: 'Apache-2.0',

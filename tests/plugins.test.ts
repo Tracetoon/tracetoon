@@ -55,6 +55,15 @@ describe('privacy and data handling', () => {
     expect(readme).toContain(PRIVACY_URL);
     expect(text(`${OUT}/${dir}/REVIEW.md`)).toContain(PRIVACY_URL);
   });
+  test.each(ALL)('%s README says when Codex reviews apply on its host', (dir) => {
+    const readme = text(`${OUT}/${dir}/README.md`);
+    if (dir.startsWith('codex')) expect(readme).toMatch(/\(the default\s+on Codex\)/);
+    else expect(readme).toContain("only if you switch Tracetoon's reviewers to it");
+  });
+  test('every manifest credits the author', () => {
+    for (const path of [...files.keys()].filter((p) => p.endsWith('plugin.json')))
+      expect(parse(path).author.name).toBe('Cassandra Chin');
+  });
   test.each(['claude', 'claude-directory'])('%s plugin.json names the policy', (dir) => {
     expect(parse(`${OUT}/${dir}/.claude-plugin/plugin.json`).privacyPolicyUrl).toBe(
       PRIVACY_URL,
@@ -353,7 +362,7 @@ describe('Agent Plugins (Codex, Copilot CLI, Kiro)', () => {
       const manifest = parse(`${OUT}/${dir}/plugin.json`);
       expect(Object.keys(manifest).filter((k) => !FIELDS.includes(k))).toEqual([]);
       expect(manifest.$schema).toContain('1.0.0');
-      expect(manifest.author.name).toBe('Tracetoon');
+      expect(manifest.author.name).toBe('Cassandra Chin');
       expect(manifest.keywords.length).toBeGreaterThan(3);
     },
   );
