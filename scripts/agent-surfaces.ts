@@ -58,11 +58,11 @@ export const RESULTS = {
   url: 'https://tracetoon.ai/evidence-graph-61.html',
   /** One sentence for long descriptions. */
   sentence:
-    "On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.",
+    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.",
   /** Headline figures for the npm README table. */
   table: [
-    ['83–34', 'judges preferred the evidence-graph PR on Codex'],
-    ['69–17', 'judges preferred it on Claude Code'],
+    ['83–34', 'both judges preferred the evidence-graph PR on Codex'],
+    ['69–17', 'both judges preferred it on Claude Code'],
     ['−46% / −31%', 'cost per PR on Codex / Claude Code'],
   ],
   method:
@@ -85,7 +85,7 @@ export const BENEFITS: [string, string][] = [
   ],
   [
     'Safe to post',
-    'Private paths and secrets are redacted from the evidence, a leak scan runs before anything is posted, and you approve the PR first.',
+    'Private paths and secrets are redacted from the evidence, and a leak scan runs before anything is posted.',
   ],
   [
     'Follows the house rules',
@@ -103,7 +103,7 @@ export const BENEFITS: [string, string][] = [
 
 /** The benefit-led description for listings with room for a paragraph. */
 export function listingDescription(): string {
-  return `${pitch()} Every claim is checked against what your agent actually did, and you approve the PR before it is posted. ${RESULTS.sentence}`;
+  return `${pitch()} Every claim is checked against what your agent actually did before the PR is posted. ${RESULTS.sentence}`;
 }
 
 /**
@@ -134,9 +134,9 @@ export function description(dir: string): string {
   const copy = HOST_COPY[dir];
   if (!copy) throw new Error(`no listing copy for plugins/${dir}`);
   const result = copy.result
-    ? `On 61 real pull requests from 12 repositories, AI judges preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
+    ? `On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
     : RESULTS.sentence;
-  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did, and you approve the PR before it is posted. ${result}`;
+  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. ${result}`;
 }
 
 /** The npm package description: one benefit-led line plus the command. */

@@ -12,6 +12,7 @@ import {
   OUT,
   PR_COMMAND_PATTERN,
   pluginFiles,
+  PRIVACY_URL,
   stalePlugins,
 } from '../scripts/plugins.ts';
 import { PR_COMMAND_GLOBS } from '../src/hook/prCommands.ts';
@@ -27,6 +28,39 @@ const RUNTIME = ['npx', ...NPX_ARGS].join(' ');
 
 test('plugins/ matches the generator', () => {
   expect(stalePlugins()).toEqual([]);
+});
+
+describe('privacy and data handling', () => {
+  const ALL = [
+    'claude',
+    'claude-directory',
+    'cursor',
+    'codex',
+    'codex-directory',
+    'agent',
+  ];
+  test('the privacy policy the packages link to is in the repository', () => {
+    expect(PRIVACY_URL.endsWith('/blob/main/PRIVACY.md')).toBe(true);
+    const policy = readFileSync(join(root, 'PRIVACY.md'), 'utf8');
+    for (const fact of ['GitHub', 'image service', 'telemetry', '.git/tracetoon/runs'])
+      expect(policy).toContain(fact);
+  });
+  test.each(ALL)('%s README says what leaves the machine and links the policy', (dir) => {
+    const readme = text(`${OUT}/${dir}/README.md`);
+    expect(readme).toContain('## What it sends');
+    expect(readme).toContain('## Privacy');
+    expect(readme).toContain(PRIVACY_URL);
+    expect(text(`${OUT}/${dir}/REVIEW.md`)).toContain(PRIVACY_URL);
+  });
+  test.each(['claude', 'claude-directory'])('%s plugin.json names the policy', (dir) => {
+    expect(parse(`${OUT}/${dir}/.claude-plugin/plugin.json`).privacyPolicyUrl).toBe(
+      PRIVACY_URL,
+    );
+  });
+  test('no listing promises an approval step that publish does not have', () => {
+    for (const dir of ALL)
+      expect(text(`${OUT}/${dir}/README.md`)).not.toMatch(/you approve the PR/);
+  });
 });
 
 describe('every package', () => {
@@ -144,6 +178,7 @@ describe('Claude Code (Anthropic plugin directory)', () => {
       'license',
       'keywords',
       'icon',
+      'privacyPolicyUrl',
       'documentationUrl',
       'supportUrl',
       'network',
@@ -209,6 +244,7 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
         'keywords',
         'license',
         'name',
+        'privacyPolicyUrl',
         'repository',
         'version',
       ].sort(),
