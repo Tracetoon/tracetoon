@@ -31,19 +31,19 @@ plus a `tracetoon` CLI.
   section; `tracetoon publish --dry-run --json` shows what publishing would do.
 - Every command accepts `--json`. JSON objects carry `schemaVersion`. Errors
   under `--json` print `{"error": "<message>", "errorCode", "fix",
-  "retryable", "humanRequired"}` on stdout
+"retryable", "humanRequired"}` on stdout
   ([docs/agents/errors.md](docs/agents/errors.md)).
 
 ### Commands that act outside the machine
 
-| Command | Effect |
-| --- | --- |
-| `tracetoon publish` | Pushes the branch and creates or updates the PR |
-| `tracetoon comic art` | Sends the comic prompt to an image service; needs the user's consent (`--consent`) |
-| `tracetoon images --approve <route> --test` | Approves an image route and makes one test image (may cost money) |
-| `tracetoon review run` | Runs a reviewer through the Codex CLI (sends the review packet; may cost money) |
-| `tracetoon update` | Downloads and installs a release; only when the user asks |
-| `tracetoon setup`, `tracetoon hook install` | Write the skill and hooks into the agents' own folders |
+| Command                                     | Effect                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `tracetoon publish`                         | Pushes the branch and creates or updates the PR                                    |
+| `tracetoon comic art`                       | Sends the comic prompt to an image service; needs the user's consent (`--consent`) |
+| `tracetoon images --approve <route> --test` | Approves an image route and makes one test image (may cost money)                  |
+| `tracetoon review run`                      | Runs a reviewer through the Codex CLI (sends the review packet; may cost money)    |
+| `tracetoon update`                          | Downloads and installs a release; only when the user asks                          |
+| `tracetoon setup`, `tracetoon hook install` | Write the skill and hooks into the agents' own folders                             |
 
 Everything else reads local logs and writes into the run folder.
 
@@ -100,9 +100,16 @@ bun scripts/site-kit.ts        # build site-kit/ (agent files for tracetoon.ai)
   in-process). The plugin registers it in `plugin/.mcp.json`; `server.json`
   (MCP Registry) is generated, and the release workflow publishes it only when
   the repository variable `MCP_REGISTRY_PUBLISH` is set.
+- Plugin packages: `bun scripts/agent-surfaces.ts` also writes `plugins/`
+  (`scripts/plugins.ts`): one text-only package per catalog (Claude Code,
+  Cursor, Codex, the OpenAI directory, Agent Plugins for Copilot CLI and Kiro)
+  that runs `npx -y tracetoon@<version>`. Nothing executable goes in them;
+  `tests/plugins.test.ts` checks each against its catalog's rules. The release
+  workflow publishes them on the `plugins` branch. `plugin/` keeps the full,
+  offline skill.
 - Claude Code plugin hint: `src/util/claudeHint.ts` can print Claude Code's
   `<claude-code-hint />` install prompt on stderr. It is off
   (`CLAUDE_CODE_HINT_ENABLED = false`) because hints only work for plugins in
-  an official Anthropic marketplace. Once Tracetoon is listed, set it to true
-  and `HINT_PLUGIN` to the listed `name@marketplace`.
+  an official Anthropic marketplace (a directory listing installs as
+  `tracetoon@synced`, which doesn't qualify).
 - Open PRs with Tracetoon: _"Open a PR for this branch with Tracetoon."_

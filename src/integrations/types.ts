@@ -131,6 +131,14 @@ export interface Integration {
   traces: TraceAdapter[];
   hook?: HookIntegration;
   skill?(home: string, env: Env): SkillTarget;
+  /**
+   * Whether this host has the Tracetoon plugin installed and enabled. The
+   * plugin brings its own skill and hooks (running the runtime from npm), so
+   * setup leaves the host's skill folder and user-level hooks alone.
+   */
+  plugin?(home: string, env: Env): boolean;
+  /** That plugin also runs Tracetoon's hooks (a skills-only listing doesn't). Defaults to `plugin`. */
+  pluginHooks?(home: string, env: Env): boolean;
   /** Environment variables that hold the current session id, most specific first. */
   sessionEnv?: string[];
   /**

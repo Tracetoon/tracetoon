@@ -3,6 +3,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { FROM_SOURCE } from '../version.ts';
+import { launcher, pinnedUpdateHint } from '../util/launcher.ts';
 
 export interface Layout {
   homeRoot: string;
@@ -60,6 +61,19 @@ export function updatable(
     };
   if (existsSync(layout.stable) && real(execPath) === real(layout.stable))
     return { ok: true };
+  // npm owns this copy. A plugin that pins it is reviewed for that version,
+  // so the runtime never swaps itself out from under the plugin.
+  const started = launcher(env);
+  if (started.kind === 'npx')
+    return {
+      ok: false,
+      reason: `This copy runs from npm (npx tracetoon@${started.version}). ${pinnedUpdateHint(env)}`,
+    };
+  if (started.kind === 'npm')
+    return {
+      ok: false,
+      reason: `This copy was installed with npm (tracetoon@${started.version}). Update it with npm install -g tracetoon@latest.`,
+    };
   if (!/^tracetoon(-[a-z]+-[a-z0-9]+)?(\.exe)?$/i.test(basename(execPath)))
     return {
       ok: false,

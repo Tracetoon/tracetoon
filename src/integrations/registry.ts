@@ -113,6 +113,8 @@ export function skillTargets(
   for (const i of INTEGRATIONS) {
     const t = i.skill?.(home, env);
     if (!t?.present) continue;
+    // The host's Tracetoon plugin brings the skill; a second copy would shadow it.
+    if (i.plugin?.(home, env)) continue;
     const seen = out.find((o) => o.dir === t.dir);
     if (seen) seen.labels.push(i.label);
     else out.push({ labels: [i.label], dir: t.dir });
