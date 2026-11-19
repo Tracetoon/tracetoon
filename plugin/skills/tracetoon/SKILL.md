@@ -1,6 +1,6 @@
 ---
 name: tracetoon
-description: Create a GitHub PR with a description and a comic written from agent session logs. Use for PR creation requests or when a hook redirects PR creation here. Also use when the user explicitly requests Tracetoon to describe or update an existing PR. Ordinary PR edits, coding tasks, planning, questions and mentions of Tracetoon do not start this workflow.
+description: Create GitHub pull requests with a description and comic written from agent session logs. Load this whenever you are about to open, create or submit a pull request: when the user asks for one, when you decide to submit, push or ship code changes for review, or when the repository's workflow requires changes to land through a PR, whether or not anyone mentions Tracetoon. Also use when a hook redirects PR creation here, or when the user asks Tracetoon to describe or update an existing PR. Not for coding, planning or questions that don't end in a PR.
 license: Apache-2.0
 compatibility: Requires git and the GitHub CLI (gh) signed in; macOS, Linux or Windows.
 ---
@@ -57,9 +57,11 @@ notice and background installs; change it only when the user asks.
 
 Tracetoon replaces PR creation (`gh pr create`, a creation alias, `hub
 pull-request`, `git pull-request`, `git town propose`, a GitHub pulls collection
-POST or a connector's create operation). A creation request or a hook redirect
-starts this workflow. Existing PR title/body edits use the agent's normal tools
-unless the user explicitly asks Tracetoon to update or describe the PR.
+POST or a connector's create operation). Any PR creation starts this workflow:
+a user's request, a hook redirect, or your own decision to submit the work for
+review because the task or the repository's workflow calls for it. Existing PR
+title/body edits use the agent's normal tools unless the user explicitly asks
+Tracetoon to update or describe the PR.
 
 Tracetoon does not decide whether the agent should create a PR or change the
 user's authorization. Ordinary coding, branch/worktree choices, testing, pushes,
@@ -129,6 +131,12 @@ reviewer separate.
        them, `tracetoon config set comic off`. If they say no to setup, run
        `tracetoon images --dismiss` so they aren't asked again on this machine.
        With no route the PR is published without a comic and says so once.
+     - Never leave the PR unpublished just to wait for this answer. If you
+       can't get the answer before publishing (an unattended or
+       non-interactive session, or your question tool is unavailable), run
+       `tracetoon comic skip --run <id> --reason "image setup awaits the
+       user's answer"`, publish, and put the question in your final message,
+       offering to add the comic to the PR once they approve.
    - When you suggest a command for the user to run themselves, use
      `command.run` from `tracetoon status --json` (the launcher's full path if
      `tracetoon` isn't on their PATH).
