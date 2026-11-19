@@ -203,6 +203,12 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
       pkgFiles('claude-directory').filter((p) => p.includes('/.claude-plugin/')),
     ).toEqual([`${dir}/.claude-plugin/plugin.json`]);
   });
+  test('its skill names no environment variable, key or URL (the directory holds those)', () => {
+    // MCP_FORWARDS_CREDENTIAL_ENV: an env reference or "key" beside a remote URL is held for review.
+    const skill = text(`${dir}/skills/tracetoon/SKILL.md`);
+    expect(skill).not.toMatch(/https?:\/\//);
+    expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key/);
+  });
   test('its README and REVIEW say there is no hook, and how to get one', () => {
     expect(text(`${dir}/README.md`)).toContain(
       '/plugin marketplace add Tracetoon/tracetoon',

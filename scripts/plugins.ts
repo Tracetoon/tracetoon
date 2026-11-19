@@ -81,8 +81,8 @@ version). Run it from inside the user's repository. Every command accepts
 
 If \`npx\` is not found (Tracetoon needs Node.js 18 or later), or the command
 exits with code **3**, the runtime can't start. Tell the user: they can install
-Node.js, or install the standalone binary as described in ${INSTALL_DOC}
-(then \`tracetoon\` on their PATH replaces the npx command). Don't install
+Node.js, or install the standalone binary (the install guide is linked from
+this plugin's README) (then \`tracetoon\` on their PATH replaces the npx command). Don't install
 anything yourself unless they ask. If they decline, follow
 [references/manual-mode.md](references/manual-mode.md).`;
 
@@ -106,7 +106,8 @@ const SKILL_ONLY = `This copy of the skill came without hooks (the catalog it wa
 doesn't allow them). So a plain \`gh pr create\` isn't routed here, and
 \`prepare\` matches sessions from the agent's own logs. In step 1, if
 \`tracetoon doctor --json\` reports the \`pr-hook\` check failing, tell the user
-once that the standalone install (${INSTALL_DOC}) adds the hook, then carry on.
+once that the standalone install (linked from this plugin's README) adds the
+hook, then carry on.
 Install it only if they ask.`;
 
 function swap(text: string, name: string, body: string): string {
@@ -131,6 +132,19 @@ export function thinSkill(hooks = true): Map<string, string> {
       "(the launcher's full path if `tracetoon` isn't on their PATH)",
       '(the pinned npx command)',
     );
+  // The Anthropic directory holds a skill that names an environment variable
+  // or a key beside a remote URL (MCP_FORWARDS_CREDENTIAL_ENV), so the packaged
+  // skill says these in words and leaves URLs to the README.
+  for (const [from, to] of [
+    [
+      "(PowerShell: `$env:TRACETOON='0'; gh pr create ...`)",
+      '(in PowerShell, set TRACETOON to 0 first)',
+    ],
+    ['agent after setting a key)', 'agent after adding the setting)'],
+  ]) {
+    if (!skill.includes(from!)) throw new Error(`SKILL.md no longer has: ${from}`);
+    skill = skill.replace(from!, to!);
+  }
   out.set('SKILL.md', skill);
   for (const name of readdirSync(join(src, 'references')).sort()) {
     if (!name.endsWith('.md')) continue;

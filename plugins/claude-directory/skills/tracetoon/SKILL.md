@@ -26,8 +26,8 @@ version). Run it from inside the user's repository. Every command accepts
 
 If `npx` is not found (Tracetoon needs Node.js 18 or later), or the command
 exits with code **3**, the runtime can't start. Tell the user: they can install
-Node.js, or install the standalone binary as described in https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
-(then `tracetoon` on their PATH replaces the npx command). Don't install
+Node.js, or install the standalone binary (the install guide is linked from
+this plugin's README) (then `tracetoon` on their PATH replaces the npx command). Don't install
 anything yourself unless they ask. If they decline, follow
 [references/manual-mode.md](references/manual-mode.md).
 
@@ -35,7 +35,8 @@ This copy of the skill came without hooks (the catalog it was listed in
 doesn't allow them). So a plain `gh pr create` isn't routed here, and
 `prepare` matches sessions from the agent's own logs. In step 1, if
 `tracetoon doctor --json` reports the `pr-hook` check failing, tell the user
-once that the standalone install (https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md) adds the hook, then carry on.
+once that the standalone install (linked from this plugin's README) adds the
+hook, then carry on.
 Install it only if they ask.
 
 ## Updating Tracetoon
@@ -67,7 +68,7 @@ Tracetoon can be turned off. `tracetoon status` says whether it is on here and
 which setting decided. If it is off, tell the user why (for example "this repo
 turns it off in .github/tracetoon.json") and open the PR the normal way. If the
 user explicitly asks for a plain PR without Tracetoon, prefix the `gh` command
-with `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh pr create ...`). Never use
+with `TRACETOON=0` (in PowerShell, set TRACETOON to 0 first). Never use
 that bypass on your own initiative.
 
 ## Workflow
@@ -120,7 +121,7 @@ reviewer separate.
      - `fix`: the route is installed but can't draw (e.g. Codex not signed in
        with ChatGPT, or set to another model provider); pass on the fix.
      - `setup`: no route; pass on how to add one (they'll need to restart the
-       agent after setting a key).
+       agent after adding the setting).
      - Either way, offer "skip comics for this PR" and, if they never want
        them, `tracetoon config set comic off`. If they say no to setup, run
        `tracetoon images --dismiss` so they aren't asked again on this machine.
