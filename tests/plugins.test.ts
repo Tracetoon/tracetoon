@@ -30,6 +30,12 @@ test('plugins/ matches the generator', () => {
   expect(stalePlugins()).toEqual([]);
 });
 
+test('no package runs npx with --prefer-offline (a stale package list fails with ETARGET)', () => {
+  expect(NPX_ARGS).not.toContain('--prefer-offline');
+  for (const [path, body] of files)
+    if (/\.json$/.test(path)) expect(body.toString()).not.toContain('--prefer-offline');
+});
+
 describe('privacy and data handling', () => {
   const ALL = [
     'claude',

@@ -237,9 +237,11 @@ admission, development, held-out) recorded as not run, with no experiment IDs.
 The release notes say no evaluation was run and that no score or performance
 gain is established; artifact identity and byte verification still apply.
 
-The marketplace serves the plugin from the `release` branch
-(`.claude-plugin/marketplace.json` names it), so plugin users receive only
-published releases. main has no bundle; for each tag the release workflow
+The Claude Code and Codex marketplaces serve the plugin from the `release`
+branch (`.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`
+name it), so plugin users receive only published releases; Cursor's marketplace
+takes the text-only `plugins/cursor/` from `main`, which pins the released npm
+version. main has no bundle; for each tag the release workflow
 (`.github/scripts/release-branch.ts`) adds one commit to `release` with the
 verified bundle and `build.json` from the skill archive on top of the tagged
 source. Its parents are the previous `release` head and the tag, so the branch
