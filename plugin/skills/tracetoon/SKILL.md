@@ -323,15 +323,17 @@ reviewer separate.
    - If the user already wrote a description (an existing PR body,
      `existingPr.editedText`, or a `body.md` they wrote or edited), start from
      their text and keep it; fix only what the evidence contradicts and add
-     what's missing. When asked for changes, edit `body.md` in place.
+     what's missing. When asked for changes, edit `body.md` in place; don't
+     regenerate it unless they ask for a fresh draft.
    - Read the base version of the main changed code (`git show
      <mergeBase>:<path>`) and its direct callers, so old behavior comes from
      code, not guesses. For a new PR write `title.txt` (keep an explicit
      user-supplied title); for an existing PR keep its title unless the scope
      changed.
    - Include the strongest motivation a user request, decision or commit
-     explanation supports; attribute commit-only accounts and expand clipped
-     facts with `tracetoon expand <refs...> --run <id>`.
+     explanation supports; attribute commit-only accounts, keep useful
+     issue/PR/doc references, and expand clipped facts with
+     `tracetoon expand <refs...> --run <id>`.
 5. **Have the drafter write the comic, then draw it** whenever prepare's
    `comic.expected` is true. It is false when `comic` is `off` or the repo says
    no under `allowed`; then there is nothing to do or mention. If the user
