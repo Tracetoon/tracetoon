@@ -1,6 +1,6 @@
 # Tracetoon for Claude Code
 
-Creates your PR with a description written from your Claude Code session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 69 to 17 on Claude Code, at 31% lower cost per PR.
+Creates your PR with a description written from your Claude Code session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 60 to 21 on Claude Code, at 43% lower cost per PR.
 
 ## Why use it
 
@@ -68,7 +68,7 @@ Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
 
 ## Results
 
-On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
+On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
 
 ## Support
 
