@@ -1007,7 +1007,15 @@ function marketplace(text: string): string {
     ...parsed,
   };
   const [entry] = market.plugins;
-  entry.description = listingDescription();
+  // The text-only package on the plugins branch (scripts/plugins.ts), which the
+  // release workflow publishes once npm serves the version it pins.
+  entry.source = {
+    source: 'git-subdir',
+    url: `${REPO_URL}.git`,
+    path: 'claude',
+    ref: 'plugins',
+  };
+  entry.description = description('claude');
   entry.category = 'productivity';
   entry.tags = ['pull-requests', 'github', 'code-review', 'agent-trace', 'comics'];
   entry.relevance = {
@@ -1135,7 +1143,7 @@ function codexPlugin(): string {
   });
 }
 
-/** .agents/plugins/marketplace.json: `codex plugin marketplace add Tracetoon/tracetoon`. */
+/** .agents/plugins/marketplace.json: `codex plugin marketplace add Tracetoon/tracetoon`, serving plugins/codex from the plugins branch. */
 function codexMarketplace(): string {
   return json({
     name: 'tracetoon',
@@ -1146,8 +1154,8 @@ function codexMarketplace(): string {
         source: {
           source: 'git-subdir',
           url: `${REPO_URL}.git`,
-          path: './plugin',
-          ref: 'release',
+          path: './codex',
+          ref: 'plugins',
         },
         policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' },
         category: 'Developer Tools',

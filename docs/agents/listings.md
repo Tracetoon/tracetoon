@@ -20,15 +20,13 @@ no hooks. Those packages run `npx -y tracetoon@<version>`. Skill-only installs
 branch: `main` carries source only, so a copy taken from `main` stops with exit
 code 3. A manifest reaches either branch only with the next tagged release.
 
-The repository-level Claude Code and Codex marketplaces
-(`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`) still
-serve the full `plugin/` folder from `release`; they move to `claude/` and
-`codex/` on the `plugins` branch with the next release, which also drops
-`--prefer-offline` from the packages' `npx` calls (it fails with ETARGET on a
-stale npm cache). `.cursor-plugin/marketplace.json` already takes
-`plugins/cursor/` from `main`. The `plugin/` manifests (`plugin/plugin.json`,
-`plugin/.codex-plugin/plugin.json`, `plugin/.cursor-plugin/plugin.json`) stay
-on `release` for skill-only installs.
+The repository-level marketplaces serve the same text-only packages:
+`.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json` take
+`claude/` and `codex/` from the `plugins` branch (since 1.0.0-rc.44, the first
+release whose packages run `npx` without `--prefer-offline`), and
+`.cursor-plugin/marketplace.json` takes `plugins/cursor/` from `main`. The
+`plugin/` manifests (`plugin/plugin.json`, `plugin/.codex-plugin/plugin.json`,
+`plugin/.cursor-plugin/plugin.json`) stay on `release` for skill-only installs.
 
 | Catalog                          | Backed by                                                                                               | How to submit                                                                                                                                                                                                                                                                                                                                      | Status                                                                                               | Docs                                                                                                                                                                                                                                   |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
