@@ -312,9 +312,23 @@ reviewer separate.
      user's PR request is the override; render reports it.
    - `aiPolicy.prInstructions`: follow these repo instructions about PR text.
    - If it is `disclosure-required`, keep Tracetoon's disclosure line (`config.disclosure` must not be `none`) and add any extra disclosure the policy asks for at the end of `body.md`.
-4. **Drafter phase** (thorough path only): a distinct drafter writes
-   `body.md` and `title.txt` from the evidence; see
-   [references/thorough-path.md](references/thorough-path.md).
+4. **Drafting rules (every path).** Whoever drafts, you inline or a delegated
+   drafter on the thorough path
+   ([references/thorough-path.md](references/thorough-path.md)):
+   - Draft straight away from what's available; ask the user only when the
+     draft can't be written without an answer (e.g. which change it describes).
+   - If the user already wrote a description (an existing PR body,
+     `existingPr.editedText`, or a `body.md` they wrote or edited), start from
+     their text and keep it; fix only what the evidence contradicts and add
+     what's missing. When asked for changes, edit `body.md` in place.
+   - Read the base version of the main changed code (`git show
+     <mergeBase>:<path>`) and its direct callers, so old behavior comes from
+     code, not guesses. For a new PR write `title.txt` (keep an explicit
+     user-supplied title); for an existing PR keep its title unless the scope
+     changed.
+   - Include the strongest motivation a user request, decision or commit
+     explanation supports; attribute commit-only accounts and expand clipped
+     facts with `tracetoon expand <refs...> --run <id>`.
 5. **Have the drafter write the comic, then draw it** whenever prepare's
    `comic.expected` is true. It is false when `comic` is `off` or the repo says
    no under `allowed`; then there is nothing to do or mention. If the user
@@ -464,6 +478,8 @@ Graph search: fulltext.
   operations follow the user's request and the host's normal rules.
 - **Never send prompts to an image service without consent.** `--consent` only
   after the user agreed for that provider.
+- **Never manufacture human attestations or test evidence.** Missing checks
+  stay unknown; author-supplied context goes in `author.md` in their words.
 - **Say "matched", not "wrote".** Line attribution means an agent edit matches a
   line in the diff. It is evidence, not proof of authorship.
 - **Respect privacy.** The digest is already redacted. Don't add paths outside

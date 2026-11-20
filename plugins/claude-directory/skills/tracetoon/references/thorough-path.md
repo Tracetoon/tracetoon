@@ -56,17 +56,9 @@ SKILL.md's.
    otherwise following the guide's "The title" section
    and `titleRules` from context. For an existing PR, keep its title unless the
    scope changed.
-   Pass the following writing rules to the drafter; the coordinator does not
-   author the title or description when delegation is available.
-   - Draft it straight away from what's available; don't ask the user questions
-     first. Only ask when the draft can't be written without an answer (for
-     example, it's unclear which change the PR is meant to describe).
-   - If the user already wrote a description (an existing PR body,
-     `existingPr.editedText` when they edited Tracetoon's section on GitHub, or a
-     `body.md` they wrote or edited), start from their text and keep it. Fix only
-     what the evidence contradicts and add what's missing.
-   - When asked for changes, edit `body.md` in place; don't regenerate it from
-     scratch unless the user asks for a fresh draft.
+   Pass the drafter SKILL.md step 4's drafting rules and the ones below; the
+   coordinator does not author the title or description when delegation is
+   available.
    - Before writing, read the base version of the main changed code
      (`git show <mergeBase>:<path>`) and its direct callers, so the old
      behavior is stated from code, not guessed. Then write a local
