@@ -58,12 +58,12 @@ export const RESULTS = {
   url: 'https://tracetoon.ai/evidence-graph-61.html',
   /** One sentence for long descriptions. */
   sentence:
-    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.",
+    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.",
   /** Headline figures for the npm README table. */
   table: [
-    ['83–34', 'both judges preferred the evidence-graph PR on Codex'],
-    ['69–17', 'both judges preferred it on Claude Code'],
-    ['−46% / −31%', 'cost per PR on Codex / Claude Code'],
+    ['79–38', 'both judges preferred the evidence-graph PR on Codex'],
+    ['60–21', 'both judges preferred it on Claude Code'],
+    ['−70% / −43%', 'cost per PR on Codex / Claude Code'],
   ],
   method:
     "prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow.",
@@ -114,16 +114,16 @@ export function listingDescription(): string {
 const HOST_COPY: Record<string, { agent: string; result?: string }> = {
   claude: {
     agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
   },
   'claude-directory': {
     agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
   },
-  codex: { agent: 'Codex', result: '83 to 34 on Codex, at 46% lower cost per PR' },
+  codex: { agent: 'Codex', result: '79 to 38 on Codex, at 70% lower cost per PR' },
   'codex-directory': {
     agent: 'Codex',
-    result: '83 to 34 on Codex, at 46% lower cost per PR',
+    result: '79 to 38 on Codex, at 70% lower cost per PR',
   },
   cursor: { agent: 'Cursor' },
   agent: { agent: 'GitHub Copilot CLI or Kiro' },
