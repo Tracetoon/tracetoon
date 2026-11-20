@@ -2,7 +2,12 @@ import { currentSessionId } from '../integrations/registry.ts';
 import { defaultBase } from '../git/pr.ts';
 import { findRun } from '../run.ts';
 import { beginTask, readTask, repository, saveTask } from '../workflow/state.ts';
-import { executeCheckLive, receipts } from '../workflow/checks.ts';
+import {
+  checkTimeoutMs,
+  compactCheckText,
+  executeCheckLive,
+  receipts,
+} from '../workflow/checks.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
 import { readHost, rememberRepository } from '../workflow/hostSession.ts';
 
@@ -69,6 +74,38 @@ export function taskCmd(
   );
 }
 
+/**
+ * Runs `attempt`; while another `tracetoon check` of this run holds the
+ * checks lock, waits for it in the foreground (one notice on stderr) and
+ * tries again, up to `limitMs` plus a minute. A check moved to the
+ * background is waited on by running the same command again, never polled.
+ */
+export async function waitingForOtherCheck<T>(
+  attempt: () => Promise<T>,
+  limitMs: number,
+  pollMs = 2_000,
+): Promise<T> {
+  const until = Date.now() + limitMs + 60_000;
+  let told = false;
+  for (;;) {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (
+        !/already running/.test(String((error as Error)?.message)) ||
+        Date.now() > until
+      )
+        throw error;
+      if (!told)
+        process.stderr.write(
+          'Another check of this run is still running; waiting for it here in the foreground.\n',
+        );
+      told = true;
+      await new Promise((r) => setTimeout(r, pollMs));
+    }
+  }
+}
+
 export async function checkCmd(
   cwd: string,
   command: string[],
@@ -79,6 +116,8 @@ export async function checkCmd(
     skip?: string;
     force?: boolean;
     input?: string[];
+    timeout?: string;
+    progress?: boolean;
   },
 ) {
   const repo = repository(cwd);
@@ -86,23 +125,29 @@ export async function checkCmd(
   const task = readTask(run);
   if (task && (task.branch !== repo.branch || task.root !== repo.root))
     throw new UserError('Run checks in this task worktree and branch.');
-  const receipt = await executeCheckLive(repo.root, run, {
-    ...opts,
-    name: opts.name ?? command.join(' '),
-    command,
-    onStart: (receipt) => {
-      if (receipt.outcome === 'running' && !opts.skip)
-        process.stderr.write(
-          `${receipt.name}: running; command output follows on stderr.\n`,
-        );
-    },
-  });
-  emit(
-    opts,
-    receipt,
-    () =>
-      `${receipt.name}: ${receipt.outcome}${receipt.reused ? ' (reused unchanged inputs)' : ''}; ${receipt.durationMs}ms${receipt.reason ? `; ${receipt.reason}` : ''}`,
-  );
-  if (receipt.outcome === 'failed')
+  // Quiet until done (one summary at the end) unless --progress or a terminal:
+  // an agent's exec tool returns at its own yield time, and streamed lines
+  // only cost tokens on every poll. The live output is in check-logs/running.log.
+  const progress = opts.progress ?? (!!process.stderr.isTTY || process.env.TRACETOON_CHECK_PROGRESS === '1');
+  const attempt = () =>
+    executeCheckLive(repo.root, run, {
+      ...opts,
+      progress,
+      name: opts.name ?? command.join(' '),
+      command,
+      timeoutMs: checkTimeoutMs(opts.timeout),
+      onStart: (receipt) => {
+        if (progress && receipt.outcome === 'running' && !opts.skip)
+          process.stderr.write(
+            `${receipt.name}: running in the foreground; wait for it (stops after ${Math.round(checkTimeoutMs(opts.timeout) / 60_000)} min). The first output lines follow on stderr, the full log is saved in the run folder.\n`,
+          );
+      },
+    });
+  const receipt = await waitingForOtherCheck(attempt, checkTimeoutMs(opts.timeout));
+  // A compact summary (outcome, counts, failing tests, the log path), not the output.
+  emit(opts, receipt, () => compactCheckText(receipt));
+  // A timeout is incomplete, not a failure: its own exit code (as timeout(1)).
+  if (receipt.timedOut) process.exitCode = 124;
+  else if (receipt.outcome === 'failed')
     process.exitCode = receipt.exitCode && receipt.exitCode > 0 ? receipt.exitCode : 1;
 }

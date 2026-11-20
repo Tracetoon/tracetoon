@@ -71,7 +71,7 @@ describe('comic expectation', () => {
       route: { kind: 'ready' },
       askSetup: false,
     });
-    expect(comicStep(e)).toContain('draw the comic (SKILL step 5)');
+    expect(comicStep(e)).toContain('draw the comic (references/full-path.md step 5)');
     expect(comicStep(e)).toContain('tracetoon comic skip');
   });
 
@@ -141,9 +141,9 @@ describe("prepare's next steps", () => {
     const { graphNext } = await import('../src/commands/digest.ts');
     readyRoute();
     const on = graphNext('r1', undefined, comicExpectation(repoWith(), none));
-    expect(on).toContain('draw the comic (SKILL step 5)');
+    expect(on).toContain('draw the comic (references/full-path.md step 5)');
     expect(on).toContain('tracetoon comic skip --run r1');
-    expect(on.indexOf('draw the comic')).toBeLessThan(on.indexOf('publish when'));
+    expect(on.indexOf('draw the comic')).toBeLessThan(on.indexOf('tracetoon publish --run'));
     userConfig({ comic: 'off' });
     expect(graphNext('r1', undefined, comicExpectation(repoWith(), none))).not.toContain(
       'comic',

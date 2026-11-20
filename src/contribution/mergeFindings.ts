@@ -156,7 +156,15 @@ const clip = (s: string, n: number) =>
 
 /** One line per finding: verdict, quote, evidence, fix, passes. */
 export function mergedLine(m: MergedFinding, i: number): string {
-  const verdict = m.kind === 'omission' ? `${m.verdict} (omission)` : m.verdict;
+  // An omission only a commit message backs adds no code fact: a suggestion.
+  const commitOnly =
+    m.kind === 'omission' &&
+    m.evidence.length > 0 &&
+    m.evidence.every((r) => /^commit:/.test(r.trim()));
+  const verdict =
+    m.kind === 'omission'
+      ? `${m.verdict} (omission${commitOnly ? '; suggestion, not a fact: only a commit message backs it, verify against an added diff line' : ''})`
+      : m.verdict;
   return [
     `${i + 1}. ${verdict}`,
     m.quote ? `"${clip(m.quote, 140)}"` : '',

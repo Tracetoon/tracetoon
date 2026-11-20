@@ -147,7 +147,7 @@ function blocksFor(sections: Section[], clip: number, compact: boolean): Line[] 
   const sentenceLine = (indent: string, r: Row, label: string) => {
     const to = pointsTo.get(str(r.ref)) ?? [];
     const impl = list(r.implementedBy);
-    return `${indent}${label} ${clipTo(str(r.text), clip)}${to.length ? ` → ${to.join(' ')}` : ''}${impl.length ? ` (implementedBy ${impl.join(' ')})` : ''}`;
+    return `${indent}${label} ${clipTo(str(r.text), clip)}${to.length ? ` → ${to.join(' ')}` : ''}${impl.length ? ` (implementedBy ${impl.join(' ')})` : ''}${r.note ? ` [${str(r.note)}]` : ''}`;
   };
   const commitLines = (
     id: string,
@@ -192,6 +192,24 @@ function blocksFor(sections: Section[], clip: number, compact: boolean): Line[] 
       list(c.was).length
         ? `was: ${list(c.was)
             .slice(0, compact ? 2 : 4)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
+      list(c.said).length
+        ? `commit says: ${list(c.said)
+            .slice(0, compact ? 1 : 2)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
+      list(c.checkedBy).length
+        ? `checked by: ${list(c.checkedBy)
+            .slice(0, compact ? 1 : 3)
+            .map((w) => clipTo(w, clip))
+            .join(' | ')}`
+        : '',
+      list(c.before).length
+        ? `before (base code): ${list(c.before)
+            .slice(0, compact ? 1 : 3)
             .map((w) => clipTo(w, clip))
             .join(' | ')}`
         : '',

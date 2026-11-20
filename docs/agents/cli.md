@@ -83,6 +83,8 @@ run validation and record exact tested content
 | `--cwd <path>` | directory inside the repository |
 | `--skip <reason>` | explicit CI-only or unavailable check |
 | `--force` | rerun even if unchanged |
+| `--timeout <minutes>` | stop the check after this long (default 15); a timeout is reported as incomplete, never as failed |
+| `--progress` | echo the first output lines on stderr while it runs (default: quiet until the one-line summary, unless stderr is a terminal; live output is in check-logs/running.log) |
 | `--input <path>` | also fingerprint an ignored generated artifact (repeatable) (default: `[]`) |
 
 ## `tracetoon images`
@@ -122,6 +124,7 @@ check git, gh and which agent logs are on this machine
 | --- | --- |
 | `--probe` | also list record types the log readers do not recognize |
 | `--strict` | exit 6 if a required check fails; with --probe: exit 5 if unknown record types are found |
+| `--verbose` | the full report (agents, installs, hooks, image routes) |
 
 ## `tracetoon scan`
 
@@ -229,6 +232,16 @@ freeze body.md into the final PR body, scan it, and report the review results
 | `--lean` | lean brief path: drafted inline from the evidence brief, no separate reviewer needed to publish |
 | `--check` | brief path: check the draft against the evidence brief before the slim review |
 | `--reviewed` | reviewed brief path: drafted inline from the evidence brief, then checked by one slim reviewer (reviewer-notes.md) |
+| `--verbose` | text mode: also print optional author notes and evidence-graph leads |
+
+## `tracetoon finish`
+
+after drafting: render (with the brief check), write the review packets or bind the review to the final render, and print the one next step
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--verbose` | also print render's full report |
 
 ## `tracetoon review-packet`
 
@@ -283,6 +296,7 @@ turn the lean reviewer's review-findings.json into review.json v2 for the curren
 | `--pass <n>` | which reviewer pass this is (default: this reviewer's earlier pass with the same lens, else the next) |
 | `--lens <a\|b\|c>` | the lens this reviewer checked (default findings file: review-findings-<lens>.json) |
 | `--rebind` | rebuild review.json for the current render from the passes already imported (claims whose quote is gone count as fixed) |
+| `--verbose` | list every warning, not only those that need an action |
 
 ## `tracetoon publish`
 

@@ -13,12 +13,14 @@ import { homedir } from 'node:os';
 import { isPathUnder, pathKey } from '@showtail/agent-traces/paths/pathUtil';
 import type { PrTruth } from '../git/pr.ts';
 import { leadingCd, mentionsAnyRoot, rootOf, underAnyRoot } from '../trace/pathMatch.ts';
-import { splitCommands } from '../util/shell.ts';
+import { ghTargetsRepo, repoNames, splitCommands } from '../util/shell.ts';
 import {
   commitMessage,
   confirmsHead,
   followsSuccess,
   gitOperations,
+  headLogCount,
+  heredocSubject,
   oneGitDirectory,
 } from './gitEvidence.ts';
 import type { TraceRecord, TraceSession } from '../trace/types.ts';
@@ -117,6 +119,9 @@ function belongs(r: TraceRecord, truth: PrTruth, w: TimeWindow): boolean {
   if (!inWindow(r.ts, w)) return false;
   if (r.kind === 'edit') return underAnyRoot(r.file, truth.roots);
   if (r.kind === 'command') {
+    // A CI look at this repository (`gh run watch … --repo owner/<name>`) from
+    // another folder: the digest keeps only its CI part.
+    if (ghTargetsRepo(r.cmd, repoNames(truth.remote?.name, truth.roots))) return true;
     const operations = gitOperations(r.cmd, r.cwd);
     if (operations.length)
       return operations.some((op) => underAnyRoot(op.cwd, truth.roots));
@@ -323,11 +328,25 @@ export function commitMoments(
         heads.length === 1 &&
         (c.sha.toLowerCase().startsWith(heads[0]!) ||
           heads[0]!.startsWith(c.sha.toLowerCase()));
+      // `git commit … && git log --oneline -N`: the log's first line is the
+      // commit just made, when the output holds no more SHA lines than N.
+      const shown =
+        producer && oneDirectory ? headLogCount(r.cmd, operations, producer) : undefined;
+      const byLog =
+        !!shown &&
+        heads.length > 0 &&
+        heads.length <= shown &&
+        (c.sha.toLowerCase().startsWith(heads[0]!) ||
+          heads[0]!.startsWith(c.sha.toLowerCase()));
       const bySubject =
         !r.isError &&
         !!subject &&
-        eligible.some((op) => normalizeText(commitMessage(op) ?? '') === subject);
-      if (byOutput || byPush || byHead || bySubject) {
+        eligible.some(
+          (op) =>
+            normalizeText(commitMessage(op) ?? heredocSubject(r.cmd, op) ?? '') ===
+            subject,
+        );
+      if (byOutput || byPush || byHead || byLog || bySubject) {
         found.set(c.sha, r.ts);
         break;
       }

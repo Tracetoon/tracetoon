@@ -14,10 +14,16 @@ import {
   functionProfiles,
   noPassAfterCommitRow,
   remotePathRows,
+  environmentRows,
   type LiveEvidence,
 } from '../src/graph/briefExtras.ts';
 import { invocationsOf } from '../src/digest/build.ts';
-import { splitScriptUnits, unitRole, type PatchHunk } from '../src/graph/build.ts';
+import {
+  patchHunks,
+  splitScriptUnits,
+  unitRole,
+  type PatchHunk,
+} from '../src/graph/build.ts';
 import { withGraph } from '../src/graph/engine.ts';
 import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import { briefParts } from '../src/graph/queries.ts';
@@ -61,19 +67,38 @@ const fileNode = (id: string, role = 'behavior') =>
 
 describe('open points promoted into limits', () => {
   test('no pass after the last commit: a limit when every pass came before it', () => {
-    const g = graphOf([
-      N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) }),
-    ]);
+    // An edit of a PR file after the last pass and before the commit.
+    const edited = (at: number) => [
+      N('Session', 'h:a', { band: 'included' }),
+      fileNode('src/a.ts'),
+      N('Edit', 'E1', { t: t(at), file: 'src/a.ts', inPr: true }),
+    ];
+    const editRels = [
+      R('EDITS', ['Edit', 'E1'], ['File', 'src/a.ts']),
+      R('IN_SESSION', ['Edit', 'E1'], ['Session', 'h:a']),
+    ];
+    const commit = N('Commit', 'abc123def4567', { subject: 's', body: null, t: t(5) });
+    const g = graphOf([commit, ...edited(4)], editRels);
     const runs = [
       { id: 'R1', kind: 'test', outcome: 'passed', t: t(3) },
-      { id: 'R2', kind: 'lint', outcome: 'passed', t: t(4) },
+      { id: 'R2', kind: 'lint', outcome: 'passed', t: t(3) },
     ];
     expect(withGraph(g, (e) => noPassAfterCommitRow(e, runs))).toEqual({
       change: null,
       kind: 'open',
       limit:
-        'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it.',
+        'No passing check run was recorded after the last commit (abc123def456); the last pass (R1, test) came before it, and src/a.ts changed between them.',
     });
+    // A pass with no captured edit between it and the commit: no open point
+    // (a "historical session run" row beside "nothing changed" invited hedging).
+    expect(
+      withGraph(graphOf([commit]), (e) => noPassAfterCommitRow(e, runs)),
+    ).toBeUndefined();
+    expect(
+      withGraph(graphOf([commit, ...edited(2)], editRels), (e) =>
+        noPassAfterCommitRow(e, runs),
+      ),
+    ).toBeUndefined();
     // A pass after the commit closes it; no runs or no commit say nothing.
     expect(
       withGraph(g, (e) =>
@@ -167,13 +192,13 @@ describe('open points promoted into limits', () => {
     ).toEqual([]);
   });
 
-  test('at most six limits: remote rows, then the no-request row give way first', () => {
+  test('over the cap, remote rows, then the no-request row give way first', () => {
     const row = (limit: string) => ({ change: null, kind: 'open', limit });
     const existing = [1, 2, 3, 4].map((i) => row(`existing ${i}`));
     existing.splice(2, 0, row('No user request was recorded for CH2.'));
     const extra = [row('no pass'), row('gh failed')];
     const remote = [row('remote')];
-    const out = capLimits(existing, extra, remote);
+    const out = capLimits(existing, extra, remote, 6);
     expect(out.map((r) => r.limit)).toEqual([
       'existing 1',
       'existing 2',
@@ -183,6 +208,214 @@ describe('open points promoted into limits', () => {
       'gh failed',
     ]);
     expect(capLimits([row('a')], [row('b')], remote)).toHaveLength(3);
+  });
+
+  test('environment rows: other-OS branches, faked steps, terminal paths', () => {
+    const roles = new Map([
+      ['src/launch.ts', 'behavior'],
+      ['src/ui.ts', 'behavior'],
+      ['tests/launch.test.ts', 'tests'],
+    ]);
+    const hunks = [
+      {
+        change: 'CH1',
+        file: 'src/launch.ts',
+        code: ["+ if (process.platform === 'win32') return runCmd(exe);"],
+        conds: [],
+      },
+      {
+        change: 'CH2',
+        file: 'src/ui.ts',
+        code: ['+ if (!process.stdout.isTTY) return plain(text);'],
+        conds: [],
+      },
+      {
+        change: 'CH1',
+        file: 'tests/launch.test.ts',
+        code: ['+ const spawn = mock(() => ({ status: 0 })); // fake spawnSync'],
+        conds: [],
+      },
+    ];
+    const rows = environmentRows(hunks, roles, { platform: 'linux', arch: 'x64' });
+    expect(rows.map((r) => r.limit)).toEqual([
+      "src/launch.ts changes Windows-specific code (`if (process.platform === 'win32') return runCmd(exe);`); the recorded runs were on linux/x64, so none shows the Windows path running.",
+      'The changed tests (tests/launch.test.ts) replace spawned processes with fakes or stubs: they check the logic around those steps, not the real step.',
+      'src/ui.ts changes interactive (terminal/TTY) handling; recorded checks run without a terminal, so none shows that path with a user at the keyboard.',
+    ]);
+    // On the platform the code branches for, no OS row.
+    expect(
+      environmentRows(hunks, roles, { platform: 'win32', arch: 'x64' }).some((r) =>
+        /Windows/.test(String(r.limit)),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('platform, script and fake rows', () => {
+  const host = { platform: 'linux', arch: 'x64' };
+  const roles = new Map([
+    ['src/a.ts', 'behavior'],
+    ['src/b.ts', 'behavior'],
+    ['src/digest.ts', 'behavior'],
+    ['packaging/signing.xml', 'config'],
+    ['scripts/build-win.ps1', 'behavior'],
+    ['scripts/build.sh', 'behavior'],
+    ['.github/workflows/release.yml', 'config'],
+    ['tests/a.test.ts', 'tests'],
+    ['src/run/fake-gh.ts', 'behavior'],
+  ]);
+  const h = (change: string, file: string, code: string[]) => ({
+    change,
+    file,
+    code,
+    conds: [],
+  });
+
+  test('only lines that test the platform count; one row per change unit, merged', () => {
+    const rows = environmentRows(
+      [
+        // A platform name mapped to an asset suffix is not a branch.
+        h('CH1', 'src/a.ts', [
+          "+ const os = win ? 'windows' : platform === 'darwin' ? 'darwin' : 'linux';",
+        ]),
+        h('CH1', 'src/a.ts', ['+ return platform === "win32" ? "windows" : platform;']),
+        // A `.cmd` property and a config file naming a platform are not either.
+        h('CH2', 'src/digest.ts', [
+          '+ const key = commandKey(r.cmd);',
+          '+ if (run.cmd) out.push(x);',
+        ]),
+        h('CH3', 'packaging/signing.xml', ['+ <file path="app-windows-arm64.exe" />']),
+        // Real branches, two platforms in one unit: one row.
+        h('CH4', 'src/b.ts', [
+          "+ if (process.platform === 'win32') return spawnWin(cmd);",
+          "+ if (process.arch === 'arm64') flags.push('--arm');",
+        ]),
+      ],
+      roles,
+      host,
+    );
+    expect(rows.map((r) => [r.change, r.limit])).toEqual([
+      [
+        'CH4',
+        "src/b.ts changes Windows and arm64-specific code (`if (process.platform === 'win32') return spawnWin(cmd);`); the recorded runs were on linux/x64, so none shows the Windows and arm64 paths running.",
+      ],
+    ]);
+  });
+
+  test('a Windows script and a workflow runner pick are platform-specific', () => {
+    const rows = environmentRows(
+      [
+        h('CH1', 'scripts/build-win.ps1', ['+ if ($LASTEXITCODE -ne 0) { exit 1 }']),
+        h('CH2', '.github/workflows/release.yml', [
+          '+ runs-on: windows-latest',
+          '+ name: Sign',
+        ]),
+      ],
+      roles,
+      host,
+    );
+    expect(rows.map((r) => r.change)).toEqual(['CH1', 'CH2']);
+    expect(String(rows[0]!.limit)).toStartWith(
+      'scripts/build-win.ps1 changes Windows-specific code;',
+    );
+    expect(String(rows[1]!.limit)).toContain('(`runs-on: windows-latest`)');
+  });
+
+  test('changed scripts and workflows no session command ran', () => {
+    const hunks = [
+      h('CH1', 'scripts/build-win.ps1', ['+ Write-Host done']),
+      h('CH1', 'scripts/build.sh', ['+ echo done']),
+      h('CH2', '.github/workflows/release.yml', ['+ name: Publish']),
+    ];
+    const limits = (ran?: string[]) =>
+      environmentRows(hunks, roles, host, ran)
+        .map((r) => String(r.limit))
+        .filter((l) => !/-specific/.test(l));
+    expect(limits(['bash scripts/build.sh', 'bun test'])).toEqual([
+      'scripts/build-win.ps1 is a changed script no recorded session command ran; only the diff shows it.',
+      '.github/workflows/release.yml changes CI workflow; workflows run in CI, and no run of it is in the session logs.',
+    ]);
+    // No session matched: nothing to compare with, no script rows.
+    expect(limits(undefined)).toEqual([]);
+    // CI results in the logs (any commit of the PR) are runs of the workflows.
+    expect(
+      environmentRows(hunks, roles, host, ['bash scripts/build.sh'], true).some((r) =>
+        /CI workflow/.test(String(r.limit)),
+      ),
+    ).toBe(false);
+  });
+
+  test('only runnable entry points count as scripts; modules tests drive do not', () => {
+    const rows = environmentRows(
+      [
+        // A library module under scripts/: imported, never run on its own.
+        h('CH1', 'scripts/lib/e2e-oracle.ts', ['+ export function judge() {}']),
+        // A test drives this one by name.
+        { ...h('CH1', 'scripts/lib/e2e-cases.sh', ['+ echo case']) },
+        h('CH2', 'tests/e2e-cases.test.ts', [
+          "+ const cases = load('scripts/lib/e2e-cases.sh');",
+        ]),
+        // Entry points: a shebang, a package.json script target.
+        {
+          ...h('CH3', 'bin/release', ['+ #!/usr/bin/env bash', '+ set -e']),
+          shebang: true,
+        },
+        h('CH3', 'tools/gen.ts', ['+ main();']),
+        h('CH4', 'package.json', [
+          '+ "gen": "bun tools/gen.ts",',
+          '+ "files": ["LICENSE", "tools/pack.ts"],',
+        ]),
+        // Listed in package.json, never run by a script there.
+        h('CH4', 'LICENSE', ['+ Copyright']),
+        h('CH4', 'tools/pack.ts', ['+ pack();']),
+      ],
+      new Map([
+        ...roles,
+        ['scripts/lib/e2e-oracle.ts', 'scripts'],
+        ['scripts/lib/e2e-cases.sh', 'scripts'],
+        ['tests/e2e-cases.test.ts', 'tests'],
+        ['bin/release', 'scripts'],
+        ['tools/gen.ts', 'scripts'],
+        ['package.json', 'config'],
+        ['LICENSE', 'docs'],
+        ['tools/pack.ts', 'scripts'],
+      ]),
+      host,
+      ['bun test'],
+    );
+    expect(
+      rows.map((r) => String(r.limit)).filter((l) => /changed script/.test(l)),
+    ).toEqual([
+      'bin/release, tools/gen.ts are changed scripts no recorded session command ran; only the diff shows them.',
+    ]);
+  });
+
+  test('fakes are named, with the change unit they stand in for', () => {
+    const rows = environmentRows(
+      [
+        h('CH1', 'src/run/fake-github.ts', ['+ export function fakeGithub() {}']),
+        {
+          change: 'CH2',
+          file: 'src/github.ts',
+          code: ['+ export function github() {}'],
+          conds: [],
+          symbols: ['github'],
+        },
+        h('CH3', 'tests/a.test.ts', ['+ const runner = fakeRunner({ exit: 0 });']),
+      ],
+      new Map([
+        ...roles,
+        ['src/github.ts', 'behavior'],
+        ['src/run/fake-github.ts', 'behavior'],
+      ]),
+      host,
+    );
+    expect(rows.map((r) => [r.change, r.limit])).toEqual([
+      [
+        'CH2',
+        'The changed tests (tests/a.test.ts) use a fake github and a fake runner (`fake-github.ts`, `fakeRunner`); CH2 is reached that way: they check the code around them, not the real github and runner.',
+      ],
+    ]);
   });
 });
 
@@ -262,7 +495,7 @@ describe('the entry point', () => {
     });
   });
 
-  test('with no function calling across files, the most-referenced source symbol', () => {
+  test('with no function calling across files, the most-referenced source symbol that owns added lines', () => {
     const lone = hunks.filter((h) => h.id !== 'H2');
     const row = withGraph(
       graphOf(
@@ -271,9 +504,201 @@ describe('the entry point', () => {
       ),
       (g) => entryRow(g),
     );
-    expect(row?.fact).toBe(
-      'Start at `providerInfo` in src/comic/providers.ts: the changed symbol most named elsewhere (2 other file(s)).',
+    expect(row?.fact).toBe('Start at `providerInfo` in src/comic/providers.ts.');
+  });
+
+  test('a setter or callback is never the entry', () => {
+    // The calling hunk's function is a call-through the patch adds whole.
+    const thin = hunks.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, thin: ['chooseProvider'] } } : h,
     );
+    const row = withGraph(graphOf([...files, ...thin, ...changes, headRef], rels), (g) =>
+      entryRow(g),
+    );
+    expect(String(row?.fact ?? '')).not.toContain('chooseProvider');
+  });
+
+  test('a most-referenced helper that owns little of the added code is no entry', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    // The helper's hunk is small beside another source hunk it doesn't own.
+    const big = hunkNode('H4', 'src/comic/render.ts', {
+      scope: 'renderStrip',
+      touched: ['renderStrip'],
+      added: 90,
+    });
+    const row = withGraph(
+      graphOf(
+        [...files, fileNode('src/comic/render.ts'), ...lone, big, ...changes, headRef],
+        [
+          ...rels.filter((r) => !JSON.stringify(r).includes('"H2"')),
+          R('OF', ['Hunk', 'H4'], ['File', 'src/comic/render.ts']),
+          R('HAS', ['Change', 'CH1'], ['Hunk', 'H4']),
+        ],
+      ),
+      (g) => entryRow(g),
+    );
+    expect(row).toBeUndefined();
+  });
+
+  test('only a function that owns changed code is named: not the one git names after the @@', () => {
+    // `chooseProvider` is only the @@ context; the changed lines sit in `castRefs`.
+    const owned = hunks.map((h) =>
+      h.id === 'H2'
+        ? { ...h, props: { ...h.props, owns: ['castRefs'] } }
+        : h.id === 'H1'
+          ? { ...h, props: { ...h.props, owns: ['providerInfo', 'generateImages'] } }
+          : h,
+    );
+    const row = withGraph(graphOf([...files, ...owned, ...changes, headRef], rels), (g) =>
+      entryRow(g),
+    );
+    expect(row?.fact).toBe('Start at `castRefs` in src/commands/comic.ts.');
+    // The hunk's lines only moved: it owns nothing, and nothing else qualifies.
+    const moved = owned.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, owns: [] } } : h,
+    );
+    expect(
+      withGraph(graphOf([...files, ...moved, ...changes, headRef], rels), (g) =>
+        entryRow(g),
+      ),
+    ).toBeUndefined();
+  });
+
+  test('a most-referenced symbol is no entry when it owns no changed code or only reads a value', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    const lonely = rels.filter((r) => !JSON.stringify(r).includes('"H2"'));
+    const withOwns = (owns: string[], readers: string[] = []) =>
+      lone.map((h) =>
+        h.id === 'H1' ? { ...h, props: { ...h.props, owns, readers } } : h,
+      );
+    const entry = (hs: any[]) =>
+      withGraph(graphOf([...files, ...hs, ...changes, headRef], lonely), (g) =>
+        entryRow(g),
+      );
+    expect(entry(withOwns(['providerInfo']))?.fact).toBe(
+      'Start at `providerInfo` in src/comic/providers.ts.',
+    );
+    expect(entry(withOwns(['generateImages']))).toBeUndefined();
+    expect(entry(withOwns(['providerInfo'], ['providerInfo']))).toBeUndefined();
+  });
+
+  test('a type is never the start: the function defined in its file, else the file alone', () => {
+    const lone = hunks.filter((h) => h.id !== 'H2');
+    const lonely = rels.filter((r) => !JSON.stringify(r).includes('"H2"'));
+    const typeRef = N('HeadRef', 'HR1', {
+      ...headRef.props,
+      term: 'ProviderId',
+    });
+    const entry = (hs: any[]) =>
+      withGraph(graphOf([...files, ...hs, ...changes, typeRef], lonely), (g) =>
+        entryRow(g),
+      );
+    // `ProviderId` is a type: the function owning most added lines there instead.
+    const typed = lone.map((h) =>
+      h.id === 'H1' ? { ...h, props: { ...h.props, types: ['ProviderId'] } } : h,
+    );
+    expect(entry(typed)?.fact).toMatch(
+      /^Start at `(providerInfo|providerAvailable|generateImages)` in src\/comic\/providers\.ts/,
+    );
+    expect(entry(typed)?.fact).not.toContain('ProviderId');
+    // Only the type is defined there: the file alone.
+    const onlyType = lone.map((h) =>
+      h.id === 'H1'
+        ? {
+            ...h,
+            props: {
+              ...h.props,
+              symbols: ['ProviderId'],
+              touched: ['ProviderId'],
+              types: ['ProviderId'],
+            },
+          }
+        : h,
+    );
+    expect(entry(onlyType)?.fact).toBe('Start in src/comic/providers.ts.');
+  });
+
+  test('a name the file only imports is not defined there', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,3 +1,8 @@',
+      ' import { x } from "./x.ts";',
+      '+import {',
+      '+  usageOf,',
+      '+  type Usage,',
+      '+} from "./usage.ts";',
+      '+export interface Options { cwd?: string }',
+      ' const y = 1;',
+      ' ',
+    ].join('\n');
+    const [h] = patchHunks(patch);
+    expect(h!.symbols).toEqual(['Options']);
+    expect(h!.types).toEqual(['Options']);
+  });
+
+  test("a hunk's behavior belongs to the function with most of its changed lines", () => {
+    const patch = [
+      'diff --git a/src/auth.ts b/src/auth.ts',
+      '--- a/src/auth.ts',
+      '+++ b/src/auth.ts',
+      '@@ -1,4 +1,16 @@',
+      '+export function setSharing(on: boolean) {',
+      '+  sharing = on;',
+      '+}',
+      ' export function withShared(run: () => void) {',
+      '-  run();',
+      '+  const lease = takeLease();',
+      '+  if (!lease) throw new Error("busy");',
+      '+  try {',
+      '+    linkLogin(lease);',
+      '+    run();',
+      '+  } finally {',
+      '+    unlinkLogin(lease);',
+      '+    lease.release();',
+      '+  }',
+      ' }',
+    ].join('\n');
+    const [h] = patchHunks(patch);
+    expect(h!.fnLines).toEqual(['setSharing: 2', 'withShared: 7']);
+    const node = hunkNode('H1', 'src/auth.ts', {
+      symbols: h!.symbols,
+      touched: h!.touched,
+      owns: h!.owns,
+      fnLines: h!.fnLines,
+      types: h!.types,
+    });
+    const ctx = {
+      sentences: [
+        { ref: 'abc#1', text: 'Concurrent runs share one login through a lease.' },
+      ],
+      links: { 'abc#1': ['H1'] },
+    };
+    const profiles = withGraph(
+      graphOf(
+        [fileNode('src/auth.ts'), node],
+        [R('OF', ['Hunk', 'H1'], ['File', 'src/auth.ts'])],
+      ),
+      (g) => functionProfiles(g, ctx),
+    );
+    expect(profiles.get('withShared')!.sentences.map((x) => x.ref)).toEqual(['abc#1']);
+    expect(profiles.get('setSharing')!.sentences).toEqual([]);
+  });
+
+  test('moved lines are said as moved in `was`, not as a changed value', () => {
+    const moved = hunks.map((h) =>
+      h.id === 'H2' ? { ...h, props: { ...h.props, moved: 3 } } : h,
+    );
+    const p = withGraph(graphOf([...files, ...moved, ...changes], rels), (g) =>
+      briefParts(g),
+    );
+    const was = p.sections
+      .find((x) => x.title === 'changes')!
+      .rows.flatMap((r) => (r.was as string[]) ?? []);
+    expect(was).toEqual([
+      'src/commands/comic.ts: 3 lines moved or reflowed, text unchanged',
+    ]);
   });
 
   test('the brief carries it as a process row and the head scan stops calling itself the place to start', () => {
@@ -416,7 +841,17 @@ test('drafting guidance: word target, one motive sentence, the entry row', () =>
     resolve(import.meta.dir, '../plugin/skills/tracetoon/references/drafting.md'),
     'utf8',
   );
-  expect(drafting).toContain('target 250–400 words');
+  expect(drafting).toContain('250–400 words for a typical PR');
+  expect(drafting).toContain('up to about 600');
+  // Limits keep their scope; prompt and skill text is behavior; no meta text.
+  expect(drafting).toMatch(/never widen it: not to "no\s+tests were run"/);
+  // Environment scope is allowed only with a citation; session runs are history.
+  expect(drafting).toMatch(/environment-scope statement[\s\S]{0,200}with that tag/);
+  expect(drafting).toMatch(/could not\s+run in\s+this\s+environment/);
+  expect(drafting).toMatch(
+    /agent-instruction text that changes what users or agents are told/,
+  );
+  expect(drafting).toMatch(/No meta text in the body/);
   expect(drafting).toMatch(/one motive sentence at most: never a list/);
   expect(drafting).toMatch(/`entry` process row names/);
 });
@@ -594,10 +1029,27 @@ describe('the entry row says what each function owns', () => {
   test("the entry's own sentence, and its caller with the branch tied to it", () => {
     const row = withGraph(graph(), (g) => entryRow(g, ctx));
     expect(row?.fact).toBe(
-      'Start at `leadingCd` in src/trace/pathMatch.ts: the changed symbol most named elsewhere (2 other file(s)); tied to it: Commands that start with cd are judged by the directory they… (abc1234#1). Not in `leadingCd`: `belongs` (src/correlate/correlate.ts): `if (dir) return underAnyRoot(dir, roots)…`.',
+      'Start at `leadingCd` in src/trace/pathMatch.ts; tied to it: Commands that start with cd are judged by the directory they… (abc1234#1). Not in `leadingCd`: `belongs` (src/correlate/correlate.ts): `if (dir) return underAnyRoot(dir, roots)…`.',
     );
     expect(row?.cites).toContain('abc1234#1');
     expect(String(row?.fact).length).toBeLessThanOrEqual(320);
+  });
+
+  test('a related function that owns no changed code is not named', () => {
+    const owned = graphOf(
+      graph().nodes.map((n) =>
+        n.id === 'H1'
+          ? { ...n, props: { ...n.props, owns: ['leadingCd'] } }
+          : n.id === 'H2'
+            ? { ...n, props: { ...n.props, owns: [] } }
+            : n,
+      ),
+      graph().rels,
+    );
+    const row = withGraph(owned, (g) => entryRow(g, ctx));
+    expect(row?.fact).toBe(
+      'Start at `leadingCd` in src/trace/pathMatch.ts; tied to it: Commands that start with cd are judged by the directory they… (abc1234#1).',
+    );
   });
 
   test('profiles: a sentence goes to the one function its hunk defines, branches to their hunk', () => {
@@ -674,13 +1126,14 @@ describe('stale "no passing run after the last commit"', () => {
         },
       ],
     } as any;
-    expect(applyBrief(body, receipt).flags.map((f) => f.severity)).toEqual(['fix']);
+    // (Unsupported-absence flags are their own check: left out here.)
+    const stale = (b: any) =>
+      applyBrief(body, b).flags.filter((f) => !/unsupported absence/.test(f.problem));
+    expect(stale(receipt).map((f) => f.severity)).toEqual(['fix']);
     const failed = structuredClone(receipt);
     failed.sections[0].rows[0].outcome = 'failed';
-    expect(applyBrief(body, failed).flags).toEqual([]);
-    expect(
-      applyBrief(body, { sections: [], unchecked: [], freshPass: true }).flags,
-    ).toHaveLength(1);
+    expect(stale(failed)).toEqual([]);
+    expect(stale({ sections: [], unchecked: [], freshPass: true })).toHaveLength(1);
   });
 });
 
@@ -733,5 +1186,197 @@ describe('tested behaviors attributed to the file whose titles show them', () =>
       b,
     );
     expect(r.flags.map((f) => f.severity)).toEqual(['check']);
+  });
+});
+
+describe('remote commands and change details', () => {
+  test('pushes, PRs made and CI looks are read from a command', async () => {
+    const { remoteCommands } = await import('../src/digest/build.ts');
+    expect(
+      remoteCommands('git add -A && git commit -m x && git push -u origin feat'),
+    ).toEqual([{ cmd: 'git push', kind: 'publish' }]);
+    expect(remoteCommands('gh pr create --fill; gh run view 123 --log-failed')).toEqual([
+      { cmd: 'gh pr create', kind: 'publish' },
+      { cmd: 'gh run view', kind: 'ci' },
+    ]);
+    expect(remoteCommands('git status && gh pr view 3')).toEqual([]);
+    // An API call's endpoint (owner, repo, ids) is never kept.
+    expect(
+      remoteCommands('gh api repos/o/r/actions/jobs/1/logs', '##[error]boom'),
+    ).toEqual([{ cmd: 'gh api', kind: 'ci' }]);
+    // A PR view whose output shows check results is a look at CI.
+    expect(
+      remoteCommands(
+        'gh pr view 3 --json statusCheckRollup',
+        '[{"conclusion":"SUCCESS"}]',
+      ),
+    ).toEqual([{ cmd: 'gh pr view', kind: 'ci' }]);
+  });
+
+  test('CI results are read from what a CI look printed', async () => {
+    const { ciResults } = await import('../src/digest/build.ts');
+    const sha = 'a'.repeat(8) + 'b'.repeat(32);
+    expect(
+      ciResults('build\tpass\t1m2s\thttps://x/1\nlint\tfail\t3s\thttps://x/2'),
+    ).toEqual({ results: true });
+    expect(
+      ciResults(
+        'Some checks are still pending\n0 cancelled, 1 failing, 5 successful, 0 skipped, and 2 pending checks',
+      ),
+    ).toEqual({ results: true });
+    expect(
+      ciResults(`[{"conclusion":"success","headSha":"${sha}","name":"CI"}]`),
+    ).toEqual({
+      results: true,
+      heads: [sha.slice(0, 12)],
+    });
+    // Only pending, or an error: no results.
+    expect(ciResults('0 failing, 0 successful, 3 pending checks')).toEqual({});
+    expect(ciResults('unknown flag: --json')).toEqual({});
+    expect(ciResults(undefined)).toEqual({});
+  });
+
+  test('details: flags, thresholds, defaults, workflow steps, config keys', async () => {
+    const { detailsOf, clipClause } = await import('../src/graph/queries.ts');
+    const roles: Record<string, string> = {
+      'src/cli.ts': 'behavior',
+      '.github/workflows/ci.yml': 'config',
+      'config/app.json': 'config',
+      'docs/a.md': 'docs',
+    };
+    const d = detailsOf(
+      [
+        {
+          file: 'src/cli.ts',
+          code: [
+            "+ .option('--no-timeout', 'wait for the reader')",
+            '+ const MIN_DURATION_MS = 750;',
+            '+ if (elapsed < 1500) return;',
+            "+ const mode = opts.mode ?? 'fast';",
+            '+ for (let i = 0; i < n; i++) {}',
+          ],
+        },
+        {
+          file: '.github/workflows/ci.yml',
+          code: ['+ publish:', '+ - name: Upload SBOM'],
+        },
+        { file: 'docs/a.md', code: ['+ Use --verbose for more.'] },
+      ],
+      (f) => roles[f] ?? 'behavior',
+    );
+    expect(d).toEqual([
+      '--no-timeout',
+      'MIN_DURATION_MS = 750',
+      'job publish',
+      'step "Upload SBOM"',
+    ]);
+    const long = `Readers answer at their own pace, so the final interactive command runs with no watchdog timeout, while compile and build commands keep the existing execution timeout policy for every run of a sample input and every other path that does not wait on a reader at all`;
+    const c = clipClause(long, 200);
+    expect(c.length).toBeLessThanOrEqual(200);
+    expect(c.endsWith('…')).toBe(true);
+    expect(c).toContain('no watchdog timeout');
+  });
+});
+
+describe('details: only clean facts', () => {
+  test('fallback chains, ternaries, mismatched flag/value pairs, locals and test values are left out', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'src/run.ts',
+          code: [
+            "+ const out = flag('--out') ?? 'medium';",
+            "+ const effort = args.effort ?? opts.mode ?? 'acceptEdits';",
+            "+ const tools = argv.includes('--tools') || argv.includes('--allowedTools') ? list : 45;",
+            '+ const desired = 2;',
+            '+ let height = 4;',
+            '+ const exitCode = 127;',
+            "+ const label = title ?? 'Running verification';",
+            '+ spawn(cmd, { timeoutMs: opts.timeoutMs ?? 45 * 60_000, retryLimit: 2 + extra });',
+            '+ const diff = 120;',
+            '+ const limit = 40;',
+            "+ const REPO = 'owner/name';",
+            "+ spawn(cmd, { env: { FEATURE_FLAG: '0' } });",
+            '+ for (let i = 0, step = 3; i < n; i++) {}',
+            "+ const EMBEDDED_PACK_VERSION = '2.0.1';",
+          ],
+        },
+        {
+          file: 'src/lib/thing.test.ts',
+          code: ['+ const MAX_ITEMS = 9;', "+ .option('--fake <x>', 'desc', 'y')"],
+        },
+        {
+          file: 'tests/fixtures/run.ts',
+          code: ['+ const RETRY_LIMIT = 7;'],
+        },
+      ],
+      () => 'behavior',
+    );
+    // Flags stay, never paired with a fallback value from another expression.
+    expect(d).toEqual(['--out', '--tools', '--allowedTools']);
+  });
+
+  test('flag defaults, named constants and settings with one literal are kept', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'src/cli.ts',
+          code: [
+            "+ .option('--effort <level>', 'reasoning effort', 'medium')",
+            "+ { flag: '--jobs', default: 4 },",
+            '+ export const HISTORY_GENERATION = 2;',
+            '+ const retryTimeoutMs = 30_000;',
+            '+   maxRetries: 3,',
+          ],
+        },
+      ],
+      () => 'behavior',
+    );
+    expect(d).toEqual([
+      "--effort (default 'medium')",
+      '--jobs (default 4)',
+      'HISTORY_GENERATION = 2',
+      'retryTimeoutMs = 30_000',
+      'maxRetries = 3',
+    ]);
+    // A setting passed by name in a call; a flag a condition tests.
+    expect(
+      detailsOf(
+        [
+          {
+            file: 'src/run.ts',
+            code: [
+              '+ run(cmd, { cwd, timeoutMs: 15_000, height: 4 });',
+              "+ if (argv.includes('--verbose')) log();",
+            ],
+          },
+        ],
+        () => 'behavior',
+      ),
+    ).toEqual(['timeoutMs = 15_000', '--verbose']);
+  });
+});
+
+describe('details: config noise', () => {
+  test('versions, build ids, prose values and one-character fallbacks are left out', async () => {
+    const { detailsOf } = await import('../src/graph/queries.ts');
+    const d = detailsOf(
+      [
+        {
+          file: 'config/app.json',
+          code: [
+            '+ "version": "1.2.3",',
+            '+ "buildId": "3a604c88a7c5b63cd9489d6bf6646ac7",',
+            '+ "description": "Render a screenshot of the first frame",',
+            '+ "interval": "monthly",',
+          ],
+        },
+        { file: 'src/a.ts', code: ["+ const dir = opts.dir ?? '.';"] },
+      ],
+      (f) => (f.endsWith('.json') ? 'config' : 'behavior'),
+    );
+    expect(d).toEqual(['interval: "monthly"']);
   });
 });

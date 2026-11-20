@@ -6,9 +6,14 @@ import { git } from '../src/util/exec.ts';
 import { ClaudeLog, makeRepo, tempDir } from './helpers.ts';
 import { patchHunks } from '../src/graph/build.ts';
 import {
+  addCodeCells,
   evidenceLines,
+  markCommitValues,
   numberConflict,
+  plusTokens,
   orderConflict,
+  conflictRows,
+  orderAgrees,
   stateConflict,
 } from '../src/graph/codeEvidence.ts';
 import { withGraph } from '../src/graph/engine.ts';
@@ -274,6 +279,42 @@ describe('commit vs code conflicts', () => {
     expect(orderConflict(s, '# rc.11 lands before rc.3')).toBe(false);
     expect(orderConflict(s, '# pick the newest by date')).toBe(false);
   });
+  test("a comment giving another party's order is the problem, not a conflict", () => {
+    const rows = conflictRows(
+      {
+        run: () => ({
+          rows: [
+            {
+              id: 'H1',
+              diff: 'diff:1-9',
+              file: 'src/release.ts',
+              keyLines: [
+                '+ // GitHub lists by tag name (rc.10 before rc.2), so order by date',
+              ],
+              literals: [],
+            },
+          ],
+        }),
+      } as any,
+      [
+        {
+          title: 'commitMessages',
+          columns: [],
+          rows: [
+            { ref: 'abc1234#1', text: 'A comparator that orders rc.2 before rc.10.' },
+          ],
+        },
+      ],
+      { 'abc1234#1': ['H1'] },
+    );
+    expect(rows).toEqual([]);
+  });
+  test('a test title or added line stating the same order supports the message', () => {
+    const s = 'Pick rc.10 after rc.2 when choosing the newest release.';
+    expect(orderAgrees(s, 'picks rc.2 before rc.10')).toBe(true);
+    expect(orderAgrees(s, 'rc.10 sorts after rc.2')).toBe(true);
+    expect(orderAgrees(s, 'rc.10 lands before rc.2')).toBe(false);
+  });
   test('a state the code gives the opposite way', () => {
     expect(
       stateConflict(
@@ -488,5 +529,56 @@ describe('prepare --graph-search', () => {
     const again = cli(repo.root, '--json', 'prepare', '--offline', '--run', off.json.run);
     expect(again.code).toBe(0);
     expect(tiedIn(again.json.runDir)).toEqual([]);
+  });
+});
+
+describe('commit rows and the added code', () => {
+  const graph = (props: Record<string, unknown>): EvidenceGraph => ({
+    schema: GRAPH_SCHEMA,
+    nodes: [
+      {
+        label: 'Hunk',
+        id: 'H1',
+        props: { file: 'src/a.ts', diff: 'diff:1-9', ...props },
+      },
+    ] as GraphNode[],
+    rels: [],
+    stats: { nodes: 0, rels: 0, hunks: 0, linkedHunks: 0, edits: 0, deadEndEdits: 0 },
+  });
+  const commits = (texts: string[]): Section[] => [
+    {
+      title: 'commitMessages',
+      columns: ['ref', 'text', 'implementedBy'],
+      rows: texts.map((text, i) => ({
+        ref: `abc1234#${i + 1}`,
+        text,
+        implementedBy: [],
+      })),
+    },
+  ];
+  test('a number or name only the message states is marked', () => {
+    const g = graph({
+      plusTokens: plusTokens(['const retryLimit = 30;', '  timeoutMs: 5000,']),
+    });
+    const secs = commits([
+      'Retries stop after 30 attempts with `retryLimit`.',
+      'The timeout is now 9000 ms via `backoffCap`.',
+    ]);
+    withGraph(g, (e) => markCommitValues(e, secs));
+    expect(secs[0]!.columns).toContain('note');
+    expect(secs[0]!.rows[0]!.note).toBeNull();
+    expect(String(secs[0]!.rows[1]!.note)).toBe(
+      'commit-message value, not in the diff: `9000`, `backoffCap`',
+    );
+  });
+  test('every linked row keeps its first added-code excerpt, even past the budget', () => {
+    const g = graph({
+      keyLines: ['+ const retryLimit = 30;', '+ // retries stop after the limit'],
+    });
+    const secs = commits(['Retries stop at the limit.', 'The retry limit is 30.']);
+    withGraph(g, (e) =>
+      addCodeCells(e, secs, { 'abc1234#1': ['H1'], 'abc1234#2': ['H1'] }, 1),
+    );
+    expect(secs[0]!.rows.every((r) => String(r.code).length > 0)).toBe(true);
   });
 });

@@ -4,6 +4,8 @@
  * something changed since or the leak scan found something. The only edits
  * after rendering fill in where the comic image is hosted.
  */
+import { toolchainMismatch } from '../graph/toolchain.ts';
+import { digestCmd } from './digest.ts';
 import {
   loadReviewPlan,
   planEnforced,
@@ -37,7 +39,7 @@ import {
   loadGraph,
   loadGraphReview,
 } from '../graph/evidence.ts';
-import { applyBrief, type BriefApplied } from '../graph/briefRender.ts';
+import { applyBrief, titleFlags, type BriefApplied } from '../graph/briefRender.ts';
 import {
   existsSync,
   readdirSync,
@@ -104,7 +106,13 @@ import { comicSummary } from '../comic/composition.ts';
 import { comicObservationInput } from '../contribution/comicReview.ts';
 import { readTask, saveTask, workFingerprint } from '../workflow/state.ts';
 import { fileHash, publishProblem } from '../workflow/readiness.ts';
-import { passOnSubmittedContent, receipts } from '../workflow/checks.ts';
+import {
+  currentBody,
+  rebindProblem,
+  rebindReview,
+  reviewOutOfDate,
+} from '../workflow/rebind.ts';
+import { checkReceiptGap, passOnSubmittedContent, receipts } from '../workflow/checks.ts';
 import { publicationLock, recordTiming } from '../workflow/publication.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
 import { acknowledgeRepository } from '../workflow/hostSession.ts';
@@ -284,6 +292,12 @@ export interface RenderOpts extends OutOpts {
    * slim reviewer whose corrections were applied (notes in reviewer-notes.md).
    */
   reviewed?: boolean;
+  /** Print nothing (publish's own re-render, finish's compact summary). */
+  quiet?: boolean;
+  /** Receives the brief check's text and counts (finish prints its own compact summary). */
+  report?: (r: { brief: string; open: number; uncovered: number; tags: number }) => void;
+  /** Text mode: also print the advisory detail (optional notes, evidence-graph leads). */
+  verbose?: boolean;
 }
 
 /** One line a writer can't miss, printed first: what is left to fix. */
@@ -302,6 +316,7 @@ const briefCheckSummary = (b: BriefApplied) => ({
   validationClaims: b.validationClaims,
   unbackedNames: b.unbackedNames,
   uncovered: b.uncovered,
+  openLimits: b.openLimits,
   flags: b.flags,
   /** Sentences the writer must fix before publishing (coverage gaps are counted apart). */
   open: openProblems(b),
@@ -365,6 +380,13 @@ function briefCheckLines(b: BriefApplied): string {
           '\n',
         )}${b.uncovered.length > 12 ? `\n  - …and ${b.uncovered.length - 12} more` : ''}`,
     );
+  if (b.openLimits.length)
+    out.push(
+      `Open points not in the description (optional: state one in your own words, tagged with its ref, only where the diff or logs back it; leave out any you can't):\n${b.openLimits
+        .slice(0, 9)
+        .map((u) => `  - ${u}`)
+        .join('\n')}`,
+    );
   if (b.tags) {
     const open = openProblems(b);
     out.push(
@@ -378,16 +400,25 @@ function briefCheckLines(b: BriefApplied): string {
 
 export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   let { run, truth } = loadRun(cwd, opts.run);
-  const digest = readJson<TraceDigest>(run, 'digest.json');
+  let digest = readJson<TraceDigest>(run, 'digest.json');
   if (!digest)
     throw new UserError('This run has no digest.json. Run `tracetoon digest` first.');
-  if (
+  // New check receipts since the digest (a `tracetoon check` ran): refresh the
+  // digest in place instead of failing. Writers stopped at this error and
+  // returned an unrendered draft.
+  const checksStale = () =>
     readTask(run) &&
-    digest.checksSha !== (receipts(run).length ? fileHash(run, 'checks.json') : undefined)
-  )
-    throw new UserError(
-      'Validation evidence changed after the digest. Refresh digest --run before rendering and review.',
-    );
+    digest!.checksSha !==
+      (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
+  if (checksStale()) {
+    digestCmd(cwd, { run: run.id, offline: true }, undefined, false);
+    ({ run, truth } = loadRun(cwd, run.id));
+    digest = readJson<TraceDigest>(run, 'digest.json')!;
+    if (checksStale())
+      throw new UserError(
+        'Validation evidence changed after the digest. Refresh digest --run before rendering and review.',
+      );
+  }
   const ctx = readJson<Context>(run, 'context.json');
   if (!ctx)
     throw new UserError('This run has no context.json. Run `tracetoon context` first.');
@@ -414,10 +445,18 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   const storedGraph = loadGraph(run);
   // A check that passed on the submitted content retires "no pass after the last commit".
   const freshPass = passOnSubmittedContent(run, truth.toplevel);
-  const briefCheck = applyBrief(
-    bodyMd,
-    storedGraph ? graphBriefParts(storedGraph, runLayout(run), freshPass) : undefined,
-  );
+  const parts = storedGraph
+    ? graphBriefParts(storedGraph, runLayout(run), freshPass)
+    : undefined;
+  // A fresh check that failed: a pinned toolchain other than the one here may be why.
+  if (
+    parts &&
+    (parts.sections.find((s) => s.title === 'validation')?.rows ?? []).some(
+      (r) => /^V\d/.test(String(r.check ?? '')) && r.outcome === 'failed',
+    )
+  )
+    parts.toolchain = toolchainMismatch(truth.toplevel);
+  const briefCheck = applyBrief(bodyMd, parts);
   const draft = briefCheck.text;
   // The title: a person's choice is kept. A title edited on GitHub since
   // Tracetoon posted it, or written by someone on a PR Tracetoon didn't title,
@@ -441,6 +480,14 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
       digest.pr.commits[digest.pr.commits.length - 1]?.subject ||
       digest.pr.head;
   }
+  // A title that only restates the last commit of several (brief check, advisory).
+  if (parts)
+    briefCheck.flags.push(
+      ...titleFlags(
+        title,
+        digest.pr.commits.map((c) => c.subject),
+      ),
+    );
   const titleFindings = checkTitle({ title, rules: ctx.titleRules, digest });
   writeJson(run, 'title-checks.json', titleFindings);
 
@@ -674,7 +721,15 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
       ? `Review plan (${planSummary(plan)}) still needs:\n${planNeeds.map((m) => `  - ${m}`).join('\n')}`
       : `Review plan (${planSummary(plan)}): met.`
     : '';
-  emit(
+  opts.report?.({
+    brief: [briefCheckHeadline(briefCheck), briefCheckLines(briefCheck)]
+      .filter(Boolean)
+      .join('\n'),
+    open: openProblems(briefCheck),
+    uncovered: briefCheck.uncovered.length,
+    tags: briefCheck.tags,
+  });
+  (opts.quiet ? () => {} : emit)(
     opts,
     {
       // First, so a writer reading only the head of the output still sees it.
@@ -724,7 +779,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         titleNote ? `Note: ${titleNote}` : '',
         titleLine(titleFindings),
         claimLine(claims),
-        graphLine(graphLeads),
+        opts.verbose ? graphLine(graphLeads) : '',
         graphHint ? `Evidence graph: ${graphHint}` : '',
         briefCheckLines(briefCheck),
         changeMapFindings.length
@@ -734,7 +789,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         stillFlagged.length
           ? `Note (soft): reviewer flags whose quoted text is still verbatim after the correction round. Fix each (narrow, attribute or remove it) or reject it with the diff line that supports the original; don't leave it unanswered${planRecheck(plan) === 'contested' ? ` (Review recheck: contested: recheck the rejected ones with ${tracetoonRuns(plan) ? `tracetoon review run --all --recheck --run ${run.id}` : 'the reviewer that raised them'})` : planRecheck(plan) === 'none' ? ' (Review recheck: none: no reviewer recheck needed)' : ''}:\n${stillFlagged.map((f) => `  - pass ${f.pass}${f.lens ? ` (lens ${f.lens})` : ''}, ${f.verdict} (${f.evidence}): "${f.quote}"`).join('\n')}`
           : '',
-        notes.length
+        notes.length && opts.verbose
           ? `Optional notes for the author (skippable; offer them, don't ask before drafting):\n${notes.map((n) => `  - ${n.text}`).join('\n')}`
           : '',
         policyLines(ctx.aiPolicy, mediaBanned),
@@ -749,7 +804,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         findings.length && !approval.allowFindings
           ? 'Not ready to publish: fix what the leak scan found (above), then render again.'
           : comicStatus.state === 'missing'
-            ? `Next: not ready to publish. Draw the comic (SKILL step 5), or if the user declined it or drawing keeps failing, record why: tracetoon comic skip --run ${run.id} --reason "<why>". Then render again.`
+            ? `Next: not ready to publish. Draw the comic (references/full-path.md step 5), or if the user declined it or drawing keeps failing, record why: tracetoon comic skip --run ${run.id} --reason "<why>". Then render again.`
             : briefMode === 'lean'
               ? planEnforced(plan)
                 ? `Next: tracetoon render --json --run ${run.id}, then ${tracetoonRuns(plan) ? `tracetoon review run --all --run ${run.id} (Tracetoon runs every planned pass on ${plan.reviewerModel} in parallel and writes review-findings-merged.md), apply it in ONE edit pass, render --check --json, then ${recheckStep(run.id, plan)}` : `the reviewer passes the review plan asks for, all started in one message (SKILL step 2b.5-7), then tracetoon review merge --run ${run.id}, ONE edit pass, then ${recheckStep(run.id, plan)}`}. ${planText}`
@@ -1012,13 +1067,47 @@ export function publishCmd(cwd: string, opts: PublishOpts): void {
 function publishImpl(cwd: string, opts: PublishOpts): void {
   const { run, truth } = loadRun(cwd, opts.run);
   const dry = !!opts.dryRun;
-  const approval = readJson<Approval>(run, 'approval.json');
+  let approval = readJson<Approval>(run, 'approval.json');
   const bodyPath = join(run.dir, 'final-body.md');
   if (!approval || !existsSync(bodyPath))
     throw codedError(
       'NOTHING_RENDERED',
       'Nothing rendered yet. Run `tracetoon render` first.',
     );
+  // Review recheck: none: bind the review to the final render here instead of
+  // refusing it as stale (src/workflow/rebind.ts says when that is safe). A dry
+  // run changes nothing, so it leaves the rebind to the real publish.
+  if (!dry && reviewOutOfDate(run)) {
+    const why = rebindProblem(run, truth.toplevel, currentBody(run), approval.sourceSha);
+    if (why) {
+      const input = readJson<{ fingerprint?: string }>(run, 'review-input.json');
+      const review = readJson<{ inputFingerprint?: string }>(run, 'review.json');
+      if (input?.fingerprint !== review?.inputFingerprint)
+        throw new UserError(
+          `The review is bound to an earlier render and publish can't rebind it itself (${why}). ${recheckStep(run.id, loadReviewPlan(run))}, then tracetoon render --run ${run.id} and publish.`,
+        );
+    } else {
+      const again = (a: Approval) =>
+        renderCmd(cwd, {
+          run: run.id,
+          quiet: true,
+          allowFindings: a.allowFindings,
+          noComic: a.comicStatus?.state === 'skipped',
+          retitle: readText(run, 'title.txt')?.trim() === a.title,
+        });
+      for (let round = 0; round < 2 && reviewOutOfDate(run); round++) {
+        const input = readJson<{ fingerprint?: string }>(run, 'review-input.json');
+        const review = readJson<{ inputFingerprint?: string }>(run, 'review.json');
+        if (input?.fingerprint !== review?.inputFingerprint)
+          rebindReview(run, truth.toplevel);
+        approval = again(approval);
+      }
+      if (!opts.json)
+        process.stdout.write(
+          'Bound the review to the final render (Review recheck: none) and rendered again.\n',
+        );
+    }
+  }
   const problem = snapshotProblem(truth.toplevel, approval.submission);
   if (problem)
     throw new UserError(
@@ -1030,6 +1119,14 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
     );
   const preparationProblem = publishProblem(truth.toplevel, run, approval);
   if (preparationProblem) throw new UserError(preparationProblem);
+  // A review imported or merged after the last render is not in the rendered
+  // result: publishing it would ship a draft its latest review never saw.
+  const review = readJson(run, 'review.json');
+  const result = readJson<{ reportSha256?: string }>(run, 'review-result.json');
+  if (review && result && result.reportSha256 !== objectHash(review))
+    throw new UserError(
+      `The review changed after the last render (a review was imported or merged since). Run tracetoon render --run ${run.id}, then publish.`,
+    );
   // A brief-path draft that was only checked still needs its slim review.
   const unreviewed = briefPathUnreviewed(run);
   if (unreviewed) {
@@ -1044,6 +1141,14 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
         ? `${planProblem}\nRun the missing passes with tracetoon review run --all --run ${run.id}, render again, then publish.`
         : `${planProblem}\nImport each missing pass with tracetoon review import --run ${run.id}, render again, then publish.`,
     );
+  // Declared repository checks need a receipt (or a recorded skip): required
+  // on the reviewed path (a review plan), a warning otherwise.
+  const checkGap = checkReceiptGap(run, truth.toplevel);
+  if (checkGap) {
+    if (planEnforced(loadReviewPlan(run)))
+      throw new UserError(`${checkGap}\nThen render again and publish.`);
+    if (!opts.json) process.stderr.write(`tracetoon: warning: ${checkGap}\n`);
+  }
   // On a brief path the brief check is the review: open items block publishing.
   const briefOpen = briefPathOpen(run);
   if (briefOpen) {
@@ -1071,7 +1176,7 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
     throw codedError(
       'COMIC_UNEXPLAINED',
       `This PR should have a comic${approval.comicStatus.request ? ` (this repo asks for comics: ${approval.comicStatus.request})` : ''} and none was drawn or skipped with a reason.`,
-      `Draw it (SKILL step 5), or if the user declined it or drawing keeps failing: tracetoon comic skip --run ${run.id} --reason "<why>"; then render again.`,
+      `Draw it (references/full-path.md step 5), or if the user declined it or drawing keeps failing: tracetoon comic skip --run ${run.id} --reason "<why>"; then render again.`,
     );
   const config = loadConfig(truth.toplevel);
 

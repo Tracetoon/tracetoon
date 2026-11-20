@@ -31,6 +31,7 @@ import { emit, UserError } from './commands/output.ts';
 import { publishCmd, renderCmd } from './commands/publish.ts';
 import { reviewImportCmd, reviewMergeCmd, reviewPacketCmd } from './commands/review.ts';
 import { reviewRunCmd } from './commands/reviewRun.ts';
+import { finishCmd } from './commands/finish.ts';
 import {
   comicArtCmd,
   comicRerollCmd,
@@ -184,6 +185,14 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--skip <reason>', 'explicit CI-only or unavailable check')
     .option('--force', 'rerun even if unchanged')
     .option(
+      '--timeout <minutes>',
+      'stop the check after this long (default 15); a timeout is reported as incomplete, never as failed',
+    )
+    .option(
+      '--progress',
+      'echo the first output lines on stderr while it runs (default: quiet until the one-line summary, unless stderr is a terminal; live output is in check-logs/running.log)',
+    )
+    .option(
       '--input <path>',
       'also fingerprint an ignored generated artifact (repeatable)',
       (value: string, previous: string[]) => [...previous, value],
@@ -236,6 +245,7 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--strict',
       'exit 6 if a required check fails; with --probe: exit 5 if unknown record types are found',
     )
+    .option('--verbose', 'the full report (agents, installs, hooks, image routes)')
     .action((o) => doctor(cwd, { ...g(), ...o }));
 
   program
@@ -385,10 +395,20 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--reviewed',
       'reviewed brief path: drafted inline from the evidence brief, then checked by one slim reviewer (reviewer-notes.md)',
     )
+    .option('--verbose', 'text mode: also print optional author notes and evidence-graph leads')
     .action((o) => {
       o.noComic = o.comic === false;
       renderCmd(cwd, { ...g(), ...o });
     });
+
+  program
+    .command('finish')
+    .description(
+      'after drafting: render (with the brief check), write the review packets or bind the review to the final render, and print the one next step',
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option('--verbose', "also print render's full report")
+    .action((o) => finishCmd(cwd, { ...g(), ...o }));
 
   program
     .command('review-packet')
@@ -477,6 +497,7 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--rebind',
       'rebuild review.json for the current render from the passes already imported (claims whose quote is gone count as fixed)',
     )
+    .option('--verbose', 'list every warning, not only those that need an action')
     .action((o) => reviewImportCmd(cwd, { ...g(), ...o }));
 
   program

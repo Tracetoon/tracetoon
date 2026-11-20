@@ -15,6 +15,7 @@
  * Pure over the brief's sections, capped, deterministic.
  */
 import type { Section } from './queries.ts';
+import { PROSE_FILE } from './build.ts';
 
 type Row = Record<string, unknown>;
 const list = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
@@ -83,6 +84,10 @@ export function beyondVersionBump(sections: Section[]): string[] {
     .sort((a, b) => Number(generated.has(a)) - Number(generated.has(b)));
 }
 
+/** A limit that states an absence: nothing ran, was recorded or was tested. */
+const ABSENCE =
+  /\b(?:no|none|nothing|never|not|without)\b[^.;]{0,60}\b(?:run|ran|recorded|tested|exercised|executed|checked)\b/i;
+
 const names = (xs: string[], cap: number) => {
   const shown = xs.slice(0, cap).map((x) => `\`${x}\``);
   return xs.length > cap
@@ -126,10 +131,45 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     const what = kinds.join('/');
     out.push({
       kind: 'recorded requests',
-      text: `${what[0]!.toUpperCase()}${what.slice(1)} were recorded (${recorded.slice(0, 6).join(', ')}): don't say none was recorded.`,
+      text: `${what[0]!.toUpperCase()}${what.slice(1)} were recorded (${recorded.slice(0, 6).join(', ')}): don't say none was recorded, or that an approval or review wasn't.`,
       cites: recorded.slice(0, 6),
     });
-  }
+  } else
+    // None linked in the attributed turns: the request may lie earlier in the
+    // session, so its absence is not a fact the writer may state.
+    out.push({
+      kind: 'recorded requests',
+      text: "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
+      cites: [],
+    });
+
+  // Absence of a run: the brief reads only the attributed turns, so "no
+  // hardware/live/test run was recorded" is a session-wide claim the full logs
+  // contradicted (live runs and device tests done earlier, or by others).
+  const limitRefs = rowsOf(sections, 'limits').map((r) => String(r.ref));
+  const absent = rowsOf(sections, 'limits')
+    .filter((r) => ABSENCE.test(String(r.limit ?? '')))
+    .map((r) => String(r.ref));
+  // Only the session-wide claim: a scoped uncertainty ("verified only with
+  // fakes", "not run on Windows", "the build script was never run") stays,
+  // with a limits row or the change/test rows that show the gap behind it.
+  const span = (xs: string[]) =>
+    xs.length > 2 ? `${xs[0]}–${xs.at(-1)}` : xs.join(', ');
+  const scoped =
+    'a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap';
+  out.push({
+    kind: 'absence',
+    text: `Never say session-wide that nothing ran or that no test was recorded${
+      absent.length
+        ? `, beyond what ${absent.slice(0, 3).join(', ')} say${absent.length === 1 ? 's' : ''}`
+        : ''
+    }; ${
+      limitRefs.length && !absent.length
+        ? `the open points in ${span(limitRefs)} stay, and ${scoped}`
+        : scoped
+    }.`,
+    cites: (absent.length ? absent : limitRefs).slice(0, 3),
+  });
 
   // Kept short: "new" for existing code is rare in judged errors.
   const existing = existingSymbols(sections).filter((x) => x.length >= 4);
@@ -144,11 +184,16 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     // One quoted condition, from the first symbol's change.
     const shown = branchy.slice(0, 3);
     const mine = new Set(changeOf(shown[0]!));
+    // A behavior line of code that branches, never a docs or config line.
+    const branching = (b: string) =>
+      !PROSE_FILE.test(b.split(': ')[0] ?? '') &&
+      !/^\.[\w.-]*ignore:/.test(b) &&
+      /\b(?:if|elif|else|switch|case|when|unless)\b|\?\?|\?[^:]+:|\|\||&&/.test(b);
     const cond =
       changes
         .filter((r) => mine.has(String(r.change)))
-        .flatMap((r) => list(r.behavior))[0] ??
-      changes.flatMap((r) => list(r.behavior))[0];
+        .flatMap((r) => list(r.behavior))
+        .find(branching) ?? changes.flatMap((r) => list(r.behavior)).find(branching);
     out.push({
       kind: 'conditional code',
       text: `${names(shown, 3)}${branchy.length > 3 ? ` and ${branchy.length - 3} more` : ''} branch or fall back${cond ? ` (${clip(cond, 90)})` : ''}: "always", "only", "every", "no longer" only if every branch does it.`,
@@ -166,10 +211,10 @@ export function doNotSayRows(sections: Section[], branchy: string[] = []): Row[]
     });
   }
 
-  if (changes.some((r) => Number(r.removed ?? 0) > 0))
+  if (changes.some((r) => Number(r.removed ?? 0) > 0 || list(r.before).length))
     out.push({
       kind: 'old behavior',
-      text: 'What the code did before: only from removed lines (`was`, `removed:`, `dropped:`) or a commit message.',
+      text: 'What the code did before: only from removed lines (`was`, `removed:`, `dropped:`), base code (`before`) or a commit message; say it in one "Previously …" sentence.',
       cites: [],
     });
 

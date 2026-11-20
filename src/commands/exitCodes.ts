@@ -164,7 +164,7 @@ export const ERROR_CODES: ErrorCode[] = [
     exit: 1,
     meaning:
       'A comic was expected and an image route could draw it, but none was drawn or skipped with a reason',
-    fix: 'Draw it (SKILL step 5), or `tracetoon comic skip --reason "<why>"`, then render again',
+    fix: 'Draw it (references/full-path.md step 5), or `tracetoon comic skip --reason "<why>"`, then render again',
   },
   {
     code: 'UPDATES_DISABLED',
