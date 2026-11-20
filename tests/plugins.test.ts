@@ -36,6 +36,11 @@ test('no package runs npx with --prefer-offline (a stale package list fails with
     if (/\.json$/.test(path)) expect(body.toString()).not.toContain('--prefer-offline');
 });
 
+test('every packaged SKILL.md stays within 500 lines (Agent Skills guidance, enforced by vally)', () => {
+  for (const path of [...files.keys()].filter((p) => p.endsWith('/SKILL.md')))
+    expect(text(path).split('\n').length).toBeLessThanOrEqual(500);
+});
+
 test('every packaged SKILL.md has frontmatter a strict YAML parser accepts', () => {
   const skills = [...files.keys()].filter((p) => p.endsWith('/SKILL.md'));
   expect(skills.length).toBeGreaterThan(0);
