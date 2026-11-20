@@ -22,15 +22,15 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8').replace(/\r\n/g,
 const RAW = 'https://raw.githubusercontent.com/Tracetoon/tracetoon/main/';
 
 /** The SKILL.md frontmatter as key -> raw value (single-line values only). */
+/**
+ * A strict YAML parse, as Agent Skills hosts and catalog linters (vally,
+ * skills-ref) do. A line-by-line reader hid an unquoted ": " in the rc.41
+ * description, which strict parsers reject.
+ */
 function frontmatter(text: string): Record<string, string> {
   const m = /^---\n([\s\S]*?)\n---\n/.exec(text);
   if (!m) throw new Error('SKILL.md has no frontmatter');
-  const out: Record<string, string> = {};
-  for (const line of (m[1] ?? '').split('\n')) {
-    const kv = /^([a-z_-]+):\s?(.*)$/.exec(line);
-    if (kv?.[1]) out[kv[1]] = kv[2] ?? '';
-  }
-  return out;
+  return Bun.YAML.parse(m[1] ?? '') as Record<string, string>;
 }
 
 describe('agent surfaces', () => {
