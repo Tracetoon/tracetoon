@@ -302,8 +302,12 @@ describe('vendor catalog manifests', () => {
     expect(market.owner.name.length).toBeGreaterThan(0);
     const [entry] = market.plugins;
     expect(entry.name).toBe(p.name);
+    expect(entry.source).toBe('./plugins/cursor');
     expect(existsSync(join(root, entry.source, '.cursor-plugin', 'plugin.json'))).toBe(
       true,
+    );
+    expect(json(join(entry.source, '.cursor-plugin', 'plugin.json')).version).toBe(
+      pkg.version,
     );
   });
 
