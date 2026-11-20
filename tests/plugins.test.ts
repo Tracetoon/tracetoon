@@ -275,7 +275,7 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
   test('its listing names Claude Code alone, with the Claude Code result', () => {
     const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
     expect(description).toContain('Claude Code session logs');
-    expect(description).toContain('69 to 17 on Claude Code');
+    expect(description).toContain('60 to 21 on Claude Code');
     for (const other of ['Codex', 'Cursor', 'Antigravity', 'Copilot', 'Kiro'])
       expect(description).not.toContain(other);
   });

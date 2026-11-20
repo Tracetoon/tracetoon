@@ -25,7 +25,7 @@ write, and there's a comic on top.
 <!-- results:start -->
 <div align="center">
 
-| **83–34** | **69–17** | **−46% / −31%** |
+| **79–38** | **60–21** | **−70% / −43%** |
 | :---: | :---: | :---: |
 | both judges preferred the evidence-graph PR on Codex | both judges preferred it on Claude Code | cost per PR on Codex / Claude Code |
 
@@ -183,9 +183,9 @@ Here is one real PR from the earlier 5-PR study, written three ways and scored
 | **Tracetoon + evidence graph** | **80** |
 
 Across 61 real PRs from 12 repositories, judges preferred Tracetoon with the
-graph over its own no-graph workflow **83–34** on Codex and **69–17** on Claude
+graph over its own no-graph workflow **79–38** on Codex and **60–21** on Claude
 Code. A pick only counts when two judges each read both orders and agree. On
-the 36 PRs the brief was never tuned on, the picks were 51–14 and 43–11.
+the 36 PRs the brief was never tuned on, the picks were 51–21 and 42–11.
 
 ---
 
@@ -276,7 +276,7 @@ model runs. Then:
 2. **Two cheap reviewers** check a short packet in parallel: one with the
    completeness lens, one general. They run on the host's cheap model at
    `xhigh` effort (`haiku` subagents on Claude Code, `luna` passes started by
-   `tracetoon review run` on Codex). That's about 4¢ per PR on Claude and
+   `tracetoon review run` on Codex). That's about 6¢ per PR on Claude and
    under 1¢ on Codex.
 3. **One edit pass.** The reviewers' findings merge into a single list. There
    are no repeat review rounds, and `publish` refuses until both passes are
@@ -285,11 +285,11 @@ model runs. Then:
 | Setup (61 real PRs)     | Cost per PR |
 | ----------------------- | ----------: |
 | Claude Code, no graph   |      $0.654 |
-| **Claude Code + graph** |  **$0.415** |
+| **Claude Code + graph** |  **$0.344** |
 | Codex, no graph         |      $0.447 |
-| **Codex + graph**       |  **$0.225** |
+| **Codex + graph**       |  **$0.128** |
 
-Averages per PR; the typical paired saving is 31% on Claude Code and 46% on
+Averages per PR; the typical paired saving is 43% on Claude Code and 70% on
 Codex ([how cost is measured](https://tracetoon.ai/evidence-graph-61.html)).
 
 <details>
