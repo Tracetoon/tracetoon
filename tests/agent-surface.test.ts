@@ -66,9 +66,12 @@ describe('agent surfaces', () => {
     for (const label of supportedLabels()) {
       expect(readme).toContain(label.replace(/ CLI$/, ''));
       expect(llms).toContain(label);
-      expect(market.plugins[0].description).toContain(label);
     }
-    expect(market.plugins[0].description).toBe(listingDescription());
+    // The Claude Code marketplace installs plugins/claude, so it shows that
+    // package's own line (Claude Code alone), not the every-host listing.
+    expect(market.plugins[0].description).toBe(
+      JSON.parse(read('plugins/claude/.claude-plugin/plugin.json')).description,
+    );
     expect(supportedLabels().length).toBe(
       INTEGRATIONS.filter((i) => i.status === 'supported').length,
     );
@@ -284,8 +287,8 @@ describe('vendor catalog manifests', () => {
     expect(entry.source).toEqual({
       source: 'git-subdir',
       url: 'https://github.com/Tracetoon/tracetoon.git',
-      path: './plugin',
-      ref: 'release', // main has no build
+      path: './codex',
+      ref: 'plugins', // the text-only package each release publishes
     });
     expect(entry.policy).toEqual({
       installation: 'AVAILABLE',
