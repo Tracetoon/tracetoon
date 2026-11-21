@@ -50,7 +50,13 @@ const ICON_SOURCE = 'docs/brand/png/tracetoon-icon-tile-dark-512.png';
 const ICON = 'assets/tracetoon.png';
 
 /** The npx arguments every package runs: exactly this version, from npm's cache when it has it. */
-export const NPX_ARGS = ['-y', '--prefer-offline', `tracetoon@${pkg.version}`];
+/**
+ * No --prefer-offline: with it, npm answers from a cached package list written
+ * before this version was published and fails with ETARGET (seen on rc.43), so
+ * a plugin update would break every hook and the MCP server until something
+ * refreshed npm's cache. A cached run costs about 60 ms more without it.
+ */
+export const NPX_ARGS = ['-y', `tracetoon@${pkg.version}`];
 const npx = (...args: string[]) => ['npx', ...NPX_ARGS, ...args].join(' ');
 const pluginHook = (agent: string, event: string) =>
   npx('hook', 'plugin', '--agent', agent, '--event', event);

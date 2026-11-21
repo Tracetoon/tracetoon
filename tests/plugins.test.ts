@@ -30,6 +30,28 @@ test('plugins/ matches the generator', () => {
   expect(stalePlugins()).toEqual([]);
 });
 
+test('no package runs npx with --prefer-offline (a stale package list fails with ETARGET)', () => {
+  expect(NPX_ARGS).not.toContain('--prefer-offline');
+  for (const [path, body] of files)
+    if (/\.json$/.test(path)) expect(body.toString()).not.toContain('--prefer-offline');
+});
+
+test('every packaged SKILL.md stays within 500 lines (Agent Skills guidance, enforced by vally)', () => {
+  for (const path of [...files.keys()].filter((p) => p.endsWith('/SKILL.md')))
+    expect(text(path).split('\n').length).toBeLessThanOrEqual(500);
+});
+
+test('every packaged SKILL.md has frontmatter a strict YAML parser accepts', () => {
+  const skills = [...files.keys()].filter((p) => p.endsWith('/SKILL.md'));
+  expect(skills.length).toBeGreaterThan(0);
+  for (const path of skills) {
+    const m = /^---\n([\s\S]*?)\n---\n/.exec(text(path));
+    const meta = Bun.YAML.parse(m?.[1] ?? '') as Record<string, unknown>;
+    expect(meta.name).toBe('tracetoon');
+    expect(String(meta.description)).toContain('pull request');
+  }
+});
+
 describe('privacy and data handling', () => {
   const ALL = [
     'claude',

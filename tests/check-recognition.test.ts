@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { resolve } from 'node:path';
 import {
   checkForm,
   commandRun,
@@ -133,24 +134,25 @@ describe('check commands as agents write them', () => {
 });
 
 describe("runs are this repository's", () => {
-  const roots = ['/w/app', '/w/app-wt'];
+  // Not a one-letter top folder: on Windows `/w` is Git Bash's spelling of drive W:.
+  const roots = ['/ws/app', '/ws/app-wt'];
   test('a run in another folder is not; unsure means it is', () => {
-    expect(runsInRepo('bun test', '/w/app/src', roots)).toBe(true);
-    expect(runsInRepo('bun test', '/w/app-wt', roots)).toBe(true);
-    expect(runsInRepo('cd ../other && bun run test', '/w/app', roots)).toBe(false);
-    expect(runsInRepo('bun run test', '/w/other', roots)).toBe(false);
+    expect(runsInRepo('bun test', '/ws/app/src', roots)).toBe(true);
+    expect(runsInRepo('bun test', '/ws/app-wt', roots)).toBe(true);
+    expect(runsInRepo('cd ../other && bun run test', '/ws/app', roots)).toBe(false);
+    expect(runsInRepo('bun run test', '/ws/other', roots)).toBe(false);
     // A folder holding the repo, no folder, or a command naming the repo: kept.
-    expect(runsInRepo('bun test', '/w', roots)).toBe(true);
+    expect(runsInRepo('bun test', '/ws', roots)).toBe(true);
     expect(runsInRepo('bun test', undefined, roots)).toBe(true);
-    expect(runsInRepo('bun test /w/app/tests', '/tmp', roots)).toBe(true);
+    expect(runsInRepo('bun test /ws/app/tests', '/tmp', roots)).toBe(true);
   });
 
   test('git -C and chained cd move the run; a relative folder is unknown', () => {
-    expect(runsInRepo('git -C ../site diff --check', '/w/app', roots)).toBe(false);
-    expect(runsInRepo('git -C /w/app-wt diff --check', '/tmp', roots)).toBe(true);
-    expect(runsInRepo('cd /w && cd other && bun test', '/w/app', roots)).toBe(false);
-    expect(runsInRepo('cd /w; cd app && bun test', '/tmp', roots)).toBe(true);
-    expect(leadingCd('git -C sub status', '/w/app')).toBe('/w/app/sub');
+    expect(runsInRepo('git -C ../site diff --check', '/ws/app', roots)).toBe(false);
+    expect(runsInRepo('git -C /ws/app-wt diff --check', '/tmp', roots)).toBe(true);
+    expect(runsInRepo('cd /ws && cd other && bun test', '/ws/app', roots)).toBe(false);
+    expect(runsInRepo('cd /ws; cd app && bun test', '/tmp', roots)).toBe(true);
+    expect(leadingCd('git -C sub status', '/ws/app')).toBe(resolve('/ws/app/sub'));
     // A folder relative to nothing known can't be placed: kept.
     expect(runsInRepo('bun test', 'some/dir', roots)).toBe(true);
     expect(runsInRepo('cd ../x && bun test', 'rel', roots)).toBe(true);

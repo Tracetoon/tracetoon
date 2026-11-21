@@ -1,6 +1,6 @@
 ---
 name: tracetoon
-description: Create GitHub pull requests with a description and comic written from agent session logs. Load this whenever you are about to open, create or submit a pull request: when the user asks for one, when you decide to submit, push or ship code changes for review, or when the repository's workflow requires changes to land through a PR, whether or not anyone mentions Tracetoon. Also use when a hook redirects PR creation here, or when the user asks Tracetoon to describe or update an existing PR. Not for coding, planning or questions that don't end in a PR.
+description: "Create GitHub pull requests with a description and comic written from agent session logs. Load this whenever you are about to open, create or submit a pull request: when the user asks for one, when you decide to submit, push or ship code changes for review, or when the repository's workflow requires changes to land through a PR, whether or not anyone mentions Tracetoon. Also use when a hook redirects PR creation here, or when the user asks Tracetoon to describe or update an existing PR. Not for coding, planning or questions that don't end in a PR."
 license: Apache-2.0
 compatibility: Requires git and the GitHub CLI (gh) signed in; macOS, Linux or Windows.
 ---

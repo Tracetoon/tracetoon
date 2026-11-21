@@ -1184,7 +1184,13 @@ function cursorMarketplace(): string {
       version: pkg.version,
     },
     plugins: [
-      { name: 'tracetoon', source: './plugin', description: listingDescription() },
+      // Cursor reads this file from the default branch, so it names the package
+      // committed on main; main's plugins/ always pins the released version.
+      {
+        name: 'tracetoon',
+        source: './plugins/cursor',
+        description: description('cursor'),
+      },
     ],
   });
 }

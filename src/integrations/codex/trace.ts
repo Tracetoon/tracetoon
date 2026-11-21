@@ -104,7 +104,9 @@ function planFromArgs(args: unknown): string | undefined {
 /**
  * A working directory as Codex logs it: a path, or a `file://` URI (app-server
  * items), which is turned into the path it names. A URI read as a path would
- * resolve under the process's own folder and look like this repository.
+ * resolve under the process's own folder and look like this repository. On
+ * Windows a local URI without a drive (`file:///w/app`) is still the rooted
+ * path it names, which fileURLToPath refuses.
  */
 function dirOf(v: unknown): string | undefined {
   const s = str(v);
@@ -112,7 +114,12 @@ function dirOf(v: unknown): string | undefined {
   try {
     return fileURLToPath(s);
   } catch {
-    return undefined;
+    try {
+      const u = new URL(s);
+      return u.host ? undefined : decodeURIComponent(u.pathname) || undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
 
