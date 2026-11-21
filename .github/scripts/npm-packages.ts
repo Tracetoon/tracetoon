@@ -34,7 +34,7 @@ const COMMON = {
   homepage: 'https://tracetoon.ai',
   repository: REPOSITORY,
   bugs: 'https://github.com/Tracetoon/tracetoon/issues',
-  author: 'Tracetoon',
+  author: 'Cassandra Chin',
 };
 
 /** Release target (build.config.json) → npm `os`/`cpu` and package suffix. */

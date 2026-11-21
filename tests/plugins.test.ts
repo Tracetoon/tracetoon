@@ -30,6 +30,28 @@ test('plugins/ matches the generator', () => {
   expect(stalePlugins()).toEqual([]);
 });
 
+test('no package runs npx with --prefer-offline (a stale package list fails with ETARGET)', () => {
+  expect(NPX_ARGS).not.toContain('--prefer-offline');
+  for (const [path, body] of files)
+    if (/\.json$/.test(path)) expect(body.toString()).not.toContain('--prefer-offline');
+});
+
+test('every packaged SKILL.md stays within 500 lines (Agent Skills guidance, enforced by vally)', () => {
+  for (const path of [...files.keys()].filter((p) => p.endsWith('/SKILL.md')))
+    expect(text(path).split('\n').length).toBeLessThanOrEqual(500);
+});
+
+test('every packaged SKILL.md has frontmatter a strict YAML parser accepts', () => {
+  const skills = [...files.keys()].filter((p) => p.endsWith('/SKILL.md'));
+  expect(skills.length).toBeGreaterThan(0);
+  for (const path of skills) {
+    const m = /^---\n([\s\S]*?)\n---\n/.exec(text(path));
+    const meta = Bun.YAML.parse(m?.[1] ?? '') as Record<string, unknown>;
+    expect(meta.name).toBe('tracetoon');
+    expect(String(meta.description)).toContain('pull request');
+  }
+});
+
 describe('privacy and data handling', () => {
   const ALL = [
     'claude',
@@ -54,6 +76,15 @@ describe('privacy and data handling', () => {
     expect(readme).toContain('## Privacy');
     expect(readme).toContain(PRIVACY_URL);
     expect(text(`${OUT}/${dir}/REVIEW.md`)).toContain(PRIVACY_URL);
+  });
+  test.each(ALL)('%s README says when Codex reviews apply on its host', (dir) => {
+    const readme = text(`${OUT}/${dir}/README.md`);
+    if (dir.startsWith('codex')) expect(readme).toMatch(/\(the default\s+on Codex\)/);
+    else expect(readme).toContain("only if you switch Tracetoon's reviewers to it");
+  });
+  test('every manifest credits the author', () => {
+    for (const path of [...files.keys()].filter((p) => p.endsWith('plugin.json')))
+      expect(parse(path).author.name).toBe('Cassandra Chin');
   });
   test.each(['claude', 'claude-directory'])('%s plugin.json names the policy', (dir) => {
     expect(parse(`${OUT}/${dir}/.claude-plugin/plugin.json`).privacyPolicyUrl).toBe(
@@ -266,7 +297,7 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
   test('its listing names Claude Code alone, with the Claude Code result', () => {
     const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
     expect(description).toContain('Claude Code session logs');
-    expect(description).toContain('69 to 17 on Claude Code');
+    expect(description).toContain('60 to 21 on Claude Code');
     for (const other of ['Codex', 'Cursor', 'Antigravity', 'Copilot', 'Kiro'])
       expect(description).not.toContain(other);
   });
@@ -353,7 +384,7 @@ describe('Agent Plugins (Codex, Copilot CLI, Kiro)', () => {
       const manifest = parse(`${OUT}/${dir}/plugin.json`);
       expect(Object.keys(manifest).filter((k) => !FIELDS.includes(k))).toEqual([]);
       expect(manifest.$schema).toContain('1.0.0');
-      expect(manifest.author.name).toBe('Tracetoon');
+      expect(manifest.author.name).toBe('Cassandra Chin');
       expect(manifest.keywords.length).toBeGreaterThan(3);
     },
   );

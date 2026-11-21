@@ -10,19 +10,21 @@ const json = (p: string) => JSON.parse(readFileSync(join(root, p), 'utf8'));
 
 describe('Claude Code marketplace route', () => {
   const market = json('.claude-plugin/marketplace.json');
-  test('serves plugin/ from the release branch and leaves versioning to plugin.json', () => {
+  test('serves the claude package from the plugins branch and leaves versioning to plugin.json', () => {
     expect(market.plugins).toHaveLength(1);
     const [entry] = market.plugins;
-    // main has no bundle; `release` adds it to each tagged source tree.
+    // The text-only package (scripts/plugins.ts), published on `plugins` by each release.
     expect(entry.source).toEqual({
       source: 'git-subdir',
       url: 'https://github.com/Tracetoon/tracetoon.git',
-      path: 'plugin',
-      ref: 'release',
+      path: 'claude',
+      ref: 'plugins',
     });
     // Claude Code warns when both carry a version, and plugin.json wins silently.
     expect(entry).not.toHaveProperty('version');
-    expect(existsSync(join(root, 'plugin', '.claude-plugin', 'plugin.json'))).toBe(true);
+    expect(
+      existsSync(join(root, 'plugins', 'claude', '.claude-plugin', 'plugin.json')),
+    ).toBe(true);
   });
   test('the plugin version follows package.json, so each release triggers an update', () => {
     expect(json('plugin/.claude-plugin/plugin.json').version).toBe(pkg.version);

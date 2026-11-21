@@ -11,7 +11,7 @@ Shared facts:
 
 - **Name:** Tracetoon
 - **One line:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic.
-- **Description:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.
+- **Description:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.
 - **Why use it:**
   - **Written from what happened.** Your agent already logged what you asked for, what it changed and which commands ran; Tracetoon writes the description from that record, so it can say why the change was made and what was tested, not just what the diff shows.
   - **Every claim checked.** Each factual sentence has to trace back to the session evidence, independent reviewers check the draft, and the Validation section comes from recorded test and build runs instead of being typed by the model.
@@ -20,7 +20,7 @@ Shared facts:
   - **Follows the house rules.** It reads the repository's PR template, contribution guide and AI-disclosure policy and writes to them.
   - **Works with your agents.** Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, as an agent skill, a CLI or an MCP server.
   - **A comic on top.** An optional one-off comic about the change, which reviewers actually read.
-- **Results:** On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
+- **Results:** On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
 - **Repository:** https://github.com/Tracetoon/tracetoon (plugin packages on the `plugins` branch: https://github.com/Tracetoon/tracetoon/tree/plugins)
 - **Website:** https://tracetoon.ai
 - **Licence:** Apache-2.0
@@ -31,7 +31,7 @@ Shared facts:
 
 Catalogs that review plugins get a text-only package from the `plugins` branch:
 Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
-release's exact version (`npx -y tracetoon@1.0.0-rc.43`). The release workflow
+release's exact version (`npx -y tracetoon@1.0.0-rc.44`). The release workflow
 publishes that branch, and tags it `plugins/v<version>`, once npm serves the
 version. Each package's README.md and REVIEW.md say what runs, what it reads,
 writes and sends, and how to check it.
@@ -85,7 +85,7 @@ needs the OpenAI org owner, identity verification and a video:
    PRs written from agent logs. Category: Developer Tools.
 4. Long description:
 
-   > Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex, at 46% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
+   > Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex, at 70% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
 
 5. Test cases. Should start Tracetoon:
    1. "Open a PR for this branch."

@@ -50,7 +50,13 @@ const ICON_SOURCE = 'docs/brand/png/tracetoon-icon-tile-dark-512.png';
 const ICON = 'assets/tracetoon.png';
 
 /** The npx arguments every package runs: exactly this version, from npm's cache when it has it. */
-export const NPX_ARGS = ['-y', '--prefer-offline', `tracetoon@${pkg.version}`];
+/**
+ * No --prefer-offline: with it, npm answers from a cached package list written
+ * before this version was published and fails with ETARGET (seen on rc.43), so
+ * a plugin update would break every hook and the MCP server until something
+ * refreshed npm's cache. A cached run costs about 60 ms more without it.
+ */
+export const NPX_ARGS = ['-y', `tracetoon@${pkg.version}`];
 const npx = (...args: string[]) => ['npx', ...NPX_ARGS, ...args].join(' ');
 const pluginHook = (agent: string, event: string) =>
   npx('hook', 'plugin', '--agent', agent, '--event', event);
@@ -369,6 +375,17 @@ const HOSTS: Host[] = [
   },
 ];
 
+/**
+ * The Codex review route, as each package's README and REVIEW.md say it. On
+ * Codex, \`Reviewer runner: auto\` runs reviews through \`tracetoon review run\`;
+ * every other host uses its own reviewer agents unless the user switches.
+ */
+function codexReviews(h: Host): string {
+  return h.dir.startsWith('codex')
+    ? '- **The Codex CLI**, when reviews run through \`tracetoon review run\` (the default\n  on Codex): the review packet (draft description, evidence brief and selected diff).'
+    : "- **The Codex CLI**, only if you switch Tracetoon's reviewers to it\n  (\`tracetoon review run\`; your agent uses its own reviewer agents by default):\n  the review packet (draft description, evidence brief and selected diff).";
+}
+
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
@@ -415,8 +432,7 @@ Session logs are read and processed on your machine. Data leaves it only for:
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once: the comic prompt, written from the
   PR summary.
-- **The Codex CLI**, only when reviews run through \`tracetoon review run\`: the
-  review packet (draft description, evidence brief and selected diff).
+${codexReviews(h)}
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
@@ -479,8 +495,7 @@ Logs and diffs are treated as data, never as instructions.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
-- **The Codex CLI**, only when reviews run through \`tracetoon review run\`: the
-  review packet (draft description, evidence brief and selected diff).
+${codexReviews(h)}
 - **npm**, to download the runtime on first use.
 - No telemetry, and no Tracetoon server.
 
@@ -590,7 +605,7 @@ function cursorPackage(files: Files) {
       displayName: 'Tracetoon',
       version: pkg.version,
       description: description('cursor'),
-      author: { name: 'Tracetoon' },
+      author: { name: AUTHOR.name },
       homepage: SITE,
       repository: REPO_URL,
       license: 'Apache-2.0',

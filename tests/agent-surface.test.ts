@@ -22,15 +22,15 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8').replace(/\r\n/g,
 const RAW = 'https://raw.githubusercontent.com/Tracetoon/tracetoon/main/';
 
 /** The SKILL.md frontmatter as key -> raw value (single-line values only). */
+/**
+ * A strict YAML parse, as Agent Skills hosts and catalog linters (vally,
+ * skills-ref) do. A line-by-line reader hid an unquoted ": " in the rc.41
+ * description, which strict parsers reject.
+ */
 function frontmatter(text: string): Record<string, string> {
   const m = /^---\n([\s\S]*?)\n---\n/.exec(text);
   if (!m) throw new Error('SKILL.md has no frontmatter');
-  const out: Record<string, string> = {};
-  for (const line of (m[1] ?? '').split('\n')) {
-    const kv = /^([a-z_-]+):\s?(.*)$/.exec(line);
-    if (kv?.[1]) out[kv[1]] = kv[2] ?? '';
-  }
-  return out;
+  return Bun.YAML.parse(m[1] ?? '') as Record<string, string>;
 }
 
 describe('agent surfaces', () => {
@@ -66,9 +66,12 @@ describe('agent surfaces', () => {
     for (const label of supportedLabels()) {
       expect(readme).toContain(label.replace(/ CLI$/, ''));
       expect(llms).toContain(label);
-      expect(market.plugins[0].description).toContain(label);
     }
-    expect(market.plugins[0].description).toBe(listingDescription());
+    // The Claude Code marketplace installs plugins/claude, so it shows that
+    // package's own line (Claude Code alone), not the every-host listing.
+    expect(market.plugins[0].description).toBe(
+      JSON.parse(read('plugins/claude/.claude-plugin/plugin.json')).description,
+    );
     expect(supportedLabels().length).toBe(
       INTEGRATIONS.filter((i) => i.status === 'supported').length,
     );
@@ -284,8 +287,8 @@ describe('vendor catalog manifests', () => {
     expect(entry.source).toEqual({
       source: 'git-subdir',
       url: 'https://github.com/Tracetoon/tracetoon.git',
-      path: './plugin',
-      ref: 'release', // main has no build
+      path: './codex',
+      ref: 'plugins', // the text-only package each release publishes
     });
     expect(entry.policy).toEqual({
       installation: 'AVAILABLE',
@@ -302,8 +305,12 @@ describe('vendor catalog manifests', () => {
     expect(market.owner.name.length).toBeGreaterThan(0);
     const [entry] = market.plugins;
     expect(entry.name).toBe(p.name);
+    expect(entry.source).toBe('./plugins/cursor');
     expect(existsSync(join(root, entry.source, '.cursor-plugin', 'plugin.json'))).toBe(
       true,
+    );
+    expect(json(join(entry.source, '.cursor-plugin', 'plugin.json')).version).toBe(
+      pkg.version,
     );
   });
 

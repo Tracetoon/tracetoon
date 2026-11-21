@@ -58,12 +58,12 @@ export const RESULTS = {
   url: 'https://tracetoon.ai/evidence-graph-61.html',
   /** One sentence for long descriptions. */
   sentence:
-    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR.",
+    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.",
   /** Headline figures for the npm README table. */
   table: [
-    ['83–34', 'both judges preferred the evidence-graph PR on Codex'],
-    ['69–17', 'both judges preferred it on Claude Code'],
-    ['−46% / −31%', 'cost per PR on Codex / Claude Code'],
+    ['79–38', 'both judges preferred the evidence-graph PR on Codex'],
+    ['60–21', 'both judges preferred it on Claude Code'],
+    ['−70% / −43%', 'cost per PR on Codex / Claude Code'],
   ],
   method:
     "prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow.",
@@ -114,16 +114,16 @@ export function listingDescription(): string {
 const HOST_COPY: Record<string, { agent: string; result?: string }> = {
   claude: {
     agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
   },
   'claude-directory': {
     agent: 'Claude Code',
-    result: '69 to 17 on Claude Code, at 31% lower cost per PR',
+    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
   },
-  codex: { agent: 'Codex', result: '83 to 34 on Codex, at 46% lower cost per PR' },
+  codex: { agent: 'Codex', result: '79 to 38 on Codex, at 70% lower cost per PR' },
   'codex-directory': {
     agent: 'Codex',
-    result: '83 to 34 on Codex, at 46% lower cost per PR',
+    result: '79 to 38 on Codex, at 70% lower cost per PR',
   },
   cursor: { agent: 'Cursor' },
   agent: { agent: 'GitHub Copilot CLI or Kiro' },
@@ -1007,7 +1007,15 @@ function marketplace(text: string): string {
     ...parsed,
   };
   const [entry] = market.plugins;
-  entry.description = listingDescription();
+  // The text-only package on the plugins branch (scripts/plugins.ts), which the
+  // release workflow publishes once npm serves the version it pins.
+  entry.source = {
+    source: 'git-subdir',
+    url: `${REPO_URL}.git`,
+    path: 'claude',
+    ref: 'plugins',
+  };
+  entry.description = description('claude');
   entry.category = 'productivity';
   entry.tags = ['pull-requests', 'github', 'code-review', 'agent-trace', 'comics'];
   entry.relevance = {
@@ -1038,6 +1046,7 @@ function pluginJson(text: string): string {
   plugin.description = listingDescription();
   plugin.homepage = SITE;
   plugin.keywords = KEYWORDS;
+  plugin.author = AUTHOR;
   return JSON.stringify(plugin, null, 2) + '\n';
 }
 
@@ -1051,7 +1060,7 @@ function pluginJson(text: string): string {
 export const SITE = 'https://tracetoon.ai';
 export const REPO_URL = `https://github.com/${REPO}`;
 export const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
-export const AUTHOR = { name: 'Tracetoon', url: SITE };
+export const AUTHOR = { name: 'Cassandra Chin', url: SITE };
 /** Plugin-relative path of the square icon catalogs show: the dark app tile from the logo kit (scripts/brand.ts). */
 export const ICON = 'assets/tracetoon.svg';
 
@@ -1134,7 +1143,7 @@ function codexPlugin(): string {
   });
 }
 
-/** .agents/plugins/marketplace.json: `codex plugin marketplace add Tracetoon/tracetoon`. */
+/** .agents/plugins/marketplace.json: `codex plugin marketplace add Tracetoon/tracetoon`, serving plugins/codex from the plugins branch. */
 function codexMarketplace(): string {
   return json({
     name: 'tracetoon',
@@ -1145,8 +1154,8 @@ function codexMarketplace(): string {
         source: {
           source: 'git-subdir',
           url: `${REPO_URL}.git`,
-          path: './plugin',
-          ref: 'release',
+          path: './codex',
+          ref: 'plugins',
         },
         policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' },
         category: 'Developer Tools',
@@ -1162,7 +1171,7 @@ function cursorPlugin(): string {
     displayName: 'Tracetoon',
     version: pkg.version,
     description: listingDescription(),
-    author: { name: 'Tracetoon' },
+    author: { name: AUTHOR.name },
     homepage: SITE,
     repository: REPO_URL,
     license: 'Apache-2.0',
@@ -1183,7 +1192,13 @@ function cursorMarketplace(): string {
       version: pkg.version,
     },
     plugins: [
-      { name: 'tracetoon', source: './plugin', description: listingDescription() },
+      // Cursor reads this file from the default branch, so it names the package
+      // committed on main; main's plugins/ always pins the released version.
+      {
+        name: 'tracetoon',
+        source: './plugins/cursor',
+        description: description('cursor'),
+      },
     ],
   });
 }
