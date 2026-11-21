@@ -139,6 +139,8 @@ export interface DigestSession {
  */
 export interface Run {
   verificationBasis?: 'exact-content-receipt';
+  /** A receipt for this content that ran in another shell environment than the current one. */
+  environmentChanged?: true;
   id?: string;
   t?: string;
   cmd: string;

@@ -144,7 +144,7 @@ image service) apply throughout.
    `comic.expected` is true. It is false when `comic` is `off` or the repo says
    no under `allowed`; then there is nothing to do or mention. If the user
    declines this one, record it with `tracetoon comic skip --reason "the user
-   declined it"`. Follow
+   declined it" --by user`. Follow
    [references/comic-guide.md](comic-guide.md). The comic sits in
    the PR, so its first reader is the reviewer: it should make them laugh and
    leave them knowing _what changed_. It must look and read like a real comic:

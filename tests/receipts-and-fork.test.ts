@@ -166,6 +166,25 @@ describe('check environment identity', () => {
       checkEnvironment(base),
     );
   });
+
+  test("what an agent's shell tool sets for itself does not change it", () => {
+    const base = { PATH: 'C:\\bin', HOME: 'C:\\Users\\u' };
+    expect(
+      checkEnvironment({
+        ...base,
+        PROMPT: '$P$G',
+        PSExecutionPolicyPreference: 'Bypass',
+        GCM_INTERACTIVE: 'never',
+        GIT_TERMINAL_PROMPT: '0',
+        GIT_ASKPASS: '',
+        NO_COLOR: '1',
+        PLINK_PROTOCOL: 'ssh',
+        CLAUDE_CODE_EXECPATH: 'C:\\claude.exe',
+        AGENT_SESSION_ID: '20261121_9',
+        GOOSE_TERMINAL: '1',
+      }),
+    ).toBe(checkEnvironment(base));
+  });
 });
 
 describe('receipts without task bookkeeping', () => {
@@ -211,6 +230,26 @@ describe('receipts without task bookkeeping', () => {
     );
     expect(digest.verification).toEqual([
       expect.objectContaining({ id: 'V1', outcome: 'passed', summary: ['3 pass'] }),
+    ]);
+    expect(digest.verification[0].environmentChanged).toBeUndefined();
+
+    // The next command runs in another shell (Git Bash vs PowerShell differ in
+    // PATH and more): the receipt still counts for this content, marked as such.
+    const otherShell = spawnSync(
+      process.execPath,
+      [CLI, '--json', 'digest', '--run', run],
+      {
+        cwd: repo.root,
+        env: { ...env, RECEIPT_TEST_TOOLCHAIN: 'another shell' },
+        encoding: 'utf8',
+      },
+    );
+    expect(otherShell.status).toBe(0);
+    const moved = JSON.parse(
+      readFileSync(join(again.json.runDir ?? first.json.runDir, 'digest.json'), 'utf8'),
+    );
+    expect(moved.verification).toEqual([
+      expect.objectContaining({ id: 'V1', outcome: 'passed', environmentChanged: true }),
     ]);
   });
 });

@@ -173,8 +173,8 @@ export interface ComicStatus {
     | 'missing'
     | 'none';
   detail?: string;
-  /** For a skip: the user decided, or a host that can't draw (MCP). */
-  by?: 'user' | 'mcp';
+  /** For a skip: the user decided, the agent did, or a host that can't draw (MCP). */
+  by?: 'user' | 'agent' | 'mcp';
   /** The repo asks for comics (`file:line`), shown when a PR has none. */
   request?: string;
   /** Included although the repo's rules forbid images (`always`): where the rule is. */
@@ -406,8 +406,10 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   // New check receipts since the digest (a `tracetoon check` ran): refresh the
   // digest in place instead of failing. Writers stopped at this error and
   // returned an unrendered draft.
+  // Receipts count with or without task bookkeeping (as in digest), so a check
+  // run after `prepare` in a task-less run refreshes the digest too.
   const checksStale = () =>
-    readTask(run) &&
+    (readTask(run) || receipts(run).length > 0) &&
     digest!.checksSha !==
       (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
   if (checksStale()) {
@@ -804,7 +806,7 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
         findings.length && !approval.allowFindings
           ? 'Not ready to publish: fix what the leak scan found (above), then render again.'
           : comicStatus.state === 'missing'
-            ? `Next: not ready to publish. Draw the comic (references/full-path.md step 5), or if the user declined it or drawing keeps failing, record why: tracetoon comic skip --run ${run.id} --reason "<why>". Then render again.`
+            ? `Next: not ready to publish. Draw the comic (references/full-path.md step 5), or if the user declined it or drawing keeps failing, record why: tracetoon comic skip --run ${run.id} --reason "<why>" (add --by user when the user declined it). Then render again.`
             : briefMode === 'lean'
               ? planEnforced(plan)
                 ? `Next: tracetoon render --json --run ${run.id}, then ${tracetoonRuns(plan) ? `tracetoon review run --all --run ${run.id} (Tracetoon runs every planned pass on ${plan.reviewerModel} in parallel and writes review-findings-merged.md), apply it in ONE edit pass, render --check --json, then ${recheckStep(run.id, plan)}` : `the reviewer passes the review plan asks for, all started in one message (SKILL step 2b.5-7), then tracetoon review merge --run ${run.id}, ONE edit pass, then ${recheckStep(run.id, plan)}`}. ${planText}`
@@ -1176,7 +1178,7 @@ function publishImpl(cwd: string, opts: PublishOpts): void {
     throw codedError(
       'COMIC_UNEXPLAINED',
       `This PR should have a comic${approval.comicStatus.request ? ` (this repo asks for comics: ${approval.comicStatus.request})` : ''} and none was drawn or skipped with a reason.`,
-      `Draw it (references/full-path.md step 5), or if the user declined it or drawing keeps failing: tracetoon comic skip --run ${run.id} --reason "<why>"; then render again.`,
+      `Draw it (references/full-path.md step 5), or if the user declined it or drawing keeps failing: tracetoon comic skip --run ${run.id} --reason "<why>" (add --by user when the user declined it); then render again.`,
     );
   const config = loadConfig(truth.toplevel);
 
@@ -1552,7 +1554,7 @@ export function renderComicStatus(input: {
   recorded?: {
     state: 'no-route' | 'failed' | 'skipped';
     detail: string;
-    by?: 'user' | 'mcp';
+    by?: 'user' | 'agent' | 'mcp';
   };
   policy: Pick<AiPolicy, 'media' | 'mediaSource' | 'mediaRequest'>;
   route: () => NextStep;
@@ -1643,9 +1645,10 @@ export function comicNotices(
       if (s.by === 'mcp')
         return once(noticeKey.mcp, `Comic: none — ${s.detail}${asked}.`);
       const hint = noticeKey.skipHint(repo);
+      const whose = s.by === 'agent' ? " (the agent's call, not the user's)" : '';
       return {
         lines: [
-          `Comic: none — ${s.detail}${asked}.`,
+          `Comic: none — ${s.detail}${whose}${asked}.`,
           ...(seen(hint)
             ? []
             : [

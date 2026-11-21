@@ -168,7 +168,7 @@ export function evidenceNotes(
     lines.push('## Current validation receipts');
     for (const r of digest.verification)
       lines.push(
-        `- ${r.id}: \`${r.cmd}\`: ${r.outcome}; receipt matches current content and environment.`,
+        `- ${r.id}: \`${r.cmd}\`: ${r.outcome}; receipt matches current content${r.environmentChanged ? ' (it ran in a different shell environment)' : ' and environment'}.`,
       );
     lines.push('');
   }

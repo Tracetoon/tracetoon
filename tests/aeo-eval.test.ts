@@ -23,6 +23,7 @@ import {
   score,
 } from '../evals/aeo/score.ts';
 import { tempDir } from './helpers.ts';
+import { onPath } from '../src/util/onPath.ts';
 
 setDefaultTimeout(60_000);
 
@@ -219,13 +220,17 @@ describe('aeo fixture', () => {
       { cwd: f.repo, env: f.env, encoding: 'utf8' },
     );
     expect(r.stdout.trim()).toBe('https://github.com/acme/demo/pull/1');
-    // ...and the agent's shell through `gh` on PATH.
-    const sh = spawnSync('sh', ['-c', 'gh pr view --json url -q .url'], {
-      cwd: f.repo,
-      env: f.env,
-      encoding: 'utf8',
-    });
-    expect(sh.stdout.trim()).toBe('https://github.com/acme/demo/pull/1');
+    // ...and the agent's shell through `gh` on PATH (where there is an sh: a
+    // Windows run from PowerShell or cmd has none unless Git's usr\bin is on PATH).
+    const hasSh = !!onPath('sh', f.env);
+    if (hasSh) {
+      const sh = spawnSync('sh', ['-c', 'gh pr view --json url -q .url'], {
+        cwd: f.repo,
+        env: f.env,
+        encoding: 'utf8',
+      });
+      expect(sh.stdout.trim()).toBe('https://github.com/acme/demo/pull/1');
+    }
     const calls = readGhLog(f.ghLog);
     expect(calls[0]).toMatchObject({
       args: [
@@ -240,7 +245,7 @@ describe('aeo fixture', () => {
       ],
     });
     expect(calls[0]!.body).toContain(START_MARKER);
-    expect(calls[1]!.args.slice(0, 2)).toEqual(['pr', 'view']);
+    if (hasSh) expect(calls[1]!.args.slice(0, 2)).toEqual(['pr', 'view']);
 
     // The seeded session that wrote the branch is not the agent's.
     expect(readSessions('codex', f.repo, f.env).sessions).toEqual([]);

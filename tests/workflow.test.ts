@@ -746,6 +746,38 @@ describe('requested PR to publication rehearsal', () => {
     ).not.toBe(digestChecksBefore);
   });
 
+  test('a check after the digest refreshes it without task bookkeeping too', () => {
+    // An agent that runs `prepare` without `--run` gets a run with no task;
+    // its later checks must still reach the Validation section.
+    const repo = makeRepo();
+    repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
+    const digested = ok(repo.root, 'digest', '--offline');
+    const run = findRun(repository(repo.root).gitDir, digested.run);
+    expect(readTask(run)).toBeUndefined();
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    writeFileSync(join(run.dir, 'body.md'), 'Adds a greeting.\n');
+    writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeUndefined();
+    ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'tests',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("1 pass")',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeTruthy();
+  });
+
   test('prepares, publishes without rerunning work, and recovers an interrupted create', () => {
     const repo = makeRepo();
     const remote = tempDir('tracetoon-remote-');
@@ -1180,7 +1212,7 @@ describe('ordinary git and task identity', () => {
     expect(readTask(run)?.state).not.toBe('published');
   });
 
-  test('receipts ignore agent session bookkeeping but not the toolchain', () => {
+  test('receipts ignore agent session bookkeeping; a toolchain change blocks reuse, not evidence', () => {
     const repo = makeRepo();
     const { run } = beginTask(repo.root, { session: 'receipts' });
     const saved = { ...process.env };
@@ -1221,8 +1253,19 @@ describe('ordinary git and task identity', () => {
       expect(
         checkEnvironment({ ...process.env, BASH_ENV: 'different-startup-script' }),
       ).not.toBe(environment);
+      // A toolchain change: the receipt is no longer reused (the check runs again),
+      // but it still says the check passed on this content, noting the change.
       process.env.NODE_ENV = 'production';
-      expect(current()).toBe(false);
+      expect(current()).toBe(true);
+      expect(
+        checkReport(repo.root, run).find((c) => c.name === 'tests')!.environmentChanged,
+      ).toBe(true);
+      expect(
+        executeCheck(repo.root, run, {
+          name: 'tests',
+          command: [process.execPath, '-e', '1'],
+        }).reused,
+      ).toBeUndefined();
     } finally {
       for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k];
       Object.assign(process.env, saved);

@@ -100,6 +100,8 @@ export const integration: Integration = {
   status: 'supported',
   supportTier: 'community',
   variants: 'CLI and desktop app',
+  // Set by Goose's developer shell on every call; not part of the toolchain.
+  hostEnv: /^(AGENT_SESSION_ID|GOOSE_TERMINAL)$/,
   limits: [
     "Goose runs hooks with `sh -c`, on Windows too. The desktop app doesn't see Git Bash's PATH, so unless Git for Windows' `usr\\bin` is on your user PATH the PR hook never runs: `tracetoon setup --agent goose --fix-sh` adds it (or, without Git, Tracetoon's own `sh`), and `tracetoon doctor` says when Goose couldn't start the hook.",
   ],
