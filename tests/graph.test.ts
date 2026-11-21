@@ -324,7 +324,7 @@ describe('evidence graph', () => {
     const prepared = cli(
       repo.root,
       '--json',
-      'prepare',
+      'prepare', '--drafter-model', 'main',
       '--offline',
       '--review-passes',
       '3',
@@ -361,7 +361,7 @@ describe('evidence graph', () => {
     const plain = cli(
       repo.root,
       '--json',
-      'prepare',
+      'prepare', '--drafter-model', 'main',
       '--offline',
       '--run',
       run,
@@ -387,13 +387,81 @@ describe('evidence graph', () => {
     expect(bad.json.error).toContain('Unknown review lens');
   });
 
+  test('delegated drafting: prepare writes drafter-packet.md and prints only coordinator steps', () => {
+    const saved = process.env.TRACETOON_HOST_AGENT;
+    for (const host of ['claude', 'codex'] as const) {
+      process.env.TRACETOON_HOST_AGENT = host;
+      try {
+        const { repo, cli } = scenario();
+        const prepared = cli(
+          repo.root,
+          '--json',
+          'prepare',
+          '--offline',
+          '--drafter-model',
+          'standard',
+          ...['--review-passes', '2', '--review-lenses', 'd', '--reviewer-model', 'cheap'],
+          ...['--reviewer-effort', 'xhigh', '--reviewer-runner', 'auto', '--review-recheck', 'none'],
+        );
+        const run = prepared.json.run;
+        const model = host === 'claude' ? 'sonnet' : 'gpt-6.1-terra';
+        // The coordinator never sees the brief; the drafter packet carries it.
+        expect(prepared.json.brief).toBeUndefined();
+        expect(prepared.json.drafter.model).toBe(model);
+        expect(prepared.json.next).toContain("Coordinate; don't draft.");
+        expect(prepared.json.next).toContain(`model "${model}"`);
+        expect(prepared.json.next).toContain(`tracetoon publish --run ${run}`);
+        expect(prepared.json.next).not.toContain('Drafting rules');
+        const packet = readFileSync(prepared.json.drafter.packet, 'utf8');
+        expect(packet).toContain('## Evidence brief');
+        expect(packet).toContain('Drafting rules');
+        expect(packet).toContain('READY TO PUBLISH');
+        expect(packet).not.toContain('quick path');
+        const brief = cli(repo.root, '--json', 'query', 'brief', '--run', run);
+        expect(brief.code).toBe(0);
+        if (host === 'claude') {
+          // A Claude Code subagent can't start agents: the drafter hands back
+          // at the packets and the coordinator starts lens d + one general reviewer.
+          expect(packet).toContain('PACKETS READY');
+          expect(prepared.json.next).toContain('review-packet-d.md');
+          expect(prepared.json.next).toContain('reviewer-lens-d.md');
+          expect(prepared.json.next).toContain('review-findings.json');
+          expect(prepared.json.next).toContain('model "haiku" and effort "xhigh"');
+          expect(prepared.json.next).toContain('SendMessage');
+        } else {
+          expect(packet).toContain(`tracetoon review run --all --run ${run}`);
+          expect(packet).not.toContain('PACKETS READY');
+          expect(prepared.json.next).toContain('fork_turns: "none"');
+        }
+      } finally {
+        if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
+        else process.env.TRACETOON_HOST_AGENT = saved;
+      }
+    }
+  });
+
+  test('delegation is off for main and for an unknown host', () => {
+    const saved = process.env.TRACETOON_HOST_AGENT;
+    process.env.TRACETOON_HOST_AGENT = 'none';
+    try {
+      const { repo, cli } = scenario();
+      const p = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'standard');
+      expect(p.json.drafter).toBeUndefined();
+      expect(p.json.next).toContain('reviewed brief path');
+      expect(typeof p.json.brief).toBe('string');
+    } finally {
+      if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
+      else process.env.TRACETOON_HOST_AGENT = saved;
+    }
+  });
+
   test('lean render writes the Validation section and checks ref tags', () => {
     const { repo, cli } = scenario();
     // The single-reviewer plan (the shipped SKILL asks for more; see below).
     const prepared = cli(
       repo.root,
       '--json',
-      'prepare',
+      'prepare', '--drafter-model', 'main',
       '--offline',
       ...['--review-passes', '1', '--review-lenses', 'none'],
       ...['--reviewer-model', 'same', '--reviewer-effort', 'default'],
@@ -1316,7 +1384,7 @@ describe('graph-derived evidence in checks, budgets, notes and review', () => {
       'Draft from the evidence brief below (`tracetoon query brief`)',
     );
     expect(notes).toContain('## Where each change came from (evidence graph)');
-    const prepared = cli(repo.root, '--json', 'prepare', '--offline');
+    const prepared = cli(repo.root, '--json', 'prepare', '--drafter-model', 'main', '--offline');
     expect(Object.keys(prepared.json).slice(0, 3)).toEqual(['run', 'next', 'brief']);
     // The brief itself is embedded, so a drafter that never queries still sees it.
     expect(prepared.json.brief).toContain('changes[');

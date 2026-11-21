@@ -233,6 +233,10 @@ program
     '--review-recheck <mode>',
     'review plan (SKILL "Review recheck:"): once (each reviewer confirms the correction round), contested (only reviewers whose findings were rejected) or none; publish never requires a recheck',
   )
+  .option(
+    '--drafter-model <name>',
+    'delegated drafting (SKILL "Drafter model:"): a fresh drafter agent on this model drafts from drafter-packet.md while this agent only coordinates; standard = Claude Code sonnet, Codex gpt-6.1-terra; main (default) = draft yourself',
+  )
   .action((o) => {
     prepareCmd(cwd, { ...g(), ...o });
   });

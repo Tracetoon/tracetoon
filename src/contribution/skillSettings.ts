@@ -1,7 +1,7 @@
 /**
  * The variant lines at the end of the skill's Workflow section
  * (`Brief layout:`, `Reviewer model:`, `Reviewer effort:`, `Review passes:`,
- * `Review lenses:`, `Reviewer runner:`, `Review recheck:`, `Graph search:`), read from the SKILL.md that ships next to this runtime.
+ * `Review lenses:`, `Reviewer runner:`, `Review recheck:`, `Graph search:`, `Drafter model:`), read from the SKILL.md that ships next to this runtime.
  *
  * `prepare` uses them as defaults when the agent passes no matching flag, so a
  * configured reviewer plan holds even when the agent forgets to pass it on.
@@ -19,6 +19,7 @@ export interface SkillSettings {
   reviewerRunner?: string;
   reviewRecheck?: string;
   graphSearch?: string;
+  drafterModel?: string;
 }
 
 const LINES: Record<string, keyof SkillSettings> = {
@@ -30,6 +31,7 @@ const LINES: Record<string, keyof SkillSettings> = {
   'Reviewer runner': 'reviewerRunner',
   'Review recheck': 'reviewRecheck',
   'Graph search': 'graphSearch',
+  'Drafter model': 'drafterModel',
 };
 
 /** Parse the variant lines out of SKILL.md text. */

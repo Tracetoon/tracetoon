@@ -79,7 +79,15 @@ not switch to another run.
    ([references/quick-path.md](references/quick-path.md)) or the most thorough
    one ([references/full-path.md](references/full-path.md)).
 
-   **2b. Reviewed brief path (the default).** You draft; fresh independent
+   **2b. Reviewed brief path (the default).** With `Drafter model:` naming a
+   model, prepare's `next` makes you the coordinator: start ONE fresh drafter
+   on that model with `drafter-packet.md` (it holds steps 1–8 and the brief);
+   on Claude Code start the reviewers when it replies `PACKETS READY` and send
+   it their agent ids (SendMessage); publish (step 7) when it replies `READY
+   TO PUBLISH`. Follow that `next` exactly and don't read the brief, body or
+   packets yourself: every call you make re-reads the whole session, the
+   drafter's don't. The steps below are for the drafter, or for you when
+   prepare's `next` says to draft yourself. A drafter drafts; fresh independent
    reviewers check. Prepare's `next` names the reviewer model (`cheap`: Claude
    Code `haiku`, Codex `luna`) and runner (`auto`: your reviewer agents on
    Claude Code, `tracetoon review run` on Codex). Read only
@@ -174,6 +182,8 @@ Review recheck: none.
 Brief layout: toon.
 
 Graph search: fulltext.
+
+Drafter model: standard.
 
 Other commands: [references/commands.md](references/commands.md).
 
