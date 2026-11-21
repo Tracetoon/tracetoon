@@ -44,4 +44,14 @@ describe('Claude Code marketplace route', () => {
     expect(wf).not.toMatch(/push[^\n]*(--force|-f\b)/);
     expect(wf).not.toContain('$GITHUB_SHA:refs/heads/release');
   });
+  test('the plugins branch waits until every pinned npm tarball downloads', () => {
+    // npm lists a new version minutes before its tarball serves, and every
+    // package on the plugins branch runs that exact version through npx.
+    const wf = readFileSync(join(root, '.github/workflows/release.yml'), 'utf8');
+    const wait = wf.slice(wf.indexOf('- name: Wait for the npm packages'));
+    const publish = wait.indexOf('plugins-branch.ts');
+    expect(publish).toBeGreaterThan(0);
+    expect(wait.slice(0, publish)).toContain('dist.tarball');
+    expect(wait.slice(0, publish)).toMatch(/curl -sfIL/);
+  });
 });
