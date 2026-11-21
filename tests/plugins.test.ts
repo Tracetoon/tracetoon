@@ -8,6 +8,8 @@ import { lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import pkg from '../package.json';
 import {
+  AGENT_MCP_SCHEMA,
+  AGENT_PLUGIN_SCHEMA,
   NPX_ARGS,
   OUT,
   PR_COMMAND_PATTERN,
@@ -156,9 +158,15 @@ describe('every package', () => {
       for (const m of body.matchAll(/tracetoon@[^\s"]+/g))
         expect(m[0]).toBe(`tracetoon@${pkg.version}`);
     }
-    for (const dir of ['claude', 'cursor', 'codex', 'agent']) {
-      const mcp = parse(`${OUT}/${dir}/${dir === 'claude' ? '.mcp.json' : 'mcp.json'}`);
-      expect(mcp.mcpServers.tracetoon).toEqual({
+    for (const path of [
+      'claude/.mcp.json',
+      'claude/mcp.json',
+      'cursor/mcp.json',
+      'codex/mcp.json',
+      'agent/mcp.json',
+    ]) {
+      expect(parse(`${OUT}/${path}`).mcpServers.tracetoon).toEqual({
+        type: 'stdio',
         command: 'npx',
         args: [...NPX_ARGS, 'mcp'],
       });
@@ -365,7 +373,64 @@ describe('Cursor Marketplace', () => {
   });
 });
 
-describe('Agent Plugins (Codex, Copilot CLI, Kiro)', () => {
+/**
+ * Agent Plugins 1.0.0 (agent-plugins.org/plugin-builders/specification, the
+ * standard cursor.directory calls Open Plugins), checked by hand so the tests
+ * need no network and no schema library: plugin.json (§5), skills (§7.1) and
+ * mcp.json (§7.2). Hooks are outside v1 and each host reads its own.
+ */
+describe('Agent Plugins 1.0.0 conformance', () => {
+  const NAME = /^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
+  const DIRS = [
+    'claude',
+    'claude-directory',
+    'cursor',
+    'codex',
+    'codex-directory',
+    'agent',
+  ];
+  test.each(DIRS)('%s is a conforming plugin', (dir) => {
+    const manifest = parse(`${OUT}/${dir}/plugin.json`);
+    expect(manifest.$schema).toBe(AGENT_PLUGIN_SCHEMA);
+    expect(manifest.name).toMatch(NAME);
+    expect(manifest.name.length).toBeLessThanOrEqual(64);
+    for (const key of ['version', 'description', 'homepage', 'repository', 'license'])
+      expect(typeof manifest[key]).toBe('string');
+    expect(
+      Object.keys(manifest.author).every((k) => ['name', 'email', 'url'].includes(k)),
+    ).toBe(true);
+    expect(manifest.keywords.every((k: unknown) => typeof k === 'string')).toBe(true);
+    for (const [ns, value] of Object.entries(manifest.extensions)) {
+      expect(ns).toMatch(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/);
+      expect(typeof value === 'object' && value !== null && !Array.isArray(value)).toBe(
+        true,
+      );
+    }
+    // Skills: skills/<name>/SKILL.md, one level deep, nothing deeper named SKILL.md.
+    const skills = pkgFiles(dir).filter((p) => p.endsWith('/SKILL.md'));
+    expect(skills).toEqual([`${OUT}/${dir}/skills/tracetoon/SKILL.md`]);
+    const mcpPath = `${OUT}/${dir}/mcp.json`;
+    if (!files.has(mcpPath)) return;
+    const mcp = parse(mcpPath);
+    expect(Object.keys(mcp).sort()).toEqual(['$schema', 'mcpServers']);
+    expect(mcp.$schema).toBe(AGENT_MCP_SCHEMA);
+    // The mcp.json schema version matches the plugin.json one (§10).
+    expect(mcp.$schema.split('/')[4]).toBe(manifest.$schema.split('/')[4]);
+    for (const server of Object.values<any>(mcp.mcpServers)) {
+      expect(
+        Object.keys(server).every((k) =>
+          ['type', 'command', 'args', 'env', 'cwd'].includes(k),
+        ),
+      ).toBe(true);
+      expect(server.type).toBe('stdio');
+      expect(server.command).toMatch(/^(?:\.\/)?[^\s/]+$/);
+      expect(Object.keys(server.env ?? {})).not.toContain('PLUGIN_ROOT');
+      expect(Object.keys(server.env ?? {})).not.toContain('PLUGIN_DATA');
+    }
+  });
+});
+
+describe('Agent Plugins (every package; Codex, Copilot CLI and Kiro read it)', () => {
   const FIELDS = [
     '$schema',
     'name',
@@ -378,16 +443,20 @@ describe('Agent Plugins (Codex, Copilot CLI, Kiro)', () => {
     'keywords',
     'extensions',
   ];
-  test.each(['codex', 'codex-directory', 'agent'])(
-    '%s/plugin.json keeps to the closed field set',
-    (dir) => {
-      const manifest = parse(`${OUT}/${dir}/plugin.json`);
-      expect(Object.keys(manifest).filter((k) => !FIELDS.includes(k))).toEqual([]);
-      expect(manifest.$schema).toContain('1.0.0');
-      expect(manifest.author.name).toBe('Cassandra Chin');
-      expect(manifest.keywords.length).toBeGreaterThan(3);
-    },
-  );
+  test.each([
+    'claude',
+    'claude-directory',
+    'cursor',
+    'codex',
+    'codex-directory',
+    'agent',
+  ])('%s/plugin.json keeps to the closed field set', (dir) => {
+    const manifest = parse(`${OUT}/${dir}/plugin.json`);
+    expect(Object.keys(manifest).filter((k) => !FIELDS.includes(k))).toEqual([]);
+    expect(manifest.$schema).toContain('1.0.0');
+    expect(manifest.author.name).toBe('Cassandra Chin');
+    expect(manifest.keywords.length).toBeGreaterThan(3);
+  });
   test('the OpenAI directory package has no hooks and no MCP server', () => {
     const paths = pkgFiles('codex-directory');
     expect(paths.some((p) => /\/hooks\/|mcp\.json$/.test(p))).toBe(false);

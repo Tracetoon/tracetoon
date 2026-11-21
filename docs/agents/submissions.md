@@ -72,6 +72,26 @@ writes and sends, and how to check it.
 3. Description: the `description` in `cursor/.cursor-plugin/plugin.json`.
    Logo: `cursor/assets/tracetoon.png`.
 
+## cursor.directory (community)
+
+The community directory builds a listing from `main` (it always reads the
+default branch), so submit after the release is on npm: before that, `main`
+pins a version npm doesn't serve yet.
+
+1. Open https://cursor.directory/plugins/new, choose **Auto (GitHub)** and enter
+   https://github.com/Tracetoon/tracetoon.
+2. Check it found three components, all from `plugins/cursor`: the MCP server
+   and hooks running `npx -y tracetoon@<version>`, and the skill whose
+   "The tool" section runs npx (not `bin/tracetoon`).
+3. The scan reads only the repository's marketplace file, so fill in by hand:
+   - Description: Creates your PR with a description written from your Cursor session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.
+   - Author: Cassandra Chin (https://tracetoon.ai)
+   - Keywords: pull-request, pull-request-description, pr-description-generator, github, code-review, agent-skills, session-logs, agent-trace, provenance, ai-provenance, mcp-server, comic
+   - Logo: https://raw.githubusercontent.com/Tracetoon/tracetoon/main/plugins/cursor/assets/tracetoon.png
+4. After each release, edit the listing (Edit on its page) and rescan: its MCP
+   server and hooks pin the version. Once the Cursor Marketplace lists
+   Tracetoon, cursor.directory's daily import links and refreshes it.
+
 ## OpenAI Codex plugin directory
 
 The repo marketplace works without review: `codex plugin marketplace add Tracetoon/tracetoon`

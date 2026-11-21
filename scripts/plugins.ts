@@ -62,6 +62,20 @@ const pluginHook = (agent: string, event: string) =>
   npx('hook', 'plugin', '--agent', agent, '--event', event);
 const mcpEntry = () => ({ command: 'npx', args: [...NPX_ARGS, 'mcp'] });
 
+/** Agent Plugins 1.0.0 (agent-plugins.org): the schema ids plugin.json and mcp.json declare. */
+export const AGENT_PLUGIN_SCHEMA =
+  'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
+export const AGENT_MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
+/**
+ * A package's MCP config in the Agent Plugins form: `$schema`, and `type` on
+ * every server. Hosts that read `mcpServers` ignore the extra key and accept
+ * `type: "stdio"`.
+ */
+const agentMcp = () => ({
+  $schema: AGENT_MCP_SCHEMA,
+  mcpServers: { tracetoon: { type: 'stdio', ...mcpEntry() } },
+});
+
 export type Files = Map<string, string | Buffer>;
 
 /**
@@ -157,7 +171,10 @@ export function thinSkill(hooks = true): Map<string, string> {
     ],
     ['(`gh auth switch`, or a fork)', '(in the GitHub CLI, or a fork)'],
     ['agent after setting a key)', 'agent after adding the setting)'],
-    ["(the launcher's full path if\n  `tracetoon` isn't on their PATH)", '(the pinned npx command)'],
+    [
+      "(the launcher's full path if\n  `tracetoon` isn't on their PATH)",
+      '(the pinned npx command)',
+    ],
   ]) {
     const file = [...files].find(([, text]) => text.includes(from!));
     if (!file) throw new Error(`The skill no longer has: ${from}`);
@@ -545,6 +562,7 @@ const host = (dir: string) => HOSTS.find((h) => h.dir === dir)!;
 function claudePackage(files: Files) {
   const dir = `${OUT}/claude`;
   common(files, dir, host('claude'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('claude', {})));
   files.set(
     `${dir}/.claude-plugin/plugin.json`,
     json({
@@ -564,7 +582,12 @@ function claudePackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(claudeHooks()));
-  files.set(`${dir}/.mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  // Claude Code reads .mcp.json; mcp.json is the same server for Agent Plugins hosts.
+  files.set(
+    `${dir}/.mcp.json`,
+    json({ mcpServers: { tracetoon: { type: 'stdio', ...mcpEntry() } } }),
+  );
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /**
@@ -577,6 +600,7 @@ function claudePackage(files: Files) {
 function claudeDirectoryPackage(files: Files) {
   const dir = `${OUT}/claude-directory`;
   common(files, dir, host('claude-directory'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('claude-directory', {})));
   files.set(
     `${dir}/.claude-plugin/plugin.json`,
     json({
@@ -597,6 +621,7 @@ function claudeDirectoryPackage(files: Files) {
 function cursorPackage(files: Files) {
   const dir = `${OUT}/cursor`;
   common(files, dir, host('cursor'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('cursor', {})));
   files.set(
     `${dir}/.cursor-plugin/plugin.json`,
     json({
@@ -613,13 +638,13 @@ function cursorPackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(cursorHooks()));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /** Agent Plugins 1.0.0 (agentplugins/agent-plugins-spec): a closed set of fields. */
 function agentManifest(dir: string, extensions: Record<string, unknown>) {
   return {
-    $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
+    $schema: AGENT_PLUGIN_SCHEMA,
     name: 'tracetoon',
     version: pkg.version,
     description: description(dir),
@@ -665,7 +690,7 @@ function codexPackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(codexHooks()));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /** The OpenAI public directory ZIP: skills only (no hooks, no local MCP). */
@@ -702,7 +727,7 @@ function agentPackage(files: Files) {
   const dir = `${OUT}/agent`;
   common(files, dir, host('agent'));
   files.set(`${dir}/plugin.json`, json(agentManifest('agent', {})));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
   files.set(`${dir}/com.github.copilot/hooks/hooks.json`, json(copilotHooks()));
 }
 
