@@ -10,6 +10,7 @@ This branch is the website at https://tracetoon.ai. The code and docs live on `m
 ## Pages
 
 - `index.html`: the landing page. Plain HTML with inline CSS and one small inline script for the install tabs and copy buttons. The page still works with JavaScript off. No build step.
+- `prbench.html`: what prbench (the benchmark behind the results) does, the golden-run table and how to run it. Plain HTML with inline CSS and SVG, one small script for the copy buttons. Its numbers come from `evidence-graph-61.html`; change both together.
 - `evidence-graph.html`: the evidence graph results write-up, linked from the landing page as "Results". It is an export of the article with a site nav bar added. Mermaid loads from jsDelivr.
 
 ## Agent files
