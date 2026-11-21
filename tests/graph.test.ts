@@ -334,6 +334,9 @@ describe('evidence graph', () => {
       'terra',
       '--reviewer-effort',
       'xhigh',
+      // The reviewer-agent path (auto now picks tracetoon review run on both hosts).
+      '--reviewer-runner',
+      'agent',
     );
     const run = prepared.json.run;
     const plan = JSON.parse(
@@ -410,29 +413,25 @@ describe('evidence graph', () => {
         expect(prepared.json.drafter.model).toBe(model);
         expect(prepared.json.next).toContain("Coordinate; don't draft.");
         expect(prepared.json.next).toContain(`model "${model}"`);
-        expect(prepared.json.next).toContain(`tracetoon publish --run ${run}`);
+        // The drafter publishes; the coordinator only relays its one reply.
+        expect(prepared.json.next).toContain('PUBLISHED <url>');
+        expect(prepared.json.next).not.toContain(`tracetoon publish --run ${run}`);
         expect(prepared.json.next).not.toContain('Drafting rules');
         const packet = readFileSync(prepared.json.drafter.packet, 'utf8');
         expect(packet).toContain('## Evidence brief');
         expect(packet).toContain('Drafting rules');
-        expect(packet).toContain('READY TO PUBLISH');
+        expect(packet).toContain(`tracetoon publish --run ${run}`);
+        expect(packet).toContain('PUBLISHED <PR URL>');
+        expect(packet).toContain('Send no other messages');
         expect(packet).not.toContain('quick path');
         const brief = cli(repo.root, '--json', 'query', 'brief', '--run', run);
         expect(brief.code).toBe(0);
-        if (host === 'claude') {
-          // A Claude Code subagent can't start agents: the drafter hands back
-          // at the packets and the coordinator starts lens d + one general reviewer.
-          expect(packet).toContain('PACKETS READY');
-          expect(prepared.json.next).toContain('review-packet-d.md');
-          expect(prepared.json.next).toContain('reviewer-lens-d.md');
-          expect(prepared.json.next).toContain('review-findings.json');
-          expect(prepared.json.next).toContain('model "haiku" and effort "xhigh"');
-          expect(prepared.json.next).toContain('SendMessage');
-        } else {
-          expect(packet).toContain(`tracetoon review run --all --run ${run}`);
-          expect(packet).not.toContain('PACKETS READY');
-          expect(prepared.json.next).toContain('fork_turns: "none"');
-        }
+        // Both hosts: the drafter starts the reviewers with tracetoon review run
+        // (claude -p on Claude Code, codex exec on Codex); no handback.
+        expect(packet).toContain(`tracetoon review run --all --run ${run}`);
+        expect(packet).not.toContain('PACKETS READY');
+        if (host === 'codex') expect(prepared.json.next).toContain('wait_agent ONCE');
+        else expect(prepared.json.next).not.toContain('SendMessage');
       } finally {
         if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
         else process.env.TRACETOON_HOST_AGENT = saved;
