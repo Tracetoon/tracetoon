@@ -20,6 +20,9 @@ import { GRAPH_SCHEMA, type EvidenceGraph } from '../src/graph/model.ts';
 import {
   behaviorOf,
   briefParts,
+  addedFact,
+  planText,
+  requestText,
   describedHunks,
   findQuery,
   listsSeveral,
@@ -261,6 +264,7 @@ describe('evidence graph', () => {
       'limits',
       'doNotSay',
       'changes',
+      'behaviors',
       'process',
       'requests',
       'background',
@@ -280,6 +284,11 @@ describe('evidence graph', () => {
     expect(of('src/farewell.ts')).not.toBe(of('src/greet.ts'));
     expect(sec('requests').map((x: any) => x.ref)).toEqual(['S1', 'S2']);
     expect(sec('requests')[0].text).toContain('greet helper');
+    // One goal; no "first"/"later request" labels.
+    expect(sec('requests').map((x: any) => x.kind)).toEqual([
+      'goal; user request',
+      'user request',
+    ]);
     // The goal is this PR's own request already: no background row repeats it.
     expect(sec('background')).toEqual([]);
     // The last run of each command; it ran before farewell's final edit.
@@ -294,7 +303,7 @@ describe('evidence graph', () => {
     expect(limits).not.toContain('src/greet.ts:');
     // No pass after the commit: an open point, said once (process rows drop it).
     expect(limits).toMatch(
-      /No passing check run was recorded after the last commit \([0-9a-f]{12}\); the last pass \(R1, test\) came before it\./,
+      /No passing check run was recorded after the last commit \([0-9a-f]{12}\); the last pass \(R1, test\) came before it, and src\/farewell\.ts changed between them\./,
     );
     // Only open points: no instructions to the writer.
     expect(sec('limits').every((x: any) => x.kind === 'open')).toBe(true);
@@ -455,6 +464,99 @@ describe('evidence graph', () => {
     expect(r.json.contributionReview.status).toBe('skipped');
   });
 
+  test('hunks: a moved or reflowed line is counted as moved, not as a changed value or rule', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,6 +1,6 @@',
+      '-  if (count > 10) return;',
+      '-  const limit = 10;',
+      ' function run() {',
+      '+  const limit = 20;',
+      '   work();',
+      '+    if (count > 10) return;',
+      ' }',
+      'diff --git a/docs/guide.md b/docs/guide.md',
+      '--- a/docs/guide.md',
+      '+++ b/docs/guide.md',
+      '@@ -1,3 +1,3 @@',
+      '-Runs stop after 10 retries and the',
+      '-limit can be raised with --max.',
+      '+Runs stop after 10 retries and the limit',
+      '+can be raised with --max.',
+      '',
+    ].join('\n');
+    const [code, doc] = patchHunks(patch);
+    // The moved condition is neither a changed nor an added/removed condition;
+    // the value that really changed still pairs.
+    expect(code!.moved).toBe(1);
+    expect(code!.pairs).toEqual(['const limit = 10; → const limit = 20;']);
+    expect(code!.conds.some((c) => c.includes('count > 10'))).toBe(false);
+    // Key lines never quote the moved line as removed.
+    expect(code!.code.some((l) => l.includes('count > 10'))).toBe(false);
+    // Reflowed prose: no pair, all lines moved.
+    expect(doc!.moved).toBe(2);
+    expect(doc!.pairs).toEqual([]);
+  });
+
+  test('hunks: a line moved between hunks of a file is cancelled once on each side', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,3 +1,2 @@',
+      ' function first() {',
+      '-  retry(limit, 30);',
+      ' }',
+      '@@ -20,2 +19,3 @@ function second() {',
+      '   work();',
+      '+  retry(limit, 30);',
+      ' }',
+      '@@ -40,2 +40,2 @@ function third() {',
+      '-  retry(limit, 30);',
+      '+  retry(limit, 60);',
+      ' }',
+      '',
+    ].join('\n');
+    const [a, b, c] = patchHunks(patch);
+    expect(a!.moved).toBe(1);
+    expect(b!.moved ?? 0).toBe(0);
+    // The third hunk's removal is a real change: the one added copy was spent.
+    expect(c!.moved ?? 0).toBe(0);
+    expect(c!.pairs).toEqual(['retry(limit, 30); → retry(limit, 60);']);
+  });
+
+  test('hunks: owns names functions with changed code, not the @@ context or moved lines', () => {
+    const patch = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -10,5 +10,8 @@ export function before(x: number) {',
+      '   return x;',
+      ' }',
+      ' export function after(y: number) {',
+      '+  if (y > 3) return 0;',
+      '   return y;',
+      ' }',
+      '+export const budget = () =>',
+      '+  Number(process.env.BUDGET) || 100;',
+      '@@ -40,4 +43,4 @@',
+      ' export function mover() {',
+      '-  const a = compute(1, 2);',
+      '   step();',
+      '+  const a = compute(1, 2);',
+      ' }',
+      '',
+    ].join('\n');
+    const [h, m] = patchHunks(patch);
+    expect(h!.scope).toBe('before');
+    expect(h!.owns).toEqual(['after', 'budget']);
+    expect(h!.readers).toEqual(['budget']);
+    // Only moved lines: `mover` owns no change.
+    expect(m!.owns).toEqual([]);
+  });
+
   test('hunks: symbols end with their body, imports define nothing, values and tests are read', () => {
     const patch = [
       'diff --git a/src/a.ts b/src/a.ts',
@@ -558,7 +660,7 @@ describe('evidence graph', () => {
     expect(v.split('\n').filter((l) => l.startsWith('- '))).toEqual([
       // Its own result lines; a typecheck pass known only from an exit status is left out.
       '- `bun test`: passed (96 pass, 0 fail) in the session logs.',
-      "- Tracetoon can't tell whether these runs saw the final commit.",
+      "- The session logs don't show whether these runs saw the final commit.",
     ]);
   });
 
@@ -651,9 +753,13 @@ describe('evidence graph', () => {
       'The shell module changes how commands split. [CH1]\n\n<!-- tracetoon:validation -->',
       b,
     );
-    expect(r.uncovered).toEqual([
-      'L1 (open point): Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
+    // A commit-message result is the writer's to attribute: listed for the writer,
+    // never written into Validation by render.
+    expect(r.uncovered).toEqual([]);
+    expect(r.openLimits).toEqual([
+      'L1: Only commit abc1234\'s message reports "50/50"; no captured run shows that result.',
     ]);
+    expect(r.text).not.toContain('Open points:');
     expect(r.text).toContain(
       '- `bun test`: passed (9 pass, 0 fail) in the session logs.',
     );
@@ -709,7 +815,7 @@ describe('evidence graph', () => {
       ],
     } as any);
     expect(v).toContain(
-      '- `bun test`: passed (96 pass, 0 fail), run by `tracetoon check` on the submitted content.',
+      '- `bun test`: passed (96 pass, 0 fail), run on the submitted content.',
     );
     expect(v).not.toContain('tsc');
     expect(v).not.toContain("can't tell whether");
@@ -748,12 +854,57 @@ describe('evidence graph', () => {
         },
       ],
     } as any);
+    // Passing receipts collapse into one line naming each.
     const lines = v.split('\n').filter((l) => l.startsWith('- '));
-    expect(lines).toHaveLength(4);
-    expect(v).toContain(
-      '- `bun run bundle`: passed, run by `tracetoon check` on the submitted content.',
-    );
+    expect(lines).toEqual([
+      '- Checks passed on the submitted content: `bun x tsc --noEmit`, `bun test` (96 pass, 0 fail), `bun run bundle`, `bun x prettier --check .`.',
+    ]);
+    expect(v).toContain('<sub>From runs on the submitted content.</sub>');
     expect(v).not.toContain('tests/a.test.ts');
+  });
+
+  test('a failed receipt keeps the session pass, names failing files and the toolchain', () => {
+    const v = validationSection({
+      unchecked: [],
+      toolchain: ['bun 1.2.0 (.bun-version; this environment runs 1.3.14)'],
+      sections: [
+        {
+          title: 'changes',
+          rows: [{ change: 'CH1', where: ['tests/cache.test.ts', 'src/cache.ts (get)'] }],
+        },
+        {
+          title: 'validation',
+          rows: [
+            {
+              check: 'V1',
+              kind: 'test',
+              outcome: 'failed',
+              result: '40 pass; 2 fail; tests/cache.test.ts; tests/other.test.ts',
+              cmd: 'bun test',
+              when: 'fresh: run on the submitted content',
+              editedAfter: [],
+            },
+            {
+              check: 'R4',
+              kind: 'test',
+              outcome: 'passed',
+              result: '42 pass; 0 fail',
+              cmd: 'bun test',
+              when: 'after the last edit the logs captured',
+              editedAfter: [],
+              statable: true,
+            },
+          ],
+        },
+      ],
+    } as any);
+    expect(v).toContain(
+      'Failing test files: `tests/cache.test.ts` (changed in this PR), `tests/other.test.ts` (not changed in this PR).',
+    );
+    expect(v).toContain('The repo pins bun 1.2.0');
+    expect(v).toContain('passed (42 pass, 0 fail) in the session logs');
+    // No lines, no heading.
+    expect(validationSection({ unchecked: [], sections: [] } as any)).toBe('');
   });
 
   test('shown commands drop output redirections', () => {
@@ -824,7 +975,11 @@ describe('evidence graph', () => {
         names: ['SeriesBible'],
       },
     ]);
-    expect(r.flags.map((f) => [f.severity, f.problem.slice(0, 30)])).toEqual([
+    expect(
+      r.flags
+        .filter((f) => !f.sentence.startsWith('(no '))
+        .map((f) => [f.severity, f.problem.slice(0, 30)]),
+    ).toEqual([
       ['fix', '`ImageJob` already existed (no'],
       ['fix', 'only a commit message says thi'],
     ]);
@@ -1379,6 +1534,7 @@ describe('the brief states recorded process and behavior', () => {
         title: null,
         failedCommands: 2,
         failedCommand: 'git push',
+        firstPromptT: t(1),
       }),
       N('Prompt', 'S1', {
         t: t(1),
@@ -1505,11 +1661,31 @@ describe('the brief states recorded process and behavior', () => {
   const b = withGraph(graph, (g) => briefParts(g));
   const sec = (title: string) => b.sections.find((s) => s.title === title)!.rows;
 
-  test('no avoid rules and no instructions: only open limits, one for unrequested changes', () => {
+  test('an added file copying a base file is a housekeeping row, not new content', () => {
+    const copied = {
+      ...graph,
+      nodes: graph.nodes.map((n: any) =>
+        n.label === 'File' && n.id === 'src/b.ts'
+          ? { ...n, props: { ...n.props, copyOf: 'lib/b.ts' } }
+          : n,
+      ),
+    };
+    const hk = withGraph(copied, (g) => briefParts(g)).sections.find(
+      (x) => x.title === 'housekeeping',
+    )!.rows;
+    expect(hk).toContainEqual({
+      ref: expect.stringMatching(/^HK\d+$/),
+      what: 'copy of lib/b.ts, not new content (byte-identical to the base file)',
+      files: ['src/b.ts'],
+    });
+  });
+
+  test('no avoid rules and no instructions: only open limits, and none claiming a change was unrequested', () => {
     expect(b.sections.map((s) => s.title)).toEqual([
       'limits',
       'doNotSay',
       'changes',
+      'behaviors',
       'process',
       'requests',
       'background',
@@ -1519,8 +1695,8 @@ describe('the brief states recorded process and behavior', () => {
       'validation',
       'headScan',
     ]);
+    // No "no request was recorded" row: requests are read from attributed turns only.
     expect(sec('limits').map((l) => [l.kind, l.change, l.limit])).toEqual([
-      ['open', ['CH2'], 'No user request was recorded for CH2.'],
       // A failed push is an open point: what reached the remote isn't recorded.
       [
         'open',
@@ -1531,9 +1707,11 @@ describe('the brief states recorded process and behavior', () => {
   });
 
   test('a check passed on the submitted content retires "no pass after the last commit"', () => {
-    // Every logged pass before the commit, no receipt: the limit holds.
+    // Every logged pass before the commit, and an edit after them, no receipt:
+    // the limit holds. (A pass with no edit before the commit covers it.)
     const stale: EvidenceGraph = structuredClone(graph);
     for (const id of ['R2', 'R3']) stale.nodes.find((n) => n.id === id)!.props.t = t(3);
+    stale.nodes.find((n) => n.id === 'E1')!.props.t = '2026-01-01T00:00:03.500Z';
     stale.nodes = stale.nodes.filter((n) => n.id !== 'V1');
     const limitText = (p: { sections: { title: string; rows: any[] }[] }) =>
       p.sections.find((s) => s.title === 'limits')!.rows.map((l) => String(l.limit));
@@ -1579,6 +1757,101 @@ describe('the brief states recorded process and behavior', () => {
     ).toEqual([]);
   });
 
+  test('a file with no recognized pass is scoped to what Tracetoon read, naming later commands', () => {
+    // No pass at all, and the session ran commands Tracetoon does not classify after the edit.
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['R2', 'R3', 'V1'].includes(n.id));
+    const s = g.nodes.find((n) => n.id === 'h:s')!;
+    s.props.lateCmds = ['./target/debug/pingpong 10', 'make smoke-local'];
+    s.props.lateT = [t(2), t(6)];
+    const p = withGraph(g, (e) => briefParts(e));
+    const limits = p.sections
+      .find((x) => x.title === 'limits')!
+      .rows.map((l) => String(l.limit));
+    expect(limits).toContainEqual(
+      'The session logs show no passing test, build, lint or typecheck run after the last captured edit of src/a.ts; after that edit the session ran other commands: `make smoke-local`.',
+    );
+    expect(limits.join('\n')).not.toMatch(/^No recorded passing/m);
+    expect(p.sections.find((x) => x.title === 'otherRuns')!.rows).toEqual([
+      { cmd: 'make smoke-local', after: 'last captured edit of src/a.ts' },
+    ]);
+    // Validation says what Tracetoon could read and lists the later commands.
+    const also =
+      '- After the last captured edit the session also ran `make smoke-local`, which are not classified as checks.';
+    // An earlier failure, before the edit, is shown; the later command follows it.
+    expect(validationSection(p)).toContain('- `bun test`: failed (2 pass, 1 fail)');
+    expect(validationSection(p)).toContain(also);
+    g.nodes = g.nodes.filter((n) => n.id !== 'R1');
+    const none = withGraph(g, (e) => briefParts(e));
+    const v = validationSection(none);
+    // No empty-state line: "no check appears" read as a session-wide fact.
+    expect(v).not.toContain('No test, typecheck or lint run appears');
+    expect(v).toContain(also);
+    expect(v).not.toMatch(/was recorded in the captured sessions/);
+    // Without later commands: the scoped line only, and no otherRuns section.
+    delete s.props.lateCmds;
+    delete s.props.lateT;
+    const q = withGraph(g, (e) => briefParts(e));
+    expect(q.sections.some((x) => x.title === 'otherRuns')).toBe(false);
+    expect(validationSection(q)).not.toContain('also ran');
+  });
+
+  test('session history stays beside a fresh pass: the last run preceded the final edit', () => {
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['R2', 'R3', 'V1'].includes(n.id));
+    const limits = (fresh: boolean) =>
+      withGraph(g, (e) => briefParts(e, { freshPass: fresh }))
+        .sections.find((x) => x.title === 'limits')!
+        .rows.map((l) => String(l.limit));
+    const row = limits(true).find((l) => /^The session's last /.test(l));
+    expect(row).toMatch(
+      /^The session's last test run \(R1\) came before the final edits to src\/a\.ts\b/,
+    );
+    expect(row).not.toMatch(/Tracetoon/);
+    // Without a fresh pass the scoped no-pass row says it instead.
+    expect(limits(false).some((l) => /^The session's last /.test(l))).toBe(false);
+  });
+
+  test('a pass just before the commit covers it in the process rows', () => {
+    // R2 passes after the last edit and before the commit, with nothing edited in between.
+    const g: EvidenceGraph = structuredClone(graph);
+    g.nodes = g.nodes.filter((n) => !['V1', 'R3'].includes(n.id));
+    g.nodes.find((n) => n.id === 'R2')!.props.t = '2026-01-01T00:00:03.500Z';
+    const p = withGraph(g, (e) => briefParts(e));
+    const facts = p.sections
+      .find((x) => x.title === 'process')!
+      .rows.map((r) => String(r.fact))
+      .join('\n');
+    expect(facts).toContain(
+      'R2 passed before the last commit with no captured edit in between',
+    );
+    expect(facts).not.toMatch(/no pass(ing run recorded)? after the last commit/);
+    const limits = p.sections.find((x) => x.title === 'limits')!.rows;
+    expect(limits.some((l) => /No passing check run/.test(String(l.limit)))).toBe(false);
+    // The same turn ran the suite (its own result lines) and made the commit:
+    // the run is on the committed content, so no "historical" open point.
+    expect(limits.some((l) => /historical session run/.test(String(l.limit)))).toBe(
+      false,
+    );
+    // A user turn between the pass and the commit: no captured edit came
+    // between, so still no "historical session run" point (it invited hedging).
+    g.nodes.push(
+      N('Prompt', 'S4', {
+        t: '2026-01-01T00:00:03.700Z',
+        text: 'Now commit it',
+        pushback: false,
+        session: 'h:s',
+      }),
+    );
+    g.rels.push(R('IN_SESSION', ['Prompt', 'S4'], ['Session', 'h:s']));
+    const later = withGraph(g, (e) => briefParts(e));
+    expect(
+      later.sections
+        .find((x) => x.title === 'limits')!
+        .rows.some((l) => /historical session run/.test(String(l.limit))),
+    ).toBe(false);
+  });
+
   test("requests are this PR's turns only; a cut-off record is marked", () => {
     expect(sec('requests').map((r) => [r.ref, r.truncated])).toEqual([
       ['S3', null],
@@ -1586,14 +1859,32 @@ describe('the brief states recorded process and behavior', () => {
       ['P2', null],
     ]);
     expect(sec('requests')[2]!.kind).toBe('plan (approved) in the turn of S3');
+    // A bare "go ahead" is the goal, shown as the request it continues; no
+    // "first"/"later request" labels.
+    expect(sec('requests')[0]!.kind).toMatch(
+      /^goal \(the user's "Go ahead" continues S1/,
+    );
+    expect(sec('requests')[0]!.text).toBe('Earlier work');
   });
 
   test('background: the session goal and earlier plans and decisions, outside requests', () => {
     expect(sec('background').map((r) => [r.ref, r.kind, r.text])).toEqual([
-      ['S1', "why this work started: the session's first request", 'Earlier work'],
-      // At most the goal and one plan: a decision gives way to the plan.
+      ['S1', 'why this work started', '(shown under requests as the goal, S3)'],
+      // At most three rows: the goal, the latest plan, then the latest decision.
+      ['D0', 'earlier decision in the session', 'Old question'],
       ['P1', 'earlier plan (not approved as written) in the session', 'Limit v1'],
     ]);
+    // An earlier prompt the digest did not keep: S1 is only the earliest kept.
+    const earlier = {
+      ...graph,
+      nodes: graph.nodes.map((n: any) =>
+        n.label === 'Session' ? { ...n, props: { ...n.props, firstPromptT: t(0) } } : n,
+      ),
+    };
+    const bg = withGraph(earlier, (e) => briefParts(e)).sections.find(
+      (x) => x.title === 'background',
+    )!.rows;
+    expect(String(bg[0]!.kind)).toBe('why this work started');
     // Optional context: refs render accepts, never required for coverage.
     const r = applyBrief(
       'The limit is now 12. [CH1]\n\nIt started from earlier work. [S1]',
@@ -1608,11 +1899,11 @@ describe('the brief states recorded process and behavior', () => {
     ).toEqual([]);
   });
 
-  test('background: at most two rows, clipped text, acknowledgments are no goal', () => {
+  test('background: at most three rows, clipped text, acknowledgments are no goal', () => {
     const more: EvidenceGraph = structuredClone(graph);
     more.nodes.find((n) => n.id === 'S1')!.props.text = 'go ahead';
     more.nodes.find((n) => n.id === 'S2')!.props.text =
-      `Plan the limit ${'x'.repeat(700)}`;
+      `Plan the limit ${'x'.repeat(2000)}`;
     for (const i of [5, 6, 7, 8]) {
       more.nodes.push(
         N('Decision', `D${i}`, {
@@ -1626,17 +1917,21 @@ describe('the brief states recorded process and behavior', () => {
     const rows = withGraph(more, (g) => briefParts(g)).sections.find(
       (s) => s.title === 'background',
     )!.rows;
-    expect(rows.map((r) => r.ref)).toEqual(['S2', 'P1']);
-    expect(String(rows[0]!.text).length).toBe(600);
-    expect(String(rows[0]!.text).endsWith('…')).toBe(true);
+    expect(rows.map((r) => r.ref)).toEqual(['S2', 'D8', 'P1']);
+    // The bare goal ("Go ahead") shows S2's text, clipped.
+    const goal = withGraph(more, (g) => briefParts(g)).sections.find(
+      (s) => s.title === 'requests',
+    )!.rows[0]!;
+    expect(String(goal.text).length).toBe(1500);
+    expect(String(goal.text).endsWith('…')).toBe(true);
     // With no earlier plan, the latest decision, clipped.
     more.nodes = more.nodes.filter((n) => n.id !== 'P1');
     more.rels = more.rels.filter((r) => r.from.id !== 'P1');
     const noPlan = withGraph(more, (g) => briefParts(g)).sections.find(
       (s) => s.title === 'background',
     )!.rows;
-    expect(noPlan.map((r) => r.ref)).toEqual(['S2', 'D8']);
-    expect(String(noPlan[1]!.text).length).toBe(400);
+    expect(noPlan.map((r) => r.ref)).toEqual(['S2', 'D7', 'D8']);
+    expect(String(noPlan[2]!.text).length).toBe(400);
   });
 
   test('background: plans and decisions of a session with no captured prompt still show', () => {
@@ -1653,36 +1948,196 @@ describe('the brief states recorded process and behavior', () => {
     );
     const parts = withGraph(cut, (g) => briefParts(g)).sections;
     const rows = parts.find((s) => s.title === 'background')!.rows;
-    // No goal: the two latest plans (decisions give way to plans).
+    // No goal: the plans first, then the latest decision.
     expect(rows.map((r) => [r.ref, r.kind])).toEqual([
       [
         'P1',
         "plan (not approved as written) in the session (the prompt before it wasn't captured)",
       ],
+      ['D1', "decision in the session (the prompt before it wasn't captured)"],
       ['P2', "plan (approved) in the session (the prompt before it wasn't captured)"],
     ]);
     const plan = parts
       .find((s) => s.title === 'process')!
       .rows.find((r) => r.kind === 'plan')!;
+    // A plan with no turn opened its session: it is this PR's plan, never "none recorded".
     expect(plan.fact).toBe(
-      "No plan or decision in this PR's own turns; the session recorded P1 (plan not approved as written), P2 (approved plan) outside them: see background.",
+      'Plans, in order: P1 "Limit v1" not approved as written → P2 "Limit v2" approved.',
     );
     expect(plan.cites).toEqual(['P1', 'P2']);
     expect(
       parts
         .find((s) => s.title === 'doNotSay')!
         .rows.find((r) => r.kind === 'recorded requests')?.text,
-    ).toBe("Plans were recorded (P1, P2): don't say none was recorded.");
-    // Before a captured prompt, a turnless plan is the tail of earlier work.
+    ).toBe(
+      "Plans/decisions were recorded (P1, D1, P2): don't say none was recorded, or that an approval or review wasn't.",
+    );
+    // Before a captured prompt, a turnless plan still shows (a session started
+    // to carry out a plan opens with it); one after the last productive turn doesn't.
     const tail: EvidenceGraph = structuredClone(graph);
     tail.nodes.push(
       N('Plan', 'P8', { t: t(0), approved: true, text: 'Old', session: 'h:s' }),
+      N('Plan', 'P7', { t: t(50), approved: true, text: 'Later', session: 'h:s' }),
     );
-    tail.rels.push(R('IN_SESSION', ['Plan', 'P8'], ['Session', 'h:s']));
+    tail.rels.push(
+      R('IN_SESSION', ['Plan', 'P8'], ['Session', 'h:s']),
+      R('IN_SESSION', ['Plan', 'P7'], ['Session', 'h:s']),
+    );
     const tailParts = withGraph(tail, (g) => briefParts(g)).sections;
+    const tailRefs = tailParts
+      .find((s) => s.title === 'background')!
+      .rows.map((r) => r.ref);
+    expect(tailRefs).toContain('P8');
+    expect(tailRefs).not.toContain('P7');
+  });
+
+  test('background: a short "implement the plan" request brings the plan before it', () => {
+    const impl: EvidenceGraph = structuredClone(graph);
+    impl.nodes.find((n) => n.id === 'S3')!.props.text = 'Implement the plan.';
+    impl.nodes = impl.nodes.filter((n) => n.id !== 'P2');
+    impl.rels = impl.rels.filter((r) => r.from.id !== 'P2' && r.to.id !== 'P2');
+    const parts = withGraph(impl, (g) => briefParts(g)).sections;
+    const bg = parts.find((s) => s.title === 'background')!.rows;
+    // The plan before S3 is P1, made in an earlier turn.
+    const planRow = bg.find((r) => /refers to/.test(String(r.kind)));
+    expect(planRow?.ref).toBe('P1');
+  });
+
+  test('limits: CI on the final head is open only after a push or a PR made', () => {
+    const lim = (x: EvidenceGraph) =>
+      withGraph(x, (g) => briefParts(g))
+        .sections.find((s) => s.title === 'limits')!
+        .rows.map((r) => String(r.limit));
+    // Only a failed push (its own row says what's unknown): no CI row.
+    expect(lim(graph).some((l) => /CI results/.test(l))).toBe(false);
+    const pushed: EvidenceGraph = structuredClone(graph);
+    const s = pushed.nodes.find((n) => n.label === 'Session')!;
+    s.props.remoteCmds = ['git push', 'gh pr create', 'gh run rerun'];
+    s.props.remoteKinds = ['publish', 'publish', 'ci'];
+    s.props.remoteT = [t(6), t(7), t(8)];
+    s.props.remoteFailed = ['ok', 'ok', 'failed'];
+    expect(lim(pushed)).toContain(
+      'The session pushed and opened a PR (`git push`, `gh pr create`); CI results for the final head are not in the session logs (afterwards it ran `gh run rerun`, which failed; its output shows no check results).',
+    );
+    // A push alone is worded as a push, never as a PR opened.
+    const pushOnly: EvidenceGraph = structuredClone(graph);
+    Object.assign(pushOnly.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push'],
+      remoteKinds: ['publish'],
+      remoteT: [t(6)],
+      remoteFailed: ['ok'],
+    });
+    expect(lim(pushOnly)).toContain(
+      'The session pushed (`git push`); CI results for the final head are not in the session logs.',
+    );
+    // Check results after the last push cover the final head: no row.
+    const checked: EvidenceGraph = structuredClone(pushOnly);
+    Object.assign(checked.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push', 'gh pr checks'],
+      remoteKinds: ['publish', 'ci'],
+      remoteT: [t(6), t(7)],
+      remoteFailed: ['ok', 'ok'],
+      remoteResults: ['', 'results'],
+    });
+    expect(lim(checked).some((l) => /CI results/.test(l))).toBe(false);
+    // Results that name an earlier commit only: said exactly so.
+    const earlier: EvidenceGraph = structuredClone(checked);
+    earlier.nodes.push(
+      N('Commit', 'fed987cba654', { subject: 'fix: follow-up', body: null, t: t(9) }),
+    );
+    Object.assign(earlier.nodes.find((n) => n.label === 'Session')!.props, {
+      remoteCmds: ['git push', 'gh run list', 'git push'],
+      remoteKinds: ['publish', 'ci', 'publish'],
+      remoteT: [t(6), t(7), t(10)],
+      remoteFailed: ['ok', 'ok', 'ok'],
+      remoteResults: ['', 'results abc123def456', ''],
+    });
+    expect(lim(earlier)).toContain(
+      'The session pushed (`git push`); the logs record CI results (`gh run list`) for an earlier commit of this PR (abc123def456), not for the final head (fed987cba654).',
+    );
+    // A push before the PR's first commit pushed earlier work.
+    const early: EvidenceGraph = structuredClone(pushed);
+    early.nodes.find((n) => n.label === 'Session')!.props.remoteT = [
+      '2000-01-01T00:00:00.000Z',
+      '2000-01-01T00:00:01.000Z',
+      '2000-01-01T00:00:02.000Z',
+    ];
+    expect(lim(early).some((l) => /CI results/.test(l))).toBe(false);
+    // A push that failed reached nothing.
+    s.props.remoteCmds = ['git push'];
+    s.props.remoteKinds = ['publish'];
+    s.props.remoteT = [t(6)];
+    s.props.remoteFailed = ['failed'];
+    expect(lim(pushed).some((l) => /CI results/.test(l))).toBe(false);
+    // No session matched: no row, whatever the commits.
+    const none: EvidenceGraph = structuredClone(graph);
+    for (const n of none.nodes) if (n.label === 'Session') n.props.band = 'ambiguous';
+    expect(lim(none).some((l) => /CI results/.test(l))).toBe(false);
+  });
+
+  test('housekeeping: binary artifacts and checksum files get a row', () => {
+    const bin: EvidenceGraph = structuredClone(graph);
+    bin.nodes.push(
+      N('File', 'release/SHA256SUMS', { role: 'config', inPr: true }),
+      N('File', 'assets/logo.png', { role: 'config', inPr: true }),
+    );
+    const hk = withGraph(bin, (g) => briefParts(g))
+      .sections.find((s) => s.title === 'housekeeping')!
+      .rows.find((r) => /binary artifacts/.test(String(r.what)));
+    expect(hk?.files).toEqual(['assets/logo.png', 'release/SHA256SUMS']);
+  });
+
+  test('requestText drops task boilerplate and keeps the reason when clipping', () => {
+    const text = [
+      'Fix the cache eviction order.',
+      'Work in the worktree at /tmp/wt on branch fix-cache.',
+      'bun test tests/cache.test.ts',
+      'End commits with Co-Authored-By: Someone <x@example.com>',
+      ...Array.from({ length: 40 }, (_, i) => `Detail number ${i} about the layout.`),
+      'This matters because stale entries are served after a restart.',
+    ].join('\n');
+    const out = requestText(text, 600);
+    expect(out.length).toBeLessThanOrEqual(600);
+    expect(out).toStartWith('Fix the cache eviction order.');
+    expect(out).not.toContain('worktree');
+    expect(out).not.toContain('Co-Authored-By');
+    expect(out).not.toContain('bun test');
+    expect(out).toContain('because stale entries are served after a restart');
+    expect(out).toContain('…');
+    // Short requests are quoted whole.
+    expect(requestText('Make it faster.')).toBe('Make it faster.');
+  });
+
+  test('addedFact picks the telling added line: an option, a default, a step', () => {
     expect(
-      tailParts.find((s) => s.title === 'background')!.rows.map((r) => r.ref),
-    ).not.toContain('P8');
+      addedFact([
+        {
+          code: [
+            '+ // helper',
+            "+ import { x } from 'y';",
+            '+ const total = sum(items);',
+            "+ program.option('--dry-run', 'print only');",
+          ],
+        },
+      ]),
+    ).toBe("program.option('--dry-run', 'print only');");
+    expect(addedFact([{ code: ['+       - name: Upload release assets'] }])).toBe(
+      '- name: Upload release assets',
+    );
+    expect(addedFact([{ code: ['+ }'] }])).toBeUndefined();
+  });
+
+  test('planText quotes the why-sections of a plan before its steps', () => {
+    const plan = [
+      '# Rework the cache',
+      '## Steps',
+      ...Array.from({ length: 60 }, (_, i) => `- step ${i} edits a file`),
+      '## Context',
+      'Entries outlive a restart, so users see stale data.',
+    ].join('\n');
+    const out = planText(plan, 200);
+    expect(out).toStartWith('# Rework the cache ## Context Entries outlive a restart');
+    expect(out.length).toBeLessThanOrEqual(200);
   });
 
   test('process rows: session role, plan history, test trajectory, failed commands', () => {

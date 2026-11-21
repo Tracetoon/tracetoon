@@ -71,6 +71,10 @@ export type TraceRecord =
       output?: string;
       /** Still running when the log was read: no result (or output) yet. */
       pending?: boolean;
+      /** Its output was put together from polls of a running command (Codex `write_stdin`). */
+      partial?: boolean;
+      /** A result whose call the log lacks: `cmd` is `ORPHAN_COMMAND`, the output a test runner's. */
+      orphan?: boolean;
     })
   | (Base & {
       kind: 'link';
@@ -158,3 +162,10 @@ export interface TraceAdapter {
   discover(q: DiscoverQuery): SessionRef[];
   read(ref: SessionRef): TraceSession;
 }
+
+/** The command of a test-runner result whose call is not in the log. */
+export const ORPHAN_COMMAND = '‹command not in the log›';
+/** Starts a receipt's result when its check could not start in this environment. */
+export const COULD_NOT_RUN = 'could not run here: ';
+/** Starts a receipt's result when its check hit the time limit: incomplete, not failed. */
+export const TIMED_OUT = 'timed out (incomplete)';

@@ -27,7 +27,8 @@ export const PREPARATION_CONTRACT: PackagedContract = {
 export const CHECK_PROGRESS_CONTRACT: PackagedContract = {
   id: 'live-check-progress',
   file: 'tests/check-progress.test.ts',
-  pattern: 'CLI streams check progress while the receipt and lock still indicate running',
+  pattern:
+    'CLI streams check progress with --progress while the receipt and lock still indicate running',
   minimum: 1,
 };
 export const EVIDENCE_GRAPH_CONTRACT: PackagedContract = {

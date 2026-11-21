@@ -76,10 +76,29 @@ export function placeholderAgentId(id: unknown): boolean {
 }
 
 /**
- * Check review-findings.json's shape. Throws one error listing everything to fix.
- * Returns warnings for issues that don't block the import.
+ * The reviewer id a findings file records, wherever the reviewer put it:
+ * `reviewer.agentId` (the contract), or the spellings reviewers also write
+ * (`reviewer.agent_id`, `reviewer.id`, a top-level `agentId`). Placeholders
+ * (null, "", "unknown", "<id>") count as none.
  */
-export function parseFindings(value: unknown): {
+export function findingsAgentId(value: unknown): string | undefined {
+  if (!record(value)) return undefined;
+  const r = record(value.reviewer) ? value.reviewer : {};
+  for (const id of [r.agentId, r.agent_id, r.agentID, r.id, value.agentId, value.agent_id])
+    if (typeof id === 'string' && !placeholderAgentId(id)) return id.trim();
+  return undefined;
+}
+
+/**
+ * Check review-findings.json's shape. Throws one error listing everything to fix.
+ * Returns warnings for issues that don't block the import. `agentId` (from
+ * `review import --agent-id`) stands in for a missing, null or empty
+ * `reviewer.agentId`: the file never needs hand-fixing when the host gave one.
+ */
+export function parseFindings(
+  value: unknown,
+  given: { agentId?: string } = {},
+): {
   findings: LeanFindings;
   warnings: string[];
 } {
@@ -87,8 +106,19 @@ export function parseFindings(value: unknown): {
   const warnings: string[] = [];
   if (!record(value)) throw new Error(fixList(['the file must hold one JSON object']));
   if (value.v !== 1) errors.push('"v" must be 1');
+  const override = given.agentId?.trim();
+  const fromFile = findingsAgentId(value);
+  const id = override || fromFile;
+  if (id) {
+    value.reviewer = {
+      ...(record(value.reviewer) ? value.reviewer : {}),
+      agentId: id,
+    };
+  }
   if (!record(value.reviewer) || typeof value.reviewer.agentId !== 'string')
-    errors.push('"reviewer" must be {"agentId": "<your real agent id>"}');
+    errors.push(
+      '"reviewer" must be {"agentId": "<your real agent id>"} (or pass --agent-id <id> to review import)',
+    );
   else if (
     value.reviewer.model !== undefined &&
     (typeof value.reviewer.model !== 'string' || !value.reviewer.model.trim())

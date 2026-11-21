@@ -131,30 +131,11 @@ export function thinSkill(hooks = true): Map<string, string> {
   let skill = readFileSync(join(src, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
   skill = swap(skill, 'runtime', hooks ? RUNTIME : `${RUNTIME}\n\n${SKILL_ONLY}`);
   skill = swap(skill, 'update', UPDATE);
-  skill = skill
-    .replace(
-      /^compatibility: Requires git and/m,
-      'compatibility: Requires Node.js 18 or later (npx), git and',
-    )
-    .replace(
-      "(the launcher's full path if `tracetoon` isn't on their PATH)",
-      '(the pinned npx command)',
-    );
-  // The Anthropic directory holds a skill that names an environment variable
-  // or a key beside a remote URL (MCP_FORWARDS_CREDENTIAL_ENV), so the packaged
-  // skill says these in words and leaves URLs to the README.
-  for (const [from, to] of [
-    [
-      "prefix the `gh` command\nwith `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh pr create ...`). Never use",
-      'use the\none-command bypass that `tracetoon status` prints. Never use',
-    ],
-    ['(`gh auth switch`)', '(in the GitHub CLI)'],
-    ['agent after setting a key)', 'agent after adding the setting)'],
-  ]) {
-    if (!skill.includes(from!)) throw new Error(`SKILL.md no longer has: ${from}`);
-    skill = skill.replace(from!, to!);
-  }
-  out.set('SKILL.md', skill);
+  skill = skill.replace(
+    /^compatibility: Requires git and/m,
+    'compatibility: Requires Node.js 18 or later (npx), git and',
+  );
+  const files = new Map<string, string>([['SKILL.md', skill]]);
   for (const name of readdirSync(join(src, 'references')).sort()) {
     if (!name.endsWith('.md')) continue;
     let text = readFileSync(join(src, 'references', name), 'utf8').replace(/\r\n/g, '\n');
@@ -163,8 +144,26 @@ export function thinSkill(hooks = true): Map<string, string> {
         'Use this only when the launcher exits with code 3 and the user declined the\ndownload.',
         "Use this only when Tracetoon's runtime can't start (no Node.js for npx, or\nexit code 3) and the user declined the installer.",
       );
-    out.set(`references/${name}`, text);
+    files.set(`references/${name}`, text);
   }
+  // The Anthropic directory holds a skill that names an environment variable
+  // or a key beside a remote URL (MCP_FORWARDS_CREDENTIAL_ENV), so the packaged
+  // skill says these in words and leaves URLs to the README. Each phrase must
+  // still be in SKILL.md or one of its references.
+  for (const [from, to] of [
+    [
+      "prefix `gh` with `TRACETOON=0` (PowerShell: `$env:TRACETOON='0'; gh\npr create ...`); never",
+      'use the one-command bypass that `tracetoon status`\nprints; never',
+    ],
+    ['(`gh auth switch`, or a fork)', '(in the GitHub CLI, or a fork)'],
+    ['agent after setting a key)', 'agent after adding the setting)'],
+    ["(the launcher's full path if\n  `tracetoon` isn't on their PATH)", '(the pinned npx command)'],
+  ]) {
+    const file = [...files].find(([, text]) => text.includes(from!));
+    if (!file) throw new Error(`The skill no longer has: ${from}`);
+    files.set(file[0], file[1].replace(from!, to!));
+  }
+  for (const [name, text] of files) out.set(name, text);
   return out;
 }
 

@@ -277,7 +277,12 @@ function checkVerification(
     ),
   ];
   if (counts.length && result && !author) {
-    const shown = result.summary.join(' ');
+    // Every command the line names: one line can list several checks, each
+    // with its own counts beside it.
+    const shown = results
+      .filter((r): r is NonNullable<typeof r> => !!r)
+      .map((r) => r.summary.join(' '))
+      .join(' ');
     const missing = counts.filter((m) => {
       const label = /^pass/i.test(m[2]!)
         ? 'pass\\w*'

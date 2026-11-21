@@ -11,6 +11,7 @@ import { resolvePlanResult } from '@showtail/agent-traces/transcript/plans';
 import { headTail } from '../../trace/diffLines.ts';
 import { mentionsAnyRoot } from '../../trace/pathMatch.ts';
 import { discoveryIndex } from '../../trace/discovery.ts';
+import { ORPHAN_COMMAND } from '../../trace/types.ts';
 import type {
   DecisionQuestion,
   SessionRef,
@@ -22,6 +23,15 @@ import { sawToolCall, sawUnknownTool } from '../../trace/toolCalls.ts';
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const COMMAND_TOOLS = new Set(['Bash', 'PowerShell']);
+/** Test runners' own summaries: enough to keep a result whose command the log lacks. */
+const RUNNER_SUMMARY = [
+  /^\s*\d+ pass\s*$[\s\S]*^\s*\d+ fail\s*$/m, // bun
+  /^Ran \d+ tests? in [\d.]+s/m, // unittest
+  /^=+ .*\b\d+ (passed|failed)\b.* in [\d.]+s/m, // pytest
+  /^test result: (ok|FAILED)\. \d+ passed; \d+ failed/m, // cargo
+  /^\s*Tests:\s+.*\b\d+ (passed|failed)\b.*\b\d+ total/m, // jest
+  /^\s*Tests\s+\d+ (passed|failed)\b/m, // vitest
+];
 const NON_USER_PROMPT_SOURCES = new Set(['system', 'sdk']);
 /** Record types we read or deliberately skip; anything else is counted as unknown. */
 const KNOWN_TYPES = new Set([
@@ -157,6 +167,17 @@ interface Pending {
 }
 
 /** Parse one Claude JSONL file's content into records. Exported for tests. */
+/**
+ * Whether a shell call that came back as an error ran at all. Claude Code
+ * reports a command that exited non-zero as `Exit code N` and one that ran
+ * out of time as timed out; a refusal by a hook or the permission system
+ * ("The user doesn't want to proceed", "Refusing to run it") has neither.
+ */
+function ran(text: string | undefined, result: unknown): boolean {
+  const said = `${text ?? ''}\n${typeof result === 'string' ? result : ''}`;
+  return /(^|\n)\s*(Error:\s*)?Exit code \d+/.test(said) || /\btimed out\b/i.test(said);
+}
+
 export function parseClaudeLines(
   content: string,
   into: TraceSession,
@@ -242,7 +263,23 @@ export function parseClaudeLines(
         }
         const id = str(c.tool_use_id);
         const call = id ? pending.get(id) : undefined;
-        if (!call) continue;
+        if (!call) {
+          // A shell result whose call is not in the log (Claude Code can store a
+          // tool's input elsewhere): kept only when its output is a test runner's
+          // own summary, with no command.
+          const r = isObj(o.toolUseResult) ? o.toolUseResult : undefined;
+          const out = r && 'interrupted' in r ? str(r.stdout) : undefined;
+          if (out !== undefined && RUNNER_SUMMARY.some((re) => re.test(out)))
+            into.records.push({
+              kind: 'command',
+              cmd: ORPHAN_COMMAND,
+              orphan: true,
+              isError: c.is_error === true,
+              output: headTail(`${out}\n${str(r!.stderr) ?? ''}`),
+              ...base,
+            });
+          continue;
+        }
         pending.delete(id!);
         const isError = c.is_error === true;
         const where = {
@@ -275,6 +312,9 @@ export function parseClaudeLines(
               ? `${str(r.stdout) ?? ''}\n${str(r.stderr) ?? ''}`
               : textOfToolResult(c.content),
           );
+          // A shell call that failed with no exit code never ran: a hook or the
+          // permission system refused it. It is no run, passing or failing.
+          if (isError && !ran(textOfToolResult(c.content), o.toolUseResult)) continue;
           if (cmd) into.records.push({ kind: 'command', cmd, isError, output, ...where });
           // Files the command changed (sed, a script, a heredoc): Claude Code
           // records them as diffs on the result. Kept even if the command failed
@@ -407,7 +447,16 @@ export const claudeAdapter: TraceAdapter = {
     const { sinceMs } = query;
     const out: SessionRef[] = [];
     const index = discoveryIndex(query, 'claude-code');
-    for (const t of claude.findTranscripts()) {
+    const transcripts = claude.findTranscripts();
+    const paths = new Set(transcripts.map((t) => resolve(t.path)));
+    for (const t of transcripts) {
+      // A subagent's log is read with the session that spawned it (see read):
+      // listed on its own too, its work would count twice.
+      if (
+        /[\\/]subagents[\\/][^\\/]+\.jsonl$/.test(t.path) &&
+        paths.has(resolve(dirname(dirname(t.path)) + '.jsonl'))
+      )
+        continue;
       const files = [t.path, ...subagentFiles(t.path)];
       const info = files.map((p) => index.inspect(p)).filter((p) => p !== undefined);
       const active =

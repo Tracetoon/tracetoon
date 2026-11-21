@@ -37,6 +37,7 @@ passing receipt supports only the command and environment that were checked.
 | `files[].facts` | Facts (S/D/P) whose turns' edits survive in this file, strongest first. From the evidence graph |
 | `files[].checksAfterLastEdit` | Check runs after the file's last captured edit, latest first (`R4:passed`). Absent: none captured. Historical log evidence, not proof the submitted content passes |
 | `sessions[].runs[].laterEdits` | PR files the session edited after this run: what the run did not see. Qualify a cited result as from before those edits |
+| `sessions[].runs[].statable`, `masked`, `sole` | `statable: true` when a reader can check the run's result in the log (its own result lines, the only check in its command, a status no pipe or `;` hid, output neither truncated nor polled, run in this repository); `masked` (`pipe`, `sequence`) names what hid its exit status; `sole: true` when no other program shared its command. Only statable runs appear in the Validation section |
 | `graph` | Size of the run's evidence graph (`evidence-graph.json`): nodes, relationships, hunks, hunks linked to an agent edit, edits, dead-end edits |
 | `disclosure` | Agents, models, suggested and existing AI trailers |
 | `interop` | Provenance other tools recorded: Entire checkpoints in commit trailers, git-ai notes |

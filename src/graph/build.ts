@@ -58,13 +58,48 @@ export interface PatchHunk {
   /** Test titles added in this hunk (`test('…')`, `def test_…`, `func Test…`). */
   tests: string[];
   /**
+   * Removed lines that reappear, whitespace aside, as added lines of the same
+   * file (moved or re-indented), or a hunk whose text is only reflowed: not a
+   * changed value, condition or rule. Counted, and left out of `pairs`/`conds`.
+   */
+  moved?: number;
+  /**
+   * Functions that own this hunk's changed code: a changed code line (not a
+   * comment, not moved) sits in their body. Set by `patchHunks`.
+   */
+  owns?: string[];
+  /** Of `owns`, the functions whose changed code only reads a value (`readsOnly`). */
+  readers?: string[];
+  /**
    * Per function whose body a changed line is in (the nearest definition above
    * it): `name: word word …`, the lowercased words of those changed lines, so
    * a sentence can be matched to the function inside a hunk that holds several.
    */
   fnWords: string[];
+  /**
+   * Per function that owns changed code (see `owns`): `name: N`, its changed
+   * code lines in this hunk, so a hunk's behavior goes to the function holding
+   * most of it rather than the first one named.
+   */
+  fnLines?: string[];
+  /**
+   * Functions this hunk adds whose whole body is one assignment or one call
+   * through (a setter, a callback): never where a reviewer starts.
+   */
+  thin?: string[];
+  /**
+   * Names this hunk shows defined as types (class, interface, enum, type alias,
+   * struct, trait…) rather than functions: never where a reviewer starts.
+   */
+  types?: string[];
   /** Lowercased words of the changed lines (identifiers split, strings), for matching prose to code. */
   words: string[];
+  /** The hunk shows the file's first line as a shebang (`#!`): a runnable script. */
+  shebang?: true;
+  /** Added lines start a local server (`Bun.serve`, `createServer`, `127.0.0.1`): real code runs against it. */
+  localServer?: true;
+  /** Test doubles the added lines name in words (`a fake release server`), lowercased. */
+  fakes?: string[];
   /**
    * Up to 24 key changed lines, in patch order, for the neighborhood brief:
    * `- old ⇒ + new` for a removed line and its closest added line, then lines
@@ -85,6 +120,12 @@ export interface PatchHunk {
   /** Raw removed and added lines, for search indexing and key lines. Never written out. */
   minus?: string[];
   plus?: string[];
+  /**
+   * The changed lines without moved ones (see `moved`), for evidence that
+   * quotes removed or changed code. Never written out.
+   */
+  keptMinus?: string[];
+  keptPlus?: string[];
 }
 
 const KEYWORDS = new Set([
@@ -115,10 +156,13 @@ const DEFINITIONS = [
 export function definedSymbol(line: string): string | undefined {
   // Imports name types (`import { type X }`) without defining them.
   if (
-    /^\s*(import\b|from\s+\S+\s+import\b|use\s|using\s|#\s*include\b|export\s*\{|export\s+\*)/.test(
+    /^\s*(import\b|from\s+\S+\s+import\b|use\s|using\s|#\s*include\b|export\s*\{|export\s+\*|export\s+type\s*\{)/.test(
       line,
     )
   )
+    return undefined;
+  // One specifier of a multi-line import or export list (`  type X,`, `  type X as Y }`).
+  if (/^\s*type\s+[A-Za-z_$][\w$]*\s*(?:as\s+[A-Za-z_$][\w$]*\s*)?(?:[,}]|$)/.test(line))
     return undefined;
   for (const re of DEFINITIONS) {
     const m = re.exec(line);
@@ -126,6 +170,22 @@ export function definedSymbol(line: string): string | undefined {
   }
   return undefined;
 }
+/** A line that defines a type (class, interface, enum, type alias, struct…), not a function. */
+export function definesType(line: string): boolean {
+  const name = definedSymbol(line);
+  if (!name) return false;
+  const esc = name.replace(/[$]/g, '\\$');
+  return new RegExp(
+    `\\b(?:class|interface|enum|type|struct|trait|module|record|protocol|union)\\s+${esc}\\b`,
+  ).test(line);
+}
+/**
+ * Opens a multi-line import or export list (`import {`, `export type {`,
+ * `from x import (`): the lines up to its close name, never define.
+ */
+const OPENS_IMPORT =
+  /^\s*(?:(?:import|export)\b[^;{}]*\{[^}]*$|from\s+\S+\s+import\s*\([^)]*$|use\s+[\w:]+::\{[^}]*$)/;
+
 /** Lines that add a branch or a fallback: each path deserves its own sentence. */
 export const BRANCHING =
   /(\bif\s*\(|\bif\s+[^=]|\belse\b|\belif\b|\bswitch\s*\(|\bcase\s+[^:]+:|\bcatch\b|\bexcept\b|\?\?|\|\||\bdefault\s*:|\bfallback\b|\?\s*[^:?]+\s*:\s*)/;
@@ -149,12 +209,29 @@ export function patchHunks(patch: string): PatchHunk[] {
   let current: string | undefined;
   // Indent of the line that defined `current`; a later line at or left of it ends its body.
   let currentIndent = -1;
+  // Enclosing definitions of `current` (a callback or method defined inside
+  // a function): when the inner one ends, its lines below go to the outer one.
+  let outer: { name: string; indent: number }[] = [];
+  const resume = (indent: number) => {
+    current = undefined;
+    currentIndent = -1;
+    while (outer.length) {
+      const o = outer.pop()!;
+      if (indent > o.indent) {
+        current = o.name;
+        currentIndent = o.indent;
+        return;
+      }
+    }
+  };
   const removedDefs = new Set<string>();
   const changed = new Map<PatchHunk, { minus: string[]; plus: string[] }>();
   // Per hunk: function → its changed lines.
   const byFn = new Map<PatchHunk, Map<string, string[]>>();
   // Changed comment lines outside any body, waiting for the definition below them.
   let pendingDoc: string[] = [];
+  // Inside a multi-line import or export list: its names are not definitions.
+  let inImport = false;
   const touch = (h: PatchHunk) => {
     if (current && !h.touched.includes(current)) h.touched.push(current);
   };
@@ -175,16 +252,27 @@ export function patchHunks(patch: string): PatchHunk[] {
     if (cur && (oldLeft > 0 || newLeft > 0)) {
       const c = line[0];
       const text = line.slice(1);
+      if (c !== '-' && newLine === 1 && text.startsWith('#!')) cur.shebang = true;
       const indent = /^\s*/.exec(text)![0].replace(/\t/g, '    ').length;
-      const def = definedSymbol(text);
+      const listed = inImport;
+      if (inImport) {
+        if (/[})]/.test(text)) inImport = false;
+      } else if (OPENS_IMPORT.test(text)) inImport = true;
+      const def = listed ? undefined : definedSymbol(text);
+      if (def && definesType(text) && !(cur.types ??= []).includes(def))
+        cur.types.push(def);
       // A line back at the definition's indent ends its body: a closing brace
       // still belongs to it, anything else (the next function, a comment) doesn't.
       let closes = false;
       if (current && text.trim() && !def && indent <= currentIndent) {
-        if (/^\s*[}\])]/.test(text)) closes = true;
-        else current = undefined;
+        // A multi-line signature's `): T {` opens the body; it doesn't end it.
+        if (/^\s*[}\])]/.test(text) && !/[{([]\s*$/.test(text)) closes = true;
+        else if (!/^\s*[)\]]/.test(text)) resume(indent);
       }
       if (def) {
+        if (current && indent > currentIndent)
+          outer.push({ name: current, indent: currentIndent });
+        else outer = outer.filter((o) => o.indent < indent);
         current = def;
         currentIndent = indent;
         // A changed doc comment right above a definition describes it.
@@ -211,7 +299,11 @@ export function patchHunks(patch: string): PatchHunk[] {
           if (!cur.dropped.includes(def)) cur.dropped.push(def);
         }
       }
-      if (closes) current = undefined;
+      if (closes) {
+        const o = outer.pop();
+        current = o?.name;
+        currentIndent = o?.indent ?? -1;
+      }
       if (c === '+') {
         newLeft--;
         cur.added++;
@@ -219,7 +311,7 @@ export function patchHunks(patch: string): PatchHunk[] {
         const raw = line.slice(1);
         const e = evidenceLine(raw);
         if (e) cur.lines.add(e);
-        const sym = definedSymbol(raw);
+        const sym = listed ? undefined : definedSymbol(raw);
         if (sym && !cur.symbols.includes(sym)) cur.symbols.push(sym);
         if (BRANCHING.test(raw) && !/^\s*(\/\/|#|\*)/.test(raw)) cur.branches++;
       } else if (c === '-') {
@@ -243,6 +335,8 @@ export function patchHunks(patch: string): PatchHunk[] {
       newLeft = h[3] === undefined ? 1 : Number(h[3]);
       first = last = n;
       pendingDoc = [];
+      inImport = false;
+      outer = [];
       current = h[4]?.trim() ? definedSymbol(h[4]) : undefined;
       currentIndent = current ? /^\s*/.exec(h[4]!)![0].replace(/\t/g, '    ').length : -1;
       cur = {
@@ -255,6 +349,7 @@ export function patchHunks(patch: string): PatchHunk[] {
         diff: '',
         ...(h[4]?.trim() ? { context: clip(h[4].trim(), 160) } : {}),
         ...(h[4]?.trim() && definedSymbol(h[4]) ? { scope: definedSymbol(h[4]) } : {}),
+        ...(h[4]?.trim() && definesType(h[4]) ? { types: [definedSymbol(h[4])!] } : {}),
         symbols: [],
         touched: [],
         branches: 0,
@@ -317,18 +412,79 @@ export function patchHunks(patch: string): PatchHunk[] {
   }
   close();
   const addedDefs = new Set(hunks.flatMap((h) => h.symbols));
+  // Per file, the added and removed lines whitespace-normalized: a removed line
+  // that comes back elsewhere in the file was moved, not changed.
+  const perFile = new Map<string, { minus: string[]; plus: string[] }>();
+  for (const h of hunks) {
+    const ch = changed.get(h) ?? { minus: [], plus: [] };
+    const f = perFile.get(h.file) ?? { minus: [], plus: [] };
+    f.minus.push(...ch.minus);
+    f.plus.push(...ch.plus);
+    perFile.set(h.file, f);
+  }
+  // One budget per file and side, shared by the file's hunks: a line moved
+  // once is cancelled once on each side, wherever its hunks are.
+  const movedOf = new Map(
+    [...perFile].map(([f, x]) => {
+      const m = movedLines(x.minus, x.plus);
+      return [f, { minus: new Map(m), plus: new Map(m) }] as const;
+    }),
+  );
   for (const h of hunks) {
     h.fresh = h.symbols.filter((x) => !removedDefs.has(x));
     h.dropped = h.dropped.filter((x) => !addedDefs.has(x));
     const ch = changed.get(h) ?? { minus: [], plus: [] };
-    h.pairs = valuePairs(ch.minus, ch.plus);
-    h.conds = PROSE_FILE.test(h.file) ? [] : conditionFacts(ch.minus, ch.plus, h.pairs);
+    const kept = withoutMoved(
+      ch.minus,
+      ch.plus,
+      movedOf.get(h.file)!,
+      PROSE_FILE.test(h.file),
+    );
+    if (kept.moved) h.moved = kept.moved;
+    // Functions whose own changed code survives the moved lines: only these
+    // own a change (a function whose lines only moved, or that git names
+    // after the @@ while the changes sit below it, does not).
+    const left = new Map<string, number>();
+    for (const l of [...kept.minus, ...kept.plus].map(normLine))
+      left.set(l, (left.get(l) ?? 0) + 1);
+    h.owns = [];
+    h.readers = [];
+    h.fnLines = [];
+    for (const [fn, ls] of byFn.get(h) ?? []) {
+      const code = ls.filter(isCodeLine);
+      // Each kept (not moved) changed code line in the function's body.
+      const kept = code.filter((l) => {
+        const k = normLine(l);
+        const n = left.get(k) ?? 0;
+        if (n <= 0) return false;
+        left.set(k, n - 1);
+        return true;
+      }).length;
+      if (!kept) continue;
+      h.owns.push(fn);
+      h.fnLines.push(`${fn}: ${kept}`);
+      if (readsOnly(code)) h.readers.push(fn);
+      if (h.symbols.includes(fn) && !h.dropped.includes(fn) && thinBody(fn, code))
+        (h.thin ??= []).push(fn);
+    }
+    h.pairs = valuePairs(kept.minus, kept.plus);
+    h.conds = PROSE_FILE.test(h.file)
+      ? []
+      : conditionFacts(kept.minus, kept.plus, h.pairs);
     h.tests = uniqStrings(ch.plus.flatMap(testTitles)).slice(0, 8);
+    if (ch.plus.some((l) => LOCAL_SERVER.test(l))) h.localServer = true;
+    const fakes = uniqStrings(ch.plus.flatMap(fakePhrases)).slice(0, 4);
+    if (fakes.length) h.fakes = fakes;
     h.words = uniqStrings([...ch.minus, ...ch.plus].flatMap(wordsOf)).slice(0, 400);
     h.fnWords = [...(byFn.get(h) ?? [])].map(
       ([fn, ls]) => `${fn}: ${uniqStrings(ls.flatMap(wordsOf)).slice(0, 120).join(' ')}`,
     );
-    h.code = keyCodeLines(ch.minus, ch.plus);
+    // Key lines never quote a moved line as removed; a hunk that only moved
+    // code shows where it now sits.
+    const pureMove = !kept.minus.length && !kept.plus.length;
+    h.keptMinus = kept.minus;
+    h.keptPlus = pureMove ? ch.plus : kept.plus;
+    h.code = keyCodeLines(h.keptMinus, h.keptPlus);
     h.minus = ch.minus;
     h.plus = ch.plus;
   }
@@ -414,6 +570,158 @@ const CODE_TOKEN =
   /'[^']*'|"[^"]*"|`[^`]*`|\d[\d_.]*\w*|[A-Za-z_$][\w$]*(?:[.:/-][A-Za-z_$][\w$]*)*/g;
 const isComment = (l: string) => /^\s*(\/\/|#(?!\[)|\*|\/\*|--\s)/.test(l);
 
+/** A line with whitespace collapsed; blank or brace-only lines are no evidence of a move. */
+const normLine = (l: string) => l.replace(/\s+/g, ' ').trim();
+const MOVABLE = (l: string) => /[\w'"`]/.test(l) && l.length >= 6;
+/** A line that starts or addresses a server on this machine. */
+export const LOCAL_SERVER =
+  /\bBun\.serve\(|\b(?:http|https|net)\.createServer\(|\bcreateServer\(|\bHTTPServer\(|\bhttptest\.NewServer|\bTestServer\b|\b(?:localhost|127\.0\.0\.1)(?::\d+|\b)/;
+/**
+ * Test doubles a line names in words, inside a string or comment: "a fake
+ * release server", "mock registry". The double word and up to three words
+ * after it, lowercased; never code identifiers.
+ */
+export function fakePhrases(line: string): string[] {
+  const text = [
+    ...(line.match(/(['"`])(?:(?!\1).)*\1/g) ?? []),
+    ...(line.match(/(?:\/\/|#|\/\*)\s.*$/) ?? []),
+  ].join(' ');
+  const out: string[] = [];
+  for (const m of text.matchAll(
+    /\b(fake|mock|stub(?:bed)?|dummy)\s+([a-z][a-z-]*(?:\s+[a-z][a-z-]*){0,2})/gi,
+  )) {
+    const words = m[2]!
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 3);
+    // Stop at a word that starts a clause.
+    const cut = words.findIndex((w) =>
+      /^(?:and|or|but|that|which|with|for|the|when|then|returns?|to|in|on|is|are|was)$/.test(
+        w,
+      ),
+    );
+    const kept = cut < 0 ? words : words.slice(0, cut);
+    if (kept.length)
+      out.push(`${m[1]!.toLowerCase().replace(/^stubbed$/, 'stub')} ${kept.join(' ')}`);
+  }
+  return out;
+}
+
+/** A changed line that is code: not blank, brace-only or a comment. */
+const isCodeLine = (l: string) => /[\w'"`]/.test(l) && !isComment(l);
+
+/** Calls that only convert a value they read. */
+const CONVERSION =
+  /^(?:Number|String|Boolean|BigInt|parseInt|parseFloat|int|str|bool|float)$/;
+
+/**
+ * Whether a function's changed code only reads a value: a one-expression
+ * body (`() => Number(process.env.X) || 10`, `get size() { return this.n; }`)
+ * that assigns nothing, branches no statement and calls nothing but value
+ * conversions. Such a getter holds a setting; the behavior lives where it is
+ * used, so it is never named as the place a change starts.
+ */
+export function readsOnly(code: string[]): boolean {
+  if (!code.length || code.length > 3) return false;
+  const text = code.join(' ');
+  const at = /=>|\breturn\b/.exec(text);
+  if (!at) return false;
+  // Before the value only the definition itself (`get size() {`, `const f = () =>`):
+  // a `return` after a statement (`if (x) return 0;`) is a branch, not a getter.
+  const prefix = text.slice(0, at.index).trim();
+  if (prefix && !(definedSymbol(code[0]!) && prefix.length <= code[0]!.trim().length))
+    return false;
+  const body = text
+    .slice(at.index + at[0].length)
+    .replace(/^\s*\{?\s*(?:return\b)?/, '')
+    .replace(/[\s;}]+$/, '');
+  if (!body.trim() || /;|\{/.test(body)) return false;
+  if (/\b(?:if|for|while|switch|await|new|throw|yield|delete)\b/.test(body)) return false;
+  // An assignment (not `==`, `=>`, `<=`, `>=`, `!=`).
+  if (/(?<![=!<>])=(?![=>])/.test(body)) return false;
+  const calls = [...body.matchAll(/([A-Za-z_$][\w$.]*)\s*\(/g)].map((m) =>
+    m[1]!.split('.').pop()!,
+  );
+  return calls.every((c) => CONVERSION.test(c));
+}
+
+const ONE_ASSIGNMENT =
+  /^\s*(?:(?:const|let|var|self\.|this\.)\s*)?[\w$.[\]'"]+\s*(?:[-+*/%|&^]|\?\?|\|\||&&)?=(?![=>])[^;]*;?\s*$/;
+const ONE_CALL =
+  /^\s*(?:(?:return|await|void)\s+)*[\w$.]+\s*\((?:[^()]|\([^()]*\))*\)\s*;?\s*$/;
+/**
+ * A new function whose whole body is one statement that assigns a value or
+ * calls through to another function (`setX(v) { this.x = v; }`,
+ * `const onDone = (r) => finish(r);`). `code` is its changed code lines, the
+ * definition line among them.
+ */
+export function thinBody(fn: string, code: string[]): boolean {
+  const defAt = code.findIndex((l) => definedSymbol(l) === fn);
+  if (defAt < 0) return false;
+  const body = code
+    .filter((_, i) => i !== defAt)
+    .map((l) => l.trim())
+    .filter((l) => !/^[{}()[\];,\s]*$/.test(l));
+  const def = code[defAt]!;
+  // A one-line definition: the body follows `=>` or `{` on the same line.
+  const inline =
+    /=>\s*(.+?)\s*;?\s*$/.exec(def)?.[1] ?? /\{\s*(.+?)\s*\}\s*;?\s*$/.exec(def)?.[1];
+  const stmts =
+    inline && !/^\{?\s*$/.test(inline) ? [inline.replace(/^\{\s*/, ''), ...body] : body;
+  if (stmts.length !== 1) return false;
+  const one = stmts[0]!.replace(/^\s*return\s+(?=[\w$.]+\s*\()/, '');
+  if (/\b(?:if|for|while|switch|try|catch|else|throw)\b/.test(one)) return false;
+  return ONE_ASSIGNMENT.test(one) || ONE_CALL.test(one);
+}
+
+/**
+ * Lines removed and added again (whitespace-normalized) in one file, as a
+ * multiset: how many times each such line can be cancelled on either side.
+ */
+export function movedLines(minus: string[], plus: string[]): Map<string, number> {
+  const count = (ls: string[]) => {
+    const m = new Map<string, number>();
+    for (const l of ls.map(normLine).filter(MOVABLE)) m.set(l, (m.get(l) ?? 0) + 1);
+    return m;
+  };
+  const a = count(minus);
+  const b = count(plus);
+  const out = new Map<string, number>();
+  for (const [l, n] of a) if (b.has(l)) out.set(l, Math.min(n, b.get(l)!));
+  return out;
+}
+
+/**
+ * A hunk's changed lines without the moved ones (see `movedLines`; the budget
+ * is shared across the file's hunks). For prose, a hunk whose remaining
+ * removed and added text is the same once whitespace is collapsed was only
+ * reflowed: none of it is a change.
+ */
+export function withoutMoved(
+  minus: string[],
+  plus: string[],
+  /** `movedLines` of the file; or per-side budgets the file's hunks share (spent here). */
+  moved: Map<string, number> | { minus: Map<string, number>; plus: Map<string, number> },
+  prose = false,
+): { minus: string[]; plus: string[]; moved: number } {
+  const take = (ls: string[], budget: Map<string, number>) =>
+    ls.filter((l) => {
+      const k = normLine(l);
+      const n = budget.get(k) ?? 0;
+      if (n <= 0) return true;
+      budget.set(k, n - 1);
+      return false;
+    });
+  const budgets =
+    moved instanceof Map ? { minus: new Map(moved), plus: new Map(moved) } : moved;
+  const m = take(minus, budgets.minus);
+  const p = take(plus, budgets.plus);
+  const count = minus.length - m.length;
+  if (prose && m.length && p.length && normLine(m.join(' ')) === normLine(p.join(' ')))
+    return { minus: [], plus: [], moved: count + m.length };
+  return { minus: m, plus: p, moved: count };
+}
+
 /**
  * Old → new values: each removed line paired with its most similar added line,
  * kept when a few tokens differ and one of them is a number or string literal
@@ -456,8 +764,8 @@ export function valuePairs(minus: string[], plus: string[]): string[] {
 }
 
 /** Files whose lines are prose or data, not code: an "if" there is a word. */
-const PROSE_FILE =
-  /\.(md|mdx|txt|rst|adoc|json|jsonc|ya?ml|toml|lock|csv|svg|html?|xml|ini|cfg)$|(^|\/)VERSION$/i;
+export const PROSE_FILE =
+  /\.(md|mdx|txt|rst|adoc|json|jsonc|ya?ml|toml|lock|csv|svg|html?|xml|ini|cfg)$|(^|\/)VERSION$|(^|\/)(?:LICEN[CS]E|NOTICE|COPYING|AUTHORS|CHANGELOG|README)(?:\.[\w-]+)?$/i;
 /** A line's code with string contents blanked, so an "if" or "??" in a string doesn't count. */
 const codeOnly = (l: string) =>
   l.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`]*`/g, '""');
@@ -633,15 +941,27 @@ function decisionAnswers(
   d: TraceDigest['sessions'][number]['decisions'][number],
 ): string | null {
   if (!d.questions?.length) return null;
+  // A question with no recorded answer decided nothing: left out.
+  const answered = d.questions.filter(
+    (q) => q.answer !== undefined && q.answer.trim() !== '',
+  );
+  if (!answered.length) return null;
   return clip(
-    d.questions
+    answered
       .map(
         (q) =>
-          `${clip(q.question.replace(/\s+/g, ' '), 200)} = ${q.answer === undefined ? '(no answer recorded)' : `"${clip(q.answer.replace(/\s+/g, ' '), 300)}"`}${q.ownWords ? ' (own words)' : ''}`,
+          `${clip(q.question.replace(/\s+/g, ' '), 200)} = "${clip(q.answer!.replace(/\s+/g, ' '), 300)}"${q.ownWords ? ' (own words)' : ''}`,
       )
       .join(' / '),
     1200,
   );
+}
+
+/** A decision made only of questions, none with a recorded answer: nothing was decided. */
+export function unansweredDecision(
+  d: TraceDigest['sessions'][number]['decisions'][number],
+): boolean {
+  return !!d.questions?.length && decisionAnswers(d) === null;
 }
 
 const dirOf = (p: string) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '.');
@@ -676,6 +996,96 @@ const unitWords = (hs: PatchHunk[]) =>
       ),
     ]),
   );
+
+/** A literal or short expression a flag falls back to: `?? "bin/x"`, `|| 5`, `default: 3`, `default=3`. */
+const FLAG_DEFAULT =
+  /(?:\?\?|\|\||\bdefault\s*[:=])\s*((?:join|resolve|path\.join)?\(?\s*(?:"[^"]*"|'[^']*'|`[^`]*`|-?\d[\d_.]*|true|false|null|None)(?:\s*,\s*(?:"[^"]*"|'[^']*'|`[^`]*`|-?\d[\d_.]*))*\s*\)?)/;
+
+/** The fallback after a flag's read: `?? <expr>` / `|| <expr>` up to its closing bracket, or `default: <literal>`. */
+function flagDefault(rest: string): string | undefined {
+  const m = /^\s*\)?\s*(?:\?\?|\|\|)\s*/.exec(rest);
+  if (!m) return FLAG_DEFAULT.exec(rest)?.[1]?.trim();
+  let depth = 0;
+  let out = '';
+  for (const ch of rest.slice(m[0].length)) {
+    if ('([{'.includes(ch)) depth++;
+    if (')]}'.includes(ch)) {
+      if (depth === 0) break;
+      depth--;
+    }
+    if ((ch === ';' || ch === ',') && depth === 0) break;
+    out += ch;
+  }
+  const v = out.trim();
+  return v && /["'`\d]|true|false/.test(v) ? v : undefined;
+}
+
+/**
+ * A new script's interface from its added lines: each flag it parses (a
+ * quoted `--flag` on a line that reads arguments), with its default when the
+ * line gives one, then the lines that decide pass or fail (an exit status, a
+ * PASS/FAIL message). Clipped and capped.
+ */
+export function scriptInterface(plus: string[]): string[] {
+  const flags = new Map<string, string | undefined>();
+  const outcomes: string[] = [];
+  for (const raw of plus) {
+    const l = raw.trim();
+    if (!l || /^(?:\/\/|#(?!!)|\/\*|\*)/.test(l)) continue;
+    const parsesArgs =
+      /\b(?:args?|argv|argument|options?|opts|flags?|value|has|includes|getopt\w*|parse\w*|add_argument|case)\b/i.test(
+        l,
+      );
+    if (parsesArgs)
+      for (const m of l.matchAll(/(['"`])(--[a-z][\w-]*)(?:[= ][^'"`]*)?\1/g)) {
+        const name = m[2]!;
+        const def = flagDefault(l.slice(m.index! + m[0].length));
+        if (!flags.has(name) || (def && !flags.get(name)))
+          flags.set(
+            name,
+            def ? (def.length > 60 ? `${def.slice(0, 59)}…` : def) : undefined,
+          );
+      }
+    if (
+      /\b(?:process\.exit|sys\.exit|os\.exit|Deno\.exit)\s*\(|^\s*exit\s+\d|\bprocess\.exitCode\s*=(?!=)/.test(
+        l,
+      ) ||
+      /(['"`])[^'"`]*\b(?:PASS|FAIL)\b/.test(l)
+    ) {
+      const t = l.replace(/\s+/g, ' ');
+      outcomes.push(t.length > 110 ? `${t.slice(0, 109)}…` : t);
+    }
+  }
+  return [
+    ...[...flags].map(([f, d]) => (d ? `${f} (default ${d})` : f)),
+    ...[...new Set(outcomes)].slice(0, 4).map((o) => `pass/fail: ${o}`),
+  ].slice(0, 16);
+}
+
+/** A comment line in source code (normalized, possibly `-` for a removed line). */
+export function isCommentLine(line: string, path: string): boolean {
+  const l = line.replace(/^-/, '').trim();
+  if (!l) return true;
+  if (/^(\/\/|\/\*|\*\/?|<!--|-->)/.test(l)) return true;
+  // `#` comments: shell, Python, Ruby, YAML, TOML, Makefiles, not C's #include.
+  if (l.startsWith('#') && !/\.(c|cc|cpp|cxx|h|hpp|m|mm|cs)$/i.test(path)) return true;
+  if (/^--(\s|$)/.test(l) && /\.(sql|lua|hs|elm)$/i.test(path)) return true;
+  return false;
+}
+
+/**
+ * Whether a commit's own lines (file -> normalized lines, removed ones with a
+ * leading `-`) touch only comments, docs or test files.
+ */
+export function commentOrTestOnly(files: Map<string, string[]>): boolean {
+  if (!files.size) return false;
+  for (const [path, lines] of files) {
+    const role = fileRole(path);
+    if (role === 'tests' || role === 'docs') continue;
+    if (!lines.every((l) => isCommentLine(l, path))) return false;
+  }
+  return true;
+}
 
 /**
  * One commit or request can hold a source change and an unrelated script
@@ -724,6 +1134,68 @@ export function splitScriptUnits(
     );
   }
 }
+/** A CI workflow file. */
+const WORKFLOW_UNIT_FILE =
+  /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)azure-pipelines\.ya?ml$/;
+/** Changed lines from which a workflow file is its own change unit. */
+const WORKFLOW_UNIT_LINES = 12;
+
+/**
+ * Each substantially changed CI workflow file (WORKFLOW_UNIT_LINES changed
+ * lines or more) that shares a unit with other files becomes a unit of its
+ * own, so its jobs are described apart from the code and docs beside it.
+ * Deterministic: the new unit's key is the old key plus `|workflow:<file>`.
+ */
+export function splitWorkflowUnits(groups: Map<string, PatchHunk[]>): void {
+  for (const [key, hs] of [...groups]) {
+    const files = [...new Set(hs.map((h) => h.file))];
+    if (files.length < 2) continue;
+    const big = files.filter(
+      (f) =>
+        WORKFLOW_UNIT_FILE.test(f) &&
+        hs.filter((h) => h.file === f).reduce((n, h) => n + h.added + h.removed, 0) >=
+          WORKFLOW_UNIT_LINES,
+    );
+    if (!big.length) continue;
+    const rest = hs.filter((h) => !big.includes(h.file));
+    if (rest.length) groups.set(key, rest);
+    else groups.delete(key);
+    for (const f of big.sort())
+      groups.set(
+        `${key}|workflow:${f}`,
+        hs.filter((h) => h.file === f),
+      );
+  }
+}
+
+/**
+ * A unit that is one changed line (one added and/or one removed line) in
+ * files another unit also changes joins the unit holding most of that file's
+ * changed lines: a stray line is no change of its own.
+ */
+export function foldStrayLines(groups: Map<string, PatchHunk[]>): void {
+  for (const [key, hs] of [...groups].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (!groups.has(key)) continue;
+    const files = [...new Set(hs.map((h) => h.file))];
+    if (files.length !== 1) continue;
+    const added = hs.reduce((n, h) => n + h.added, 0);
+    const removed = hs.reduce((n, h) => n + h.removed, 0);
+    if (added > 1 || removed > 1) continue;
+    const f = files[0]!;
+    const host = [...groups]
+      .filter(([k]) => k !== key)
+      .map(([k, xs]) => ({
+        k,
+        n: xs.filter((h) => h.file === f).reduce((a, h) => a + h.added + h.removed, 0),
+      }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n || a.k.localeCompare(b.k))[0];
+    if (!host) continue;
+    groups.set(host.k, [...groups.get(host.k)!, ...hs]);
+    groups.delete(key);
+  }
+}
+
 const RUN_WHEN: Record<string, string> = {
   'no later edits seen':
     'after the last edit the logs captured (edits outside the logs are not ruled out)',
@@ -773,6 +1245,22 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
 
   // Hunks of the submitted patch.
   const hunks = patchHunks(input.patch).filter((h) => prFiles.has(h.file));
+  // A new script's interface: the flags it parses (with defaults) and what it
+  // prints or exits on to pass or fail, from its added lines.
+  {
+    const byFile = new Map<string, PatchHunk[]>();
+    for (const h of hunks) byFile.set(h.file, [...(byFile.get(h.file) ?? []), h]);
+    for (const [file, hs] of byFile) {
+      const isNew = hs.every((h) => h.removed === 0) && hs.some((h) => h.start === 1);
+      const script =
+        /\.(?:[cm]?[jt]s|py|rb|sh|bash|ps1)$/i.test(file) &&
+        (/(^|\/)(?:scripts?|bin|tools?|ci|dev)\//.test(file) ||
+          hs.some((h) => h.shebang));
+      if (!isNew || !script || fileRole(file) === 'tests') continue;
+      const cli = scriptInterface(hs.flatMap((h) => h.plus ?? []));
+      if (cli.length) node('File', file, { cli });
+    }
+  }
   const hunksByFile = new Map<string, PatchHunk[]>();
   for (const h of hunks) {
     hunksByFile.set(h.file, [...(hunksByFile.get(h.file) ?? []), h]);
@@ -793,10 +1281,19 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       dropped: h.dropped,
       conds: h.conds,
       tests: h.tests,
+      moved: h.moved ?? null,
+      owns: h.owns ?? [],
+      readers: h.readers ?? [],
+      fnLines: h.fnLines ?? [],
+      thin: h.thin ?? [],
+      types: h.types ?? [],
       fnWords: h.fnWords,
       words: h.words,
       code: h.code,
       binary: h.binary ?? null,
+      shebang: h.shebang ?? false,
+      localServer: h.localServer ?? false,
+      fakes: h.fakes ?? [],
     });
     rel('OF', ['Hunk', h.id], ['File', h.file]);
   }
@@ -816,6 +1313,25 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       return [t.ref, m];
     }),
   );
+  // Per session: its last distinct commands in this repository other than
+  // checks (at most 12), each with when it last ran.
+  const lateBy = new Map(
+    trails.map((t) => {
+      const m = new Map<string, string>();
+      for (const x of t.invocations ?? [])
+        if (x.t && !x.elsewhere) {
+          m.delete(x.cmd);
+          m.set(x.cmd, x.t);
+        }
+      return [t.ref, [...m].slice(-12)];
+    }),
+  );
+  // Decisions whose every question went unanswered: no node, no relation.
+  const droppedDecisions = new Set(
+    full.sessions.flatMap((s) =>
+      s.decisions.filter((d) => d.id && unansweredDecision(d)).map((d) => d.id!),
+    ),
+  );
   for (const s of full.sessions) {
     // Failed commands other than checks (checks are Run nodes with outcomes).
     const checkKeys = new Set(
@@ -824,10 +1340,13 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
         .map((r) => clip(commandKey(testSegment(r.cmd) ?? r.cmd), 60)),
     );
     const failing = s.commands.filter(
-      (c) => c.failures > 0 && !c.isTest && !checkKeys.has(c.cmd),
+      (c) => c.failures > 0 && !c.isTest && !c.isCheck && !checkKeys.has(c.cmd),
     );
     node('Session', s.ref, {
       agent: s.agent,
+      // Every user prompt in the session log, kept or not (older digests: unknown).
+      userPrompts: s.userPrompts?.count ?? null,
+      firstPromptT: s.userPrompts?.firstT ?? null,
       band: s.band,
       score: s.score,
       title: s.title ?? null,
@@ -842,6 +1361,25 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       invokedOut: [...(invocationsBy.get(s.ref) ?? new Map()).values()].map((w) =>
         [...w].join(' '),
       ),
+      // The last commands other than checks, and (same position) when each last ran.
+      lateCmds: (lateBy.get(s.ref) ?? []).map(([c]) => c),
+      lateT: (lateBy.get(s.ref) ?? []).map(([, t]) => t),
+      // Pushes, PRs made and looks at CI (same position: kind, time, failed).
+      remoteCmds: (s.remote ?? []).map((x) => x.cmd),
+      remoteKinds: (s.remote ?? []).map((x) => x.kind),
+      remoteT: (s.remote ?? []).map((x) => x.t ?? ''),
+      remoteFailed: (s.remote ?? []).map((x) => (x.failed ? 'failed' : 'ok')),
+      remoteResults: (s.remote ?? []).map((x) =>
+        x.results ? ['results', ...(x.heads ?? [])].join(' ') : '',
+      ),
+      // Same position: runner platforms of jobs the CI look shows passing.
+      remoteOs: (s.remote ?? []).map((x) => (x.os ?? []).join(' ')),
+      // Same position: platforms of jobs shown finished (passed or failed).
+      remoteRanOs: (s.remote ?? []).map((x) => (x.ranOs ?? x.os ?? []).join(' ')),
+      // Same position: workflow files the CI command ran or watched.
+      remoteWorkflows: (s.remote ?? []).map((x) => (x.workflows ?? []).join(' ')),
+      // Same position: `commit` when the push's command line committed first.
+      remoteWith: (s.remote ?? []).map((x) => (x.withCommit ? 'commit' : '')),
     });
     for (const p of s.prompts) factSession.set(p, s.ref);
     for (const p of s.prompts)
@@ -854,7 +1392,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           session: s.ref,
         });
     for (const d of s.decisions)
-      if (d.id)
+      if (d.id && !unansweredDecision(d))
         node('Decision', d.id, {
           t: d.t ?? null,
           text: clip(d.text.replace(/\s+/g, ' '), 600),
@@ -871,7 +1409,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           t: p.t ?? null,
           approved: p.approved ?? null,
           text: clip(firstLine(p.excerpt), 120),
-          excerpt: clip(p.excerpt.replace(/\s+/g, ' '), 600),
+          // Headings kept: the brief quotes the why-sections first (queries.ts planText).
+          excerpt: clip(p.excerpt.replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n'), 1500),
           session: s.ref,
         });
     for (const r of s.runs)
@@ -885,6 +1424,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           summary: r.summary.slice(0, 3),
           when: RUN_WHEN[r.revision] ?? r.revision,
           session: s.ref,
+          basis: r.basis,
+          statable: r.statable === true,
+          masked: r.masked ?? null,
         });
     for (const label of ['Prompt', 'Decision', 'Plan', 'Run'] as const) {
       const facts =
@@ -896,7 +1438,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
               ? s.plans
               : s.runs;
       for (const f of facts)
-        if (f.id) rel('IN_SESSION', [label, f.id], ['Session', s.ref]);
+        if (f.id && !(label === 'Decision' && droppedDecisions.has(f.id)))
+          rel('IN_SESSION', [label, f.id], ['Session', s.ref]);
     }
     for (const sha of s.commitsMade) {
       const c = full.pr.commits.find(
@@ -923,11 +1466,14 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
     [...(m?.entries() ?? [])].find(([k]) => k.startsWith(sha.slice(0, 12)))?.[1];
   for (const c of full.pr.commits) {
     const sha = c.sha.slice(0, 12);
+    const own = lookup(input.commitLines, c.sha);
     node('Commit', sha, {
       subject: clip(c.subject, 120),
       // The message body often holds the motivation; keep it queryable.
       body: c.body ? clip(c.body, 4000) : null,
       t: c.time ?? null,
+      // Only comments, docs or tests changed: the commit changes no behavior.
+      noBehavior: own ? commentOrTestOnly(own) : false,
     });
     for (const path of lookup(input.commitFiles, c.sha) ?? []) {
       if (!prFiles.has(path)) continue;
@@ -1007,6 +1553,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
       if (e.kind !== 'edit') {
         const id = e.fact.id;
         if (!id) continue;
+        if (e.kind === 'decision' && droppedDecisions.has(id)) continue;
         const label =
           e.kind === 'decision' ? 'Decision' : e.kind === 'plan' ? 'Plan' : 'Run';
         if (turn) rel('IN_TURN', [label, id], ['Prompt', turn]);
@@ -1023,7 +1570,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
           surviving += n;
         }
       }
-      if (!surviving) deadEnds++;
+      // A write read from a command's text has no lines to survive.
+      if (!surviving && !e.inferred) deadEnds++;
       node('Edit', id, {
         t: e.t ?? null,
         file: e.file,
@@ -1032,6 +1580,7 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
         surviving,
         inPr: e.inPr,
         via: e.via ?? null,
+        inferred: e.inferred === true,
         session: trail.ref,
       });
       if (!nodes.has(`File|${e.file}`))
@@ -1102,6 +1651,8 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
     }
   }
   splitScriptUnits(groups, roleOf);
+  splitWorkflowUnits(groups);
+  foldStrayLines(groups);
   const weight = (hs: PatchHunk[]) =>
     hs
       .filter((h) => roleOf(h.file) === 'behavior')

@@ -161,7 +161,9 @@ export function operandsOf(text: string, single = false): string[] {
     lo = o + 1;
     hi = pairs.get(o) ?? text.length;
   }
-  const at = ops.filter((o) => o.depth === depth && o.at >= lo && o.at < hi).map((o) => o.at);
+  const at = ops
+    .filter((o) => o.depth === depth && o.at >= lo && o.at < hi)
+    .map((o) => o.at);
   const parts: string[] = [];
   let from = lo;
   for (const a of at) {
@@ -183,7 +185,8 @@ function cleanOperand(p: string, i: number): string {
   // Brackets the split left unbalanced at either end.
   while (/^\(/.test(t) && !balanced(t)) t = t.slice(1).trim();
   while (/\)$/.test(t) && !balanced(t)) t = t.slice(0, -1).trim();
-  while (/^\(.*\)$/.test(t) && balanced(t.slice(1, -1)) && wraps(t)) t = t.slice(1, -1).trim();
+  while (/^\(.*\)$/.test(t) && balanced(t.slice(1, -1)) && wraps(t))
+    t = t.slice(1, -1).trim();
   return t;
 }
 
@@ -273,12 +276,77 @@ export function operandChanges(
       added.length ? `added: ${list(added, 70)}` : '',
       kept.length ? `kept: ${list(kept, 45)}` : '',
     ].filter(Boolean);
-    out.push({ text: clip(`${head}${parts.join('; ')}`, 230), lines: [...g.lines, ...p.lines] });
+    out.push({
+      text: clip(`${head}${parts.join('; ')}`, 230),
+      lines: [...g.lines, ...p.lines],
+    });
   }
   return out;
 }
 
 /** Number and version tokens of a hunk's changed lines, for the conflict check. */
+/**
+ * Numbers and identifiers on a hunk's added lines (lowercased), so a value a
+ * commit message states can be checked against the added code.
+ */
+export function plusTokens(plus: string[]): string[] {
+  const out = new Set<string>();
+  for (const l of plus) {
+    for (const m of l.matchAll(/\bv?\d+(?:[._]\d+)*\b/g))
+      out.add(m[0].replace(/^v/, '').replace(/_/g, ''));
+    for (const m of l.matchAll(/[A-Za-z_$][\w$-]*[\w$]/g)) out.add(m[0].toLowerCase());
+  }
+  return [...out].slice(0, 400);
+}
+
+/** Values a commit sentence states that code would hold: numbers (2+ digits or dotted) and code-like names. */
+function statedValues(text: string): string[] {
+  const t = text.replace(/#\d+\b/g, ' ').replace(/\b[0-9a-f]{7,40}\b/g, ' ');
+  const out = new Set<string>();
+  for (const m of t.matchAll(
+    /(?<![\w.])v?(\d{2,}(?:[.,_]\d+)*|\d+\.\d+(?:\.\d+)*)(?![\w.]*\w)/g,
+  ))
+    out.add(m[1]!.replace(/[,_]/g, ''));
+  for (const m of t.matchAll(/`([^`\s]{3,60})`/g)) out.add(m[1]!);
+  // camelCase, snake_case and SCREAMING_CASE names outside backticks.
+  for (const m of t.matchAll(/\b(?:[a-z]+[A-Z][A-Za-z0-9]*|[A-Za-z]+_[A-Za-z0-9_]+)\b/g))
+    out.add(m[0]);
+  return [...out];
+}
+
+/**
+ * Mark commit-message rows that state a number or identifier no added line of
+ * the patch holds: `note: commit-message value, not in the diff: …`. Only for
+ * graphs whose hunks carry added-line tokens.
+ */
+export function markCommitValues(g: GraphEngine, sections: Section[]): void {
+  const commits = sections.find((s) => s.title === 'commitMessages');
+  if (!commits?.rows.length) return;
+  const rows = g.run('MATCH (h:Hunk) RETURN h.plusTokens AS t').rows;
+  if (!rows.some((r) => Array.isArray(r.t))) return;
+  const tokens = new Set(rows.flatMap((r) => ((r.t as string[]) ?? []).map(String)));
+  const inDiff = (v: string) => {
+    const k = v.replace(/^v(?=\d)/, '').toLowerCase();
+    if (tokens.has(k)) return true;
+    // A backticked expression (`a.b`, `--flag`, `x()`): each name part must be there.
+    const parts = k.match(/[a-z_$][\w$-]*[\w$]|\d+(?:\.\d+)*/g) ?? [];
+    return parts.length > 0 && parts.every((p) => tokens.has(p));
+  };
+  let any = false;
+  for (const r of commits.rows) {
+    const missing = statedValues(String(r.text ?? '')).filter((v) => !inDiff(v));
+    if (!missing.length) continue;
+    any = true;
+    r.note = `commit-message value, not in the diff: ${missing
+      .slice(0, 4)
+      .map((v) => `\`${v}\``)
+      .join(', ')}`;
+  }
+  if (any && !commits.columns.includes('note'))
+    commits.columns = [...commits.columns, 'note'];
+  if (any) for (const r of commits.rows) r.note ??= null;
+}
+
 export function literalTokens(minus: string[], plus: string[]): string[] {
   const out = new Set<string>();
   for (const l of [...minus, ...plus])
@@ -426,7 +494,9 @@ export function addCodeCells(
       // The direction words (`added:`, `removed:`) cost what `+`/`-` did:
       // spelling them out never pushes a line out.
       const cost = line.length + 3 - (/^\S+ (?:added|removed): /.exec(line) ? 6 : 0);
-      if (used + cost > budget) return;
+      // Every row with a matching line keeps its first one: a budget spent by
+      // earlier rows dropped the only added-code excerpt of later ones.
+      if (round > 0 && used + cost > budget) return;
       used += cost;
       shown.add(line);
       cells[i]!.push(line);
@@ -508,6 +578,23 @@ export function orderTriples(text: string): Triple[] {
 }
 
 /** The sentence and the code say opposite things about the same two anchors. */
+/** Words that give an order to someone other than the code: the problem it fixes. */
+const THIRD_PARTY =
+  /\b(?:github|gitlab|the api|api|upstream|server|registry|npm|pypi|crates\.io|lexical(?:ly)?|naive(?:ly)?|by default|otherwise|would)\b/i;
+
+/** The code or a test title states the sentence's order the same way. */
+export function orderAgrees(sentence: string, code: string): boolean {
+  const s = orderTriples(sentence);
+  const c = orderTriples(code);
+  return s.some((x) =>
+    c.some(
+      (y) =>
+        (sameAnchor(x.a, y.a) && sameAnchor(x.b, y.b) && x.rel === y.rel) ||
+        (sameAnchor(x.a, y.b) && sameAnchor(x.b, y.a) && OPPOSITE[x.rel] === y.rel),
+    ),
+  );
+}
+
 export function orderConflict(sentence: string, code: string): boolean {
   const s = orderTriples(sentence);
   const c = orderTriples(code);
@@ -607,6 +694,9 @@ export function conflictRows(
 ): Record<string, unknown>[] {
   const commits = sections.find((s) => s.title === 'commitMessages')?.rows ?? [];
   const info = hunkInfo(g);
+  const titles = (sections.find((s) => s.title === 'tests')?.rows ?? []).flatMap((r) =>
+    ((r.titles as string[]) ?? []).map(String),
+  );
   const out: Record<string, unknown>[] = [];
   for (const r of commits) {
     const text = String(r.text ?? '');
@@ -626,9 +716,15 @@ export function conflictRows(
             : body;
         if (!added) continue;
         const comment = isComment(added);
+        // A comment giving another party's order (the API, GitHub, a naive
+        // sort) states the problem the code fixes, not what the code does,
+        // unless the commit sentence speaks of that party too.
+        const party = THIRD_PARTY.exec(added)?.[0]?.toLowerCase().replace(/^the /, '');
+        const problem = !!party && !text.toLowerCase().includes(party);
         if (
           (comment &&
-            (orderConflict(text, added) || stateConflict(text, added, false))) ||
+            ((!problem && orderConflict(text, added)) ||
+              stateConflict(text, added, false))) ||
           (!comment && stateConflict(text, added, true)) ||
           numberConflict(text, added, h.literals)
         ) {
@@ -639,6 +735,33 @@ export function conflictRows(
       if (found) break;
     }
     if (!found) continue;
+    // Supported elsewhere: another added line or a test title states the
+    // sentence's order, or carries every version or number it names. Then
+    // the message is right and the conflicting line is a detail, not a
+    // contradiction.
+    const addedLines = (hunkLinks[String(r.ref)] ?? []).flatMap((id) =>
+      (info.get(id)?.keyLines ?? [])
+        .filter((l) => !l.startsWith('- ') && !l.startsWith('± '))
+        .map((l) =>
+          l
+            .replace(/^[-+]\s/, '')
+            .split(/\s⇒\s+\+ /)
+            .pop()!,
+        ),
+    );
+    const others = [...addedLines.filter((l) => l !== found!.line), ...titles];
+    const values = tokensOf(text).filter((t) => VERSION.test(t) || /^\d{2,}$/.test(t));
+    const literals = new Set(
+      (hunkLinks[String(r.ref)] ?? []).flatMap((id) => info.get(id)?.literals ?? []),
+    );
+    if (
+      others.some((l) => orderAgrees(text, l)) ||
+      (values.length > 0 &&
+        values.every(
+          (v) => literals.has(v) || titles.some((t) => tokensOf(t).includes(v)),
+        ))
+    )
+      continue;
     out.push({
       kind: 'commit vs code',
       text: `The commit message says "${clip(text, 110)}"; the code${found.comment ? ' comment' : ''} says "${clip(found.line.replace(/^\s*(\/\/+|#+|\/\*+|\*+|--)\s*/, ''), 120)}" (${found.diff}): describe the code, not the message.`,

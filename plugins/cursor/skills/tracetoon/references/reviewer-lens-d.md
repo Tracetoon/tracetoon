@@ -20,6 +20,11 @@ Look for:
 - **secondary user-visible changes** (a preview page, an output format, a
   flag) the body skips.
 
+An omission that adds a code fact (a value, a number, a behavior) must cite
+an added (`+`) diff line that shows it (`diff:N`); removed lines and commit
+messages are not the code. Without such a line it is a suggestion, not a
+fact: leave it out, or start its `fix` with "suggestion:" and state no value.
+
 Each is `kind: "omission"`, verdict `missing`, with the row ref or diff
 lines that show it, and a `fix` naming the fact to add. Skip the
 generated Validation section. **At most 6 findings**, the ones a reviewer of
