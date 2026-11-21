@@ -88,6 +88,14 @@ export function shellSegments(cmd: string): ShellSegment[] {
       push(ch as ';' | '|' | '\n');
       continue;
     }
+    // A lone `&` also ends a command: cmd runs `a & b` one after the other
+    // (Goose on Windows chains this way) and sh runs `a &` in the background.
+    // Redirections (`2>&1`, `<&3`, `&>file`) and cmd's `^&` escape are not.
+    if (ch === '&' && !/[<>^]$/.test(cur) && cmd[i + 1] !== '>') {
+      // `|&` (bash's pipe with stderr) keeps the `|` it follows.
+      if (cur.trim()) push(';');
+      continue;
+    }
     cur += ch;
   }
   push(undefined);
