@@ -158,6 +158,23 @@ describe("runs are this repository's", () => {
     expect(runsInRepo('cd ../x && bun test', 'rel', roots)).toBe(true);
     expect(runsInRepo('cd ../x && bun test', undefined, roots)).toBe(true);
   });
+
+  test("cmd.exe's cd /d moves the run; a lone cd /d is the folder /d", () => {
+    expect(leadingCd('cd /d /ws/app && bun test', '/tmp')).toBe(resolve('/ws/app'));
+    expect(leadingCd('cd /D "/ws/app-wt" && bun test', '/tmp')).toBe(
+      resolve('/ws/app-wt'),
+    );
+    expect(runsInRepo('cd /d /ws/app && bun test', '/tmp', roots)).toBe(true);
+    expect(runsInRepo('cd /d /ws/other && bun test', '/ws/app', roots)).toBe(false);
+    if (process.platform !== 'win32')
+      expect(leadingCd('cd /d && ls', '/tmp')).toBe(resolve('/d'));
+  });
+
+  test.if(process.platform === 'win32')('cd /d with a Windows drive path', () => {
+    expect(leadingCd('cd /d C:\\work\\app && git status --short', 'C:\\Users\\me')).toBe(
+      resolve('C:\\work\\app'),
+    );
+  });
 });
 
 const session = (agent: TraceSession['agent'] = 'codex'): TraceSession => ({

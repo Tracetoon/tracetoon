@@ -38,7 +38,10 @@ function includesPath(hay: string, needle: string): boolean {
   return false;
 }
 
-const CD = /^(?:cd|pushd|Set-Location|sl)\s+(?:-Path\s+)?("[^"]+"|'[^']+'|[^\s;&|]+)/i;
+// cmd.exe's `cd /d <dir>` also changes drive; the switch is skipped only when a
+// folder follows it, so a POSIX `cd /d` still means the folder /d.
+const CD =
+  /^(?:cd(?:\s+\/d(?=\s+[^\s;&|]))?|pushd|Set-Location|sl)\s+(?:-Path\s+)?("[^"]+"|'[^']+'|[^\s;&|]+)/i;
 const GIT_C =
   /^git\s+(?:(?:-c\s+\S+|--no-pager|--no-optional-locks|-P)\s+)*-C\s+("[^"]+"|'[^']+'|[^\s;&|]+)/;
 
