@@ -16,7 +16,7 @@
 import { describe, expect, test } from 'bun:test';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { join, normalize } from 'node:path';
+import { join, normalize, posix } from 'node:path';
 import pkg from '../package.json';
 
 const root = join(import.meta.dir, '..');
@@ -119,7 +119,7 @@ function scan(files: string[]): Found[] {
 
 describe('cursor.directory GitHub scan', () => {
   const found = scan(tree());
-  const folder = (from: string) => normalize(from).replace(/\/$/, '');
+  const folder = (from: string) => posix.normalize(from).replace(/\/$/, '');
 
   test('finds exactly the Cursor package: one skill, one MCP server, one hooks file', () => {
     expect(found.map((c) => c.type).sort()).toEqual(['hook', 'mcp_server', 'skill']);
