@@ -9,6 +9,7 @@ import {
   type HookChange,
 } from '../hook/install.ts';
 import { repoRoot, switchState } from '../hook/switches.ts';
+import { unfixSh } from '../hook/windowsSh.ts';
 import { INTEGRATIONS } from '../integrations/registry.ts';
 import { git } from '../util/exec.ts';
 import { selfProgram, userCommand } from '../util/userCommand.ts';
@@ -137,5 +138,16 @@ export function hookInstallCmd(opts: OutOpts & { program?: string }): void {
 }
 
 export function hookUninstallCmd(opts: OutOpts): void {
-  report(opts, uninstallHooks());
+  const changes = uninstallHooks();
+  // Take back the sh `setup --fix-sh` put on the user PATH for Goose, and only that.
+  const sh = process.platform === 'win32' ? unfixSh() : undefined;
+  if (sh)
+    changes.push({
+      agent: 'goose',
+      label: 'Goose sh',
+      file: sh,
+      result: 'removed',
+      note: 'removed from your user PATH (added by setup --fix-sh)',
+    });
+  report(opts, changes);
 }

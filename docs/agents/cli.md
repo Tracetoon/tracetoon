@@ -495,6 +495,7 @@ install the skill shipped with this runtime into each agent's skill folder, and 
 | --- | --- |
 | `--agent <id>` | only this agent (repeatable; see tracetoon integrations) (default: `[]`) |
 | `--no-hook` | leave the PR hook alone |
+| `--fix-sh` | Windows: add Git for Windows' usr\bin (or Tracetoon's sh shim) to the user PATH so Goose can run hooks |
 
 ## `tracetoon guide`
 

@@ -18,6 +18,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { skillDir } from '../contribution/skillSettings.ts';
 import { hookTargets, installHooks, type HookChange } from '../hook/install.ts';
 import { INTEGRATIONS, integration, skillTargets } from '../integrations/registry.ts';
+import { findSh, fixSh, type ShFix } from '../hook/windowsSh.ts';
 import { selfProgram } from '../util/userCommand.ts';
 import { skillInstalls } from './doctor.ts';
 import { codedError, emit, UserError, type OutOpts } from './output.ts';
@@ -25,6 +26,8 @@ import { codedError, emit, UserError, type OutOpts } from './output.ts';
 export interface SetupOpts extends OutOpts {
   agent?: string[];
   noHook?: boolean;
+  /** Windows: put an `sh` on the user PATH so Goose can run its hooks. */
+  fixSh?: boolean;
 }
 
 export interface SkillInstall {
@@ -110,6 +113,27 @@ function targets(agents: string[]): { labels: string[]; dir: string }[] {
   return out;
 }
 
+/** `--fix-sh`: give Goose an `sh` to run its hooks with (see integrations/goose/shell.ts). */
+function fixGooseSh(): ShFix {
+  if (process.platform !== 'win32')
+    throw codedError(
+      'USAGE',
+      '--fix-sh is only for Windows; Goose finds sh on every other system.',
+      'tracetoon setup --agent goose',
+    );
+  const exe = selfProgram();
+  // The shim is a link to the standalone binary; from source or npx there's nothing stable to link.
+  const linkable = exe.length === 1 ? exe[0]! : undefined;
+  const state = findSh();
+  if (!state.found && !state.gitUsrBin && !linkable)
+    throw codedError(
+      'GOOSE_SH_UNAVAILABLE',
+      "Git for Windows isn't installed, and this Tracetoon isn't the standalone runtime, so there is no sh to give Goose.",
+      'Install Git for Windows (https://git-scm.com/download/win), or the standalone runtime (docs/agents/install.md), then rerun with --fix-sh.',
+    );
+  return fixSh(linkable);
+}
+
 export function setupCmd(opts: SetupOpts): void {
   const source = skillSource();
   if (!source)
@@ -129,6 +153,8 @@ export function setupCmd(opts: SetupOpts): void {
     place(source, t.dir);
     return { agents: t.labels, dir: t.dir, action };
   });
+  let sh: ShFix | undefined;
+  if (opts.fixSh) sh = fixGooseSh();
   let hooks: HookChange[] = [];
   if (!opts.noHook) {
     const ids = opts.agent ?? [];
@@ -139,9 +165,17 @@ export function setupCmd(opts: SetupOpts): void {
   }
   const restartRequired =
     installed.some((i) => i.action !== 'unchanged') ||
-    hooks.some((h) => h.result === 'installed');
-  emit(opts, { installed, hooks, restartRequired }, () =>
+    hooks.some((h) => h.result === 'installed') ||
+    sh?.result === 'added';
+  emit(opts, { installed, hooks, ...(sh ? { gooseSh: sh } : {}), restartRequired }, () =>
     [
+      ...(sh
+        ? [
+            sh.result === 'added'
+              ? `Goose sh: added ${sh.dir} to your user PATH (${sh.kind === 'git' ? "Git for Windows' sh" : "Tracetoon's sh shim"}). Quit Goose from the tray and start it again.`
+              : `Goose sh: already available (${sh.dir})`,
+          ]
+        : []),
       installed.length ? 'Skill:' : 'Skill: no agents found (name one with --agent <id>)',
       ...installed.map((i) => `  ${i.agents.join(', ')}: ${i.action} (${i.dir})`),
       ...(opts.noHook

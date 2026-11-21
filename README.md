@@ -126,7 +126,7 @@ on a best-effort basis.
 | Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
 | Junie (CLI and JetBrains IDE plugin)                                  | ✅ supported                                                                      |
 | Devin (CLI and Devin Desktop, formerly Windsurf)                      | ✅ supported (uses Claude Code's hook; [see notes](docs/agents/support.md#notes)) |
-| Goose (CLI and desktop app)                                           | ✅ supported                                                                      |
+| Goose (CLI and desktop app)                                           | ✅ supported ([see notes](docs/agents/support.md#notes))                          |
 | Qwen Code (CLI)                                                       | ✅ supported                                                                      |
 | Crush (CLI)                                                           | ✅ supported                                                                      |
 | Amp (CLI)                                                             | 🟡 partial (no session logs; [see notes](docs/agents/support.md#notes))          |
@@ -419,8 +419,11 @@ The hook only touches its own entries in each agent's config, backs up each file
 before the first change, and lists every file it changed. Codex asks you to
 trust a new hook once (`/hooks`), and again whenever the hook entry changes;
 `tracetoon doctor` says when Codex would skip it. The Antigravity IDE picks it
-up after a restart. Goose runs hooks with `sh`, so on Windows it needs Git for
-Windows' `usr\bin` on `PATH`. Where each agent keeps its hook is listed in
+up after a restart. Goose runs hooks with `sh`; on Windows, where the desktop
+app has none on its `PATH`, `tracetoon setup --agent goose --fix-sh` adds Git
+for Windows' `usr\bin` to your user `PATH` (or Tracetoon's own `sh` when Git
+isn't installed), and `tracetoon doctor` says when Goose couldn't start the
+hook. Where each agent keeps its hook is listed in
 [supported agents](docs/agents/support.md). Skip
 installing it with `TRACETOON_NO_HOOK=1`, or manage it with
 `tracetoon hook install` and `tracetoon hook uninstall`.

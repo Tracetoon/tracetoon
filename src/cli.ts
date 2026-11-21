@@ -8,6 +8,19 @@ import { recordTiming } from './workflow/publication.ts';
 import { saveProfile } from './util/profile.ts';
 import { claudeCodeHint } from './util/claudeHint.ts';
 import { withGitAnswers } from './util/exec.ts';
+import { isShim, shimMain } from './util/shShim.ts';
+import { gitUsrBin, windowsReg } from './hook/windowsSh.ts';
+import { join } from 'node:path';
+
+// Started as sh.exe: Tracetoon's sh shim for Goose hooks (src/util/shShim.ts).
+if (isShim()) {
+  const code = shimMain(process.argv.slice(2), () => {
+    const bin = gitUsrBin(windowsReg, process.env);
+    return bin ? join(bin, 'sh.exe') : undefined;
+  });
+  await new Promise<void>((done) => process.stdout.write('', () => done()));
+  process.exit(code);
+}
 
 const cwd = process.cwd();
 
