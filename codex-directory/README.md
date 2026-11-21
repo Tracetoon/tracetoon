@@ -1,6 +1,6 @@
 # Tracetoon for the OpenAI plugin directory (skills only)
 
-Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex, at 46% lower cost per PR.
+Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex, at 70% lower cost per PR.
 
 ## Why use it
 
@@ -18,7 +18,7 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.43`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.44`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,8 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** None: the directory accepts no lifecycle hooks or local MCP servers, so the skill starts when you ask for a PR.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.43, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.43, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.44, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.44, published from GitHub Actions with npm provenance.
 
 ## What it reads
 
@@ -49,8 +49,8 @@ Session logs are read and processed on your machine. Data leaves it only for:
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once: the comic prompt, written from the
   PR summary.
-- **The Codex CLI**, only when reviews run through `tracetoon review run`: the
-  review packet (draft description, evidence brief and selected diff).
+- **The Codex CLI**, when reviews run through `tracetoon review run` (the default
+  on Codex): the review packet (draft description, evidence brief and selected diff).
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
@@ -61,7 +61,7 @@ Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
 
 ## Results
 
-On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 83 to 34 on Codex and 69 to 17 on Claude Code, at 46% and 31% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
+On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
 
 ## Support
 

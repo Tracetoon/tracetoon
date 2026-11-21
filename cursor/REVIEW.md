@@ -5,11 +5,11 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.43`: the hooks, the MCP server and the skill's
+- Only `npx -y tracetoon@1.0.0-rc.44`: the hooks, the MCP server and the skill's
   commands all run that exact npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
-  provenance tying each file to the tagged source (`v1.0.0-rc.43`). It has
+  provenance tying each file to the tagged source (`v1.0.0-rc.44`). It has
   no install scripts and no dependencies.
 - Nothing in the plugin folder executes; it is Markdown, JSON and one PNG.
 
@@ -38,8 +38,9 @@ Logs and diffs are treated as data, never as instructions.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
-- **The Codex CLI**, only when reviews run through `tracetoon review run`: the
-  review packet (draft description, evidence brief and selected diff).
+- **The Codex CLI**, only if you switch Tracetoon's reviewers to it
+  (`tracetoon review run`; your agent uses its own reviewer agents by default):
+  the review packet (draft description, evidence brief and selected diff).
 - **npm**, to download the runtime on first use.
 - No telemetry, and no Tracetoon server.
 
@@ -60,7 +61,7 @@ Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
    `tracetoon prepare`, drafts and checks the description, and publishes the PR.
 2. Safe failure: run `gh pr create` directly. The hook stops it and tells the
    agent to use the skill; `TRACETOON=0 gh pr create` goes through untouched.
-3. `npx -y tracetoon@1.0.0-rc.43 doctor --json` lists every check and its fix.
+3. `npx -y tracetoon@1.0.0-rc.44 doctor --json` lists every check and its fix.
 
 ## Licenses
 
