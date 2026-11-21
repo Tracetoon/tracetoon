@@ -724,6 +724,10 @@ export function buildProgram(cwd: string = process.cwd()): {
       [] as string[],
     )
     .option('--no-hook', 'leave the PR hook alone')
+    .option(
+      '--fix-sh',
+      "Windows: add Git for Windows' usr\\bin (or Tracetoon's sh shim) to the user PATH so Goose can run hooks",
+    )
     .action((o) => setupCmd({ ...g(), ...o, noHook: o.hook === false }));
 
   program

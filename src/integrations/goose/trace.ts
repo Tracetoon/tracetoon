@@ -57,6 +57,10 @@ const QUIET = new Set([
   'search',
   'todo_write',
   'todo_read',
+  // Goose 1.60 namespaces the todo extension's tools; read_image only looks.
+  'todo__todo_write',
+  'todo__todo_read',
+  'read_image',
 ]);
 
 export interface GooseMessage {

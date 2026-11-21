@@ -20,6 +20,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { skillInstalls } from '../commands/doctor.ts';
 import { run } from '../util/exec.ts';
+import { refreshShim } from '../hook/windowsSh.ts';
 import { fetchBytes, fetchText, sources, type Release } from './release.ts';
 import type { Layout } from './layout.ts';
 
@@ -199,6 +200,8 @@ export async function applyRelease(
     discard(`${layout.assets}.old-${id}`);
     discard(aside); // Windows keeps the old running binary locked; the next update clears it
     const hooks = run(layout.stable, ['hook', 'install'], { env }).ok;
+    // Goose's sh shim is a link to the old binary; point it at the new one.
+    if (process.platform === 'win32') refreshShim(layout.stable, env);
     // Everything is installed by now: a receipt that cannot be written must not undo that.
     try {
       writeFileSync(

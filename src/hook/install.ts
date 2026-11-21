@@ -243,7 +243,7 @@ export function hookStatus(targets = hookTargets()): HookState[] {
         const text = readText(t.file);
         return text === undefined ? undefined : owned.command(text);
       })();
-      return {
+      const state: HookState = {
         agent: t.agent,
         label: t.label,
         present: t.present,
@@ -253,6 +253,10 @@ export function hookStatus(targets = hookTargets()): HookState[] {
         command,
         coverage: COVERAGE,
       };
+      // Written correctly but unable to run (Goose without `sh`): doctor must say so.
+      const problem = command ? hookOf(t).problem?.(t.file, {}) : undefined;
+      if (problem) state.problem = problem;
+      return state;
     }
     let data: Json = {};
     let unreadable = false;
