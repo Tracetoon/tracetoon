@@ -746,6 +746,38 @@ describe('requested PR to publication rehearsal', () => {
     ).not.toBe(digestChecksBefore);
   });
 
+  test('a check after the digest refreshes it without task bookkeeping too', () => {
+    // An agent that runs `prepare` without `--run` gets a run with no task;
+    // its later checks must still reach the Validation section.
+    const repo = makeRepo();
+    repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
+    const digested = ok(repo.root, 'digest', '--offline');
+    const run = findRun(repository(repo.root).gitDir, digested.run);
+    expect(readTask(run)).toBeUndefined();
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    writeFileSync(join(run.dir, 'body.md'), 'Adds a greeting.\n');
+    writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeUndefined();
+    ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'tests',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("1 pass")',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeTruthy();
+  });
+
   test('prepares, publishes without rerunning work, and recovers an interrupted create', () => {
     const repo = makeRepo();
     const remote = tempDir('tracetoon-remote-');
