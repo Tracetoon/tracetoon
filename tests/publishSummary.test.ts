@@ -126,6 +126,18 @@ describe('post-PR message', () => {
     expect(second).not.toContain('Comics: tracetoon config set');
   });
 
+  test("an agent's skip says it was the agent's call", () => {
+    const l = log();
+    const skipped: ComicStatus = {
+      state: 'skipped',
+      by: 'agent',
+      detail: 'no review value',
+    };
+    expect(l.publish(approval({ comicStatus: skipped }))).toContain(
+      "Comic: none — no review value (the agent's call, not the user's).",
+    );
+  });
+
   test('MCP, which cannot draw, is said once per machine', () => {
     const l = log();
     const mcp: ComicStatus = {

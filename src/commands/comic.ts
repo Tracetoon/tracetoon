@@ -158,18 +158,24 @@ function load(cwd: string, runId?: string): Loaded {
  */
 export function comicSkipCmd(
   cwd: string,
-  opts: OutOpts & { run?: string; reason?: string; mcp?: boolean },
+  opts: OutOpts & { run?: string; reason?: string; mcp?: boolean; by?: string },
 ): void {
   const reason = opts.reason?.trim();
   if (!reason)
     throw new UserError(
-      'Say why there is no comic, in the user\'s terms: --reason "the user declined it".',
+      'Say why there is no comic, in the user\'s terms: --reason "the user declined it" --by user.',
     );
+  if (opts.by !== undefined && opts.by !== 'user' && opts.by !== 'agent')
+    throw new UserError('--by is "user" (the user declined the comic) or "agent".', 2, {
+      code: 'USAGE',
+      fix: 'tracetoon comic skip --reason "<why>" --by user|agent',
+    });
   const truth = prTruth(cwd, { noGh: true });
   const run = findRun(truth.gitDir, opts.run);
   writeComicStatus(run, {
     state: 'skipped',
-    by: opts.mcp ? 'mcp' : 'user',
+    // Only a skip the user asked for is the user's; otherwise it was the agent's call.
+    by: opts.mcp ? 'mcp' : opts.by === 'user' ? 'user' : 'agent',
     detail: reason,
   });
   emit(

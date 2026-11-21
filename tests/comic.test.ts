@@ -555,7 +555,15 @@ describe('comic end to end', () => {
     expect(refused.json.errorCode).toBe('COMIC_UNEXPLAINED');
     expect(ghCalls().some((c) => c.args[1] === 'create')).toBe(false);
 
-    const skip = cli(repo.root, 'comic', 'skip', '--reason', 'the user declined it');
+    const skip = cli(
+      repo.root,
+      'comic',
+      'skip',
+      '--reason',
+      'the user declined it',
+      '--by',
+      'user',
+    );
     expect(skip.code).toBe(0);
     expect(cli(repo.root, 'render').json.comicStatus).toMatchObject({
       state: 'skipped',
@@ -570,6 +578,15 @@ describe('comic end to end', () => {
   test('comic skip needs a reason; images --dismiss stops the setup offer on this machine', () => {
     const { repo } = prepared();
     expect(cli(repo.root, 'comic', 'skip').code).toBe(1);
+    // Without --by user, the skip is recorded as the agent's call.
+    expect(
+      cli(repo.root, 'comic', 'skip', '--reason', 'no value', '--by', 'bot').code,
+    ).toBe(2);
+    expect(cli(repo.root, 'comic', 'skip', '--reason', 'no value').code).toBe(0);
+    expect(cli(repo.root, 'render').json.comicStatus).toMatchObject({
+      state: 'skipped',
+      by: 'agent',
+    });
     const before = cli(repo.root, 'context', '--offline');
     expect(before.json.comic.expectation).toMatchObject({
       route: { kind: 'setup' },

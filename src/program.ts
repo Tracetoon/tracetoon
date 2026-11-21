@@ -395,7 +395,10 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--reviewed',
       'reviewed brief path: drafted inline from the evidence brief, then checked by one slim reviewer (reviewer-notes.md)',
     )
-    .option('--verbose', 'text mode: also print optional author notes and evidence-graph leads')
+    .option(
+      '--verbose',
+      'text mode: also print optional author notes and evidence-graph leads',
+    )
     .action((o) => {
       o.noComic = o.comic === false;
       renderCmd(cwd, { ...g(), ...o });
@@ -531,6 +534,10 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--run <id>', 'run id (default: latest)')
     .option('--reason <text>', "why, in the user's terms (shown after publishing)")
     .option('--mcp', 'recorded by the MCP server, which cannot draw')
+    .option(
+      '--by <who>',
+      'user (the user declined the comic) or agent (default: the agent decided)',
+    )
     .action((o) => comicSkipCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')

@@ -328,6 +328,7 @@ record why this PR has no comic when one was expected (the user declined, or dra
 | `--run <id>` | run id (default: latest) |
 | `--reason <text>` | why, in the user's terms (shown after publishing) |
 | `--mcp` | recorded by the MCP server, which cannot draw |
+| `--by <who>` | user (the user declined the comic) or agent (default: the agent decided) |
 
 ## `tracetoon comic check`
 
