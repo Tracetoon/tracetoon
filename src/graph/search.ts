@@ -28,7 +28,7 @@
  */
 import { readJson, writeJson, type Run } from '../run.ts';
 import { patchHunks, type PatchHunk } from './build.ts';
-import { evidenceLines, literalTokens, stem } from './codeEvidence.ts';
+import { evidenceLines, literalTokens, plusTokens, stem } from './codeEvidence.ts';
 import { GraphEngine } from './engine.ts';
 import { porterStem } from './porter.ts';
 import { identWords, mentionedNames, mentionedPaths, terms } from './text.ts';
@@ -152,10 +152,16 @@ export function addSearchLinks(input: SearchInput): SearchStats | undefined {
   // Key lines for the brief: added comments, values, conditions (codeEvidence.ts).
   for (const h of hunks) {
     const node = hunkNodes.get(h.id)!;
-    const lines = evidenceLines(h.minus ?? [], h.plus ?? [], h.file);
+    // Moved lines are no removed or changed code (see `PatchHunk.moved`).
+    const lines = evidenceLines(
+      h.keptMinus ?? h.minus ?? [],
+      h.keptPlus ?? h.plus ?? [],
+      h.file,
+    );
     if (lines.length) node.props.keyLines = lines;
     const literals = literalTokens(h.minus ?? [], h.plus ?? []);
     if (literals.length) node.props.literals = literals;
+    node.props.plusTokens = plusTokens(h.plus ?? []);
   }
   if (!hunks.length) return undefined;
   let db: GraphEngine;

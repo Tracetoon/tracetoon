@@ -56,6 +56,7 @@ import type {
 } from './records.ts';
 import upstream from '../../compat/upstream.json';
 import { traceLabel } from '../../src/integrations/registry.ts';
+import { USER_ENV, windowsReg } from '../../src/hook/windowsSh.ts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const CLI = join(ROOT, 'src', 'cli.ts');
@@ -467,14 +468,23 @@ async function main(): Promise<number> {
           `${recipe.secret} is not set, so the free-plan session can't run`,
         );
       if (opts.install) {
-        for (const c of recipe.install(version)) {
-          const r = exec(shellSafe(c), { ...process.env }, root, 600_000);
-          if (r.code !== 0)
-            throw new CheckFailure(
-              'install',
-              'infra',
-              `install failed: ${(r.stderr || r.stdout).slice(-400)}`,
-            );
+        // Installers such as Cursor's add their folder (here inside the sandbox) to
+        // the real user PATH in the registry, which the sandbox's env can't contain.
+        const userPath =
+          process.platform === 'win32' ? windowsReg.get(USER_ENV, 'Path') : undefined;
+        try {
+          for (const c of recipe.install(version)) {
+            const r = exec(shellSafe(c), { ...process.env }, root, 600_000);
+            if (r.code !== 0)
+              throw new CheckFailure(
+                'install',
+                'infra',
+                `install failed: ${(r.stderr || r.stdout).slice(-400)}`,
+              );
+          }
+        } finally {
+          if (userPath && windowsReg.get(USER_ENV, 'Path')?.value !== userPath.value)
+            windowsReg.set(USER_ENV, 'Path', userPath);
         }
       }
       const versionCmd =

@@ -169,8 +169,14 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           for attempt in $(seq 1 40); do
             missing=""
+            # The registry lists a version a few minutes before its tarball downloads
+            # (rc.44's 404'd for about 3 minutes), and the plugins pin this exact
+            # version, so wait until every tarball answers too.
             for name in tracetoon @tracetoon/cli-linux-x64 @tracetoon/cli-linux-arm64 @tracetoon/cli-darwin-x64 @tracetoon/cli-darwin-arm64 @tracetoon/cli-win32-x64; do
-              npm view "$name@$version" version >/dev/null 2>&1 || missing="$missing $name"
+              tarball="$(npm view "$name@$version" dist.tarball 2>/dev/null)"
+              if [ -z "$tarball" ] || ! curl -sfIL -o /dev/null "$tarball"; then
+                missing="$missing $name"
+              fi
             done
             if [ -z "$missing" ]; then exit 0; fi
             echo "Not on npm yet:$missing (attempt $attempt); waiting 30 s"

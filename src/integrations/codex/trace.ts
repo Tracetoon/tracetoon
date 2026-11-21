@@ -10,6 +10,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { codex } from '@showtail/agent-traces';
 import { isSyntheticPrompt } from '@showtail/agent-traces/prompts/synthetic';
 import {
@@ -19,7 +20,12 @@ import {
   splitLines,
 } from '../../trace/diffLines.ts';
 import { mentionsAnyRoot } from '../../trace/pathMatch.ts';
-import type { SessionRef, TraceAdapter, TraceSession } from '../../trace/types.ts';
+import type {
+  DecisionQuestion,
+  SessionRef,
+  TraceAdapter,
+  TraceSession,
+} from '../../trace/types.ts';
 import { sawToolCall } from '../../trace/toolCalls.ts';
 import { discoveryIndex } from '../../trace/discovery.ts';
 
@@ -68,6 +74,20 @@ function parseJson(s: unknown): unknown {
   }
 }
 
+/** A unified-exec result's exit code (`Process exited with code 0`), if it finished. */
+function unifiedExit(out: string): string | undefined {
+  return (
+    /Process exited with code\s+(-?\d+)/i.exec(out)?.[1] ??
+    /Exit code:\s*(\d+)/i.exec(out)?.[1]
+  );
+}
+
+/** A unified-exec result's command output, without the header Codex puts before it. */
+function unifiedBody(out: string): string {
+  const at = /^Output:\r?\n/m.exec(out);
+  return at ? out.slice(at.index + at[0].length) : out;
+}
+
 /** Plan text from an `update_plan` call: `{ explanation?, plan: [{ step, status }] }`. */
 function planFromArgs(args: unknown): string | undefined {
   const a = parseJson(args);
@@ -79,6 +99,28 @@ function planFromArgs(args: unknown): string | undefined {
     .filter((s) => s.length > 6);
   const head = str(a.explanation);
   return [head, ...steps].filter(Boolean).join('\n') || undefined;
+}
+
+/**
+ * A working directory as Codex logs it: a path, or a `file://` URI (app-server
+ * items), which is turned into the path it names. A URI read as a path would
+ * resolve under the process's own folder and look like this repository. On
+ * Windows a local URI without a drive (`file:///w/app`) is still the rooted
+ * path it names, which fileURLToPath refuses.
+ */
+function dirOf(v: unknown): string | undefined {
+  const s = str(v);
+  if (!s || !/^file:\/\//i.test(s)) return s;
+  try {
+    return fileURLToPath(s);
+  } catch {
+    try {
+      const u = new URL(s);
+      return u.host ? undefined : decodeURIComponent(u.pathname) || undefined;
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 /** Parse one rollout file's content. Exported for tests. */
@@ -95,6 +137,12 @@ export function parseCodexLines(content: string, into: TraceSession): void {
   const pendingCalls = new Map<
     string,
     { name: string; args: unknown; ts?: string; cwd?: string }
+  >();
+
+  /** Unified-exec commands still running, by session id, until a `write_stdin` poll ends them. */
+  const running = new Map<
+    string,
+    { cmd: string; ts?: string; workdir?: string; out: string }
   >();
 
   const where = (ts: string | undefined, at?: string) => ({
@@ -156,7 +204,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
     }
 
     if (type === 'session_meta') {
-      cwd = str(p.cwd) ?? cwd;
+      cwd = dirOf(p.cwd) ?? cwd;
       if (isObj(p.git)) branch = str(p.git.branch) ?? branch;
       if (isObj(p.source) && 'subagent' in p.source) {
         delegated = true;
@@ -171,7 +219,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
       continue;
     }
     if (type === 'turn_context') {
-      cwd = str(p.cwd) ?? cwd;
+      cwd = dirOf(p.cwd) ?? cwd;
       model = str(p.model) ?? model;
       continue;
     }
@@ -232,7 +280,7 @@ export function parseCodexLines(content: string, into: TraceSession): void {
               cmd,
               isError: exit !== undefined ? exit !== 0 : it.status === 'failed',
               output,
-              ...where(ts, str(it.cwd)),
+              ...where(ts, dirOf(it.cwd)),
             });
             break;
           }
@@ -299,11 +347,66 @@ export function parseCodexLines(content: string, into: TraceSession): void {
       if ((rt === 'function_call_output' || rt === 'custom_tool_call_output') && callId) {
         const call = pendingCalls.get(callId);
         pendingCalls.delete(callId);
-        if (!call || !SHELL_TOOL.test(call.name)) continue;
+        if (!call) continue;
         const args = parseJson(call.args);
+        const out = typeof p.output === 'string' ? p.output : textOf(p.output);
+        // Unified exec: `write_stdin` polls a command still running from an
+        // earlier `exec_command`; its output finishes that command's.
+        if (call.name === 'write_stdin') {
+          const sid = isObj(args) ? String(args.session_id ?? '') : '';
+          const open = running.get(sid);
+          if (!open) continue;
+          open.out += `\n${unifiedBody(out)}`;
+          const exit = unifiedExit(out);
+          if (exit === undefined) continue;
+          running.delete(sid);
+          into.records.push({
+            kind: 'command',
+            cmd: open.cmd,
+            isError: exit !== '0',
+            output: headTail(open.out),
+            partial: true,
+            ...where(open.ts, open.workdir),
+          });
+          continue;
+        }
+        // An answered question (`request_user_input`): each question with the
+        // option labels offered and the answer(s) chosen, as a decision.
+        if (call.name === 'request_user_input') {
+          const questions = userInputQuestions(args, out);
+          if (questions.length)
+            into.records.push({
+              kind: 'decision',
+              text: questions
+                .map((q) => `${q.question} → ${q.answer ?? '(no answer)'}`)
+                .join('\n'),
+              questions,
+              ...where(call.ts),
+            });
+          continue;
+        }
+        if (call.name === 'exec_command') {
+          const cmd = isObj(args) ? commandText(args.cmd ?? args.command) : undefined;
+          if (!cmd) continue;
+          const workdir = isObj(args) ? dirOf(args.workdir) : undefined;
+          const exit = unifiedExit(out);
+          const sid = /Process running with session ID\s+(\d+)/i.exec(out)?.[1];
+          if (exit === undefined && sid) {
+            running.set(sid, { cmd, ts: call.ts, workdir, out: unifiedBody(out) });
+            continue;
+          }
+          into.records.push({
+            kind: 'command',
+            cmd,
+            isError: exit !== undefined ? exit !== '0' : undefined,
+            output: headTail(unifiedBody(out)),
+            ...where(call.ts, workdir),
+          });
+          continue;
+        }
+        if (!SHELL_TOOL.test(call.name)) continue;
         const cmd = isObj(args) ? commandText(args.command) : undefined;
         if (!cmd) continue;
-        const out = typeof p.output === 'string' ? p.output : textOf(p.output);
         const exit =
           /Exit code:\s*(\d+)/i.exec(out)?.[1] ?? /"exit_code":\s*(\d+)/.exec(out)?.[1];
         into.records.push({
@@ -311,11 +414,42 @@ export function parseCodexLines(content: string, into: TraceSession): void {
           cmd,
           isError: exit !== undefined ? exit !== '0' : undefined,
           output: headTail(out),
-          ...where(call.ts, isObj(args) ? str(args.workdir) : undefined),
+          ...where(call.ts, isObj(args) ? dirOf(args.workdir) : undefined),
         });
       }
     }
   }
+}
+
+/**
+ * The questions of a `request_user_input` call and the answers its output
+ * gives (`{"answers": {"<id>": {"answers": ["<label>"]}}}`), by question id.
+ */
+export function userInputQuestions(args: unknown, output: string): DecisionQuestion[] {
+  const qs = isObj(args) && Array.isArray(args.questions) ? args.questions : [];
+  const parsed = parseJson(output);
+  const answers = isObj(parsed) && isObj(parsed.answers) ? parsed.answers : {};
+  return qs.flatMap((q): DecisionQuestion[] => {
+    if (!isObj(q)) return [];
+    const question = str(q.question);
+    if (!question) return [];
+    const options = (Array.isArray(q.options) ? q.options : [])
+      .map((o) => (isObj(o) ? str(o.label) : str(o)))
+      .filter((l): l is string => !!l);
+    const a = answers[str(q.id) ?? ''] ?? answers[question];
+    const list =
+      isObj(a) && Array.isArray(a.answers) ? a.answers : Array.isArray(a) ? a : [a];
+    const chosen = list.map((x) => str(x)).filter((x): x is string => !!x);
+    const answer = chosen.length ? chosen.join(', ') : undefined;
+    return [
+      {
+        question,
+        options,
+        answer,
+        ownWords: answer ? !chosen.every((c) => options.includes(c)) : undefined,
+      },
+    ];
+  });
 }
 
 /** Thread titles from `session_index.jsonl` ({ id, thread_name }). */

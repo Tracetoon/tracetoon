@@ -529,6 +529,52 @@ describe('receipts follow tested content', () => {
     expect(contentFingerprint(repo.root)).toBe(source);
     expect(executeCheck(repo.root, run, options).reused).toBeUndefined();
   });
+  test('reuses the latest receipt while the tracked code is unchanged, passed or failed, across runs', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo.root, 'code.ts'), 'one');
+    git(repo.root, ['add', 'code.ts']);
+    git(repo.root, ['commit', '-qm', 'Add code']);
+    const { run } = beginTask(repo.root);
+    const failing = {
+      name: 'tests',
+      command: [process.execPath, '-e', 'process.exit(3)'],
+    };
+    const first = executeCheck(repo.root, run, failing);
+    expect(first.outcome).toBe('failed');
+    expect(first.tracked).toBeString();
+    // An untracked draft beside the code changes nothing a check reads here.
+    writeFileSync(join(repo.root, 'draft.md'), 'a PR description');
+    const again = executeCheck(repo.root, run, failing);
+    expect(again.reused).toBe(true);
+    expect(again.outcome).toBe('failed');
+    expect(again.reuse?.reason).toContain('--force');
+    // Reused, it counts as current for the content now.
+    expect(checkReport(repo.root, run).find((c) => c.name === 'tests')!.current).toBe(
+      true,
+    );
+    expect(
+      executeCheck(repo.root, run, { ...failing, force: true }).reused,
+    ).toBeUndefined();
+    // Another run of the repository on the same code tree reuses it too.
+    git(repo.root, ['checkout', '-qb', 'other']);
+    const second = beginTask(repo.root);
+    expect(second.run.id).not.toBe(run.id);
+    expect(executeCheck(repo.root, second.run, failing).reused).toBe(true);
+    // A tracked edit reruns it.
+    writeFileSync(join(repo.root, 'code.ts'), 'two');
+    expect(executeCheck(repo.root, second.run, failing).reused).toBeUndefined();
+    // A check the environment stopped is rerun: the environment may be fixed.
+    const missing = {
+      name: 'deps',
+      command: [
+        process.execPath,
+        '-e',
+        'console.error("sh: 1: cargo: not found"); process.exit(127)',
+      ],
+    };
+    expect(executeCheck(repo.root, second.run, missing).couldNotRun).toBeString();
+    expect(executeCheck(repo.root, second.run, missing).reused).toBeUndefined();
+  });
   test('reuses unchanged input, survives commits and ignores private trails; edits and environment changes invalidate', () => {
     const repo = makeRepo();
     const { run } = beginTask(repo.root);
@@ -625,6 +671,113 @@ describe('active transcript discovery', () => {
 });
 
 describe('requested PR to publication rehearsal', () => {
+  test('a check after the digest: render refreshes the digest instead of failing', () => {
+    const repo = makeRepo();
+    const remote = tempDir('tracetoon-remote-');
+    git(remote, ['init', '-q', '--bare']);
+    git(repo.root, ['remote', 'add', 'origin', remote]);
+    git(repo.root, ['push', '-q', 'origin', 'main']);
+    const begun = ok(repo.root, 'task', 'begin', '--session', 'rehearsal');
+    const run = findRun(repository(repo.root).gitDir, begun.run);
+    repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
+    const checked = ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'tests',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("1 pass")',
+    );
+    expect(checked.outcome).toBe('passed');
+    // The user asks for a PR; the direct write is redirected to this task.
+    const p = { cwd: repo.root, session_id: 'rehearsal' };
+    expect(
+      lifecycle(
+        'codex',
+        'PreToolUse',
+        { ...p, tool_input: { command: 'gh pr create --fill' } },
+        env(),
+      ),
+    ).toContain(`tracetoon publish --run ${run.id}`);
+    expect(readTask(run)?.prRequestedAt).toBeTruthy();
+    expect(lifecycle('codex', 'Stop', p, env())).toBeUndefined();
+    ok(repo.root, 'task', 'complete', '--run', run.id, '--checks', 'tests');
+    ok(repo.root, 'digest', '--run', run.id, '--offline');
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    const request = readLocal<{ fingerprint: string }>(
+      join(run.dir, 'guidance-request.json'),
+    )!;
+    writeLocal(join(run.dir, 'guidance.json'), {
+      v: 1,
+      requestFingerprint: request.fingerprint,
+      researcher: { mode: 'inline' },
+      sources: [],
+      requirements: [],
+      gaps: ['Isolated workflow fixture; no production compliance claim.'],
+    });
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'Adds a greeting.\n\nTesting: the smoke test passed.\n',
+    );
+    writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    const digestChecksBefore = readLocal<{ checksSha?: string }>(
+      join(run.dir, 'digest.json'),
+    )!.checksSha;
+    ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'lint',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("ok")',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).not.toBe(digestChecksBefore);
+  });
+
+  test('a check after the digest refreshes it without task bookkeeping too', () => {
+    // An agent that runs `prepare` without `--run` gets a run with no task;
+    // its later checks must still reach the Validation section.
+    const repo = makeRepo();
+    repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
+    const digested = ok(repo.root, 'digest', '--offline');
+    const run = findRun(repository(repo.root).gitDir, digested.run);
+    expect(readTask(run)).toBeUndefined();
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    writeFileSync(join(run.dir, 'body.md'), 'Adds a greeting.\n');
+    writeFileSync(join(run.dir, 'title.txt'), 'Add greeting');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeUndefined();
+    ok(
+      repo.root,
+      'check',
+      '--run',
+      run.id,
+      '--name',
+      'tests',
+      '--',
+      process.execPath,
+      '-e',
+      'console.log("1 pass")',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    expect(
+      readLocal<{ checksSha?: string }>(join(run.dir, 'digest.json'))!.checksSha,
+    ).toBeTruthy();
+  });
+
   test('prepares, publishes without rerunning work, and recovers an interrupted create', () => {
     const repo = makeRepo();
     const remote = tempDir('tracetoon-remote-');
@@ -1059,7 +1212,7 @@ describe('ordinary git and task identity', () => {
     expect(readTask(run)?.state).not.toBe('published');
   });
 
-  test('receipts ignore agent session bookkeeping but not the toolchain', () => {
+  test('receipts ignore agent session bookkeeping; a toolchain change blocks reuse, not evidence', () => {
     const repo = makeRepo();
     const { run } = beginTask(repo.root, { session: 'receipts' });
     const saved = { ...process.env };
@@ -1100,8 +1253,19 @@ describe('ordinary git and task identity', () => {
       expect(
         checkEnvironment({ ...process.env, BASH_ENV: 'different-startup-script' }),
       ).not.toBe(environment);
+      // A toolchain change: the receipt is no longer reused (the check runs again),
+      // but it still says the check passed on this content, noting the change.
       process.env.NODE_ENV = 'production';
-      expect(current()).toBe(false);
+      expect(current()).toBe(true);
+      expect(
+        checkReport(repo.root, run).find((c) => c.name === 'tests')!.environmentChanged,
+      ).toBe(true);
+      expect(
+        executeCheck(repo.root, run, {
+          name: 'tests',
+          command: [process.execPath, '-e', '1'],
+        }).reused,
+      ).toBeUndefined();
     } finally {
       for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k];
       Object.assign(process.env, saved);

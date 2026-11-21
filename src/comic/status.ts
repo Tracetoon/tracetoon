@@ -10,8 +10,8 @@ import type { Run } from '../run.ts';
  */
 export interface ComicStatus {
   state: 'no-route' | 'failed' | 'skipped';
-  /** For a skip: who decided (the user, or a host that can't draw). */
-  by?: 'user' | 'mcp';
+  /** For a skip: who decided (the user, the agent, or a host that can't draw). */
+  by?: 'user' | 'agent' | 'mcp';
   detail: string;
   at: string;
 }

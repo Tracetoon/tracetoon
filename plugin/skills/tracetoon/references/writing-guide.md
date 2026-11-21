@@ -48,8 +48,10 @@ bug fix all take different shapes.
   maintainer would search for. A bare code (an issue number, a rule ID, a CWE)
   doesn't explain anything on its own; pair it with the behavior.
 - **The change that matters most, not the biggest diff.** Cover the whole PR
-  at the level of its main change, not the latest commit. Read the commit
-  subjects; reuse a good one if it fits. The main change is usually what the
+  at the level of its main change, not the latest commit: with several
+  commits, a title that only restates the head commit's subject is flagged by
+  `render`. Read every commit subject and change unit; reuse a subject only
+  if it covers them all. The main change is usually what the
   user asked for: if they asked for something visible (a clickable link, a new
   option), it belongs in the title even when fixes found along the way touched
   more code. Name what's **new**, not what already existed ("draw with Codex
@@ -182,9 +184,10 @@ in the change map's order. The main idea or riskiest part first, then the key
 test, then "the rest is mechanical" when it is. Name files by role, at most one
 per step.>
 
-<Feedback wanted: only when the trace shows a real open decision (an approach
-not discussed, a trade-off left to the reviewer). Name it in one line. Never
-invent one.>
+<Where to start: the function and file a reviewer should read first.>
+
+<Feedback wanted: one concrete question for reviewers about a decision or
+risk the change takes (an approach, a default, a trade-off). One line.>
 ```
 
 A review path is not a file list: it says what to read first and why, and puts
@@ -240,6 +243,9 @@ result to its source without guessing a command or dropping a material outcome.
   tested code that isn't in this PR. If `outcome` is `unknown`, don't claim a
   result. If `pr.dirty` is true, a run may have covered code that isn't in the
   PR.
+- Order runs and commits by time only ("passed before the final commit").
+  Never say a commit or edits "followed" a run "and changed" something, or
+  use "after which": the edits may sit inside that commit.
 - If a run failed and a later one passed, you can say so when it helps the
   reviewer.
 - A later failure does not erase a real earlier pass. Say which command passed
@@ -260,10 +266,17 @@ result to its source without guessing a command or dropping a material outcome.
 - **Don't put words in anyone's mouth.** "I chose X because…" claims who decided
   and why. Write it only when a prompt, a recorded decision or the user's own
   text supports it. Otherwise state the reason neutrally, or leave it out.
+  Quote or paraphrase the request itself rather than characterizing the
+  session: never "the session began/started with…", "the session's first
+  request was…" or "follows the request to 'Continue'", and never "the session
+  chose…" or "the user chose…" without a recorded decision or the user's own
+  words.
 - **Where the change came from is context only the trace has.** The user's
   report or request ("a Codex test showed the PR link couldn't be
-  clicked") tells a reviewer why the change exists; put it in a sentence,
-  paraphrased per `promptQuoting`. Expand and read that exact prompt first.
+  clicked") tells a reviewer why the change exists; state it as the PR's
+  purpose (problem, then design, then consequences), paraphrased per
+  `promptQuoting`, never as session history ("a later request in the
+  session asked…"). Expand and read that exact prompt first.
   Use the specific reported problem, not a broad evaluation or setup request
   from another part of the conversation. Retain a verified overall request for
   this submission at the level it supports, and establish the cause of each

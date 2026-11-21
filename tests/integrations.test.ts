@@ -135,12 +135,14 @@ const PAYLOADS: Record<string, (command: string, cwd: string) => unknown> = {
     tool_name: 'powershell',
     tool_input: { command, timeout: 30 },
   }),
-  // Recorded from Goose 1.58.1 (the shell tool is `shell`).
+  // Recorded from Goose 1.60.2 on Windows (the shell tool is `shell`).
   goose: (command, cwd) => ({
     event: 'PreToolUse',
-    session_id: '20261114_3',
+    session_id: '20261121_10',
+    matcher_context: 'shell',
+    tool_call_id: 'call_a4340b0a84bc4cfb9a999537c3b71958',
     tool_name: 'shell',
-    tool_input: { command },
+    tool_input: { command, timeout_secs: null },
     working_dir: cwd,
   }),
   // Qwen Code speaks Claude Code's protocol (shell tool: run_shell_command).

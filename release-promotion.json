@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.44",
-  "buildId": "9a6efae78e42f9f97981b63be3dd663c1c3d5076bfaf9e7ba2acd3e58c6c1f99",
+  "version": "1.0.0-rc.45",
+  "buildId": "2345c7b4c8bb571bbb335571fa2c3d3cd3522ce0065466bcaee5eca45fd671ba",
   "artifact": {
-    "runId": 44849542740,
-    "id": 14685310345,
-    "name": "tracetoon-candidate-f7d85012c925399f3ad7e448003ef34135539507-attempt-1",
-    "digest": "sha256:94e40ac1a0248e61aa227d021e065a77b11f3ebc443b7b8b4a8c164073c01174"
+    "runId": 44895516452,
+    "id": 14703494725,
+    "name": "tracetoon-candidate-e76fbc16cec5cada1de8eea64fa0036c1262934a-attempt-1",
+    "digest": "sha256:0c72acf2c8638a2b052125c4502ff9c2651774f7691b711dd8a34c117401ec2e"
   },
   "expected": {
-    "manifestSha256": "8c5f401ca0d601df686dde6aaed5cd8ef9b69d4427046dfda569d8b7ad6defce",
-    "checksumsSha256": "21839fab03c3295bb739dc7d890d05ee28629c2844ac032f222988ddd4c305d0",
-    "windowsSha256": "38d40a12133a014ef8c16b1b34919fa4de813f7883006b0e5bc5bb776a896950",
-    "bundleSha256": "59ecc56b214ab7a7995d400c9102cd67fa55168986e90b09e0a532d05ad1b0e2"
+    "manifestSha256": "8c78d5b2107fa351baa94c1ce16c46c2e74e4ef13f38942b413caf4f2b126ae2",
+    "checksumsSha256": "69e6e8052031b6720b20ddcb729ed0d7f6007a3527c7ea245ad7bee0abb829de",
+    "windowsSha256": "a95de0d6dca3e2fffd36b7a28b5f4c460158dcc3395add368a78d031fbe31b5f",
+    "bundleSha256": "f8828c5d2e9796a90261f53ecd2f474a1b25586d834d42667b4373cc4404fd36"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-21T01:29:57.000Z",
-    "reason": "The user asked to cut a new release carrying the fixes merged since rc.43 (author credit, npx without --prefer-offline, the strict-YAML skill description, SKILL.md under 500 lines) and the Claude Code and Codex marketplace switch to the plugins branch. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-21T10:50:32.000Z",
+    "reason": "The user asked to prepare a release carrying the Goose fixes merged since rc.44 (Goose hooks on Windows desktop with setup --fix-sh, Goose session matching and cmd cd /d, and check receipts that survive a shell change or a task-less run), so Goose works fully with the released version. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

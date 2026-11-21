@@ -426,7 +426,7 @@ contributions are welcome.
 | Cline         | CLI, VS Code and JetBrains extensions                      | ✅ supported (see notes) | `~/.cline/hooks/PreToolUse.mjs`                    | `~/.agents/skills/tracetoon`        |
 | Junie         | CLI and JetBrains IDE plugin                               | ✅ supported             | `~/.junie/config.json`                             | `~/.junie/skills/tracetoon`         |
 | Devin         | CLI and Devin Desktop, formerly Windsurf                   | ✅ supported (see notes) | inherited: Claude Code's hook, which Devin imports | `~/.agents/skills/tracetoon`        |
-| Goose         | CLI and desktop app                                        | ✅ supported             | `~/.agents/plugins/tracetoon/hooks/hooks.json`     | `~/.agents/skills/tracetoon`        |
+| Goose         | CLI and desktop app                                        | ✅ supported (see notes) | `~/.agents/plugins/tracetoon/hooks/hooks.json`     | `~/.agents/skills/tracetoon`        |
 | Qwen Code     | CLI                                                        | ✅ supported             | `~/.qwen/settings.json`                            | `~/.qwen/skills/tracetoon`          |
 | Crush         | CLI                                                        | ✅ supported             | `~/.config/crush/crush.json`                       | `~/.agents/skills/tracetoon`        |
 | Amp           | CLI                                                        | 🟡 partial (see notes)  | `~/.config/amp/plugins/tracetoon.ts`               | `~/.agents/skills/tracetoon`        |
@@ -438,6 +438,7 @@ contributions are welcome.
 - **Cursor:** Cursor's logs don't record exit codes, so the PR can't confirm that tests or builds passed.
 - **Cline:** PRs opened through GitHub connector or MCP tools are not redirected; `gh` and other shell commands are. In the VS Code and JetBrains extensions, a blocked PR command stops the task, since their hooks cannot skip a single command; a global Cline rule (~/.cline/rules/tracetoon.md) points the agent to the Tracetoon skill first.
 - **Devin:** Devin Desktop runs the Devin CLI engine and keeps its sessions in the same database, so it is read the same way; it has not yet been tested end to end.
+- **Goose:** Goose runs hooks with `sh -c`, on Windows too. The desktop app doesn't see Git Bash's PATH, so unless Git for Windows' `usr\bin` is on your user PATH the PR hook never runs: `tracetoon setup --agent goose --fix-sh` adds it (or, without Git, Tracetoon's own `sh`), and `tracetoon doctor` says when Goose couldn't start the hook.
 - **Amp:** Amp keeps its threads on Amp's servers, so the PR is written from the diff and git history, not session logs. Only PR commands run in the shell are redirected to Tracetoon.
 - **Zed:** Zed has no hook before its agent's tools, so a PR command run by the Zed Agent isn't redirected; the agent can still use the Tracetoon skill. Claude Code, Codex and Copilot CLI run inside Zed are covered by their own integrations.
 - **Warp:** Warp keeps its agent's replies and file edits on its servers; Tracetoon reads the prompts and the commands the agent ran, from Warp's local database. Warp has no hook before its agent's tools, so a PR command run by Warp's agent isn't redirected; the agent can still use the Tracetoon skill.
@@ -532,7 +533,7 @@ Successful JSON objects also carry `schemaVersion`; JSON arrays (such as
 | `GITHUB_UNREACHABLE` | 7 | GitHub could not be reached, timed out or rate-limited the call | Rerun the same command in a minute | yes | no |
 | `CONSENT_REQUIRED` | 4 | Sending comic prompts to this image route needs the user’s agreement | Ask the user; rerun with --consent only after they agree | no | yes |
 | `NO_IMAGE_ROUTE` | 5 | No approved image route can draw the comic | Offer the printed options, or skip the comic | no | yes |
-| `COMIC_UNEXPLAINED` | 1 | A comic was expected and an image route could draw it, but none was drawn or skipped with a reason | Draw it (SKILL step 5), or `tracetoon comic skip --reason "<why>"`, then render again | no | no |
+| `COMIC_UNEXPLAINED` | 1 | A comic was expected and an image route could draw it, but none was drawn or skipped with a reason | Draw it (references/full-path.md step 5), or `tracetoon comic skip --reason "<why>"`, then render again | no | no |
 | `UPDATES_DISABLED` | 1 | `TRACETOON_DISABLE_UPDATES=1` is set here |  | no | no |
 | `UPDATE_LOOKUP_FAILED` | 7 | The release list could not be fetched | Rerun the same command in a minute | yes | no |
 | `SKILL_SOURCE_NOT_FOUND` | 1 | `setup` found no skill folder shipped with this runtime | Follow docs/agents/install.md | no | no |

@@ -293,7 +293,7 @@ describe('run history', () => {
         run('R3', 2, 'typecheck', 'bun x tsc --noEmit', 'unknown'),
       ])?.text,
     ).toBe(
-      "`bun x tsc --noEmit`: 2 runs in this PR's turns, in order: passed (R1), then the last run (R3) has no captured result",
+      "`bun x tsc --noEmit`: 2 runs in this PR's turns, in order: passed (R1), then the last run (R3) shows no exit status",
     );
     // Many alternations: the failures, then how it ended; unknown runs counted.
     const many = [
@@ -308,7 +308,7 @@ describe('run history', () => {
       run(`R${i + 1}`, i, 'test', 'bun test', o, o === 'unknown' ? [] : ['x']),
     );
     expect(runHistory(many)?.text).toBe(
-      "`bun test`: 7 runs in this PR's turns, 2 failed (R2, R4); after the last failure: passed twice (R6, R7); 1 other run(s) with no captured result",
+      "`bun test`: 7 runs in this PR's turns, 2 failed (R2, R4); after the last failure: passed twice (R6, R7); 1 other run(s) with exit status not shown",
     );
     // Passing, then failing: the opposite trend, said the same way.
     expect(
@@ -384,18 +384,88 @@ describe('do not say', () => {
   test('rows: existing names, conditional code, commit-only results, old behavior, the files', () => {
     const rows = doNotSayRows(sections(), ['load']);
     expect(rows.map((r) => r.kind)).toEqual([
+      'recorded requests',
+      'absence',
       'existed before this PR',
       'conditional code',
       'commit message only',
       'old behavior',
       'files in this diff',
     ]);
-    expect(rows[0]!.text).toBe('`load`: changed, not "new" or "added".');
-    expect(String(rows[1]!.text)).toContain('(a.ts: + if (!cfg) return;)');
-    expect(String(rows[2]!.text)).toContain("commit abc1234's claim, not a run");
-    expect(rows[4]!.text).toBe(
+    expect(rows[1]!.text).toBe(
+      'Never say session-wide that nothing ran or that no test was recorded; a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap.',
+    );
+    expect(rows[2]!.text).toBe('`load`: changed, not "new" or "added".');
+    expect(String(rows[3]!.text)).toContain('(a.ts: + if (!cfg) return;)');
+    expect(String(rows[4]!.text)).toContain("commit abc1234's claim, not a run");
+    expect(rows[6]!.text).toBe(
       '5: a.ts, install.sh, version.ts, package.json, app.mjs. 3 are beyond the version bump: never "housekeeping only", "version bump only" or "no logic changes".',
     );
+  });
+
+  test('absence: only what a limits row says', () => {
+    const withLimit = [
+      ...sections(),
+      {
+        title: 'limits',
+        columns: [],
+        rows: [
+          {
+            ref: 'L1',
+            kind: 'tests',
+            limit: 'No test run was recorded after the last commit.',
+          },
+          { ref: 'L2', kind: 'scope', limit: 'The diff touches two packages.' },
+        ],
+      },
+    ];
+    expect(doNotSayRows(withLimit).find((r) => r.kind === 'absence')).toEqual({
+      kind: 'absence',
+      text: 'Never say session-wide that nothing ran or that no test was recorded, beyond what L1 says; a scoped uncertainty (not run on one platform, a script no session ran, covered only by fakes) stays when it cites the limits, change or test rows that show the gap.',
+      cites: ['L1'],
+    });
+  });
+
+  test('absence: limits rows that say no absence are referenced, never "no limits row"', () => {
+    const withLimits = [
+      ...sections(),
+      {
+        title: 'limits',
+        columns: [],
+        rows: ['L1', 'L2', 'L3'].map((ref) => ({
+          ref,
+          kind: 'open',
+          limit: 'a.ts changes Windows-specific code.',
+        })),
+      },
+    ];
+    const row = doNotSayRows(withLimits).find((r) => r.kind === 'absence')!;
+    expect(String(row.text)).toContain('the open points in L1–L3 stay');
+    expect(String(row.text)).not.toContain('no limits row');
+    expect(row.cites).toEqual(['L1', 'L2', 'L3']);
+  });
+
+  test('conditional code: a docs or ignore-file line is never the quoted branch', () => {
+    const s = sections().map((x) =>
+      x.title === 'changes'
+        ? {
+            ...x,
+            rows: x.rows.map((r) => ({
+              ...r,
+              behavior: [
+                '.gitignore: + .claude/',
+                'SKILL.md: + if you need it, ask',
+                'LICENSE: + unless required by law or if agreed',
+                ...((r.behavior as string[]) ?? []),
+              ],
+            })),
+          }
+        : x,
+    );
+    const row = doNotSayRows(s, ['load']).find((r) => r.kind === 'conditional code')!;
+    expect(String(row.text)).not.toContain('.gitignore');
+    expect(String(row.text)).not.toContain('SKILL.md');
+    expect(String(row.text)).not.toContain('LICENSE');
   });
 
   test('recorded requests, plans and decisions: never "none was recorded"', () => {
@@ -419,7 +489,7 @@ describe('do not say', () => {
     const row = doNotSayRows(withRecords).find((r) => r.kind === 'recorded requests');
     expect(row).toEqual({
       kind: 'recorded requests',
-      text: "Requests/plans/decisions were recorded (S2, D1, P1, P3): don't say none was recorded.",
+      text: "Requests/plans/decisions were recorded (S2, D1, P1, P3): don't say none was recorded, or that an approval or review wasn't.",
       cites: ['S2', 'D1', 'P1', 'P3'],
     });
     const plansOnly = doNotSayRows([
@@ -431,11 +501,13 @@ describe('do not say', () => {
       },
     ]);
     expect(plansOnly.find((r) => r.kind === 'recorded requests')?.text).toBe(
-      "Plans were recorded (P1): don't say none was recorded.",
+      "Plans were recorded (P1): don't say none was recorded, or that an approval or review wasn't.",
     );
-    // None recorded: no hint row (the limits rows say it).
-    expect(doNotSayRows(sections()).some((r) => r.kind === 'recorded requests')).toBe(
-      false,
+    // None linked in the attributed turns: the row forbids claiming absence.
+    expect(
+      doNotSayRows(sections()).find((r) => r.kind === 'recorded requests')?.text,
+    ).toBe(
+      "Tracetoon reads only the turns attributed to this PR: don't say the work was unrequested or that no request, plan, approval or decision was recorded.",
     );
   });
 
@@ -616,10 +688,11 @@ describe('receipts in the Validation section', () => {
       sections: [{ title: 'validation', columns: [], rows }],
     })
       .split('\n')
-      .filter((l) => l.startsWith('- `'));
-    expect(lines).toHaveLength(6);
-    expect(lines.filter((l) => l.startsWith('- `bun test`'))).toEqual([
-      '- `bun test`: passed (697 pass, 0 fail), run by `tracetoon check` on the submitted content.',
+      .filter((l) => l.startsWith('- '));
+    // Passing receipts collapse into one line, each command once (the
+    // latest), its counts beside it.
+    expect(lines).toEqual([
+      '- Checks passed on the submitted content: `bun run typecheck`, `bun run bundle`, `bun run build:check`, `bun run build:reproduce`, `bun test` (697 pass, 0 fail), `bun x prettier --check src`.',
     ]);
     const verification = rows.map((r, i) => ({
       id: r.check,
@@ -643,5 +716,107 @@ describe('receipts in the Validation section', () => {
       } as any,
     }).map((f) => f.state);
     expect(states).toEqual(lines.map(() => 'observed'));
+  });
+});
+
+describe('a fresh receipt covers a missing-pass open point', () => {
+  const parts = (receipt: boolean) => ({
+    sections: [
+      {
+        title: 'limits',
+        columns: ['ref', 'change', 'kind', 'limit'],
+        rows: [
+          {
+            ref: 'L1',
+            change: 'CH1',
+            kind: 'open',
+            limit:
+              'Tracetoon recognized no passing test, build, lint or typecheck run after the last captured edit of src/a.ts.',
+          },
+          { ref: 'L2', change: null, kind: 'open', limit: 'A publish command failed.' },
+        ],
+      },
+      {
+        title: 'validation',
+        columns: ['check', 'kind', 'outcome', 'result', 'when', 'editedAfter', 'cmd'],
+        rows: receipt
+          ? [
+              {
+                check: 'V1',
+                kind: 'test',
+                outcome: 'passed',
+                result: '3 pass',
+                when: 'fresh',
+                editedAfter: [],
+                cmd: 'bun test',
+              },
+            ]
+          : [],
+      },
+    ],
+    unchecked: [],
+  });
+  test('the no-pass row is not listed once a receipt passed', () => {
+    const open = (receipt: boolean) =>
+      applyBrief('Some text here for the body.', parts(receipt) as any).openLimits;
+    expect(open(false).map((u) => u.slice(0, 2))).toEqual(['L1', 'L2']);
+    expect(open(true).map((u) => u.slice(0, 2))).toEqual(['L2']);
+  });
+});
+
+describe('unsupported absence', () => {
+  const parts = {
+    sections: [
+      {
+        title: 'limits',
+        columns: ['ref', 'change', 'kind', 'limit'],
+        rows: [
+          {
+            ref: 'L1',
+            change: null,
+            kind: 'open',
+            limit: 'No live run shows the remote call.',
+          },
+        ],
+      },
+      {
+        title: 'changes',
+        columns: ['change', 'where'],
+        rows: [{ change: 'CH1', where: ['src/a.ts'] }],
+      },
+    ],
+    unchecked: [],
+  } as any;
+  const absent = (body: string) =>
+    applyBrief(body, parts).flags.filter((f) => /unsupported absence/.test(f.problem));
+  test('an absence without a supporting row is a non-blocking check', () => {
+    const f = absent('It was not tested on real hardware. [CH1]');
+    expect(f.length).toBe(1);
+    expect(f[0]!.severity).toBe('check');
+    expect(absent('No end-to-end test was run against the service. [CH1]').length).toBe(
+      1,
+    );
+  });
+  test('a sentence citing a limits row may say it', () => {
+    expect(absent('The remote call was not run live. [L1]')).toEqual([]);
+    // A test, request, run or commit row supports an environment-scope statement.
+    expect(
+      absent('The installer was not run on Windows; the tests fake it. [T1]'),
+    ).toEqual([]);
+    expect(absent('It was not tested on hardware. [S2]')).toEqual([]);
+    expect(absent('Not run against the service. [commit:abc1234#2]')).toEqual([]);
+    // Restating a limits row needs no tag of its own.
+    expect(absent('No live run was recorded that shows the remote call.')).toEqual([]);
+    expect(absent('The change adds a retry to the client. [CH1]')).toEqual([]);
+  });
+});
+
+describe('unsupported absence and code behavior', () => {
+  test('"not run" about code is not an absence of checks', () => {
+    const parts = { sections: [], unchecked: [] } as any;
+    const flags = (body: string) =>
+      applyBrief(body, parts).flags.filter((f) => /unsupported absence/.test(f.problem));
+    expect(flags('The hook is not run for draft pull requests. [CH1]')).toEqual([]);
+    expect(flags('The suite was not run after the rename. [CH1]').length).toBe(1);
   });
 });

@@ -34,6 +34,9 @@ problems: **at most 6 findings**, most consequential first.
 
 - `verdict`: `contradicted`, `overstated` or `unsupported` (claims);
   `missing` for an omission (`kind: "omission"`).
+  An omission that adds a code fact must cite an added (`+`) diff line
+  (`diff:N`); backed only by removed lines or a commit message it is a
+  suggestion, not a fact: leave it out.
 - `evidence` (required): `diff:N`, a brief ref (`CH2`, `commit:<sha>#3`,
   `H4`) or `path:line`; several separated by `|`.
 - `quote`: verbatim from one numbered body line, without the number.

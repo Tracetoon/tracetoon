@@ -244,6 +244,50 @@ export function headRefNodes(terms: ScanTerms, hits: GrepHit[]): GraphNode[] {
   return nodes;
 }
 
+/**
+ * Which changed behavior files' symbols and file stems a test file at the head
+ * names: one `test scan` HeadRef with every term looked for (`terms`) and
+ * those a test file names (`tested`). A change unit none of whose terms any
+ * test file names, while all were looked for, has no test that exercises it
+ * by name or import; a term not looked for proves nothing.
+ */
+export function testScanNode(
+  graph: EvidenceGraph,
+  hits: (terms: string[]) => GrepHit[] | undefined,
+): GraphNode | undefined {
+  const role = new Map(
+    graph.nodes
+      .filter((n) => n.label === 'File')
+      .map((n) => [n.id, String(n.props.role ?? fileRole(n.id))]),
+  );
+  const arr = (v: Value | undefined) => (Array.isArray(v) ? v.map(String) : []);
+  const terms = new Set<string>();
+  for (const h of graph.nodes.filter((n) => n.label === 'Hunk')) {
+    const file = String(h.props.file);
+    if (role.get(file) !== 'behavior') continue;
+    const stem = (file.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
+    if (stem.length >= 4) terms.add(stem);
+    for (const s of [
+      ...arr(h.props.fresh),
+      ...arr(h.props.touched),
+      ...arr(h.props.symbols),
+    ])
+      if (usable(s)) terms.add(s);
+  }
+  // Too many to look for in one grep: no node, so no absence is claimed.
+  if (!terms.size || terms.size > MAX_TERMS) return undefined;
+  const found = hits([...terms]);
+  if (!found) return undefined;
+  const tested = [
+    ...new Set(found.filter((h) => fileRole(h.file) === 'tests').map((h) => h.term)),
+  ].sort();
+  return {
+    label: 'HeadRef',
+    id: `HR${graph.nodes.filter((n) => n.label === 'HeadRef').length + 1}`,
+    props: { kind: 'test scan', terms: [...terms].sort(), tested },
+  };
+}
+
 /** Scan the head tree and add HeadRef nodes to the graph. Never throws. */
 export function addHeadScan(
   graph: EvidenceGraph,
@@ -259,6 +303,8 @@ export function addHeadScan(
     ]);
     if (!hits) return;
     graph.nodes.push(...headRefNodes(terms, hits));
+    const tests = testScanNode(graph, (t) => grepTree(root, rev, t));
+    if (tests) graph.nodes.push(tests);
     graph.stats.nodes = graph.nodes.length;
   } catch {
     /* the scan is optional */

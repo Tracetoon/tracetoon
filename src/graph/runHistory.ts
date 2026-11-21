@@ -11,7 +11,11 @@
  *   a pass inferred from an exit status alone, often of a whole `&&` chain,
  *   shows a reader nothing to check;
  * - it is one command, not several test commands sharing one output;
- * - no later run of the same kind ended differently.
+ * - no later run of the same kind ended differently;
+ * - the digest found it checkable (`statable`): its own runner result lines,
+ *   the only check in its command, a status no pipe or `;` hides, output
+ *   neither truncated nor polled, run in this repository. Rows from graphs
+ *   built before that flag existed (no property) keep the rules above.
  */
 import { shownCommand } from './briefRender.ts';
 
@@ -31,6 +35,8 @@ export const compositeCommand = (cmd: unknown) => shownCommand(cmd).includes(' ;
 export function statableRun(r: RunRow): boolean {
   return (
     KNOWN(r) &&
+    r.statable !== false &&
+    !summaryOf(r).every((l) => /^exit \d+(, no output)?$/.test(l)) &&
     summaryOf(r).length > 0 &&
     !compositeCommand(r.cmd) &&
     !!shownCommand(r.cmd)
@@ -140,9 +146,55 @@ export function selectValidationRuns(
     }
     const last = ofKind.at(-1);
     if (!best && last && last.outcome === 'unknown') best = last;
+    // The newest known run of the kind passed with no edit after it: an earlier
+    // run marked "before later edits" must not stand in for it (it read as the
+    // last word on the kind). Prefer that newest pass; when its result can't be
+    // stated (a chained command), show no session row for the kind.
+    const newest = ofKind.filter(KNOWN).at(-1);
+    if (best && !standing(best) && newest?.outcome === 'passed' && current(newest))
+      best = statableRun(newest) ? newest : undefined;
     if (best) out.set(kind, best);
   }
   return [...out.values()];
+}
+
+/**
+ * With no passing `tracetoon check` receipt, the Validation section would be
+ * empty whenever the chosen run of every kind is unstatable (its command's
+ * rerun showed no result, or a later run ended differently). For each check
+ * kind with no statable chosen run, this returns the latest statable run of
+ * the kind, and the last run of the kind after it (if any), so the section
+ * states that history instead of nothing. Statability itself is unchanged
+ * (`statableRun`).
+ */
+export function historyFallback(
+  runs: RunRow[],
+  chosen: RunRow[],
+  skip: Set<string> = new Set(),
+  /** A run that saw every captured edit: a kind whose newest run passed so is not backfilled with a stale one. */
+  current?: (r: RunRow) => boolean,
+): { run: RunRow; after?: RunRow }[] {
+  const sorted = [...runs].sort(byTime);
+  const out: { run: RunRow; after?: RunRow }[] = [];
+  for (const kind of HISTORY_KINDS) {
+    if (skip.has(kind)) continue;
+    if (chosen.some((r) => String(r.kind) === kind && statableRun(r))) continue;
+    const ofKind = sorted.filter((r) => String(r.kind) === kind);
+    const run = ofKind.filter(statableRun).at(-1);
+    if (!run) continue;
+    const newest = ofKind.filter(KNOWN).at(-1);
+    if (
+      current &&
+      newest !== run &&
+      newest?.outcome === 'passed' &&
+      current(newest) &&
+      !current(run)
+    )
+      continue;
+    const after = ofKind.slice(ofKind.indexOf(run) + 1).at(-1);
+    out.push(after ? { run, after } : { run });
+  }
+  return out;
 }
 
 /**
@@ -159,14 +211,20 @@ export function earlierFailure(runs: RunRow[], chosen: RunRow): RunRow | undefin
       String(r.kind) === String(chosen.kind) &&
       (at >= 0 ? i < at : String(r.t ?? '') < String(chosen.t ?? '')),
   );
-  return before.filter((r) => r.outcome === 'failed' && !compositeCommand(r.cmd)).at(-1);
+  // Only a failure its own output shows: an exit status alone may be a later
+  // program's, or a refusal's.
+  const shown = (r: RunRow) =>
+    r.basis === undefined || r.basis === null || r.basis === 'output';
+  return before
+    .filter((r) => r.outcome === 'failed' && !compositeCommand(r.cmd) && shown(r))
+    .at(-1);
 }
 
 const times = (n: number) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
 const OUTCOME_WORD: Record<string, string> = {
   passed: 'passed',
   failed: 'failed',
-  unknown: 'no result captured',
+  unknown: 'exit status not shown',
 };
 
 const SUBJECT: Record<string, string> = {
@@ -255,7 +313,7 @@ export function runHistory(
     order = `${failed.length} failed (${ids(failed)}); after the last failure: ${part(groups.at(-1)!)}`;
   }
   if (lastUnknown)
-    order += `, then the last run (${String(last.id)}) has no captured result`;
+    order += `, then the last run (${String(last.id)}) shows no exit status`;
   const unknown = sorted.length - known.length - (lastUnknown ? 1 : 0);
   const lead = trendSentence(groups, sorted, one ? [...commands][0]! : undefined);
   const head = one
@@ -276,7 +334,7 @@ export function runHistory(
     ]),
   ];
   return {
-    text: `${lead ? `${lead} ` : ''}${head}, ${order}${unknown > 0 ? `; ${unknown} other run(s) with no captured result` : ''}`,
+    text: `${lead ? `${lead} ` : ''}${head}, ${order}${unknown > 0 ? `; ${unknown} other run(s) with exit status not shown` : ''}`,
     cites,
   };
 }

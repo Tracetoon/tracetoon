@@ -16,7 +16,9 @@ import { homedir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { isSyntheticPrompt } from '@showtail/agent-traces/prompts/synthetic';
 import { splitLines } from '../../trace/diffLines.ts';
+import { mentionsAnyRoot } from '../../trace/pathMatch.ts';
 import type {
+  DiscoverQuery,
   SessionRef,
   TraceAdapter,
   TraceRecord,
@@ -57,6 +59,10 @@ const QUIET = new Set([
   'search',
   'todo_write',
   'todo_read',
+  // Goose 1.60 namespaces the todo extension's tools; read_image only looks.
+  'todo__todo_write',
+  'todo__todo_read',
+  'read_image',
 ]);
 
 export interface GooseMessage {
@@ -166,6 +172,37 @@ const within = (dir: string, root: string) => {
   return a === b || a.startsWith(b.endsWith(sep) ? b : b + sep);
 };
 
+/** The sessions among `ids` whose messages name a repository root or a needle. */
+function mentions(ids: string[], query: DiscoverQuery): Set<string> {
+  const found = new Set<string>();
+  if (!ids.length) return found;
+  try {
+    const db = openReadOnly(dbPath());
+    if (!db) return found;
+    try {
+      for (const id of ids) {
+        const text = db
+          .all<{ content_json: string }>(
+            'select content_json from messages where session_id = ?',
+            id,
+          )
+          .map((m) => m.content_json)
+          .join('\n');
+        if (
+          mentionsAnyRoot(text, query.roots) ||
+          (query.needles ?? []).some((n) => text.toLowerCase().includes(n.toLowerCase()))
+        )
+          found.add(id);
+      }
+    } finally {
+      db.close();
+    }
+  } catch {
+    /* unreadable: only sessions started in the repository are used */
+  }
+  return found;
+}
+
 /** Goose stores times as "YYYY-MM-DD HH:MM:SS" in UTC. */
 const utc = (t: string) => Date.parse(t.includes('T') ? t : `${t.replace(' ', 'T')}Z`);
 
@@ -201,11 +238,28 @@ export const gooseAdapter: TraceAdapter = {
     } catch {
       return [];
     }
-    const out: SessionRef[] = [];
-    for (const r of rows) {
+    const recent = rows.filter((r) => {
       const mtimeMs = utc(r.updated_at);
-      if (Number.isFinite(mtimeMs) && mtimeMs < query.sinceMs) continue;
-      if (!query.all && !query.roots.some((root) => within(r.working_dir, root)))
+      return !(Number.isFinite(mtimeMs) && mtimeMs < query.sinceMs);
+    });
+    // Goose Desktop starts sessions in the home folder; the agent then reaches the
+    // repository with `cd /d <repo>` and absolute paths. Such a session belongs
+    // when its messages name a root (or a needle), as with the file-based hosts.
+    const elsewhere = query.all
+      ? []
+      : recent.filter((r) => !query.roots.some((root) => within(r.working_dir, root)));
+    const mentioning = mentions(
+      elsewhere.map((r) => r.id),
+      query,
+    );
+    const out: SessionRef[] = [];
+    for (const r of recent) {
+      const mtimeMs = utc(r.updated_at);
+      if (
+        !query.all &&
+        !query.roots.some((root) => within(r.working_dir, root)) &&
+        !mentioning.has(r.id)
+      )
         continue;
       out.push({
         agent: 'goose',
