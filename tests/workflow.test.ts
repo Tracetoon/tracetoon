@@ -1212,7 +1212,7 @@ describe('ordinary git and task identity', () => {
     expect(readTask(run)?.state).not.toBe('published');
   });
 
-  test('receipts ignore agent session bookkeeping but not the toolchain', () => {
+  test('receipts ignore agent session bookkeeping; a toolchain change blocks reuse, not evidence', () => {
     const repo = makeRepo();
     const { run } = beginTask(repo.root, { session: 'receipts' });
     const saved = { ...process.env };
@@ -1253,8 +1253,19 @@ describe('ordinary git and task identity', () => {
       expect(
         checkEnvironment({ ...process.env, BASH_ENV: 'different-startup-script' }),
       ).not.toBe(environment);
+      // A toolchain change: the receipt is no longer reused (the check runs again),
+      // but it still says the check passed on this content, noting the change.
       process.env.NODE_ENV = 'production';
-      expect(current()).toBe(false);
+      expect(current()).toBe(true);
+      expect(
+        checkReport(repo.root, run).find((c) => c.name === 'tests')!.environmentChanged,
+      ).toBe(true);
+      expect(
+        executeCheck(repo.root, run, {
+          name: 'tests',
+          command: [process.execPath, '-e', '1'],
+        }).reused,
+      ).toBeUndefined();
     } finally {
       for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k];
       Object.assign(process.env, saved);

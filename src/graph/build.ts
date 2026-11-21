@@ -1455,7 +1455,9 @@ export function buildEvidenceGraph(input: GraphInputs): EvidenceGraph {
         kind: r.kind,
         outcome: r.outcome,
         summary: r.summary.slice(0, 3),
-        when: 'fresh: run on the submitted content',
+        when: r.environmentChanged
+          ? 'fresh: run on the submitted content, in a different shell environment than this one'
+          : 'fresh: run on the submitted content',
       });
 
   // Commits, the files they touched, the hunks their own lines survive in, and

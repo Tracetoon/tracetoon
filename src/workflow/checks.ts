@@ -282,7 +282,10 @@ export function setupFailure(
  * a receipt.
  */
 const VOLATILE_VARS =
-  /^(TMPDIR|TMP|TEMP|TERM|TERM_PROGRAM\w*|COLORTERM|COLUMNS|LINES|DISPLAY|WAYLAND_DISPLAY|WINDOWID|DBUS_SESSION_BUS_ADDRESS|XDG_SESSION_\w+|XDG_RUNTIME_DIR|SSH_\w+|VTE_VERSION|KITTY_\w+|ITERM_\w+|TMUX\w*|STY|WT_SESSION|WT_PROFILE_ID)$/;
+  // Also what an agent's shell tool sets for itself on Windows: cmd's prompt,
+  // PowerShell's execution policy, and the git/colour settings that keep a tool
+  // call from prompting or colouring output.
+  /^(TMPDIR|TMP|TEMP|TERM|TERM_PROGRAM\w*|COLORTERM|COLUMNS|LINES|DISPLAY|WAYLAND_DISPLAY|WINDOWID|DBUS_SESSION_BUS_ADDRESS|XDG_SESSION_\w+|XDG_RUNTIME_DIR|SSH_\w+|VTE_VERSION|KITTY_\w+|ITERM_\w+|TMUX\w*|STY|WT_SESSION|WT_PROFILE_ID|PROMPT|PSExecutionPolicyPreference|GCM_INTERACTIVE|GIT_TERMINAL_PROMPT|GIT_ASKPASS|NO_COLOR|PLINK_PROTOCOL)$/;
 export function checkEnvironment(env: NodeJS.ProcessEnv = process.env): string {
   // Hash, don't log, the environment. Changed PATH/toolchain/options invalidate reuse.
   return hash([
@@ -756,20 +759,29 @@ export function checkReport(root: string, run: Run) {
   const fingerprint = contentFingerprint(root);
   const dependency = dependencyFingerprint(root);
   const environment = checkEnvironment();
-  return receipts(run).map((c) => ({
-    ...c,
-    current: (() => {
+  return receipts(run).map((c) => {
+    // Evidence follows the content: a check that passed on exactly this content
+    // still did when the next command runs in another shell (Git Bash and
+    // PowerShell differ in PATH and a dozen variables). Reuse (latestReceipt)
+    // still needs the same environment; here a difference is only noted.
+    const sameContent = (() => {
       try {
         return (
           c.fingerprint ===
-            inputFingerprint(root, c.inputs ?? [], fingerprint, dependency) &&
-          c.environment === environment
+          inputFingerprint(root, c.inputs ?? [], fingerprint, dependency)
         );
       } catch {
         return false;
       }
-    })(),
-  }));
+    })();
+    return {
+      ...c,
+      current: sameContent,
+      ...(sameContent && c.environment !== environment
+        ? { environmentChanged: true as const }
+        : {}),
+    };
+  });
 }
 /**
  * A `tracetoon check` receipt that passed on the content as it is now (and in
@@ -863,6 +875,7 @@ export function receiptEvidence(
     t: c.startedAt,
     revision: 'no later edits seen',
     verificationBasis: 'exact-content-receipt',
+    ...(c.environmentChanged ? { environmentChanged: true as const } : {}),
   }));
 }
 
