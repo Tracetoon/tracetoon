@@ -183,7 +183,7 @@ Brief layout: toon.
 
 Graph search: fulltext.
 
-Drafter model: standard.
+Drafter model: inherit.
 
 Other commands: [references/commands.md](references/commands.md).
 

@@ -73,7 +73,7 @@ describe('skill settings', () => {
       reviewerRunner: 'auto',
       reviewRecheck: 'none',
       layout: 'toon',
-      drafterModel: 'standard',
+      drafterModel: 'inherit',
       graphSearch: 'fulltext',
     });
   });

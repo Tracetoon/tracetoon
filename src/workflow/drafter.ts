@@ -19,6 +19,7 @@ export const DRAFTER_PACKET = 'drafter-packet.md';
 export const DRAFTER_FILE = 'drafter.json';
 
 /**
+ * `inherit`: a fresh drafter on the session's own model.
  * `standard`: the host's mid-size model (Claude Code `sonnet`, Codex
  * `gpt-6.1-terra`), whatever model the session itself runs on.
  */
@@ -39,6 +40,8 @@ export function resolveDrafterModel(
   const s = String(value ?? '').trim();
   if (!s || /^(main|same|none|inline|default|-)$/i.test(s) || !host) return undefined;
   if (s.toLowerCase() === 'standard') return STANDARD_DRAFTERS[host];
+  // `inherit`: delegate, but the drafter runs on the session's own model (no model argument).
+  if (s.toLowerCase() === 'inherit') return 'inherit';
   return s;
 }
 
@@ -114,6 +117,6 @@ export function coordinatorNext(
     "Coordinate; don't draft. Don't read the brief, drafter-packet.md, title.txt, body.md or the review packets yourself: the drafter and reviewers read them, and they would only add to your context.";
   const publish = `When the drafter replies READY TO PUBLISH, run \`tracetoon publish --run ${p.run}\` (SKILL step 7) and relay the PR URL. If the drafter fails or replies anything else, run \`tracetoon finish --run ${p.run}\` and follow its next step yourself.`;
   if (host === 'codex')
-    return `${keepOut} Start ONE fresh drafter now: \`spawn_agent\` with \`fork_turns: "none"\` and model "${model}", message: "${prompt}"${userAsks}. Wait for it with long timeouts (about 300 s per wait; don't poll). ${tracetoonReview ? 'It runs the reviewers itself (tracetoon review run). ' : 'If it replies PACKETS READY, start the reviewers it names with spawn_agent (fork_turns "none"), then send the drafter (followup_task) each reviewer\'s agent id and lens. '}${publish}`;
-  return `${keepOut} 1. Start ONE fresh drafter now: a foreground Agent call (subagent_type general-purpose, model "${model}", never run_in_background), prompt: "${prompt}"${userAsks}. It works until the review packets are written and replies PACKETS READY. 2. Then ${reviewerStarts(p, plan)} 3. Send the drafter (SendMessage to its agent id; load SendMessage with ToolSearch if it isn't loaded) each reviewer's agent id, lens (or "general") and findings file in one message; it imports the reviews, applies them and replies READY TO PUBLISH. 4. ${publish}`;
+    return `${keepOut} Start ONE fresh drafter now: \`spawn_agent\` with \`fork_turns: "none"\`${model === 'inherit' ? ' (no model argument: it runs on your model)' : ` and model "${model}"`}, message: "${prompt}"${userAsks}. Wait for it with the longest timeout wait_agent accepts (each wait re-reads your whole session; never short waits or polling). ${tracetoonReview ? 'It runs the reviewers itself (tracetoon review run). ' : 'If it replies PACKETS READY, start the reviewers it names with spawn_agent (fork_turns "none"), then send the drafter (followup_task) each reviewer\'s agent id and lens. '}${publish}`;
+  return `${keepOut} 1. Start ONE fresh drafter now: a foreground Agent call (subagent_type general-purpose, ${model === 'inherit' ? 'no model argument (it runs on your model)' : `model "${model}"`}, never run_in_background), prompt: "${prompt}"${userAsks}. It works until the review packets are written and replies PACKETS READY. 2. Then ${reviewerStarts(p, plan)} 3. Send the drafter (SendMessage to its agent id; load SendMessage with ToolSearch if it isn't loaded) each reviewer's agent id, lens (or "general") and findings file in one message; it imports the reviews, applies them and replies READY TO PUBLISH. 4. ${publish}`;
 }

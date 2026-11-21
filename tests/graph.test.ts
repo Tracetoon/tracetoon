@@ -440,6 +440,21 @@ describe('evidence graph', () => {
     }
   });
 
+  test('delegated drafting with inherit runs the drafter on the session model', () => {
+    const saved = process.env.TRACETOON_HOST_AGENT;
+    process.env.TRACETOON_HOST_AGENT = 'claude';
+    try {
+      const { repo, cli } = scenario();
+      const p = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'inherit');
+      expect(p.json.drafter.model).toBe('inherit');
+      expect(p.json.next).toContain('no model argument (it runs on your model)');
+      expect(p.json.next).not.toContain('model "inherit"');
+    } finally {
+      if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
+      else process.env.TRACETOON_HOST_AGENT = saved;
+    }
+  });
+
   test('delegation is off for main and for an unknown host', () => {
     const saved = process.env.TRACETOON_HOST_AGENT;
     process.env.TRACETOON_HOST_AGENT = 'none';
