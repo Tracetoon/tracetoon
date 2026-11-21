@@ -9,13 +9,18 @@ Look for:
 - **motive or trigger**: a background, request or why row explains why the
   change was made, and the body never says why;
 - **open limits and uncertainties** (open limits rows, "no passing run
-  recorded after the last commit", "no request recorded for CHn"): left out,
+  recorded after the last commit"): left out,
   or turned into certainty ("tests pass", "as requested": a claim
   `overstated`);
 - **fail-then-pass history** in process rows (what broke, what fixed it)
   that a reviewer would want and the body skips;
 - **unverified paths**: behavior no test or receipt covers, described as
   verified; a branching hunk whose behavior the body omits.
+
+An omission that adds a code fact (a value, a number, a behavior) must cite
+an added (`+`) diff line that shows it (`diff:N`); removed lines and commit
+messages are not the code. Without such a line it is a suggestion, not a
+fact: leave it out, or start its `fix` with "suggestion:" and state no value.
 
 Each omission is `kind: "omission"`, verdict `missing`, with the row ref or
 diff lines that show it. Skip the generated Validation section. **At most 6
