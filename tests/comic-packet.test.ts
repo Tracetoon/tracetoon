@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { comicSkillFiles, DRAW_CARTOON_SKILL } from '../src/commands/comicPacket.ts';
 import { genreOptions } from '../src/comic/genres.ts';
 import { comicPacketFiles, PACKET_FILES } from '../src/comic/packet.ts';
+import { EXPRESSIONS } from '../src/comic/types.ts';
 import { tempDir } from './helpers.ts';
 import { DRAW_CARTOON_DIR, staleDrawCartoon } from '../scripts/draw-cartoon-skill.ts';
 
@@ -70,5 +71,11 @@ describe('comic author packet', () => {
     expect(skill).not.toMatch(/`tracetoon [a-z]/);
     for (const m of skill.matchAll(/\]\((references\/[^)]+)\)/g))
       expect(readFileSync(join(DRAW_CARTOON_DIR, m[1]!), 'utf8').length).toBeGreaterThan(0);
+  });
+
+  test('the comic guide names every expression comic check accepts', () => {
+    // Comic authors guessed moods like "sly" until the guide listed them.
+    const guide = readFileSync(join(DRAW_CARTOON_DIR, 'references', 'comic-guide.md'), 'utf8');
+    for (const e of EXPRESSIONS) expect(guide).toContain(`\`${e}\``);
   });
 });
