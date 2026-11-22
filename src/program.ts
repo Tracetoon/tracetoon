@@ -578,7 +578,7 @@ export function buildProgram(cwd: string = process.cwd()): {
   comic
     .command('reroll')
     .description(
-      'redraw the page in a different style (or the one given), keeping the story',
+      'redraw the page in a different style (or the one given), keeping the story and genre; fresh styles prefer ones that suit the genre',
     )
     .option('--run <id>', 'run id (default: latest)')
     .option(

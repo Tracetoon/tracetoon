@@ -22,6 +22,7 @@ import {
 } from '../comic/compose.ts';
 import { FORMATS, formatById } from '../comic/formats.ts';
 import { freshStyles, styleById } from '../comic/styles.ts';
+import { genreById } from '../comic/genres.ts';
 import {
   artPrompt,
   generateImages,
@@ -103,6 +104,7 @@ function checkOptsFor(run: Run, root: string): CheckOpts {
     .filter((t): t is string => !!t);
   return {
     pinnedStyle: config.style && config.style !== 'auto' ? config.style : undefined,
+    pinnedGenre: config.genre && config.genre !== 'auto' ? config.genre : undefined,
     recentStyles: ctx?.comic?.recentStyles ?? [],
     recentComics: ctx?.comic?.recentComics ?? [],
     ...(evidence.length ? { evidenceText: evidence.join('\n') } : {}),
@@ -742,9 +744,13 @@ export async function comicRerollCmd(cwd: string, opts: RerollOpts): Promise<voi
       throw new UserError(
         `This repo pins the style "${check.pinnedStyle}"; there is nothing to reroll to.`,
       );
-    // Any other comic preset; reusing a recent style is fine.
+    // Any other comic preset, preferring ones that suit the genre; reusing a
+    // recent style is fine.
     const pool = freshStyles([], script.style);
-    style = pool[Math.floor(Math.random() * pool.length)]!.id;
+    const suited = genreById(script.genre)?.styles ?? [];
+    const fits = pool.filter((s) => suited.includes(s.id));
+    const from = fits.length ? fits : pool;
+    style = from[Math.floor(Math.random() * from.length)]!.id;
   }
   const next: ComicScript = { ...script, style };
   if (style !== script.style) {

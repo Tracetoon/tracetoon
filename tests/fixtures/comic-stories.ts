@@ -298,7 +298,11 @@ export const COMIC_STORIES = [
  */
 const ANCHORS: Record<
   string,
-  { anchor: ComicAnchor; label: { panel: number; points: string; text: string } }
+  {
+    anchor: ComicAnchor;
+    label: { panel: number; points: string; text: string };
+    genre: string;
+  }
 > = {
   single: {
     anchor: {
@@ -307,6 +311,7 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the tiny open tap', technical: 'the leaked resource handle' }],
     },
     label: { panel: 0, points: 'the tiny open tap', text: 'open handle' },
+    genre: 'everyday',
   },
   comparison: {
     anchor: {
@@ -315,6 +320,7 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the large save button', technical: 'the single Save action' }],
     },
     label: { panel: 1, points: 'the large save button', text: 'Save' },
+    genre: 'everyday',
   },
   vertical: {
     anchor: {
@@ -324,6 +330,7 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the sand timer', technical: 'retry backoff delay' }],
     },
     label: { panel: 2, points: 'the sand timer', text: 'backoff' },
+    genre: 'fantasy-quest',
   },
   asymmetric: {
     anchor: {
@@ -332,6 +339,7 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the tiny turnstile', technical: 'the seat lock' }],
     },
     label: { panel: 3, points: 'the tiny turnstile', text: 'seat lock' },
+    genre: 'heist',
   },
   'hero-inset': {
     anchor: {
@@ -340,6 +348,7 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the drawer labels', technical: 'configuration keys' }],
     },
     label: { panel: 1, points: 'the new drawer label', text: 'config keys' },
+    genre: 'everyday',
   },
   diagonal: {
     anchor: {
@@ -348,15 +357,17 @@ const ANCHORS: Record<
       mapping: [{ visual: 'the ghost', technical: 'an orphaned background job' }],
     },
     label: { panel: 0, points: 'the ghost', text: 'orphaned job' },
+    genre: 'haunted-house',
   },
 };
 
 /** A story's script with its anchor and in-scene sign: what a current drafter writes. */
 export function anchoredStory(id: string): ComicScript {
   const story = COMIC_STORIES.find((c) => c.id === id)!;
-  const { anchor, label } = ANCHORS[id]!;
+  const { anchor, label, genre } = ANCHORS[id]!;
   const s = structuredClone(story.script);
   s.anchor = structuredClone(anchor);
+  s.genre = genre;
   s.panels[label.panel]!.dialogue.push({
     speaker: 'caption',
     kind: 'sign',

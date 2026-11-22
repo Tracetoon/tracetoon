@@ -36,6 +36,8 @@ export interface Config {
   comic: ComicMode;
   /** Pin one art style for every comic (a style idea id or any description), or `auto` to vary. */
   style: string;
+  /** Pin one comic genre for every comic (a genre id or any phrase), or `auto` to rotate. */
+  genre: string;
   /** Use Tracetoon for PRs at all. Off here, or in any other switch, wins. */
   enabled: boolean;
   /** Updates: `off` never looks, `notify` says so when a newer release exists, `install` also installs it. */
@@ -58,6 +60,7 @@ export const DEFAULTS: Config = {
   imageConsent: [],
   comic: 'allowed',
   style: 'auto',
+  genre: 'auto',
   autoUpdate: 'notify',
   updateChannel: 'latest',
 };
