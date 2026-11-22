@@ -32,6 +32,7 @@ import {
   coordinatorNext,
   drafterPacket,
   resolveDrafterModel,
+  resolveDrafterEffort,
   DRAFTER_FILE,
   DRAFTER_PACKET,
 } from '../workflow/drafter.ts';
@@ -585,13 +586,20 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
       drafterPacket(paths, graphNext(prepared.run.id, plan, { role: 'drafter', host }), prepared.brief!),
       'utf8',
     );
-    writeJson(prepared.run, DRAFTER_FILE, { v: 1, host, model: drafterModel });
+    const drafterEffort = resolveDrafterEffort((opts as { drafterEffort?: unknown }).drafterEffort);
+    writeJson(prepared.run, DRAFTER_FILE, {
+      v: 1,
+      host,
+      model: drafterModel,
+      ...(drafterEffort ? { effort: drafterEffort } : {}),
+    });
     next = coordinatorNext(
       paths,
       host,
       drafterModel,
       plan,
       planEnforced(plan) && plan.runner === 'tracetoon' && !!plan.reviewerModel,
+      drafterEffort,
     );
   }
   emit(

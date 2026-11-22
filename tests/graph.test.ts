@@ -444,8 +444,9 @@ describe('evidence graph', () => {
     process.env.TRACETOON_HOST_AGENT = 'claude';
     try {
       const { repo, cli } = scenario();
-      const p = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'inherit');
+      const p = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'inherit', '--drafter-effort', 'low');
       expect(p.json.drafter.model).toBe('inherit');
+      expect(p.json.next).toContain('effort "low"');
       expect(p.json.next).toContain('no model argument (it runs on your model)');
       expect(p.json.next).not.toContain('model "inherit"');
     } finally {

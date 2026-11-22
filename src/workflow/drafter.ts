@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import type { ReviewPlan } from '../contribution/reviewPlan.ts';
 import { planEnforced, requiredPasses } from '../contribution/reviewPlan.ts';
 import type { HostAgent } from '../util/host.ts';
+import { parseEffort } from '../contribution/reviewPlan.ts';
 
 export const DRAFTER_PACKET = 'drafter-packet.md';
 export const DRAFTER_FILE = 'drafter.json';
@@ -43,6 +44,15 @@ export function resolveDrafterModel(
   // `inherit`: delegate, but the drafter runs on the session's own model (no model argument).
   if (s.toLowerCase() === 'inherit') return 'inherit';
   return s;
+}
+
+/** The drafter agent's effort (SKILL `Drafter effort:`); undefined = the host default. */
+export function resolveDrafterEffort(value: unknown): string | undefined {
+  try {
+    return parseEffort(value);
+  } catch {
+    return undefined;
+  }
 }
 
 export interface DrafterPaths {
@@ -109,6 +119,7 @@ export function coordinatorNext(
   model: string,
   plan: ReviewPlan | undefined,
   tracetoonReview: boolean,
+  effort?: string,
 ): string {
   const packet = join(p.runDir, DRAFTER_PACKET);
   const prompt = `You are the Tracetoon PR drafter. Read ${packet} and follow it exactly.`;
@@ -117,8 +128,8 @@ export function coordinatorNext(
     "Coordinate; don't draft. Don't read the brief, drafter-packet.md, title.txt, body.md or the review packets yourself: the drafter and reviewers read them, and they would only add to your context.";
   const publish = `When the drafter replies \`PUBLISHED <url>\`, relay that URL (and any AI-policy note) to the user in one short message; don't verify it with gh or any other command, publish already checked it. Only if the drafter fails or replies without a URL, run \`tracetoon finish --run ${p.run}\` and follow its next step yourself.`;
   if (host === 'codex')
-    return `${keepOut} Start ONE fresh drafter now: \`spawn_agent\` with \`fork_turns: "none"\`${model === 'inherit' ? ' (no model argument: it runs on your model)' : ` and model "${model}"`}, message: "${prompt}"${userAsks}. Then call wait_agent ONCE with the longest timeout it accepts and nothing else in between (each of your calls re-reads your whole session); if it returns before the drafter's final reply, call wait_agent again the same way, with no other tool call or message. ${tracetoonReview ? 'The drafter runs the reviewers (tracetoon review run) and publishes. ' : 'If it replies PACKETS READY, start the reviewers it names with spawn_agent (fork_turns "none"), then send the drafter (followup_task) each reviewer\'s agent id and lens. '}${publish}`;
+    return `${keepOut} Start ONE fresh drafter now: \`spawn_agent\` with \`fork_turns: "none"\`${model === 'inherit' ? ' (no model argument: it runs on your model)' : ` and model "${model}"`}${effort ? `, reasoning effort ${effort} (if spawn_agent takes one)` : ''}, message: "${prompt}"${userAsks}. Then call wait_agent ONCE with the longest timeout it accepts and nothing else in between (each of your calls re-reads your whole session); if it returns before the drafter's final reply, call wait_agent again the same way, with no other tool call or message. ${tracetoonReview ? 'The drafter runs the reviewers (tracetoon review run) and publishes. ' : 'If it replies PACKETS READY, start the reviewers it names with spawn_agent (fork_turns "none"), then send the drafter (followup_task) each reviewer\'s agent id and lens. '}${publish}`;
   if (tracetoonReview)
-    return `${keepOut} Start ONE fresh drafter now: a foreground Agent call (subagent_type general-purpose, ${model === 'inherit' ? 'no model argument (it runs on your model)' : `model "${model}"`}, never run_in_background), prompt: "${prompt}"${userAsks}. It drafts, runs the checks and the reviewers (tracetoon review run) and publishes, then replies once. ${publish}`;
+    return `${keepOut} Start ONE fresh drafter now: a foreground Agent call (subagent_type general-purpose, ${model === 'inherit' ? 'no model argument (it runs on your model)' : `model "${model}"`}${effort ? `, effort "${effort}"` : ''}, never run_in_background), prompt: "${prompt}"${userAsks}. It drafts, runs the checks and the reviewers (tracetoon review run) and publishes, then replies once. ${publish}`;
   return `${keepOut} 1. Start ONE fresh drafter now: a foreground Agent call (subagent_type general-purpose, ${model === 'inherit' ? 'no model argument (it runs on your model)' : `model "${model}"`}, never run_in_background), prompt: "${prompt}"${userAsks}. It works until the review packets are written and replies PACKETS READY. 2. Then ${reviewerStarts(p, plan)} 3. Send the drafter (SendMessage to its agent id; load SendMessage with ToolSearch if it isn't loaded) each reviewer's agent id, lens (or "general") and findings file in one message; it imports the reviews, applies them and replies READY TO PUBLISH. 4. ${publish}`;
 }

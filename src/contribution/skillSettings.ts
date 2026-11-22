@@ -20,6 +20,7 @@ export interface SkillSettings {
   reviewRecheck?: string;
   graphSearch?: string;
   drafterModel?: string;
+  drafterEffort?: string;
 }
 
 const LINES: Record<string, keyof SkillSettings> = {
@@ -32,6 +33,7 @@ const LINES: Record<string, keyof SkillSettings> = {
   'Review recheck': 'reviewRecheck',
   'Graph search': 'graphSearch',
   'Drafter model': 'drafterModel',
+  'Drafter effort': 'drafterEffort',
 };
 
 /** Parse the variant lines out of SKILL.md text. */
