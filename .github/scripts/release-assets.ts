@@ -1,12 +1,14 @@
 /** Distribution tooling stays outside runtime build inputs; promoted bytes never change. */
 import {
   copyFileSync,
+  existsSync,
   lstatSync,
   readFileSync,
   readdirSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
+import { SIBLING_SKILLS } from '../../src/skills.ts';
 import { createHash } from 'node:crypto';
 import { buildManifest } from '../../scripts/build-info.ts';
 export const sha = (file: string) =>
@@ -46,6 +48,8 @@ export interface AssetManifest {
   bundleSha256: string;
   files: { name: string; sha256: string }[];
   skillFiles: { name: string; sha256: string }[];
+  /** Instruction-only skills packaged beside the main one (src/skills.ts). */
+  siblingSkills?: { name: string; files: { name: string; sha256: string }[] }[];
 }
 interface PromotionIdentity {
   version: string;
@@ -120,6 +124,14 @@ export function skillInventory(
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+/** The sibling skills found beside `skill`, each with its file inventory. */
+export function siblingInventory(
+  skill: string,
+): { name: string; files: { name: string; sha256: string }[] }[] {
+  return SIBLING_SKILLS.filter((name) =>
+    existsSync(join(dirname(skill), name, 'SKILL.md')),
+  ).map((name) => ({ name, files: skillInventory(join(dirname(skill), name)) }));
+}
 export function writeInventory(
   out: string,
   skill: string,
@@ -149,6 +161,7 @@ export function writeInventory(
     bundleSha256: sha(join(skill, 'dist/tracetoon.mjs')),
     files,
     skillFiles: skillInventory(skill),
+    siblingSkills: siblingInventory(skill),
   };
   writeFileSync(
     join(out, 'candidate-manifest.json'),
@@ -283,6 +296,16 @@ export function verifyCandidateInputs(out: string, skill?: string, revision?: st
     JSON.stringify(skillInventory(skill)) !== JSON.stringify(manifest.skillFiles)
   )
     throw Error('Extracted candidate skill differs from the retained inventory.');
+  if (skill)
+    for (const sibling of manifest.siblingSkills ?? []) {
+      const dir = join(dirname(skill), sibling.name);
+      if (
+        !SIBLING_SKILLS.includes(sibling.name as (typeof SIBLING_SKILLS)[number]) ||
+        !existsSync(dir) ||
+        JSON.stringify(skillInventory(dir)) !== JSON.stringify(sibling.files)
+      )
+        throw Error(`Extracted ${sibling.name} skill differs from the retained inventory.`);
+    }
   return manifest;
 }
 export function validatePromotion(p: Promotion) {

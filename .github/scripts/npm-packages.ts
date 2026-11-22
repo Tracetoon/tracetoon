@@ -17,7 +17,7 @@ import {
   readdirSync,
   writeFileSync,
 } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { SUPPORTED_TARGETS, verifyCandidateInputs } from './release-assets.ts';
 import rootPkg from '../../package.json';
 import { npmDescription } from '../../scripts/agent-surfaces.ts';
@@ -111,6 +111,11 @@ export function buildNpmPackages(
   const shipped = join(dir, 'skill', 'tracetoon');
   cpSync(skill, shipped, { recursive: true });
   chmodSync(join(shipped, 'bin', 'tracetoon'), 0o755);
+  // Sibling skills the release carries, verified with it; setup installs them beside the main one.
+  for (const sibling of manifest.siblingSkills ?? [])
+    cpSync(join(dirname(skill), sibling.name), join(dir, 'skill', sibling.name), {
+      recursive: true,
+    });
   writeJson(join(dir, 'package.json'), {
     name: 'tracetoon',
     version: manifest.version,

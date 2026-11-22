@@ -19,6 +19,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { skillInstalls } from '../commands/doctor.ts';
+import { SIBLING_SKILLS } from '../skills.ts';
 import { run } from '../util/exec.ts';
 import { refreshShim } from '../hook/windowsSh.ts';
 import { fetchBytes, fetchText, sources, type Release } from './release.ts';
@@ -156,6 +157,19 @@ export async function applyRelease(
       cpSync(skill, stage, { recursive: true });
       staged.push(stage);
     }
+    // Instruction-only skills the archive carries go beside each installed main skill.
+    const siblings: { stage: string; dir: string }[] = [];
+    for (const name of SIBLING_SKILLS) {
+      const source = join(skillRoot, name);
+      if (!existsSync(join(source, 'SKILL.md'))) continue;
+      for (const dir of new Set(targets.map((t) => join(dirname(t.dir), name)))) {
+        const stage = `${dir}.new-${id}`;
+        rmSync(stage, { recursive: true, force: true });
+        cpSync(source, stage, { recursive: true });
+        staged.push(stage);
+        siblings.push({ stage, dir });
+      }
+    }
     const assetsStage = `${layout.assets}.new-${id}`;
     rmSync(assetsStage, { recursive: true, force: true });
     mkdirSync(dirname(assetsStage), { recursive: true });
@@ -194,9 +208,16 @@ export async function applyRelease(
       undo.push(swapDir(staged[i]!, t.dir, id));
       afterSwap?.('skill');
     }
+    for (const k of siblings) {
+      const existed = existsSync(k.dir);
+      const back = swapDir(k.stage, k.dir, id);
+      // A sibling this update added is removed again on undo.
+      undo.push(existed ? back : () => rmSync(k.dir, { recursive: true, force: true }));
+    }
 
     // 5. Everything is in place: discard the old copies and register the hooks again.
     for (const t of targets) discard(`${t.dir}.old-${id}`);
+    for (const k of siblings) discard(`${k.dir}.old-${id}`);
     discard(`${layout.assets}.old-${id}`);
     discard(aside); // Windows keeps the old running binary locked; the next update clears it
     const hooks = run(layout.stable, ['hook', 'install'], { env }).ok;

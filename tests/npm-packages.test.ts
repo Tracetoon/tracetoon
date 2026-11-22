@@ -130,6 +130,13 @@ describe('npm packages from the verified release', () => {
     expect(
       readFileSync(join(npm, 'tracetoon', 'skill', 'tracetoon', 'SKILL.md'), 'utf8'),
     ).toBe('# Synthetic skill');
+    // The draw-cartoon skill ships beside it, where setup looks for it.
+    expect(
+      readFileSync(
+        join(npm, 'tracetoon', 'skill', 'tracetoon-draw-cartoon', 'references', 'guide.md'),
+        'utf8',
+      ),
+    ).toBe('guide');
   });
 
   test('no package has install scripts (Bun blocks them)', () => {
@@ -151,6 +158,11 @@ describe('npm packages from the verified release', () => {
     writeFileSync(join(f.skill, 'SKILL.md'), 'changed');
     expect(() => buildNpmPackages(f.out, f.skill, join(f.root, 'b'))).toThrow(
       'retained inventory',
+    );
+    const s = releaseFixture();
+    writeFileSync(join(s.root, 'tracetoon-draw-cartoon', 'SKILL.md'), 'changed');
+    expect(() => buildNpmPackages(s.out, s.skill, join(s.root, 'd'))).toThrow(
+      'tracetoon-draw-cartoon skill differs',
     );
     const g = releaseFixture();
     writeFileSync(join(g.out, 'tracetoon-linux-x64'), 'rebuilt');

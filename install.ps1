@@ -71,6 +71,8 @@ function Get-BinaryTargets($exe) {
 # The binary lives at a fixed path, so agent hooks keep working (and Codex keeps
 # its trust) across updates. The launchers check it first.
 $homeRoot = Join-Path $env:LOCALAPPDATA 'tracetoon'
+# Instruction-only skills installed beside the main one (src/skills.ts SIBLING_SKILLS).
+$siblings = @('tracetoon-draw-cartoon')
 $stable = Join-Path (Join-Path $homeRoot 'bin') 'tracetoon.exe'
 $targets = @(Get-Targets)
 
@@ -81,6 +83,10 @@ if ($env:TRACETOON_UNINSTALL -eq '1') {
   foreach ($t in $targets) { if (-not ($known | Where-Object { $_.Dir -eq $t.Dir })) { $known += $t } }
   foreach ($t in $known) {
     if (Test-Path $t.Dir) { Remove-Item -Recurse -Force $t.Dir; Write-Host "removed from $($t.Name) ($($t.Dir))" }
+    foreach ($s in $siblings) {
+      $sibling = Join-Path (Split-Path -Parent $t.Dir) $s
+      if (Test-Path $sibling) { Remove-Item -Recurse -Force $sibling }
+    }
   }
   if (Test-Path $homeRoot) { Remove-Item -Recurse -Force $homeRoot }
   $binDir = Split-Path -Parent $stable
@@ -147,7 +153,17 @@ try {
     if ((Split-Path -Parent ([IO.Path]::GetFullPath($stagePath))) -ne $parentPath -or (Split-Path -Parent ([IO.Path]::GetFullPath($backupPath))) -ne $parentPath) { throw 'Install staging escaped its target parent.' }
     New-Item -ItemType Directory -Force -Path $parentPath | Out-Null
     Copy-Item -LiteralPath $skill -Destination $stagePath -Recurse
-    $staged += [pscustomobject]@{ Name = $t.Name; Target = $targetPath; Stage = $stagePath; Backup = $backupPath }
+    $staged += [pscustomobject]@{ Name = $t.Name; Target = $targetPath; Stage = $stagePath; Backup = $backupPath; Quiet = $false }
+    # Instruction-only skills the archive carries go beside it (older archives have none).
+    foreach ($s in $siblings) {
+      $source = Join-Path $skillTmp $s
+      if (-not (Test-Path (Join-Path $source 'SKILL.md'))) { continue }
+      $siblingPath = Join-Path $parentPath $s
+      $siblingStage = $siblingPath + '.new-' + [guid]::NewGuid().ToString('N')
+      $siblingBackup = $siblingPath + '.old-' + [guid]::NewGuid().ToString('N')
+      Copy-Item -LiteralPath $source -Destination $siblingStage -Recurse
+      $staged += [pscustomobject]@{ Name = $t.Name; Target = $siblingPath; Stage = $siblingStage; Backup = $siblingBackup; Quiet = $true }
+    }
   }
 
   New-Item -ItemType Directory -Force -Path (Split-Path -Parent $stable) | Out-Null
@@ -206,7 +222,7 @@ try {
       throw
     }
     if (Test-Path -LiteralPath $t.Backup) { Remove-Item -LiteralPath $t.Backup -Recurse -Force }
-    Write-Host "  $($t.Name): $($t.Target)"
+    if (-not $t.Quiet) { Write-Host "  $($t.Name): $($t.Target)" }
   }
 
   if ($env:TRACETOON_NO_HOOK -eq '1') {
