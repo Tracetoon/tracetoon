@@ -133,10 +133,15 @@ describe.skipIf(!canRun)('update against a fake release server', () => {
     );
     writeFileSync(join(skill, 'bin', 'tracetoon'), '#!/bin/sh\n');
     writeFileSync(join(skill, 'assets', 'font.txt'), `font ${version}`);
+    // The instruction-only sibling skill the archive carries beside it.
+    mkdirSync(join(dir, 'tracetoon-draw-cartoon'));
+    writeFileSync(join(dir, 'tracetoon-draw-cartoon', 'SKILL.md'), `draw ${version}`);
     expect(
-      run('python3', ['-m', 'zipfile', '-c', join(dir, 'skill.zip'), 'tracetoon'], {
-        cwd: dir,
-      }).ok,
+      run(
+        'python3',
+        ['-m', 'zipfile', '-c', join(dir, 'skill.zip'), 'tracetoon', 'tracetoon-draw-cartoon'],
+        { cwd: dir },
+      ).ok,
     ).toBe(true);
     const zip = new Uint8Array(readFileSync(join(dir, 'skill.zip')));
     const id = opts.buildId ?? `build-${version}`;
@@ -204,6 +209,9 @@ describe.skipIf(!canRun)('update against a fake release server', () => {
       'font 9.0.0-rc.1',
     );
     expect(readFileSync(join(m.skill, 'VERSION'), 'utf8').trim()).toBe('9.0.0-rc.1');
+    expect(
+      readFileSync(join(m.skill, '..', 'tracetoon-draw-cartoon', 'SKILL.md'), 'utf8'),
+    ).toBe('draw 9.0.0-rc.1');
     expect(JSON.parse(readFileSync(m.layout.receipt, 'utf8')).tag).toBe('v9.0.0-rc.1');
     expect(strays(join(m.layout.stable, '..'))).toEqual([]);
     expect(strays(m.layout.homeRoot)).toEqual([]);
@@ -248,6 +256,8 @@ describe.skipIf(!canRun)('update against a fake release server', () => {
       expect(readFileSync(join(m.layout.assets, 'font.txt'), 'utf8')).toBe('font old');
       expect(readFileSync(join(m.skill, 'VERSION'), 'utf8').trim()).toBe('0.0.1');
       expect(readFileSync(join(m.skill, 'SKILL.md'), 'utf8')).toBe('old skill');
+      // A sibling this update would have added is gone again.
+      expect(existsSync(join(m.skill, '..', 'tracetoon-draw-cartoon'))).toBe(false);
       expect(existsSync(m.layout.receipt)).toBe(false);
       expect(strays(join(m.layout.stable, '..'))).toEqual([]);
       expect(strays(m.layout.homeRoot)).toEqual([]);
