@@ -43,6 +43,7 @@ beforeEach(() => {
     // The skill under test ships beside this runtime; an outer Tracetoon (a
     // `tracetoon check` running the suite) must not point setup at its own copy.
     TRACETOON_SKILL_DIR: '',
+    TRACETOON_ASSETS: '',
   };
 });
 
