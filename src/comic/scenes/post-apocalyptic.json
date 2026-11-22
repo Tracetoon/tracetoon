@@ -1,0 +1,142 @@
+[
+  {
+    "id": "war-rig-chase",
+    "title": "War rig chase across the salt flats",
+    "setting": "action",
+    "place": "Blinding white salt flats under a bleached sky, an armored tanker truck roaring ahead of a swarm of spiked buggies and dirt bikes",
+    "situation": "A tanker convoy runs a gauntlet as raiders leap between vehicles on poles while a masked guitarist on a speaker truck plays flames",
+    "cast": ["one-armed shaven-headed rig driver", "chrome-painted raider boy", "flame-guitar war drummer", "grizzled drifter tied to a hood"],
+    "visualTropes": ["raiders swinging on tall poles", "a guitar shooting fire", "spiked tires throwing dust", "a tanker swerving through a sandstorm"],
+    "jokeHooks": ["the raiders board the tanker one by one like merge conflicts piling onto a long-lived branch", "the flame guitarist plays nonstop like an alert nobody can silence", "the rig's fuel gauge is a progress bar stuck at 99 percent"]
+  },
+  {
+    "id": "scrap-market-bazaar",
+    "title": "Scrap market bazaar",
+    "setting": "crowd",
+    "place": "A bustling market built inside a crashed airliner and old shipping containers, tarps overhead, stalls selling bottle caps, batteries and canned beans",
+    "situation": "Scroungers haggle loudly over salvage; a trader swears an old circuit board still works while a crowd gathers to test it",
+    "cast": ["fast-talking salvage trader", "suspicious scrounger in goggles", "kid with a pet two-headed lizard", "market enforcer in tire armor"],
+    "visualTropes": ["prices painted on hubcaps", "strings of fairy lights powered by bicycles", "goggles pushed up on dusty foreheads", "a pile of mismatched cables"],
+    "jokeHooks": ["the trader sells a package marked works great, last updated before the collapse", "everyone pays in bottle caps but the change comes in deprecated coins", "the circuit board works only on the trader's own machine"]
+  },
+  {
+    "id": "thunderdome-arena",
+    "title": "Cage arena duel",
+    "setting": "crowd",
+    "place": "A rust-domed scrap arena packed with screaming spectators hanging off the bars, two fighters dangling on bungee harnesses inside",
+    "situation": "Two champions bounce around on elastic harnesses grabbing weapons off the cage while a flamboyant ruler announces the one rule",
+    "cast": ["flamboyant chainmail-clad ruler", "towering masked brute", "wily drifter fighter", "crowd clinging to the dome"],
+    "visualTropes": ["fighters swinging on bungee cords", "chainsaws and hammers hanging from the bars", "a chanting crowd silhouetted on the dome", "a gong struck by a muscleman"],
+    "jokeHooks": ["two developers enter the merge conflict and only one change leaves", "the announced single rule is longer than the style guide", "the brute is a legacy test suite nobody can defeat in under an hour"]
+  },
+  {
+    "id": "vault-door-opening",
+    "title": "Leaving the vault for the first time",
+    "setting": "exterior",
+    "place": "A gear-shaped steel vault door rolling aside in a hillside, blinding light spilling in over a ruined suburb and a radioactive sunset",
+    "situation": "A sheltered vault dweller in a blue jumpsuit steps out with a wrist computer and a cheerful attitude into a hostile wasteland",
+    "cast": ["optimistic vault dweller", "giant mutated cockroach", "talking wrist computer", "lone dog companion"],
+    "visualTropes": ["a cog-shaped door rolling sideways", "a thumbs-up mascot poster", "ruined houses with picket fences", "glowing green puddles"],
+    "jokeHooks": ["the dweller emerges with documentation two centuries out of date", "the wrist computer requests a firmware update in the middle of an ambush", "everything outside fails the dweller's environment checks"]
+  },
+  {
+    "id": "bunker-reactor-room",
+    "title": "Failing bunker reactor",
+    "setting": "interior",
+    "place": "A deep concrete bunker's reactor chamber, pipes hissing steam, flickering caged bulbs, a hand-painted sign reading DO NOT TOUCH",
+    "situation": "The bunker's last generator is failing and only an ancient manual written by the previous occupants explains how to fix it",
+    "cast": ["anxious bunker overseer", "self-taught teen mechanic", "elderly survivor who remembers before", "glowing rat"],
+    "visualTropes": ["steam blasting from pipe joints", "a manual held together with tape", "dials twitching into the red", "handwritten notes on every valve"],
+    "jokeHooks": ["the manual's fix says see page 40, which was torn out years ago, like a dead doc link", "a sticky note on the valve says temporary fix, dated decades back", "the reactor is held together by one undocumented hack nobody dares remove"]
+  },
+  {
+    "id": "ruined-skyline-trek",
+    "title": "Trek through a ruined skyline",
+    "setting": "exterior",
+    "place": "An overgrown city where vines swallow skyscrapers, a highway snaps off midair, and deer graze in a flooded avenue",
+    "situation": "A small band crosses the city on foot, climbing collapsed buildings and following faded street signs that lead to dead ends",
+    "cast": ["hardened guide with a crossbow", "bookish map reader", "chatty teen scrounger", "stray horse"],
+    "visualTropes": ["a highway ending in thin air", "moss-covered taxis", "a billboard smiling over ruins", "deer in a flooded intersection"],
+    "jokeHooks": ["the map is cached from before the collapse and every route is wrong", "the faded sign points to a service that was shut down years ago", "the group takes a shortcut through an abandoned module nobody maintains"]
+  },
+  {
+    "id": "gyrocopter-sky-scout",
+    "title": "Gyrocopter scout over the dunes",
+    "setting": "action",
+    "place": "Hot open sky above red dunes, a rickety homemade gyrocopter sputtering over a convoy, a dust storm chasing from behind",
+    "situation": "A goofy pilot scouts ahead, dropping notes and snakes, while the rotor loses bolts and the storm swallows the horizon",
+    "cast": ["eccentric gyrocopter pilot", "convoy boss shouting from a truck", "raider spotter on a dune", "pet snake in a basket"],
+    "visualTropes": ["a rotor wobbling and shedding bolts", "notes dropped tied to rocks", "dust storm towering behind", "a snake peeking from a basket"],
+    "jokeHooks": ["the scout reports all clear from a status page that has not refreshed", "the gyrocopter drops one bolt per minute like a slow memory leak", "messages arrive tied to rocks, out of order"]
+  },
+  {
+    "id": "water-tower-standoff",
+    "title": "Standoff at the last water tower",
+    "setting": "exterior",
+    "place": "A rusted water tower on stilts in a dusty town, rival gangs on rooftops on either side, the tower's single tap dripping",
+    "situation": "Two gangs claim the town's only water; everyone draws scrap weapons while a kid quietly fixes the tap that leaks precious water",
+    "cast": ["leather-jacketed gang queen", "mohawked rival boss", "quiet kid mechanic", "town elder with a ladle"],
+    "visualTropes": ["a slow single drip", "rooftop silhouettes", "weapons made of road signs", "dust swirling in the street"],
+    "jokeHooks": ["two teams fight over the one shared staging environment", "the kid fixes the real leak while everyone argues about ownership", "the tower's capacity is a quota nobody can raise without a ticket"]
+  },
+  {
+    "id": "irradiated-swamp-crossing",
+    "title": "Crossing the glowing swamp",
+    "setting": "exterior",
+    "place": "A fog-choked swamp glowing green, half-sunken school buses, giant mutant frogs on lily pads the size of cars",
+    "situation": "A party rafts across the swamp on a door; every ripple might be a mutant, and the geiger counter clicks faster with each paddle",
+    "cast": ["nervous geiger counter holder", "brave rafter with a pole", "three-eyed giant frog", "mutated catfish"],
+    "visualTropes": ["green glowing water", "a school bus roof as an island", "fog with eyes in it", "a frog tongue lashing out"],
+    "jokeHooks": ["the geiger counter clicks like a log stream full of warnings everyone ignores", "the raft is a quick fix that has been in production for years", "every safe-looking lily pad is a dependency with a hidden vulnerability"]
+  },
+  {
+    "id": "rail-cart-raider-escape",
+    "title": "Escape on a rail handcart",
+    "setting": "action",
+    "place": "A collapsing railway through a canyon, a pump handcart racing downhill, raiders chasing on motorbikes along the ridge",
+    "situation": "Two survivors pump a handcart at full speed toward a broken bridge while raiders leap from the ridge onto the tracks",
+    "cast": ["burly pumping survivor", "quick-thinking navigator", "raider leaping from a motorbike", "lookout vulture"],
+    "visualTropes": ["handcart sparking on rails", "a bridge with a missing section ahead", "motorbikes jumping canyon rims", "a vulture riding along"],
+    "jokeHooks": ["the bridge ahead is missing exactly the piece the change log said was done", "pumping faster only makes the build fail faster", "the raiders are notifications that keep jumping on board"]
+  },
+  {
+    "id": "fortress-gate-siege",
+    "title": "Siege at the junkyard fortress",
+    "setting": "action",
+    "place": "A walled settlement built from stacked cars and tires, a gate made of a bus, raider vehicles circling with flaming catapults",
+    "situation": "Defenders hold the gate while raiders lob flaming junk over the walls; the settlement's alarm horn keeps jamming",
+    "cast": ["fierce settlement chief", "teen gate guard", "raider warlord in a hockey mask", "old mechanic repairing the horn"],
+    "visualTropes": ["a bus rolling aside as a gate", "flaming tires flying", "lookouts on stacked car towers", "a horn duct-taped to a pole"],
+    "jokeHooks": ["the gate is guarded by a firewall rule nobody remembers adding", "the alarm horn goes off on every seagull, so nobody reacts to the real raid", "the warlord brute-forces the gate with a battering truck like a password spray"]
+  },
+  {
+    "id": "survivor-camp-campfire",
+    "title": "Night at the survivor camp",
+    "setting": "crowd",
+    "place": "A camp beneath a ruined overpass, oil-drum fires, patched tents, a crowd sharing stew around a radio that crackles with static",
+    "situation": "Survivors gather to hear a mysterious broadcast promising safety in the north, and argue whether it is real or a trap",
+    "cast": ["storyteller with an eyepatch", "skeptical medic", "kid tuning the radio", "newcomer with a suspicious backpack"],
+    "visualTropes": ["oil-drum fires", "graffiti on concrete pillars", "a radio antenna made of coat hangers", "faces lit orange"],
+    "jokeHooks": ["the broadcast is an automated message that has been looping since the end, like a stale cron job", "everyone trusts the rumor because it has many stars", "the newcomer claims it will fix everything with one install"]
+  },
+  {
+    "id": "seed-vault-cavern",
+    "title": "Frozen seed vault",
+    "setting": "interior",
+    "place": "A tunnel into an icy mountain, frost-covered racks of labeled boxes, a frozen control terminal blinking on emergency power",
+    "situation": "Explorers reach a legendary seed vault to restart farming, but the boxes are labeled in an indexing system nobody understands",
+    "cast": ["determined farmer explorer", "frostbitten guide", "librarian who knows the old codes", "squirrel thief"],
+    "visualTropes": ["icicles on every rack", "breath fogging in flashlight beams", "a squirrel stuffing seeds in its cheeks", "a terminal glowing amber"],
+    "jokeHooks": ["the index is sorted by a hash function nobody can reverse", "the backup exists, but nobody ever tested restoring it", "the squirrel is a background job silently eating storage"]
+  },
+  {
+    "id": "dust-storm-convoy",
+    "title": "Convoy caught in a dust storm",
+    "setting": "exterior",
+    "place": "A long convoy of patched buses, trucks and a sailing land-yacht on a cracked highway, a wall of brown dust swallowing the sun",
+    "situation": "The convoy must keep moving blind through the storm, linked by a rope and shouted relays from vehicle to vehicle",
+    "cast": ["convoy captain on a bus roof", "land-yacht sailor", "relay runner in goggles", "tired family in a station wagon"],
+    "visualTropes": ["a rope stretched between vehicles", "headlights barely piercing dust", "a sail full of brown wind", "goggled faces caked in grit"],
+    "jokeHooks": ["shouted relays mangle the instructions like a long chain of tool calls", "every vehicle waits on the slowest one, like a pipeline waiting on its flakiest job", "the convoy follows the rope even after it is tied to the wrong truck"]
+  }
+]

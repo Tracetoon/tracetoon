@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { userConfigPath } from '../config.ts';
-import { GENRES, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { GENRES, MAX_GENRE_CHARS, SCENE_SETTINGS, type Genre, type GenreScene } from './genres.ts';
 import { FRANCHISE_NAMES } from './script.ts';
 import { styleById } from './styles.ts';
 
@@ -30,7 +30,86 @@ const LIMITS = {
   setting: 240,
   item: 100,
   notes: 2000,
+  /** The whole body: notes plus `## Scene:` sections. */
+  body: 40000,
+  scenes: 60,
+  sceneText: 220,
+  sceneItem: 140,
 } as const;
+const SCENE_LISTS = {
+  cast: { min: 2, max: 5 },
+  visualTropes: { min: 3, max: 6 },
+  jokeHooks: { min: 2, max: 4 },
+} as const;
+
+/**
+ * `## Scene: <id>` sections of a genre file's body. Each holds `key: value`
+ * lines: title, setting (exterior, action, crowd or interior), place,
+ * situation, and cast, visualTropes and jokeHooks as items separated by `;`.
+ */
+export function parseScenes(body: string): { notes: string; scenes: GenreScene[]; problems: GenreFileProblem[] } {
+  const parts = body.split(/^##\s*Scene:\s*/im);
+  const notes = parts[0]!.trim();
+  const problems: GenreFileProblem[] = [];
+  const scenes: GenreScene[] = [];
+  const ids = new Set<string>();
+  parts.slice(1).forEach((section, n) => {
+    const [head, ...lines] = section.split(/\r?\n/);
+    const id = (head ?? '').trim().toLowerCase();
+    const at = `scenes[${n}]`;
+    const bad = (where: string, problem: string) => problems.push({ where: `${at}.${where}`, problem });
+    if (!ID.test(id) || id.length > MAX_GENRE_CHARS) bad('id', 'use lowercase letters, digits and dashes after "## Scene:"');
+    else if (ids.has(id)) bad('id', `"${id}" is used twice`);
+    ids.add(id);
+    const fields = new Map<string, string>();
+    for (const line of lines) {
+      const m = /^\s*([A-Za-z]+)\s*:\s*(.*)$/.exec(line);
+      if (m) fields.set(m[1]!, m[2]!.trim());
+    }
+    const text = (key: string) => {
+      const v = fields.get(key) ?? '';
+      if (!v) bad(key, 'is required');
+      else if (v.length > LIMITS.sceneText) bad(key, `keep it under ${LIMITS.sceneText} characters`);
+      return v;
+    };
+    const title = text('title');
+    const place = text('place');
+    const situation = text('situation');
+    const setting = (fields.get('setting') ?? '').toLowerCase();
+    if (!(SCENE_SETTINGS as readonly string[]).includes(setting)) bad('setting', `must be ${SCENE_SETTINGS.join(', ')}`);
+    const list = (key: keyof typeof SCENE_LISTS) => {
+      const items = (fields.get(key) ?? '').split(';').map((s) => s.trim()).filter(Boolean);
+      if (items.length < SCENE_LISTS[key].min || items.length > SCENE_LISTS[key].max)
+        bad(key, `needs ${SCENE_LISTS[key].min}–${SCENE_LISTS[key].max} items separated by ";" (has ${items.length})`);
+      items.forEach((s, i) => {
+        if (s.length > LIMITS.sceneItem) bad(`${key}[${i}]`, `keep it under ${LIMITS.sceneItem} characters`);
+      });
+      return items;
+    };
+    const scene: GenreScene = {
+      id,
+      title,
+      setting: setting as GenreScene['setting'],
+      place,
+      situation,
+      cast: list('cast'),
+      visualTropes: list('visualTropes'),
+      jokeHooks: list('jokeHooks'),
+    };
+    for (const [where, s] of [['title', title], ['place', place], ['situation', situation], ...scene.cast.map((c, i) => [`cast[${i}]`, c]), ...scene.visualTropes.map((c, i) => [`visualTropes[${i}]`, c]), ...scene.jokeHooks.map((c, i) => [`jokeHooks[${i}]`, c])] as [string, string][]) {
+      const hit = FRANCHISE_NAMES.exec(s);
+      if (hit)
+        problems.push({
+          where: `${at}.${where}`,
+          problem: `"${hit[0]}" names a specific work; describe the trope or character type instead`,
+          severity: 'warning',
+        });
+    }
+    scenes.push(scene);
+  });
+  if (scenes.length > LIMITS.scenes) problems.push({ where: 'scenes', problem: `at most ${LIMITS.scenes} scenes per genre` });
+  return { notes, scenes, problems };
+}
 const LISTS = {
   archetypes: { min: 1, max: 8 },
   props: { min: 1, max: 10 },
@@ -164,7 +243,11 @@ export function parseGenreFile(
   styles.forEach((s, i) => {
     if (!styleById(s)) bad(`styles[${i}]`, `"${s}" is not a Tracetoon style id (see references/styles.md)`);
   });
-  if (body.length > LIMITS.notes) bad('body', `keep the notes under ${LIMITS.notes} characters`);
+  if (body.length > LIMITS.body) bad('body', `keep the body under ${LIMITS.body} characters`);
+  const parsedScenes = parseScenes(body);
+  problems.push(...parsedScenes.problems);
+  const notes = parsedScenes.notes;
+  if (notes.length > LIMITS.notes) bad('body', `keep the notes (before the first "## Scene:") under ${LIMITS.notes} characters`);
 
   const texts: [string, string][] = [
     ['name', name],
@@ -172,7 +255,7 @@ export function parseGenreFile(
     ...archetypes.map((s, i): [string, string] => [`archetypes[${i}]`, s]),
     ...props.map((s, i): [string, string] => [`props[${i}]`, s]),
     ...jokeHooks.map((s, i): [string, string] => [`jokeHooks[${i}]`, s]),
-    ['body', body],
+    ['body', notes],
   ];
   for (const [where, s] of texts) {
     const hit = FRANCHISE_NAMES.exec(s);
@@ -194,7 +277,8 @@ export function parseGenreFile(
       props,
       jokeHooks,
       styles,
-      ...(body ? { notes: body } : {}),
+      ...(notes ? { notes } : {}),
+      ...(parsedScenes.scenes.length ? { scenes: parsedScenes.scenes } : {}),
       ...(opts.source ? { source: opts.source } : {}),
       ...(opts.path ? { path: opts.path } : {}),
     },

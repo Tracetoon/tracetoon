@@ -1,0 +1,142 @@
+[
+  {
+    "id": "mountain-ridge-trek",
+    "title": "The fellowship crosses the ridge",
+    "setting": "exterior",
+    "place": "A knife-edge mountain ridge above the clouds, snow blowing sideways, a line of tiny travelers silhouetted against a vast sunset",
+    "situation": "A mismatched band of heroes marches single file toward a distant volcano, the shortest member carrying the one item that matters",
+    "cast": ["grey-bearded wizard with a staff", "short furry-footed hero", "brooding ranger with a sword", "bickering elf and dwarf"],
+    "visualTropes": ["silhouettes in single file on a ridge", "sweeping helicopter-shot landscape", "a volcano glowing on the horizon", "snow whipping capes"],
+    "jokeHooks": ["the whole party marches three hundred miles to deliver one tiny patch", "the wizard insists on taking the long route because the short one has no tests", "the elf and dwarf keep score of bugs fixed like rival reviewers"]
+  },
+  {
+    "id": "whispering-forest",
+    "title": "Enchanted forest of walking trees",
+    "setting": "exterior",
+    "place": "An ancient misty forest of moss-hung giants, glowing mushrooms, fairy lights drifting, roots shaped like grumpy faces",
+    "situation": "Lost travelers ask the slow-talking tree elders for directions; the elders take three days to agree on anything",
+    "cast": ["ancient slow-talking tree elder", "impatient young adventurers", "swarm of mischievous fairies", "a fox who knows the way"],
+    "visualTropes": ["tree trunks with sleepy faces", "glowing mushrooms lighting the path", "shafts of light through mist", "roots slowly stepping like legs"],
+    "jokeHooks": ["the tree council takes three days to approve a one-line change", "every path loops back to the same clearing like a circular import", "the fairies rename everything when nobody's watching"]
+  },
+  {
+    "id": "dragon-mountain-lake",
+    "title": "Lake town beneath the dragon's peak",
+    "setting": "exterior",
+    "place": "A wooden town on stilts across a dark lake, a lonely mountain looming behind with smoke curling from a great gate",
+    "situation": "Townsfolk nervously watch the mountain as a burglar sneaks up the slope to steal one cup from a sleeping dragon",
+    "cast": ["nervous hired burglar", "boastful dwarf company", "worried town mayor", "sleeping dragon rumbling in the distance"],
+    "visualTropes": ["stilt houses reflected in the lake", "smoke rising from the mountain gate", "a tiny figure climbing the slope", "barrels floating downstream"],
+    "jokeHooks": ["stealing one cup wakes the dragon, like touching one shared config file", "the company arrived by riding barrels down the river, the only working deploy path", "the mayor keeps promising the gold will arrive next sprint"]
+  },
+  {
+    "id": "waterfall-elf-city",
+    "title": "Elven city of waterfalls",
+    "setting": "exterior",
+    "place": "A serene valley of white towers built into cliffs, a dozen waterfalls, arched bridges, autumn leaves forever falling",
+    "situation": "Weary heroes arrive at the hidden city for counsel, and the elves insist on a song before every answer",
+    "cast": ["serene elf lord with a circlet", "travel-worn heroes", "harp-playing elf choir", "lost messenger bird"],
+    "visualTropes": ["towers emerging from waterfalls", "golden leaves drifting in sunbeams", "graceful arched bridges", "lanterns floating on pools"],
+    "jokeHooks": ["every answer comes after a long ceremonial preamble like a verbose log", "the elves have kept the same ancient version running for three thousand years", "the hidden city can only be reached if you already know the URL"]
+  },
+  {
+    "id": "dragon-raid-village",
+    "title": "Dragon raid on the harvest village",
+    "setting": "action",
+    "place": "A thatched-roof village at harvest time, haystacks and windmills, a huge red dragon swooping overhead breathing fire",
+    "situation": "Villagers scatter with buckets as the dragon swoops again; a farm kid with a borrowed sword is the only one brave enough to stand",
+    "cast": ["enormous red dragon", "farm kid with a too-big sword", "bucket brigade of villagers", "chicken that won't leave its hay bale"],
+    "visualTropes": ["fire sweeping across rooftops", "the dragon's shadow over fields", "a water bucket line", "a kid bracing in front of a giant claw"],
+    "jokeHooks": ["the bucket brigade passes water like a slow handoff between services", "the dragon returns on schedule like a cron job nobody can find", "putting out one roof fire just spreads it to the next like a hotfix"]
+  },
+  {
+    "id": "rainy-fortress-siege",
+    "title": "Siege of the fortress wall",
+    "setting": "action",
+    "place": "A massive stone fortress in a mountain gorge at night, pouring rain, a sea of torches below, ladders rising against the battlements",
+    "situation": "Defenders brace on the wall as a horde of ugly armored brutes charges with ladders and a giant battering ram",
+    "cast": ["grim king in battered armor", "elf archers on the battlements", "horde of tusked brutes", "kid squire with an oversized helmet"],
+    "visualTropes": ["thousands of torches in the rain", "ladders slamming onto battlements", "lightning lighting up the horde", "a battering ram hammering the gate"],
+    "jokeHooks": ["the horde is a flood of open issues that arrived overnight", "the wall holds everything except the one drainage culvert nobody tested", "the archers count kills like code coverage percentages"]
+  },
+  {
+    "id": "river-ford-chase",
+    "title": "Black riders at the river ford",
+    "setting": "action",
+    "place": "A rushing river crossing in a twilight forest, a white horse galloping, hooded black riders thundering behind",
+    "situation": "A wounded hero is carried across the ford just in time; an elf calls up the river, which rises as a wall of foaming water horses",
+    "cast": ["fierce elf rider", "wounded tiny hero", "hooded black-cloaked riders", "the river itself shaped like charging horses"],
+    "visualTropes": ["a white horse mid-gallop", "water rising into foam horses", "hooded riders shrieking", "a raised hand at the riverbank"],
+    "jokeHooks": ["the river rises like a rollback that sweeps away all the bad commits", "the riders keep chasing after every retry", "the elf solves it with one line nobody else knew existed"]
+  },
+  {
+    "id": "plains-cavalry-charge",
+    "title": "Cavalry charge at dawn",
+    "setting": "action",
+    "place": "Vast grassy plains outside a white city on a hill, an enemy army of monsters and giant war beasts, the sun breaking over the ridge",
+    "situation": "Thousands of horse riders crest the hill at dawn and charge down the slope into a much bigger army",
+    "cast": ["horse lord shouting a battle speech", "thousands of riders", "giant tusked war beasts", "shieldmaiden in disguise"],
+    "visualTropes": ["horsemen cresting a hill in sunrise", "spears lowered in a wall", "giant beasts with towers on their backs", "banners snapping in wind"],
+    "jokeHooks": ["the rescue arrives at the last moment like a fix pushed before the release cut", "the war beasts topple like dominoes after one failing dependency", "the battle speech is much longer than the battle"]
+  },
+  {
+    "id": "crossroads-tavern",
+    "title": "Crossroads tavern on a rainy night",
+    "setting": "crowd",
+    "place": "A low-beamed tavern packed with travelers, roaring hearth, singing patrons on tables, a mysterious hooded stranger in the dark corner",
+    "situation": "Small furry-footed travelers try to keep a low profile while a drunken song breaks out and one of them accidentally does a magic trick",
+    "cast": ["hooded ranger in the corner", "chubby innkeeper", "rowdy singing patrons", "small travelers trying to hide"],
+    "visualTropes": ["mugs sloshing in a toast", "a stranger's pipe glowing under a hood", "patrons dancing on tables", "rain on leaded windows"],
+    "jokeHooks": ["the innkeeper forgot to deliver a crucial letter months ago, like a PR left in draft", "the stranger watches silently like a reviewer who hasn't commented yet", "a tiny mistake makes someone vanish in front of everyone, like a deleted branch"]
+  },
+  {
+    "id": "village-fireworks-party",
+    "title": "Birthday party with wizard fireworks",
+    "setting": "crowd",
+    "place": "A green hillside village with round doors, a huge party tree hung with lanterns, long tables of food, a wagon of fireworks",
+    "situation": "The whole village celebrates a birthday when a borrowed firework becomes a full-size fire dragon over the crowd",
+    "cast": ["twinkly-eyed wizard with fireworks", "very old birthday host", "mischievous young pranksters", "hundreds of cheerful villagers"],
+    "visualTropes": ["a fire dragon swooping over tables", "lanterns in a giant tree", "villagers ducking in unison", "a fireworks wagon"],
+    "jokeHooks": ["the pranksters launch the biggest firework early, like merging without review", "the host disappears mid-speech like a feature flag turned off", "the wizard's demo goes much bigger than the spec"]
+  },
+  {
+    "id": "coronation-hall",
+    "title": "Coronation in the white citadel",
+    "setting": "crowd",
+    "place": "A grand white hall packed with nobles, elves, soldiers and small heroes, petals falling from high windows, a crown on a cushion",
+    "situation": "The rightful king is crowned and the whole crowd bows to the tiny heroes, who are very embarrassed",
+    "cast": ["new king with a scruffy beard", "embarrassed small heroes", "elf queen in white", "crowd of bowing nobles"],
+    "visualTropes": ["petals falling through sunbeams", "an entire hall bowing", "a crown lowered slowly", "tiny heroes blushing"],
+    "jokeHooks": ["the whole kingdom bows to the intern who fixed the flaky test", "the coronation takes hours because every noble must approve", "the crown only fits after three resizes"]
+  },
+  {
+    "id": "wizard-tower-library",
+    "title": "Wizard's tower library",
+    "setting": "interior",
+    "place": "A spiral tower crammed with floating books, bubbling potions, star charts, a stuffed owl, and stairs that rearrange themselves",
+    "situation": "An apprentice tries to find one spell in a library where the books fly away and argue with each other",
+    "cast": ["flustered apprentice", "eccentric wizard with a pointy hat", "snapping biting book", "sleepy owl familiar"],
+    "visualTropes": ["books flapping like birds", "stairs shifting mid-step", "potions frothing over", "candles floating mid-air"],
+    "jokeHooks": ["the spellbook's documentation is three versions behind", "the stairs move like an API that changed without notice", "the apprentice's spell works only in the wizard's own tower"]
+  },
+  {
+    "id": "dwarf-mine-forge",
+    "title": "Dwarven forge under the mountain",
+    "setting": "interior",
+    "place": "A colossal underground hall of pillars carved into kings, rivers of molten metal, hammers ringing, mine carts rattling past",
+    "situation": "Dwarves forge a legendary sword while a deep rumble warns that they dug a little too far",
+    "cast": ["red-bearded master smith", "dwarf miners with lanterns", "nervous treasure accountant", "something enormous waking below"],
+    "visualTropes": ["molten metal pouring into molds", "carved stone kings towering", "sparks showering from anvils", "a glowing crack in the floor"],
+    "jokeHooks": ["they dug too deep, like optimizing until something ancient breaks", "the forge runs hot all night like a build that never finishes", "the accountant counts every gold coin like a token budget"]
+  },
+  {
+    "id": "dragon-hoard-cave",
+    "title": "Conversation with the treasure dragon",
+    "setting": "interior",
+    "place": "A vast cavern piled with mountains of gold coins and cups, a single beam of light, a dragon's eye opening beneath the gold",
+    "situation": "A tiny burglar wearing an invisibility ring tries flattery and riddles on the vain dragon slowly rising from the coins",
+    "cast": ["vain riddling dragon", "tiny invisible burglar", "mountain of whispering gold", "one stubborn missing gem"],
+    "visualTropes": ["coins avalanching off scales", "an enormous eye in the gold", "footprints in coins with no feet", "smoke curling from nostrils"],
+    "jokeHooks": ["the dragon knows instantly when one cup is missing, like a checksum", "riddles go back and forth like a code review with no approvals", "the hoard has never been sorted, like a dependency folder nobody cleans"]
+  }
+]

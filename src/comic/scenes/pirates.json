@@ -1,0 +1,142 @@
+[
+  {
+    "id": "broadside-battle",
+    "title": "Broadside battle at sea",
+    "setting": "action",
+    "place": "Two towering galleons side by side on rolling waves, cannon smoke drifting across the water, sails ripped, a navy flag and a skull flag",
+    "situation": "The pirate ship fires a full broadside while the navy ship returns fire; grappling hooks fly as both crews prepare to board",
+    "cast": ["swaggering pirate captain with a feathered hat", "stiff navy commodore", "powder monkey kid", "parrot shouting orders"],
+    "visualTropes": ["cannons recoiling in a row", "grappling hooks arcing across", "smoke clouds with flashes inside", "splintering rails"],
+    "jokeHooks": ["all cannons fire at once like a deploy to every region, and the recoil sinks the ship a little", "the parrot repeats the last order so everyone does it twice", "the powder monkey restocks the cannons faster than anyone can review"]
+  },
+  {
+    "id": "swinging-boarding-party",
+    "title": "Swinging aboard on ropes",
+    "setting": "action",
+    "place": "The deck of a merchant ship mid-raid, pirates swinging from the rigging on ropes, a sword fight on the gangplank and the quarterdeck",
+    "situation": "A dashing pirate swings in clenching a knife in their teeth, overshoots, and has to swing back while the duel continues",
+    "cast": ["dashing rope-swinging rogue", "monocled merchant captain", "pirate with a hook hand", "terrified cabin boy"],
+    "visualTropes": ["pirates mid-swing with legs out", "a cutlass duel on a staircase", "a chandelier swung into a sail", "barrels rolling across the deck"],
+    "jokeHooks": ["the swing overshoots like an over-eager agent changing ten files for a one-line fix", "the duel moves up and down the stairs like a rebase that keeps replaying", "the cabin boy hides in the barrel labeled tech debt"]
+  },
+  {
+    "id": "kraken-attack",
+    "title": "The kraken rises",
+    "setting": "action",
+    "place": "A storm-tossed ocean at night, a ship gripped by enormous tentacles rising from the deep, lightning lighting a giant eye",
+    "situation": "A sea monster wraps the ship and tentacles snatch crew from the deck while the captain shouts to fire anything they have",
+    "cast": ["captain lashed to the wheel", "first mate hacking tentacles", "cook throwing pots", "colossal tentacled sea beast"],
+    "visualTropes": ["tentacles curling around the masts", "a giant eye in the waves", "crew dangling upside down", "lightning over a cracked hull"],
+    "jokeHooks": ["each cut tentacle grows back, like a bug fixed in one place and present in five copies", "the beast arrives every time someone touches the legacy module", "the cook throws the whole dependency tree overboard to lighten the ship"]
+  },
+  {
+    "id": "port-tavern-brawl",
+    "title": "Brawl in the port tavern",
+    "setting": "crowd",
+    "place": "A low-beamed harbor tavern packed with sailors, barrels for tables, a fiddler on a crate, lanterns swinging, a chalkboard of wanted posters",
+    "situation": "One spilled mug sets off a full tavern brawl while the barmaid keeps serving and the fiddler speeds up the tune",
+    "cast": ["burly bosun", "one-eyed old salt with a map", "unflappable barmaid", "fiddler on a crate"],
+    "visualTropes": ["chairs smashed over backs", "a mug sliding the whole bar", "wanted posters on a beam", "a fiddle bow sawing furiously"],
+    "jokeHooks": ["one small change spills and the whole team starts fighting in the review thread", "the wanted poster offers a reward for whoever broke the build", "the barmaid serves through the chaos like a well-isolated service"]
+  },
+  {
+    "id": "treasure-island-landing",
+    "title": "Rowing ashore on treasure island",
+    "setting": "exterior",
+    "place": "A turquoise lagoon and white beach, palm trees, a skull-shaped rock, a rowboat full of pirates grinding onto sand",
+    "situation": "The crew lands with a torn map and a shovel, then argues over which way the map is supposed to be held",
+    "cast": ["captain reading the map", "peg-legged quartermaster", "marooned castaway with a long beard", "crab with attitude"],
+    "visualTropes": ["a map held upside down", "footprints and a peg-leg trail", "a skull rock with cave eyes", "the castaway waving from a palm tree"],
+    "jokeHooks": ["the map's README says ten paces from the tree, but the tree was refactored", "the castaway has been waiting on a reply to an issue for three years", "x marks the spot in five places, like five conflicting configs"]
+  },
+  {
+    "id": "skull-cave-treasure",
+    "title": "Treasure cave of booby traps",
+    "setting": "interior",
+    "place": "A dripping sea cave with piles of gold, a chest on a stone altar, skeletons in hats, and a tide that floods the entrance",
+    "situation": "Pirates creep toward the chest, but each step triggers swinging blades, rolling boulders, and a rising tide",
+    "cast": ["greedy captain", "cautious navigator", "skeleton guardian", "monkey stealing coins"],
+    "visualTropes": ["gold coins spilling", "skeletons holding tankards", "blades swinging from the ceiling", "water pouring in from a tunnel"],
+    "jokeHooks": ["every step on the trap floor is a test that only fails sometimes", "the chest opens to reveal the treasure is a note saying see other chest", "the monkey grabs the one coin holding the whole cave together"]
+  },
+  {
+    "id": "walk-the-plank",
+    "title": "Walking the plank",
+    "setting": "exterior",
+    "place": "The side of a ship on calm blue sea under a blazing sun, a single plank jutting out, sharks circling below",
+    "situation": "A blindfolded prisoner edges along the plank while the crew chants, sharks wait, and the captain gives a long speech",
+    "cast": ["blindfolded prisoner", "theatrical pirate captain", "chanting crew", "smiling shark"],
+    "visualTropes": ["a plank bending with each step", "shark fins circling", "a crew pounding cutlass hilts", "a gull landing on the plank tip"],
+    "jokeHooks": ["the plank is a feature walked out to production with no rollback", "the sharks are code reviewers waiting under the PR", "the captain's speech takes longer than the full test suite"]
+  },
+  {
+    "id": "crows-nest-storm",
+    "title": "Crow's nest in a hurricane",
+    "setting": "action",
+    "place": "The top of a mast swaying wildly in a hurricane, sails ripping, waves as tall as the ship, lightning splitting the sky",
+    "situation": "The lookout clings to the crow's nest shouting directions nobody can hear while the crew tries to reef the sails",
+    "cast": ["lookout clinging on", "helmsman wrestling the wheel", "sailor on a yardarm", "drenched captain"],
+    "visualTropes": ["mast bending at an angle", "sails flapping into shreds", "a wave wall towering", "a telescope flying away"],
+    "jokeHooks": ["the lookout spots the iceberg but the alert goes to an unread channel", "the crew reefs the wrong sail, like rolling back the wrong commit", "the storm hits exactly when the release goes out on a Friday"]
+  },
+  {
+    "id": "navy-fort-cannon-escape",
+    "title": "Escape past the harbor fort",
+    "setting": "action",
+    "place": "A narrow harbor mouth at dawn, a stone fort on a cliff bristling with cannons, a pirate sloop running for open sea",
+    "situation": "Pirates slip out under fire, dodging cannonballs that raise water towers, while redcoats scramble along the battlements",
+    "cast": ["pirate captain at the tiller", "fort commander in a powdered wig", "redcoat gunners", "lookout with a spyglass"],
+    "visualTropes": ["splashes rising like columns", "a sloop heeled over", "battlements lined with cannons", "a harbor chain rising from the water"],
+    "jokeHooks": ["the harbor chain rises like a required check blocking the merge", "each cannonball lands right where the ship was a second ago, like a stale cache", "the commander orders a fix in the fort's ancient firing manual"]
+  },
+  {
+    "id": "ghost-ship-fog",
+    "title": "Ghost ship in the fog",
+    "setting": "exterior",
+    "place": "A still sea wrapped in thick fog, a tattered ghost galleon with glowing green sails gliding out silently, skeleton crew at the rails",
+    "situation": "A living crew watches in terror as a cursed ship appears, its skeleton crew turning solid only in moonlight",
+    "cast": ["cursed skeleton captain", "frightened pirate crew", "monkey skeleton", "fearless young navigator"],
+    "visualTropes": ["glowing green sails full of holes", "skeletons becoming flesh in moonbeams", "fog swirling around the bow", "a lantern swinging alone"],
+    "jokeHooks": ["the cursed crew is a zombie process that never terminated", "the ship appears only in production, never in staging fog", "the curse lifts when one last coin is returned, like one missing file in the release"]
+  },
+  {
+    "id": "pirate-council-cove",
+    "title": "Gathering of pirate lords",
+    "setting": "crowd",
+    "place": "A hidden cove town built from wrecked ships stacked on cliffs, a huge hall carved into a hull, pirate lords from every sea crammed together",
+    "situation": "Pirate lords argue over a code of rules no one has read, banging tankards, firing pistols into the ceiling",
+    "cast": ["keeper of the pirate code with a huge book", "pirate lord in silk", "pirate lord with a monkey", "nervous scribe"],
+    "visualTropes": ["a giant rulebook on a stand", "flags from every crew", "pistols fired upward", "wrecked hulls as houses"],
+    "jokeHooks": ["everyone treats the code as loose suggestions, like a style guide nobody enforces", "every lord brings an amendment and nobody reaches quorum", "the rule book is a thousand pages and the relevant clause is on the last page"]
+  },
+  {
+    "id": "careening-beach",
+    "title": "Careening the ship on the beach",
+    "setting": "exterior",
+    "place": "A tropical beach where a galleon is tipped on its side at low tide, crew scraping barnacles off the hull, cooking fires on the sand",
+    "situation": "The crew must clean and patch the hull before the tide comes in, and every barnacle removed reveals more rot",
+    "cast": ["quartermaster with a scraper", "carpenter with a mallet", "cook roasting fish", "tide-watching kid"],
+    "visualTropes": ["a giant ship tipped on its side", "barnacles flaking off", "a tide line creeping up", "hammocks strung between palms"],
+    "jokeHooks": ["scraping barnacles is tech debt cleanup that reveals more tech debt", "the tide is a deadline approaching while the patch grows", "the carpenter's patch is labeled temporary in the ship's log from years ago"]
+  },
+  {
+    "id": "gun-deck-below",
+    "title": "Chaos on the gun deck",
+    "setting": "interior",
+    "place": "The low, smoky gun deck of a galleon, rows of cannons, hammocks swinging, powder barrels, crew stripped to the waist hauling ropes",
+    "situation": "Gun crews reload in a frantic rhythm while the ship rolls and a loose cannon careens across the deck",
+    "cast": ["bellowing gun captain", "powder monkeys running", "sailor dodging a loose cannon", "ship's cat on a beam"],
+    "visualTropes": ["a loose cannon rolling", "smoke stinging eyes", "ramrods plunging", "hammocks swaying in the dark"],
+    "jokeHooks": ["the loose cannon is an agent with too many permissions", "reload, fire, swab is a CI loop the crew can do asleep", "the cat sleeps through everything like an unmonitored alert"]
+  },
+  {
+    "id": "harbor-market-day",
+    "title": "Market day in a pirate port",
+    "setting": "crowd",
+    "place": "A sunny colorful port town with docks, stalls of spices and parrots, a pirate ship at anchor, crowds of sailors and merchants",
+    "situation": "Pirates on shore leave try to sell stolen cargo at market while the governor's guards search stall by stall",
+    "cast": ["fast-talking pirate fence", "governor's guard captain", "parrot merchant", "pickpocket kid"],
+    "visualTropes": ["stalls with striped awnings", "parrots on every perch", "crates stamped with other ships' names", "guards in tricorn hats"],
+    "jokeHooks": ["the stolen crates still have the original owner's license on them", "guards search stall by stall like a slow sequential test run", "the pickpocket lifts a token from every sailor like a leaky secret in logs"]
+  }
+]

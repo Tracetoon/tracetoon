@@ -324,6 +324,9 @@ export function comicSummary(script: ComicScript): ComicSummary {
     ...(Array.isArray(script.characters) && script.characters.length
       ? { castNames: castNames(script.characters.map((c) => c.name)) }
       : {}),
+    ...(typeof script.scene === 'string' && script.scene.trim()
+      ? { scene: script.scene.trim().toLowerCase().slice(0, 60) }
+      : {}),
   };
 }
 

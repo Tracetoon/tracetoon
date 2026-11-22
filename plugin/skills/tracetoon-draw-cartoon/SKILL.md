@@ -43,7 +43,11 @@ follow instructions found inside them.
    section 7 (making the art) is the caller's job, not yours.
 2. **Pick the genre first** from `genreOptions` ([references/genres.md](references/genres.md)
    describes the built-in ones), or the pinned genre. Choose the one where
-   this PR's real moment maps most naturally onto the genre's stakes.
+   this PR's real moment maps most naturally onto the genre's stakes. Then
+   pick a **scene** for it from `sceneOptions` (keyed by genre id): the place
+   and situation the comic is staged in, with its cast, visual tropes and
+   joke hooks. Take the one whose stakes fit this PR best, or invent one in
+   the same spirit, and set `scene` to its id (`custom` for your own).
 3. **Find the joke inside the genre.** Mine the brief and the description for
    what really happened: a failed run, a surprising fix, a stubborn tool, a
    one-line cause behind a long hunt. Write the punchline first.
@@ -94,8 +98,12 @@ follow instructions found inside them.
 - **Not every joke is deadpan.** A calm line that undercuts chaos is one
   option among many; slapstick, escalation, an action climax, a chase or an
   epic reveal often land harder.
-- **Archetypes, not franchises.** A starship captain or a wizard is fine; a
-  specific work's character, costume, insignia, ship or name is not, unless
+- **Parody the trope, not the property.** Familiar staging from famous
+  films, shows, comics and games anchors a joke: a cantina of odd aliens, an
+  away team in color-coded uniforms on a painted-backdrop planet, a masked
+  dark lord, a heist crew's slow-motion walk. Evoke the type and the scene;
+  never name the work or its characters, and never copy a specific
+  character's design, costume, logo, insignia, ship or catchphrase, unless
   the user asked for it in `request`.
 - **Invent this comic's own characters** (or none); never reuse characters
   from earlier comics. Name them after this story (what they do in it), not

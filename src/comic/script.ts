@@ -1,7 +1,7 @@
 /** Checks a comic script before any art is made. */
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
-import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, SCENE_MEMORY } from './genres.ts';
 import {
   ASPECTS,
   BEATS,
@@ -119,6 +119,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
+  if (s.scene !== undefined && (typeof s.scene !== 'string' || !/^[a-z0-9][a-z0-9-]{0,59}$/.test(s.scene)))
+    bad('scene', 'must be a scene id from sceneOptions (lowercase, dashes) or "custom"');
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
@@ -266,6 +268,15 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       warn(
         'composition',
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
+      );
+    if (
+      current.scene &&
+      current.scene !== 'custom' &&
+      (opts.recentComics ?? []).slice(0, SCENE_MEMORY).some((r) => r.scene === current.scene)
+    )
+      warn(
+        'scene',
+        `the scene "${current.scene}" was used by a recent comic; pick another from sceneOptions so the comics don't look alike`,
       );
     const reused = (current.castNames ?? []).filter((n) =>
       recent.some((r) => r.castNames?.includes(n)),

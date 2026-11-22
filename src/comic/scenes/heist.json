@@ -1,0 +1,142 @@
+[
+  {
+    "id": "casino-strip-walk",
+    "title": "The crew walks the strip",
+    "setting": "exterior",
+    "place": "A glittering desert casino boulevard at night, giant fountains dancing, neon signs, palm trees lit in purple",
+    "situation": "The crew walks in a slow-motion line past the fountains after the job, each one quietly peeling off in a different direction",
+    "cast": ["suave crew leader in a tux", "wisecracking sidekick eating a snack", "nervous rookie pickpocket", "acrobat in a tracksuit"],
+    "visualTropes": ["fountains shooting in sync", "a crew silhouetted in a line", "neon reflections on wet pavement", "everyone in sunglasses at night"],
+    "jokeHooks": ["the crew peels off one by one like jobs finishing in a pipeline", "the fountains fire in perfect sync like a successful release", "the rookie forgot to merge the escape plan"]
+  },
+  {
+    "id": "moonlit-museum-roof",
+    "title": "Moonlit museum rooftop",
+    "setting": "exterior",
+    "place": "A domed museum rooftop under a full moon, a glass skylight, gargoyles, the city sparkling below and a searchlight sweeping",
+    "situation": "The cat burglar rigs a cable over the skylight while the crew below whispers on earpieces and a pigeon threatens everything",
+    "cast": ["cat burglar in black", "lookout on a rooftop across the street", "nosy pigeon", "dozing night guard below"],
+    "visualTropes": ["a cable dropping through a skylight", "a searchlight sweeping the dome", "a silhouette against the moon", "gargoyles staring at the burglar"],
+    "jokeHooks": ["the pigeon is the one variable nobody mocked", "the searchlight scans on a predictable interval like a polling loop", "the earpiece chatter is a group chat during an incident"]
+  },
+  {
+    "id": "van-stakeout-street",
+    "title": "Stakeout across from the bank",
+    "setting": "exterior",
+    "place": "A busy city street with a grand marble bank, a fake flower delivery van parked across, a hot dog cart, and an armored truck arriving",
+    "situation": "Disguised crew members pretend to be a street vendor, a busker and a meter maid while timing the armored truck to the second",
+    "cast": ["crew member disguised as a hot dog vendor", "busker who can't play", "fake meter maid", "armored truck guards"],
+    "visualTropes": ["a florist van with antennas", "a stopwatch in a gloved hand", "disguises that are a little off", "an armored truck backing up"],
+    "jokeHooks": ["the truck arrives at the same time every day like a scheduled job", "the busker's fake playing fools nobody, like a mocked test", "the disguises pass review because nobody looks closely"]
+  },
+  {
+    "id": "misty-runway-getaway",
+    "title": "Getaway plane on the misty runway",
+    "setting": "exterior",
+    "place": "A tiny foggy airfield at dawn, a propeller plane idling, duffel bags stacked on the tarmac, headlights cutting through the mist",
+    "situation": "The crew loads the loot onto the plane when a strong wind rips a bag open and cash swirls everywhere",
+    "cast": ["pilot with a cigar", "crew carrying duffel bags", "detective arriving too late", "airfield dog chasing bills"],
+    "visualTropes": ["bills swirling in prop wash", "plane propellers blurring", "fog hiding approaching headlights", "a crew member chasing money"],
+    "jokeHooks": ["one unzipped bag leaks everything like an exposed secret in a log", "the plane can only take off after the last bag passes checks", "the detective arrives after the deploy already shipped"]
+  },
+  {
+    "id": "laser-grid-dance",
+    "title": "Through the laser grid",
+    "setting": "action",
+    "place": "A dark gallery crossed by red laser beams, a jewel on a pedestal under glass, motion sensors blinking, a ticking clock",
+    "situation": "The acrobat contorts through the lasers while the hacker reroutes them, and someone's phone is about to ring",
+    "cast": ["contortionist acrobat", "hacker on a laptop in a van", "jewel under a glass case", "guard walking past the door"],
+    "visualTropes": ["red beams revealed by spray mist", "a body bent impossibly between beams", "a jewel glittering under glass", "a guard's silhouette in a doorway"],
+    "jokeHooks": ["the lasers move like flaky tests, never in the same place twice", "the hacker disables one beam and three new ones appear", "the acrobat goes through on a dry run perfectly, then trips in production"]
+  },
+  {
+    "id": "getaway-car-chase",
+    "title": "Getaway chase through narrow streets",
+    "setting": "action",
+    "place": "Narrow cobbled hillside streets, tiny cars, market stalls and staircases, police sirens echoing, a fruit cart dead ahead",
+    "situation": "Three tiny getaway cars race down stairs and through markets, splitting and rejoining, with police on every corner",
+    "cast": ["getaway driver in driving gloves", "screaming crew in the back seat", "fruit seller shaking a fist", "police on scooters"],
+    "visualTropes": ["little cars bouncing down stairs", "a fruit cart exploding into melons", "three cars splitting at a fork", "police lights in a narrow lane"],
+    "jokeHooks": ["the cars split and merge back like branches before a release", "every shortcut hits a fruit cart like a cache miss", "the getaway driver ignores the navigation like an agent overriding instructions"]
+  },
+  {
+    "id": "armored-train-rob",
+    "title": "Robbing the armored train",
+    "setting": "action",
+    "place": "A steam-powered armored train crossing a canyon trestle bridge, crew on horseback and motorbikes riding alongside",
+    "situation": "The crew leaps from motorbikes onto the moving train to unhook the money car before the next tunnel",
+    "cast": ["crew member leaping onto a car", "train guard with a shotgun", "engineer pulling the whistle", "crew on a motorbike with a sidecar"],
+    "visualTropes": ["a train on a high trestle", "riders galloping alongside", "a tunnel mouth ahead", "steam billowing over the cars"],
+    "jokeHooks": ["uncoupling the money car is like detaching a dependency mid-flight", "the tunnel is the release deadline", "the guard keeps reloading like a service that restarts forever"]
+  },
+  {
+    "id": "vault-flood-escape",
+    "title": "Escape from the flooding vault",
+    "setting": "action",
+    "place": "A collapsing underground vault with water bursting through cracks, gold bars floating, an exit hatch high on the wall",
+    "situation": "The crew forms a human chain to the hatch while gold bars float away and alarms blare",
+    "cast": ["crew leader holding the hatch", "safecracker clutching his tools", "rookie who triggered the alarm", "gold bars floating"],
+    "visualTropes": ["water bursting through walls", "a human chain up a ladder", "alarm lights strobing red", "gold sinking and floating"],
+    "jokeHooks": ["one wrong pipe triggers a flood like a misconfigured migration", "the crew saves the safecracker instead of the gold, like rolling back data", "the rookie promises it worked in the test vault"]
+  },
+  {
+    "id": "casino-floor-con",
+    "title": "Con on the casino floor",
+    "setting": "crowd",
+    "place": "A dazzling casino floor of roulette wheels, slot machines and card tables, a pit boss watching, cameras everywhere",
+    "situation": "The crew plays different tables as a distraction while a fake high roller lures the owner away from the vault elevator",
+    "cast": ["fake high roller with a wild accent", "suspicious pit boss", "card shark dealer", "tourists crowding the craps table"],
+    "visualTropes": ["roulette wheels spinning", "chips stacked high", "ceiling cameras watching", "slot machines blinking"],
+    "jokeHooks": ["the slot machines are flaky tests that pay out randomly", "the pit boss watches like a reviewer looking for one wrong line", "the high roller bluffs like an agent claiming a task is done"]
+  },
+  {
+    "id": "masquerade-gala-heist",
+    "title": "Masquerade gala at the museum",
+    "setting": "crowd",
+    "place": "A glittering ballroom inside a museum, guests in masks and gowns, a string quartet, the famous diamond on display under guard",
+    "situation": "The crew mingles in masks while one member swaps the diamond with a fake during a waltz",
+    "cast": ["masked crew member in a gown", "waltzing billionaire host", "string quartet", "guard who can't tell masks apart"],
+    "visualTropes": ["a ballroom full of masks", "a diamond under a spotlight", "a waltz swirling past the display", "a tray of champagne used as cover"],
+    "jokeHooks": ["swapping the diamond is like a hot reload no one notices", "every mask is a dependency with a fake name", "the guard checks identities like a broken auth middleware"]
+  },
+  {
+    "id": "racetrack-switch",
+    "title": "Switch at the racetrack",
+    "setting": "crowd",
+    "place": "A packed grandstand at a horse racetrack, giant hats, betting windows, a horse race thundering past, binoculars everywhere",
+    "situation": "The crew swaps briefcases at the betting windows while the crowd roars and every case looks identical",
+    "cast": ["bettor in a giant hat", "crew member in a suit", "jockey on the wrong horse", "bookie with a chalkboard"],
+    "visualTropes": ["identical briefcases swapping hands", "a roaring grandstand", "horses thundering past", "binoculars pointed in every direction"],
+    "jokeHooks": ["identical briefcases are like files with the same name in different folders", "the race is a flaky test the crowd bets on", "the swap happens like a race condition"]
+  },
+  {
+    "id": "vault-door-crack",
+    "title": "Cracking the impossible vault",
+    "setting": "interior",
+    "place": "A steel vault room with a round door the size of a truck, combination dials, a stethoscope, timers counting down",
+    "situation": "The safecracker listens for clicks while the crew whispers numbers and the clock runs down",
+    "cast": ["legendary safecracker with a stethoscope", "crew counting down", "giant round vault door", "guard snoring nearby"],
+    "visualTropes": ["a dial turned with a fingertip", "a giant round door swinging open", "sweat dripping off a brow", "a timer ticking"],
+    "jokeHooks": ["the combination changes every minute like a rotating token", "the safecracker listens like a debugger stepping through", "behind the door is just another door, like a nested callback"]
+  },
+  {
+    "id": "warehouse-model-plan",
+    "title": "Planning around the scale model",
+    "setting": "interior",
+    "place": "A dusty warehouse with a detailed scale model of the casino, crates for chairs, a chalkboard of blueprints, a pool table",
+    "situation": "The leader walks the crew through the plan with toy figures, and each specialist raises an objection",
+    "cast": ["leader with a pointer", "explosives expert", "grumpy old con artist", "hacker eating cereal"],
+    "visualTropes": ["toy figures on a scale model", "a blueprint chalkboard", "crew lounging on crates", "a spotlight over the model"],
+    "jokeHooks": ["the plan is a diagram that ignores every edge case", "every specialist adds a requirement like scope creep", "the model is outdated by one renovation"]
+  },
+  {
+    "id": "looped-camera-room",
+    "title": "Security room watching a looped feed",
+    "setting": "interior",
+    "place": "A cramped security booth with a wall of monitors, donuts on the desk, and a crew member crawling through the air duct overhead",
+    "situation": "Guards watch a looped camera feed of an empty hallway while the crew walks right past",
+    "cast": ["guard eating donuts", "crew member in the air duct", "looped camera feed", "second guard who notices the loop"],
+    "visualTropes": ["a wall of monitors", "a duct grille above the guards", "a donut box", "the same janitor walking past twice"],
+    "jokeHooks": ["the loop is a cached response that never expires", "the guard notices the same janitor twice like a duplicate log line", "the crew crawling overhead is a background job nobody monitors"]
+  }
+]

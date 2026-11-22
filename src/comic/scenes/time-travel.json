@@ -1,0 +1,142 @@
+[
+  {
+    "id": "parking-lot-time-car",
+    "title": "Time car test in an empty parking lot",
+    "setting": "action",
+    "place": "A mall parking lot at night, a stainless-steel gull-wing sports car with glowing coils racing toward a camcorder, fire trails behind",
+    "situation": "A wild-haired inventor tests a time car that must hit a precise speed; it vanishes in a flash, leaving flaming tire tracks",
+    "cast": ["wild-haired inventor in a radiation suit", "teen skateboarder filming", "inventor's nervous dog", "mall security guard"],
+    "visualTropes": ["two flaming tire tracks", "gull-wing doors swinging up", "a dashboard of glowing date displays", "lightning crackling around the car"],
+    "jokeHooks": ["the machine only works at an exact speed, like a test that only passes with a specific seed", "the date display is set to the wrong timezone and the car lands an hour late", "the inventor runs the experiment in production with the dog inside"]
+  },
+  {
+    "id": "dinosaur-stampede",
+    "title": "Dinosaur stampede",
+    "setting": "action",
+    "place": "A prehistoric valley of ferns and volcanoes, a herd of long-necked and horned dinosaurs stampeding, a brass time pod smoking in a crater",
+    "situation": "Time tourists sprint for their pod as a stampede thunders past and a big carnivore shoves its head in the hatch",
+    "cast": ["safari guide in a pith helmet", "panicking tourist with a camera", "huge toothy carnivore", "tiny curious dinosaur"],
+    "visualTropes": ["a volcano erupting in the background", "pterodactyls overhead", "a hatch slammed on a snout", "footprints filling with water"],
+    "jokeHooks": ["stepping on one butterfly changes a dependency far downstream", "the time pod needs a full restart while dinosaurs bite the hatch", "the tourist's photos auto-upload to a cloud that will not exist for millions of years"]
+  },
+  {
+    "id": "medieval-market-arrival",
+    "title": "Arrival in a historic street",
+    "setting": "exterior",
+    "place": "A muddy medieval market street, a humming metal time booth appearing in a flash of light between a goat pen and a blacksmith",
+    "situation": "Two time travelers in modern clothes step out into a crowd of stunned peasants and try to blend in",
+    "cast": ["bubbly time traveler in sunglasses", "nervous companion with a backpack", "suspicious blacksmith", "goat"],
+    "visualTropes": ["a booth fading in with sparkles", "peasants dropping baskets", "sneakers in the mud", "a smartphone held up like a relic"],
+    "jokeHooks": ["the travelers bring their own runtime into an environment that never heard of it", "they search for wifi in the twelfth century, like an agent with no network", "the booth parks in exactly the wrong spot, a hardcoded coordinate"]
+  },
+  {
+    "id": "paradox-self-encounter",
+    "title": "Meeting yourself",
+    "setting": "exterior",
+    "place": "A suburban street at a school dance night, the same person appearing three times in different outfits hiding behind bushes and cars",
+    "situation": "A time traveler must fix the past without being seen by their past self, but two other future selves are already there",
+    "cast": ["time traveler", "past self", "future self in a silver suit", "baffled neighbor watering a lawn"],
+    "visualTropes": ["three identical people hiding", "a crossed-out timeline diagram", "a neighbor double-taking", "a photo where people fade out"],
+    "jokeHooks": ["three versions of the same branch tripping over each other in a merge", "the future self says do not touch that, and present self touches it anyway", "a fading photo is a failing check fading from green to red"]
+  },
+  {
+    "id": "roman-colosseum-crash",
+    "title": "Time machine crashes into the arena",
+    "setting": "crowd",
+    "place": "A packed ancient arena with sand floor, gladiators and lions, an emperor in a box, a smoking time machine crashed in the middle",
+    "situation": "The time machine lands mid-games; the crowd thinks it is part of the show and the emperor demands a fight",
+    "cast": ["emperor with a laurel crown", "gladiator with a net", "baffled time traveler", "lion curiously sniffing"],
+    "visualTropes": ["a crowd giving thumbs up and down", "a time machine half buried in sand", "chariots skidding", "togas in the stands"],
+    "jokeHooks": ["the emperor's thumbs-up or thumbs-down is code review", "the machine's error log is written in modern English nobody here can read", "the crowd thinks the crash is a planned demo"]
+  },
+  {
+    "id": "time-machine-workshop",
+    "title": "Cluttered time machine workshop",
+    "setting": "interior",
+    "place": "A garage lab with dozens of clocks all reading different times, a brass-and-crystal machine with a seat, sparks and a chalkboard of equations",
+    "situation": "An inventor flips the big lever for the first time and every clock in the room spins backward",
+    "cast": ["frizzy-haired inventor", "skeptical friends in Victorian coats", "inventor's housekeeper", "cat that ages and unages"],
+    "visualTropes": ["clocks spinning wildly", "a chalkboard of crossed-out math", "a crystal glowing in the machine", "a cat flickering between kitten and old cat"],
+    "jokeHooks": ["every clock disagrees, like servers with clock drift", "the lever is the deploy button and nobody has a rollback", "the cat flickers between versions like a flaky dependency"]
+  },
+  {
+    "id": "far-future-city",
+    "title": "Arrival in a gleaming future city",
+    "setting": "exterior",
+    "place": "A shiny future city of floating towers, flying cars in neat lanes, moving walkways, robots walking dogs, holographic billboards",
+    "situation": "A time traveler from the past gawks at everything and tries to pay with cash while robots politely escort them",
+    "cast": ["confused time traveler", "polite robot guide", "kid on a hoverboard", "future cop with a scanner"],
+    "visualTropes": ["flying car lanes", "towers with bubble domes", "hologram ads", "a moving walkway carrying a startled person"],
+    "jokeHooks": ["everything here runs on a framework the traveler has never heard of", "the future still has a loading spinner", "the robot guide reads the traveler's terms of service aloud"]
+  },
+  {
+    "id": "time-cops-chase",
+    "title": "Time police chase through the eras",
+    "setting": "action",
+    "place": "A swirling corridor of eras where a chase jumps from a jungle to a 1920s street to a space station panel by panel",
+    "situation": "Time police chase a rogue traveler who keeps jumping eras, each leap arriving with a crash in a new century",
+    "cast": ["stern time cop with a badge", "rogue traveler laughing", "flapper caught in the chase", "caveman witness"],
+    "visualTropes": ["portals bursting open in walls", "costume changes mid-leap", "era-blended debris flying", "a badge glowing with a clock"],
+    "jokeHooks": ["chasing a bug that hops across environments", "each jump leaves a stack trace in a different language", "the rogue rewrites history like a force-push"]
+  },
+  {
+    "id": "ice-age-mammoth-hunt",
+    "title": "Lost in the ice age",
+    "setting": "exterior",
+    "place": "A white glacial plain under a pale sun, woolly mammoths and saber-toothed cats, a frozen time machine half buried in snow",
+    "situation": "Travelers in summer clothes try to thaw their machine with a campfire while a tribe of fur-clad hunters watches",
+    "cast": ["shivering traveler in shorts", "fur-clad hunter elder", "curious baby mammoth", "saber-toothed cat"],
+    "visualTropes": ["a time machine encased in ice", "mammoths in silhouette", "breath fog clouds", "a campfire under a dashboard"],
+    "jokeHooks": ["the machine is frozen like a pinned dependency nobody can upgrade", "thawing it takes as long as a cold cache warmup", "the hunters' cave paintings document the machine better than the official docs"]
+  },
+  {
+    "id": "train-push-ravine",
+    "title": "Pushing a train toward a broken bridge",
+    "setting": "action",
+    "place": "A steam train racing across a desert, a time car pushing it from behind on the rails, a ravine with an unfinished bridge ahead",
+    "situation": "Travelers must push a train to an impossible speed to get home before it plunges into the ravine",
+    "cast": ["frantic inventor on the locomotive", "teen at the throttle", "unimpressed engineer", "horse running alongside"],
+    "visualTropes": ["colored logs blasting in the firebox", "a speedometer climbing", "a broken bridge ahead", "a car glued to the rails"],
+    "jokeHooks": ["the logs burn hotter like adding more CI runners", "the bridge is the integration nobody built yet", "the plan works only if every step hits on time, like a chain of dependent jobs"]
+  },
+  {
+    "id": "historical-ball-intrigue",
+    "title": "Masked ball in another century",
+    "setting": "crowd",
+    "place": "A candlelit palace ballroom full of powdered wigs, silk gowns, an orchestra, and a time traveler in a costume that is almost right",
+    "situation": "Travelers infiltrate a royal ball to retrieve a lost gadget from a noble's wig before history changes",
+    "cast": ["queen in a towering wig", "time traveler in a too-modern costume", "nosy courtier", "orchestra conductor"],
+    "visualTropes": ["wigs with birdcages", "a gadget blinking in a wig", "a dance in rows", "masks on sticks"],
+    "jokeHooks": ["the costume looks right except for sneakers, like a passing test with one mocked call", "the gadget beeps through every waltz like a forgotten debug log", "changing one dance partner rewrites the entire guest list downstream"]
+  },
+  {
+    "id": "timeline-collapse",
+    "title": "Timeline collapse",
+    "setting": "action",
+    "place": "A street dissolving into fragments, buildings from different centuries overlapping, clocks raining from a cracked sky",
+    "situation": "A paradox tears reality apart; the travelers must reach the machine as the world glitches between eras",
+    "cast": ["panicked travelers", "dinosaur in a modern street", "knight on a scooter", "inventor shouting equations"],
+    "visualTropes": ["buildings overlapping like a double exposure", "clocks falling like rain", "people flickering between costumes", "a sky cracking like glass"],
+    "jokeHooks": ["two conflicting migrations run at once and history renders both", "the fix is to roll back the one change that started the paradox", "every era glitches like a page with two versions of the same library"]
+  },
+  {
+    "id": "pyramid-construction-site",
+    "title": "Pyramid construction site",
+    "setting": "crowd",
+    "place": "A vast desert construction site with ramps, huge stone blocks on sledges, thousands of workers and overseers, a half-built pyramid",
+    "situation": "Time travelers arrive with modern advice for the builders, who politely ignore them and keep hauling",
+    "cast": ["royal architect with a scroll", "workers hauling ropes", "time traveler with a tablet", "pharaoh on a litter"],
+    "visualTropes": ["blocks on wooden rollers", "a ramp spiraling up", "scrolls of plans", "thousands of workers in rows"],
+    "jokeHooks": ["the architect's plan is a monolith and the traveler pitches microservices", "the traveler's tablet battery dies, leaving the ancient process standing", "the build takes twenty years, longer even than the CI"]
+  },
+  {
+    "id": "end-of-time-observatory",
+    "title": "Observatory at the end of time",
+    "setting": "interior",
+    "place": "A domed observatory floating at the end of the universe, a giant window showing the last stars fading, a gramophone playing",
+    "situation": "Travelers reach the final moment of time and find a lonely caretaker who has been waiting to close up",
+    "cast": ["ancient caretaker with a lantern", "awed travelers", "robot butler", "last remaining star"],
+    "visualTropes": ["stars dimming in the window", "a gramophone horn", "dust over a guest book", "a clock with no hands"],
+    "jokeHooks": ["the caretaker is the last maintainer of a project everyone else forgot", "the guest book lists every deprecated feature", "even here, a final cleanup job is still running"]
+  }
+]

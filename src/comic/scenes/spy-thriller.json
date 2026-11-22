@@ -1,0 +1,142 @@
+[
+  {
+    "id": "tropical-beach-base",
+    "title": "Agent emerges on the villain's beach",
+    "setting": "exterior",
+    "place": "A white-sand tropical island beach with palm trees, a turquoise lagoon, and the villain's sleek base hidden in the cliffs",
+    "situation": "A suave agent rises from the surf with a snorkel and dart gun, while a shell diver and a henchman patrol on the same beach",
+    "cast": ["suave agent in a tuxedo under a wetsuit", "shell-collecting diver", "henchman with binoculars", "crab that sees everything"],
+    "visualTropes": ["an agent striding from the surf", "a hidden base in the cliffs", "palms swaying in the breeze", "a tuxedo revealed under a wetsuit"],
+    "jokeHooks": ["the tuxedo under the wetsuit is like a config hidden under another config", "the henchman patrols on a predictable loop like a polling job", "the crab sees everything like a log nobody reads"]
+  },
+  {
+    "id": "volcano-crater-lair",
+    "title": "Volcano crater with a fake lake",
+    "setting": "exterior",
+    "place": "A dormant volcano crater whose lake slides open like a roof, revealing a rocket pad, helicopters circling above",
+    "situation": "The agent watches from the rim as the lake opens and a rocket rises; ninjas abseil down the crater walls",
+    "cast": ["agent on the rim", "villain's helicopter pilot", "rope-sliding ninjas", "rocket on a launch pad"],
+    "visualTropes": ["a lake sliding open", "a rocket rising from a crater", "ropes dropping from the rim", "helicopters circling"],
+    "jokeHooks": ["the lake that is really a roof is a feature flag hiding the real feature", "the rocket launches on a timer like a scheduled release", "the ninjas abseil like parallel jobs"]
+  },
+  {
+    "id": "foggy-border-bridge",
+    "title": "Prisoner exchange on the foggy bridge",
+    "setting": "exterior",
+    "place": "A steel bridge between two countries in winter fog, searchlights at both ends, black cars waiting, guards in heavy coats",
+    "situation": "Two prisoners walk toward each other at the same slow pace; any change in step could ruin the exchange",
+    "cast": ["two prisoners in trench coats", "spymasters in black cars", "guards with searchlights", "a stray dog crossing"],
+    "visualTropes": ["two figures in fog crossing a bridge", "searchlights cutting through mist", "black cars with headlights on", "breath steaming"],
+    "jokeHooks": ["the exchange is a handshake protocol where both sides must move at once", "the stray dog is an unexpected input in production", "each side waits for the other like a deadlock"]
+  },
+  {
+    "id": "coastal-road-villa",
+    "title": "Clifftop villa on the coast road",
+    "setting": "exterior",
+    "place": "A cliffside villa above an azure sea, a hairpin coast road, a vintage convertible, and a villain's yacht anchored below",
+    "situation": "The agent arrives in a convertible to a villain's party, knowing the villa is full of traps",
+    "cast": ["agent in a white dinner jacket", "villain in a linen suit petting a cat", "glamorous double agent", "valet with a dart pen"],
+    "visualTropes": ["a convertible on a hairpin bend", "a yacht in a turquoise bay", "a villa with infinity pool", "a white cat on a lap"],
+    "jokeHooks": ["the villa is a codebase where every door is a trap", "the cat-petting villain reviews every change", "the valet's pen is a tool that does more than its docs say"]
+  },
+  {
+    "id": "ski-slope-chase",
+    "title": "Ski chase down the glacier",
+    "setting": "action",
+    "place": "A steep glacier slope, henchmen on skis firing, a snowmobile racing, a cliff edge ahead with a parachute waiting",
+    "situation": "The agent skis down the slope while henchmen chase, then leaps off the cliff and opens a flag parachute",
+    "cast": ["agent on skis", "henchmen on skis", "snowmobile driver", "parachute"],
+    "visualTropes": ["skis cutting powder", "a cliff leap with a parachute", "snowmobiles chasing", "avalanche spilling"],
+    "jokeHooks": ["the slope is a release with no rollback", "henchmen follow every turn like a bot copying every commit", "the parachute deploys like a fix right before a crash"]
+  },
+  {
+    "id": "train-roof-fight",
+    "title": "Fight on the train roof",
+    "setting": "action",
+    "place": "The roof of a speeding train through mountains, tunnels approaching, a helicopter overhead, wind whipping coats",
+    "situation": "The agent and a hulking henchman with a crushing grip fight on the roof, ducking each time a tunnel comes",
+    "cast": ["agent in a suit", "hulking henchman with a crushing grip", "helicopter pilot", "conductor checking tickets"],
+    "visualTropes": ["fighters ducking under a tunnel", "coats flapping", "a helicopter swooping", "a henchman bending a rail with bare hands"],
+    "jokeHooks": ["ducking every tunnel is like dodging deadlines", "the henchman rips out cables like an agent overdoing a refactor", "the conductor checks tickets like a strict auth check mid-fight"]
+  },
+  {
+    "id": "tiled-rooftop-escape",
+    "title": "Rooftop escape over the old town",
+    "setting": "action",
+    "place": "Sun-baked terracotta rooftops of an old port town, laundry lines, satellite dishes, a market far below",
+    "situation": "The agent sprints over rooftops, crashing through laundry and leaping alleys, chased by an assassin on a motorbike",
+    "cast": ["agent sprinting", "assassin on a motorbike", "laundry-hanging grandma", "pigeons scattering"],
+    "visualTropes": ["leaping between roofs", "laundry flying", "tiles cracking", "a motorbike on a staircase"],
+    "jokeHooks": ["each rooftop leap is a dependency jump with no lockfile", "laundry lines are the tangled branches the agent cuts through", "the grandma is the reviewer who sees everything"]
+  },
+  {
+    "id": "canal-speedboat-chase",
+    "title": "Speedboat chase through the canals",
+    "setting": "action",
+    "place": "A canal city of palaces and stone bridges, gondolas everywhere, a speedboat chase spraying water on tourists",
+    "situation": "The agent's gadget gondola turns into a hovercraft and roars into a crowded square",
+    "cast": ["agent in a gadget gondola", "henchmen in a speedboat", "gondolier shouting", "pigeon doing a double take"],
+    "visualTropes": ["a gondola sprouting a hovercraft skirt", "spray soaking tourists", "a speedboat under a bridge", "a pigeon doing a double take"],
+    "jokeHooks": ["the gondola has a hidden mode like an undocumented flag", "the chase loops through the same bridges like a retry", "the pigeon is the only one who reads the release notes"]
+  },
+  {
+    "id": "baccarat-casino-duel",
+    "title": "High-stakes card duel in the casino",
+    "setting": "crowd",
+    "place": "A chandelier-lit casino with velvet tables, tuxedoed players, a crowd gathering around a high-stakes card table",
+    "situation": "The agent and the villain play a tense card game while the crowd leans in and poisoned drinks circulate",
+    "cast": ["agent in a tuxedo", "cold-eyed card-counting villain", "elegant croupier", "crowd of onlookers"],
+    "visualTropes": ["chips stacked high", "cards flipped dramatically", "a crowd leaning in", "a martini on a tray"],
+    "jokeHooks": ["the game is a code review where both sides bluff", "the poisoned drink is the dependency that looked safe", "the croupier is the CI that decides the winner"]
+  },
+  {
+    "id": "carnival-parade-chase",
+    "title": "Chase through the carnival parade",
+    "setting": "crowd",
+    "place": "A tropical carnival parade, samba dancers, giant floats, drums pounding, confetti everywhere",
+    "situation": "The agent chases a masked assassin through the parade, lost in a crowd of identical costumes",
+    "cast": ["agent in a borrowed costume", "masked assassin", "samba dancers", "drumline"],
+    "visualTropes": ["giant floats", "confetti showers", "identical costumes", "a drumline marching"],
+    "jokeHooks": ["identical costumes are like test fixtures that all look the same", "the parade moves at its own pace like a slow queue", "the drumline is a monitoring alarm nobody can turn off"]
+  },
+  {
+    "id": "embassy-gala",
+    "title": "Embassy gala in the grand ballroom",
+    "setting": "crowd",
+    "place": "A grand embassy ballroom with chandeliers, an orchestra, diplomats in sashes, and a secret file in a safe behind a painting",
+    "situation": "The agent dances with a double agent while slipping a microfilm into a pocket",
+    "cast": ["agent dancing", "double agent in red", "ambassador with a monocle", "suspicious butler"],
+    "visualTropes": ["a waltz under chandeliers", "a safe behind a painting", "a microfilm passed during a dance", "a butler watching"],
+    "jokeHooks": ["passing microfilm mid-dance is like a hot handoff between services", "the butler is a reviewer who notices every detail", "the safe behind the painting is a secret stored in plain sight"]
+  },
+  {
+    "id": "gadget-lab-tests",
+    "title": "The gadget lab testing range",
+    "setting": "interior",
+    "place": "A secret lab with exploding briefcases, an ejector seat car, a test dummy, and an umbrella shooting darts",
+    "situation": "The gadget master explains each gadget while the agent pockets them all, ignoring every warning",
+    "cast": ["grumpy gadget master", "agent pocketing gadgets", "test dummy", "assistant with a fire extinguisher"],
+    "visualTropes": ["an exploding briefcase", "an ejector seat launching", "a dart umbrella", "a dummy on fire"],
+    "jokeHooks": ["the gadget master's warnings are docs nobody reads", "every gadget has a feature flag that only works once", "the agent returns the car in pieces like a branch after a big refactor"]
+  },
+  {
+    "id": "laser-table-room",
+    "title": "Strapped to the laser table",
+    "setting": "interior",
+    "place": "A villain's chamber with a gold table, a slow-moving laser beam, a shark tank behind glass, and a villain monologuing",
+    "situation": "The villain explains the entire plan while the laser creeps toward the agent, who wriggles free with a gadget watch",
+    "cast": ["monologuing villain", "agent strapped to a table", "shark in a tank", "henchman with a remote"],
+    "visualTropes": ["a laser cutting gold", "a shark in a glass tank", "a watch shooting a tiny saw", "a villain pacing"],
+    "jokeHooks": ["the villain explains the bug in detail before fixing it", "the laser moves slowly like a long build", "the gadget watch is the one tool that saves the release"]
+  },
+  {
+    "id": "villain-ejector-boardroom",
+    "title": "Boardroom with ejector chairs",
+    "setting": "interior",
+    "place": "A villain's boardroom with a long table, chairs that drop into a pit, a giant world map, and a cat on the villain's lap",
+    "situation": "The villain asks for progress reports and drops each underperforming henchman through the floor",
+    "cast": ["villain petting a cat", "nervous henchmen", "henchman giving a report", "piranha pool below"],
+    "visualTropes": ["a chair dropping into a pit", "a world map with red dots", "a cat glaring", "henchmen sweating"],
+    "jokeHooks": ["every failed report drops someone through the floor like a failed CI step", "the map has dots for every open incident", "the cat is the real decision maker like a hidden dependency"]
+  }
+]

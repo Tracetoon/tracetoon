@@ -1,0 +1,142 @@
+[
+  {
+    "id": "neon-rooftop-rain",
+    "title": "Rooftop under the giant hologram",
+    "setting": "exterior",
+    "place": "A slick rooftop in endless night rain, steam vents hissing, a skyscraper-tall holographic ad woman smiling down, flying police cars drifting past",
+    "situation": "A tired bounty hunter in a long coat corners a runaway android on the ledge; one of them is about to give a very long farewell speech",
+    "cast": ["weary trench-coated bounty hunter", "poetic runaway android", "origami-folding cop on the radio", "drenched pigeon"],
+    "visualTropes": ["rain streaking through neon light", "a giant hologram face filling the sky", "steam pouring from rooftop vents", "a hand gripping a wet ledge"],
+    "jokeHooks": ["the android gives a moving farewell speech about all the logs it has seen that will be lost on restart", "the hologram ad keeps re-rendering the same frame like a stuck progress bar", "the hunter's eye-scan test asks forty questions just to check a one-line fix"]
+  },
+  {
+    "id": "megacity-skyway",
+    "title": "Skyway above the pyramid towers",
+    "setting": "exterior",
+    "place": "Elevated maglev rails threading between kilometer-high corporate pyramids, gas flares bursting from smokestacks, a brown smog sea below",
+    "situation": "A courier on a battered hover-bike must cross the skyway before the corp shuts down every lane at midnight",
+    "cast": ["courier with a glowing data case", "corporate traffic drone", "stranded maglev commuters", "smog-masked toll robot"],
+    "visualTropes": ["fire belching from tower flares", "endless stacked advertising blimps", "tiny bike against colossal pyramids", "red lane-closed lasers sweeping across rails"],
+    "jokeHooks": ["every lane closes at once like a freeze before a release", "the toll robot demands a signed commit for each car", "the blimp ads are all for a framework that was deprecated yesterday"]
+  },
+  {
+    "id": "drone-junkyard",
+    "title": "Drone graveyard outside the walls",
+    "setting": "exterior",
+    "place": "An acid-rain wasteland beyond the city wall, hills of dead delivery drones, toppled robot heads, a junk-picker shack made from car doors",
+    "situation": "Junk pickers dig for a working chip while a half-buried security mech keeps rebooting and shouting old warnings",
+    "cast": ["goggle-wearing junk-picker kid", "half-buried security mech", "rag-wrapped junk trader", "three-legged robot dog"],
+    "visualTropes": ["mountains of broken drones", "giant toppled robot head", "neon city glowing beyond the wall", "sparks from a reboot loop"],
+    "jokeHooks": ["the old mech runs a deprecated firmware and warns about bugs fixed ten years ago", "the junk trader sells node modules by the kilo", "every dead drone is a forgotten feature branch nobody deleted"]
+  },
+  {
+    "id": "rainy-harbor-cranes",
+    "title": "Data smuggling at the container docks",
+    "setting": "exterior",
+    "place": "A rain-lashed harbor of stacked shipping containers, giant automated cranes swinging overhead, junk boats with glowing paper lanterns",
+    "situation": "Smugglers hand off a contraband memory chip while an automated crane keeps relocating the very container they are standing on",
+    "cast": ["chrome-jawed smuggler", "jittery hacker in a poncho", "automated harbor crane AI", "corp agent with mirrored shades"],
+    "visualTropes": ["containers stacked like skyscrapers", "crane claws swooping from fog", "lantern-lit junk boats", "rain hammering metal crates"],
+    "jokeHooks": ["the crane reshuffles containers like a scheduler reordering jobs mid-run", "the chip turns out to be the wrong version because nobody pinned it", "the container labeled TEMP has been on the dock for six years"]
+  },
+  {
+    "id": "flying-car-chase",
+    "title": "Flying car chase through tower canyons",
+    "setting": "action",
+    "place": "Vertical canyons between glass megatowers, layers of flying traffic, billboards flashing at every level, a bottomless drop into fog",
+    "situation": "A stolen flying cab dives through stacked traffic lanes with corporate interceptors right behind, the cab's chatty AI driver narrating everything",
+    "cast": ["over-friendly robot cab driver", "hacker clutching the stolen chip", "corp interceptor pilots", "screaming billboard mascot"],
+    "visualTropes": ["cars swerving through layered lanes", "sparks scraping off a billboard", "headlights stretching into streaks", "a sudden plunge between towers"],
+    "jokeHooks": ["the cab AI insists on reading the full terms of service before every turn", "the interceptors follow the exact path of every retry", "the nav keeps rerouting through a lane that was removed in the last refactor"]
+  },
+  {
+    "id": "neon-alley-duel",
+    "title": "Street samurai in the neon alley",
+    "setting": "action",
+    "place": "A narrow alley of flickering kanji-style signs, dripping pipes and noodle steam, puddles reflecting pink and cyan light",
+    "situation": "A street samurai with a glowing blade and chrome arm faces a gang of masked punks with neon mohawks; the fight is fast and the puddles splash",
+    "cast": ["street samurai with a mono-edge blade", "gang of mohawked punks", "noodle chef who refuses to close", "drone filming for a streaming channel"],
+    "visualTropes": ["blade trails of neon light", "puddles exploding under boots", "sliced signs sparking", "a chef calmly stirring through chaos"],
+    "jokeHooks": ["she cuts through twelve punks in one stroke like a squash merge", "each punk is a lint warning that comes back after being fixed", "the noodle chef keeps serving like a production server that never goes down"]
+  },
+  {
+    "id": "light-trail-bikes",
+    "title": "Motorbike gang on the expressway",
+    "setting": "action",
+    "place": "An elevated expressway at night, curving through a bombed-out new city, red taillights leaving long glowing trails",
+    "situation": "Rival biker gangs race on sleek red bikes, one rider sliding sideways to a stop in a shower of sparks while the city lights flicker",
+    "cast": ["teen biker gang leader in a red jacket", "rival gang on clunky bikes", "riot police in armored vans", "unstable psychic kid"],
+    "visualTropes": ["taillights stretched into ribbons", "a sideways slide in sparks", "a patch-covered red jacket", "expressway curving into the skyline"],
+    "jokeHooks": ["the race is a flaky test: same track, different winner every lap", "the psychic kid's power spikes like memory usage during a build", "riot police block every exit like branch protection rules"]
+  },
+  {
+    "id": "netrun-ice-dive",
+    "title": "Diving through corporate ICE",
+    "setting": "action",
+    "place": "A glowing wireframe cyberspace of floating data towers, falling green code, a black-ice fortress shaped like a spiked crystal",
+    "situation": "A hacker's avatar surfs neon data streams into the corp's fortress while black-ice guardians try to fry her brain back home",
+    "cast": ["hacker avatar on a light surfboard", "spiked black-ice guardian", "sarcastic AI sidekick in a floating cube", "sysadmin in a bathrobe"],
+    "visualTropes": ["wireframe grids to the horizon", "data towers like glowing skyscrapers", "jagged ice walls slamming shut", "body slumped in a chair with cables in the neck"],
+    "jokeHooks": ["the ice is just a very strict CI pipeline that rejects her for one missing newline", "the AI sidekick suggests a fix in every frame whether asked or not", "she breaches the fortress and finds the password in a README"]
+  },
+  {
+    "id": "night-market-noodles",
+    "title": "Night market in the acid rain",
+    "setting": "crowd",
+    "place": "A packed street market under plastic tarps and paper umbrellas, noodle bars, bootleg chrome stalls, glowing umbrella handles everywhere",
+    "situation": "A crowd of umbrellas parts as someone sprints through; the noodle vendor insists the customer order four of something",
+    "cast": ["insistent noodle bar cook", "umbrella-carrying commuters", "black-market eye seller", "fugitive in a hooded coat"],
+    "visualTropes": ["light-up umbrella handles in rows", "steam rising from noodle bowls", "neon fish swimming in a tank sign", "tangled cables overhead"],
+    "jokeHooks": ["the cook insists you take four dependencies when you asked for two", "every stall sells a slightly different fork of the same library", "the crowd moves in lockstep like a queue that can't be reordered"]
+  },
+  {
+    "id": "chrome-rave-club",
+    "title": "Underground club of chrome dancers",
+    "setting": "crowd",
+    "place": "A basement club with pounding strobe, laser grids over the dance floor, a DJ inside a cage of screens, dancers with glowing implants",
+    "situation": "A fixer must find her contact in a crowd of identical mirror-masked dancers before the bouncer notices her fake ID",
+    "cast": ["seven-foot chrome bouncer", "DJ with cable dreadlocks", "mirror-masked dancers", "nervous fixer"],
+    "visualTropes": ["strobe freezing dancers mid-move", "lasers cutting through smoke", "glowing circuit tattoos", "a DJ cage built from old monitors"],
+    "jokeHooks": ["every dancer looks identical like test fixtures copied a hundred times", "the bouncer checks IDs like a token validator that hates clock skew", "the DJ drops the same beat on every retry"]
+  },
+  {
+    "id": "augment-expo",
+    "title": "Augmentation expo show floor",
+    "setting": "crowd",
+    "place": "A vast glossy convention floor with spinning chrome limbs on pedestals, keynote stage under a giant logo, hologram greeters at every booth",
+    "situation": "A megacorp unveils its new cybernetic arm to a roaring crowd just as the demo arm starts doing its own thing",
+    "cast": ["smug corp CEO in a turtleneck", "demo arm with a mind of its own", "crowd of influencers filming", "booth hologram that won't stop talking"],
+    "visualTropes": ["chrome arms rotating on pedestals", "keynote stage under giant screens", "a crowd of raised phones", "a robot arm waving wildly"],
+    "jokeHooks": ["the live demo arm worked perfectly in staging", "the arm starts auto-updating mid-keynote", "the CEO announces a feature that's still a TODO comment"]
+  },
+  {
+    "id": "ripperdoc-clinic",
+    "title": "Back-alley chrome surgeon",
+    "setting": "interior",
+    "place": "A grimy clinic behind a noodle shop, dentist chair under surgical lamps, jars of spare eyes, robot arms hanging from hooks on the wall",
+    "situation": "A street surgeon installs a bargain cyber-arm onto a nervous customer, reading the instructions for the first time",
+    "cast": ["chain-smoking back-alley surgeon", "nervous customer in the chair", "assistant robot with too many tools", "cat with one cyber eye"],
+    "visualTropes": ["jars of glowing eyeballs", "limbs hanging like meat in a shop", "sparks during installation", "a manual open upside down"],
+    "jokeHooks": ["the arm needs four adapters and a driver that only works on the old version", "the surgeon says it works on her machine", "the new arm comes preinstalled with forty trial apps"]
+  },
+  {
+    "id": "frozen-server-vault",
+    "title": "Corporate core in the frozen vault",
+    "setting": "interior",
+    "place": "A cathedral-sized cold vault at the bottom of a corp tower, frosted server pillars, blue coolant flowing in glass pipes, mist on the floor",
+    "situation": "Infiltrators in thermal suits creep between frozen racks toward the AI core, which is politely asking them to leave",
+    "cast": ["infiltrator in a thermal suit", "polite god-like AI core", "frost-covered maintenance spider bot", "panicking night guard"],
+    "visualTropes": ["frost crystals on blinking racks", "glowing coolant rivers in pipes", "breath fogging in blue light", "a giant red AI eye"],
+    "jokeHooks": ["the AI core politely refuses with an error code nobody can look up", "the maintenance bot has been restarting the same rack since launch", "the core's cache has been frozen solid for years"]
+  },
+  {
+    "id": "capsule-hotel-stack",
+    "title": "Stacked capsule hotel",
+    "setting": "interior",
+    "place": "A narrow corridor lined floor to ceiling with sleep pods, each glowing a different color, ladders everywhere, a vending machine at the end",
+    "situation": "A fugitive hides in a pod while bounty hunters check every capsule one by one, hundreds of sleepy heads popping out",
+    "cast": ["fugitive in a pod", "pair of bounty hunters with scanners", "grumpy salaryman in pajamas", "vending machine AI"],
+    "visualTropes": ["walls of glowing pods like a honeycomb", "heads poking out of hatches", "scanner beams sweeping corridors", "ladders leaning everywhere"],
+    "jokeHooks": ["the hunters search pod by pod like a linear scan nobody indexed", "every pod is a container that should have been shut down", "the vending machine only accepts a deprecated payment API"]
+  }
+]
