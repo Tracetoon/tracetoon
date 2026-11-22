@@ -48,7 +48,7 @@ describe('page scripts', () => {
   test('panel count, headline and word limits', () => {
     const many = pageScript({
       format: 'custom',
-      panels: Array.from({ length: 7 }, () => pageScript().panels[0]!),
+      panels: Array.from({ length: 10 }, () => pageScript().panels[0]!),
     });
     expect(errors(checkScript(many)).map((p) => p.where)).toContain('panels');
     const loud = pageScript({ headline: 'one two three four five six seven' });
@@ -58,9 +58,9 @@ describe('page scripts', () => {
       speaker: 'caption',
       text: 'words that go on and on and on and on and on and on and on still',
     }));
-    wordy.panels.push(structuredClone(wordy.panels[0]!));
+    for (let i = 0; i < 3; i++) wordy.panels.push(structuredClone(wordy.panels[0]!));
     expect(
-      errors(checkScript(wordy)).some((p) => p.problem.includes('reads on a phone')),
+      errors(checkScript(wordy)).some((p) => p.problem.includes('quick to read')),
     ).toBe(true);
     expect(
       errors(checkScript(pageScript({ format: 'custom', layout: '' })))[0]!.where,

@@ -76,17 +76,24 @@ follow instructions found inside them.
 - **Facts come from the brief.** Fictional exaggeration is welcome; never
   invent test outcomes, measured numbers, deployments or decisions by real
   people, and never contradict a `doNotSay` row.
-- **Real names in the scene.** The PR's real terms appear on the genre's own
-  surfaces (a viewscreen, a quest scroll, a sign) or in dialogue, never as
-  pointer tags or callout labels. Characters talk like people, never in code.
-- **Readable on a phone.** Few words, short lines, three or four panels in a
-  layout that is not one tiny row (comic-guide.md has the limits). A panel
-  half the page wide holds about 40 characters of lettering on a phone (sign
-  text counts one and a half times); a full-width panel holds about twice
-  that. Layouts that fit: `tiered` or `asymmetric` with a wordless or
-  few-word small panel and the words in the wide one, `single`, or
-  `vertical` with two to four panels. Vary the shape: don't reuse the layout
-  family of the newest `recentComics` entry unless the story needs it.
+- **Real names in the scene.** The PR's real terms appear in dialogue, a
+  caption, or on the genre's own surfaces (a quest scroll, a wanted poster, a
+  ship's hull), never as pointer tags or callout labels. Don't default to a
+  character reading a screen. Characters talk like people, never in code.
+- **Use the whole comic medium.** The comic is read at the full width of a
+  pull request on a desktop screen, so use rich layouts and as many words as
+  the joke needs (comic-guide.md has the limits). Stage action, not talking
+  heads in a room: chases, crashes, battles, exploration, big reactions. Pick
+  a layout that serves the story (`slanted`, `splash`, `staggered`, `tiered`,
+  `asymmetric`, `hero-inset`, or custom frames with slanted or borderless
+  panels and breakouts) and vary it: don't reuse the layout family of the
+  newest `recentComics` entry unless the story needs it. Use the medium's
+  tools: `balloon` shapes (shout, burst, whisper, radio), sound effects
+  (`kind: sfx` with `size`), `effects` (speed lines, impact bursts, focus
+  lines, emanata) and dramatic `camera` angles.
+- **Not every joke is deadpan.** A calm line that undercuts chaos is one
+  option among many; slapstick, escalation, an action climax, a chase or an
+  epic reveal often land harder.
 - **Archetypes, not franchises.** A starship captain or a wizard is fine; a
   specific work's character, costume, insignia, ship or name is not, unless
   the user asked for it in `request`.

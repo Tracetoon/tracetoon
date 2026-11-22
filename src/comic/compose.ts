@@ -141,11 +141,34 @@ function bubble(
         ? `<circle cx="${tipX}" cy="${by + 22}" r="12" fill="#FFF" stroke="${INK}" stroke-width="4"/><circle cx="${tipX + (tailTo - bx) * 0.2}" cy="${by + 50}" r="7" fill="#FFF" stroke="${INK}" stroke-width="4"/>`
         : `<path d="M${bx - 26},${by - 4} L${tipX},${tipY} L${bx + 26},${by - 4}" fill="#FFF" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/><path d="M${bx - 22},${by - 6} L${bx + 22},${by - 6}" stroke="#FFF" stroke-width="8"/>`;
   }
-  const rx = kind === 'thought' ? box.h / 2 : 28;
+  const balloon = kind === 'thought' ? 'thought' : (d.balloon ?? 'speech');
+  const rx = balloon === 'thought' ? box.h / 2 : 28;
   const dash =
-    kind === 'thought' ? ' stroke-dasharray="2 10" stroke-linecap="round"' : '';
-  const shape = `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${rx}" fill="#FFF" stroke="${INK}" stroke-width="${kind === 'thought' ? 6 : 4}"${dash}/>`;
+    balloon === 'thought'
+      ? ' stroke-dasharray="2 10" stroke-linecap="round"'
+      : balloon === 'whisper'
+        ? ' stroke-dasharray="14 10"'
+        : '';
+  const shape =
+    balloon === 'shout' || balloon === 'burst' || balloon === 'radio'
+      ? `<polygon points="${spikes(box, balloon === 'burst' ? 26 : balloon === 'radio' ? 10 : 18, balloon === 'radio' ? 28 : 18)}" fill="#FFF" stroke="${INK}" stroke-width="4" stroke-linejoin="${balloon === 'radio' ? 'miter' : 'round'}"/>`
+      : `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${rx}" fill="#FFF" stroke="${INK}" stroke-width="${balloon === 'thought' ? 6 : 4}"${dash}/>`;
   return kind === 'thought' ? `${shape}${tail}${text}` : `${tail}${shape}${text}`;
+}
+
+/** A spiky outline around a box: shout, burst and radio balloons. */
+function spikes(box: Box, depth: number, count: number): string {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const rx = box.w / 2 + depth * 0.6;
+  const ry = box.h / 2 + depth * 0.6;
+  const pts: string[] = [];
+  for (let i = 0; i < count * 2; i++) {
+    const a = (Math.PI * i) / count;
+    const out = i % 2 === 0 ? 1 : 0;
+    pts.push(`${(cx + Math.cos(a) * (rx + out * depth)).toFixed(1)},${(cy + Math.sin(a) * (ry + out * depth)).toFixed(1)}`);
+  }
+  return pts.join(' ');
 }
 
 function sfx(
@@ -158,9 +181,10 @@ function sfx(
 ): string {
   const x = width * (i % 2 ? 0.65 : 0.35),
     y = height * 0.45;
+  const base = d.size === 'small' ? 60 : d.size === 'huge' ? 124 : 84;
   const size = fit
-    ? Math.min(84, height * 0.4, (width * 0.6) / Math.max(d.text.length * 0.65, 1))
-    : 84;
+    ? Math.min(base, height * 0.4, (width * 0.6) / Math.max(d.text.length * 0.65, 1))
+    : base;
   return `<text x="${x}" y="${y}" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="${size}" fill="${color}" stroke="#FFFFFF" stroke-width="10" paint-order="stroke" transform="rotate(-9 ${x} ${y})">${esc(d.text)}</text>`;
 }
 
@@ -321,9 +345,7 @@ ${footerBar(h, PAGE_W)}
 
 /**
  * Columns for a page of n square panels (legacy scripts without a
- * composition). At most two: three across left bubble text about 4 px tall
- * on a 360 px phone. Pages that must read on a phone get a composition
- * (phoneLayout), whose designed bubbles stay about 12 px.
+ * composition). At most two, so overlay bubbles stay large at PR width.
  */
 function columns(n: number): number {
   return n === 1 ? 1 : 2;

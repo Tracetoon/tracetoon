@@ -263,7 +263,7 @@ function loadRun(cwd: string, runId?: string): { run: Run; truth: PrTruth } {
 /** The comic as it appears in the body: image, then a collapsed transcript. */
 function comicBlock(script: ComicScript): string {
   const alt = script.altText.replace(/[\[\]\n]/g, ' ').trim();
-  return `<p align="center"><img src="${COMIC_SRC}" alt="${alt.replace(/"/g, "'")}" width="760"></p>
+  return `<p align="center"><img src="${COMIC_SRC}" alt="${alt.replace(/"/g, "'")}"></p>
 
 <details>
 <summary>Comic transcript</summary>

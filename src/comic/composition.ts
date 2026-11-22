@@ -117,6 +117,63 @@ export function resolveComposition(
         },
       ];
       break;
+    case 'slanted': {
+      // Rows of two split by a diagonal gutter that leans the other way on
+      // each row, like an action page; an odd count opens with a wide panel.
+      const rowsOf: number[] = n % 2 ? [1, ...Array((n - 1) / 2).fill(2)] : Array(n / 2).fill(2);
+      const rh = (1 - gap * (rowsOf.length - 1)) / rowsOf.length;
+      frames = [];
+      rowsOf.forEach((count, r) => {
+        const y = r * (rh + gap);
+        if (count === 1) {
+          frames.push({ ...frame(0.025, y, 0.95, rh), textBox: { x: 0.03, y: 0.05, w: 0.94, h: 0.3 } });
+          return;
+        }
+        const lean = r % 2 === 0;
+        const t = lean ? 0.62 : 0.4;
+        const b = lean ? 0.4 : 0.62;
+        const g = 0.03;
+        frames.push({
+          ...frame(0.025, y, 0.95, rh),
+          clip: [[0, 0], [t, 0], [b, 1], [0, 1]],
+          textBox: { x: 0.03, y: 0.05, w: Math.min(t, b) - 0.06, h: 0.34 },
+        });
+        frames.push({
+          ...frame(0.025, y, 0.95, rh),
+          clip: [[t + g, 0], [1, 0], [1, 1], [b + g, 1]],
+          textBox: { x: Math.max(t, b) + g + 0.03, y: 0.05, w: 1 - (Math.max(t, b) + g) - 0.06, h: 0.34 },
+        });
+      });
+      break;
+    }
+    case 'splash': {
+      // One full-page scene with small inset panels overlapping its lower edge.
+      const insets = n - 1;
+      const w = 0.27;
+      frames = [{ ...frame(0.025, 0, 0.95, 1), textBox: { x: 0.03, y: 0.03, w: 0.6, h: 0.3 } }];
+      for (let i = 0; i < insets; i++)
+        frames.push({ ...frame(0.975 - 0.02 - (i + 1) * w - i * 0.02, 0.68, w, 0.28), inset: true });
+      break;
+    }
+    case 'staggered': {
+      // A broken grid: rows of two with uneven widths that swap sides.
+      const rowsOf: number[] = n % 2 ? [...Array((n - 1) / 2).fill(2), 1] : Array(n / 2).fill(2);
+      const rh = (1 - gap * (rowsOf.length - 1)) / rowsOf.length;
+      frames = [];
+      rowsOf.forEach((count, r) => {
+        const y = r * (rh + gap);
+        if (count === 1) {
+          frames.push(frame(0.025, y, 0.95, rh));
+          return;
+        }
+        const wide = 0.95 * 0.62 - gap / 2;
+        const narrow = 0.95 - wide - gap;
+        const [w1, w2] = r % 2 === 0 ? [wide, narrow] : [narrow, wide];
+        frames.push(frame(0.025, y, w1, rh));
+        frames.push(frame(0.025 + w1 + gap, y, w2, rh));
+      });
+      break;
+    }
     default:
       frames = [];
   }
@@ -147,14 +204,31 @@ export function frameAspect(script: ComicScript, index: number): Aspect {
 }
 
 const percent = (n: number) => `${Math.round(n * 1000) / 10}%`;
+/** What each family looks like on the page, in words an image model follows. */
+const FAMILY_LOOK: Partial<Record<Composition['family'], string>> = {
+  slanted: 'panels split by slanted diagonal gutters that lean the other way on each row, like a dynamic action page',
+  splash: 'one dramatic full-page splash scene with small inset panels overlapping its lower edge',
+  staggered: 'a broken grid of rows with uneven panel widths that swap sides from row to row',
+  diagonal: 'two triangular panels split by one diagonal gutter',
+  'hero-inset': 'a full-page hero scene with small inset panels down one side',
+  asymmetric: 'small setup panels above one wide, dominant payoff panel',
+  tiered: 'a wide establishing panel above a row of smaller beats',
+};
+/** A clipped frame's corners in page percentages, e.g. "(2.5%, 14%)". */
+function corners(f: PanelFrame): string {
+  return (f.clip ?? [])
+    .map(([x, y]) => `(${percent(f.x + x * f.w)}, ${percent(f.y + y * f.h)})`)
+    .join(', ');
+}
 export function compositionPrompt(script: ComicScript): string {
   const c = resolveComposition(script);
   if (!c) return '';
+  const look = FAMILY_LOOK[c.family];
   return [
-    `Composition: ${c.family}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Preserve the specified hierarchy, unequal sizes and negative space.`,
+    `Composition: ${c.family}${look ? ` (${look})` : ''}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Keep each panel's size, shape and position as specified.`,
     ...c.frames.map(
       (f, i) =>
-        `Frame ${i + 1}: left ${percent(f.x)}, top ${percent(f.y)}, width ${percent(f.w)}, height ${percent(f.h)}; ${f.clip ? `polygon clipping points ${JSON.stringify(f.clip)}` : 'rectangular'}; ${f.border === 'none' ? 'borderless' : 'visible frame border'}.`,
+        `Frame ${i + 1}: left ${percent(f.x)}, top ${percent(f.y)}, width ${percent(f.w)}, height ${percent(f.h)}; ${f.clip ? `a slanted, non-rectangular panel with corners at ${corners(f)} on the page` : 'rectangular'}${f.inset ? ', drawn as an inset panel on top of the larger scene' : ''}; ${f.border === 'none' ? 'borderless, bleeding into its neighbours' : 'visible frame border'}${f.breakout ? '; the main figure or effect bursts out over this panel\'s border' : ''}.`,
     ),
     c.title.mode === 'none'
       ? 'No visible title or headline. Start with the art; do not reserve a title banner.'
@@ -323,6 +397,9 @@ export function compositionProblems(
     'hero-inset': [2, 6],
     diagonal: [2, 2],
     tiered: [3, 5],
+    slanted: [3, 7],
+    splash: [2, 4],
+    staggered: [3, 6],
   };
   const range = limits[c.family];
   if (range && (script.panels.length < range[0] || script.panels.length > range[1]))
@@ -349,6 +426,8 @@ export function compositionProblems(
       bad(`${at}.border`, 'must be line or none');
     if (f.inset !== undefined && typeof f.inset !== 'boolean')
       bad(`${at}.inset`, 'must be boolean');
+    if (f.breakout !== undefined && typeof f.breakout !== 'boolean')
+      bad(`${at}.breakout`, 'must be boolean');
     if (f.textBox !== undefined && !validBounds(f.textBox))
       bad(`${at}.textBox`, 'must be positive bounds within the 0–1 frame');
     if (f.clip !== undefined) {
@@ -401,7 +480,8 @@ export function compositionProblems(
       const before = points(resolved.frames[j]!);
       if (!overlaps(poly, before)) continue;
       const inset =
-        (c.family === 'hero-inset' || f.inset) && poly.every((p) => inPolygon(p, before));
+        (c.family === 'hero-inset' || c.family === 'splash' || f.inset) &&
+        poly.every((p) => inPolygon(p, before));
       if (!inset)
         bad(
           `frames[${i}]`,
@@ -412,88 +492,3 @@ export function compositionProblems(
   return out;
 }
 
-// ------------------------------------------------------ phone-width fit
-
-/** The narrowest display the comic must read on: a phone, 360 CSS px wide. */
-export const PHONE_WIDTH = 360;
-
-/**
- * The frames a page will have: its composition, or for a model-lettered
- * format page without one, the layout its format describes.
- */
-function plannedFrames(script: ComicScript): PanelFrame[] | undefined {
-  const resolved = resolveComposition(script);
-  if (resolved) return resolved.frames;
-  const implied =
-    script.format === 'strip' || script.format === 'before-after'
-      ? 'sequence'
-      : undefined;
-  if (!implied) return undefined;
-  return resolveComposition({
-    ...script,
-    composition: { family: implied, title: { mode: 'heading' } },
-  })?.frames;
-}
-
-/**
- * Estimate whether each panel's lettering fits its frame at phone width
- * without shrinking below a readable size (about 11 CSS px letters, ~6 px a
- * character, ~15 px a line, half the frame for balloons; signs count 1.5x;
- * no text in frames under 120 px). An estimate for
- * planning; the rendered image is checked by the phone reader.
- */
-export function phoneFit(script: ComicScript) {
-  const frames = plannedFrames(script);
-  if (!frames) return [];
-  const pageH = PHONE_WIDTH / aspectRatio(pageAspect(script));
-  return frames.map((f, i) => {
-    const widthPx = Math.round(f.w * PHONE_WIDTH);
-    const heightPx = f.h * pageH;
-    const perLine = Math.max(1, Math.floor((widthPx * 0.85) / 6.2));
-    const lines = Math.max(1, Math.floor((heightPx * 0.5) / 15));
-    // Signs and labels are drawn into the art, usually smaller than balloons.
-    const chars = Math.round(
-      (script.panels[i]?.dialogue ?? []).reduce(
-        (n, d) => n + d.text.length * (d.kind === 'sign' || d.kind === 'label' ? 1.5 : 1),
-        0,
-      ),
-    );
-    const capacity = perLine * lines;
-    // A frame under ~120 px can't carry readable text on a phone at all.
-    const fits = chars <= capacity && !(widthPx < 120 && chars > 0);
-    return { panel: i + 1, widthPx, chars, capacity, fits };
-  });
-}
-
-/**
- * Reflow instead of shrinking: when a panel's text can't fit at phone width,
- * the same script with a layout whose frames are wide enough. Only geometry
- * changes (composition, aspect); wording, cast and style stay. Undefined when
- * the current layout already fits (or can't be estimated).
- */
-export function phoneLayout(script: ComicScript): ComicScript | undefined {
-  const fit = phoneFit(script);
-  if (!fit.length || fit.every((f) => f.fits)) return undefined;
-  const n = script.panels.length;
-  // Wide-panel shapes before vertical, so a phone fix doesn't collapse every
-  // comic into one stacked column; vertical stays the last resort.
-  const order: Composition['family'][] =
-    n === 1 ? ['single'] : n === 2 ? ['vertical'] : ['tiered', 'asymmetric', 'vertical'];
-  let fallback: ComicScript | undefined;
-  for (const family of order) {
-    if (family === script.composition?.family) continue;
-    const next: ComicScript = {
-      ...script,
-      composition: {
-        family,
-        title: { mode: script.composition?.title.mode ?? 'heading' },
-      },
-      aspect: family === 'vertical' ? '3:4' : '4:3',
-    };
-    delete next.layout;
-    if (compositionProblems(next).length) continue;
-    fallback ??= next;
-    if (phoneFit(next).every((f) => f.fits)) return next;
-  }
-  return fallback;
-}

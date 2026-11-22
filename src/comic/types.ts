@@ -81,6 +81,9 @@ export const LAYOUT_FAMILIES = [
   'hero-inset',
   'diagonal',
   'tiered',
+  'slanted',
+  'splash',
+  'staggered',
   'custom',
 ] as const;
 export type LayoutFamily = (typeof LAYOUT_FAMILIES)[number];
@@ -100,6 +103,8 @@ export interface PanelFrame extends FrameBounds {
   textBox?: FrameBounds;
   /** This later frame deliberately sits inside an earlier frame. */
   inset?: boolean;
+  /** A figure or effect in this panel bursts over the panel border. */
+  breakout?: boolean;
 }
 export interface Composition {
   family: LayoutFamily;
@@ -141,6 +146,40 @@ export const DIALOGUE_KINDS = [
 ] as const;
 export type DialogueKind = (typeof DIALOGUE_KINDS)[number];
 
+/**
+ * The balloon's shape, which carries how a line is said: `shout` and `burst`
+ * spiky, `whisper` dashed, `thought` a cloud, `radio` jagged for screens,
+ * comms and machines. Plain `speech` when omitted.
+ */
+export const BALLOONS = ['speech', 'shout', 'burst', 'whisper', 'thought', 'radio'] as const;
+export type Balloon = (typeof BALLOONS)[number];
+/** How big a sound effect is drawn. */
+export const SFX_SIZES = ['small', 'big', 'huge'] as const;
+export type SfxSize = (typeof SFX_SIZES)[number];
+/** Drawn effects that show motion, force and feeling. */
+export const PANEL_EFFECTS = [
+  'speed-lines',
+  'impact-burst',
+  'focus-lines',
+  'motion-blur',
+  'emanata',
+  'shake',
+] as const;
+export type PanelEffect = (typeof PANEL_EFFECTS)[number];
+export const CAMERAS = [
+  'wide',
+  'medium',
+  'close',
+  'extreme-close',
+  'low-angle',
+  'high-angle',
+  'overhead',
+  'dutch',
+  'over-shoulder',
+  'silhouette',
+] as const;
+export type Camera = (typeof CAMERAS)[number];
+
 export interface Dialogue {
   /** A character's name, or "caption" for narration (also used for signs, screens and labels). */
   speaker: string;
@@ -154,6 +193,12 @@ export interface Dialogue {
   kind?: DialogueKind;
   /** For a `sign`: the surface the words are written on (legacy `label`: the element). */
   points?: string;
+  /** Balloon shape for spoken lines; omitted means a plain speech balloon. */
+  balloon?: Balloon;
+  /** Words from `text` to letter bold or larger. */
+  emphasis?: string[];
+  /** For `sfx`: how big it is drawn. */
+  size?: SfxSize;
 }
 
 /** One drawn element and the real thing in the PR it stands for. */
@@ -180,7 +225,9 @@ export interface Panel {
   beat?: Beat;
   /** What the panel shows, in a sentence. */
   scene: string;
-  camera?: 'wide' | 'medium' | 'close';
+  camera?: Camera;
+  /** Drawn effects: speed lines, an impact burst, sweat drops, a shaking frame. */
+  effects?: PanelEffect[];
   characters: PanelCharacter[];
   dialogue: Dialogue[];
   /** Optional extra direction for image models. */

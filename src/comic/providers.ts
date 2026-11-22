@@ -96,7 +96,7 @@ export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
 /** Keeps the page a drawn comic rather than an illustration or render. */
 export const COMIC_MEDIUM =
-  "It must look like a drawn comic: inked line art with flat or cel coloring, real panel borders and gutters, lettering in balloons and caption boxes. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
+  "It must look like a drawn comic: inked line art with cel or painted coloring, dynamic staging and acting, real panel borders and gutters, lettering in balloons and caption boxes, and comic effects such as speed lines, impact bursts and sound effects where the scene calls for them. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
 
 /** The avoid-list for this script. */
 export function negativeFor(script: ComicScript): string {
@@ -160,7 +160,8 @@ export function artPrompt(
       : `Panel ${index + 1} of ${count} of a comic.`,
     `Scene: ${panel.scene}.`,
     people ? `Characters: ${people}.` : '',
-    panel.camera ? `Camera: ${panel.camera} shot.` : '',
+    panel.camera ? `Camera: ${CAMERA_LOOK[panel.camera] ?? `${panel.camera} shot`}.` : '',
+    panel.effects?.length ? `Effects: ${panel.effects.map((e) => EFFECT_LOOK[e]).join('; ')}.` : '',
     panel.artPrompt ? `${panel.artPrompt}.` : '',
     script.composition
       ? `A ${SHAPE[frameAspect(script, index)]} panel image. Keep this normalized area plain for later lettering: ${JSON.stringify(frame?.textBox ?? { x: 0, y: 0, w: 1, h: 0.4 })}. Compose the subject outside it. No text, no letters.`
@@ -180,15 +181,49 @@ const SHAPE: Record<Aspect, string> = {
   '3:4': 'portrait 3:4',
 };
 
+const BALLOON_LOOK: Record<string, string> = {
+  shout: 'a spiky shout balloon, lettered bold',
+  burst: 'a jagged explosive burst balloon, lettered huge and bold',
+  whisper: 'a dashed-outline whisper balloon, small lettering',
+  thought: 'a cloud-shaped thought balloon with bubble trail',
+  radio: 'a jagged electric radio balloon (comms or machine voice)',
+};
+const SFX_LOOK: Record<string, string> = {
+  small: 'small hand-drawn sound-effect lettering',
+  big: 'big bold sound-effect lettering integrated into the action',
+  huge: 'huge explosive sound-effect lettering bursting across the panel',
+};
+export const EFFECT_LOOK: Record<string, string> = {
+  'speed-lines': 'speed lines streaking behind the moving subject',
+  'impact-burst': 'a spiky impact burst where something hits',
+  'focus-lines': 'radiating focus lines converging on the subject',
+  'motion-blur': 'motion streaks and smear frames showing fast movement',
+  emanata: 'cartoon emanata: sweat drops, stress marks, little stars or shock lines',
+  shake: 'a shaking frame with wobble lines around the shaken object',
+};
+const CAMERA_LOOK: Record<string, string> = {
+  'extreme-close': 'extreme close-up',
+  'low-angle': 'low-angle shot looking up',
+  'high-angle': 'high-angle shot looking down',
+  overhead: "overhead bird's-eye shot",
+  dutch: 'tilted dutch-angle shot',
+  'over-shoulder': 'over-the-shoulder shot',
+  silhouette: 'dramatic silhouette shot',
+};
+const emphasisNote = (d: Dialogue) =>
+  d.emphasis?.length ? ` (letter ${d.emphasis.map((e) => `"${e}"`).join(', ')} bold and larger)` : '';
+
 function textLine(d: Dialogue): string {
-  const q = `"${d.text}"`;
+  const q = `"${d.text}"${emphasisNote(d)}`;
+  if ((!d.kind || d.kind === 'speech') && d.speaker !== 'caption' && d.balloon && d.balloon !== 'speech')
+    return `${d.speaker} ${d.balloon === 'whisper' ? 'whispers' : d.balloon === 'thought' ? 'thinks' : d.balloon === 'radio' ? 'says over the comms' : 'yells'} (${BALLOON_LOOK[d.balloon]}): ${q}`;
   switch (d.kind) {
     case 'thought':
-      return `${d.speaker} thinks (thought bubble): ${q}`;
+      return `${d.speaker} thinks (${BALLOON_LOOK.thought}): ${q}`;
     case 'caption':
       return `caption box: ${q}`;
     case 'sfx':
-      return `big sound-effect lettering: ${q}`;
+      return `${SFX_LOOK[d.size ?? 'big']}: ${q}`;
     case 'sign':
     case 'label':
       // Words belong to the world: painted, printed or shown on something, never a pointer tag.
@@ -218,7 +253,8 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
     return [
       `Panel ${i + 1}: ${p.scene}.`,
       people.length ? `Characters: ${people.join('; ')}.` : '',
-      p.camera ? `${p.camera} shot.` : '',
+      p.camera ? `${CAMERA_LOOK[p.camera] ?? `${p.camera} shot`}.` : '',
+      p.effects?.length ? `Draw: ${p.effects.map((e) => EFFECT_LOOK[e]).join('; ')}.` : '',
       p.artPrompt ? `${p.artPrompt}.` : '',
       text.length ? `Text: ${text.join('; ')}.` : 'No text in this panel.',
     ]
@@ -251,7 +287,7 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
             .filter((part) => !/headline|title/i.test(part))
             .join(',') || 'clear comic lettering suited to this art'
         : styleLettering(script.style)
-    }. Letter every quoted text exactly as written, spelled correctly. It must stay readable when the whole page is shown only 360 pixels wide on a phone: balloon and caption letters at least 1/30 of the page width tall, signs and labels in the scene just as large (draw the object bigger rather than the words smaller), short lines, no tiny print anywhere. Words on screens, signs and objects are part of the drawing, never floating tags or arrows. No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
+    }. Letter every quoted text exactly as written, spelled correctly. The page is read at the full width of a pull request on a desktop screen (about 900 pixels): balloon and caption letters at least 1/45 of the page width tall, signs and labels in the scene just as large (draw the object bigger rather than the words smaller), no tiny print anywhere. Words on screens, signs and objects are part of the drawing, never floating tags or arrows. Draw each balloon in the shape named for it, sound effects at the size named, and the named effects (speed lines, impact bursts, focus lines) as part of the art. No words other than the quoted text above: no invented labels, no signatures, no watermarks, no made-up text.`,
     `Strictly: ${negativeFor(script)}.`,
   ]
     .filter(Boolean)
