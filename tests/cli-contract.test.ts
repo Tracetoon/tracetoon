@@ -40,6 +40,9 @@ beforeEach(() => {
     // A compiled binary can't run the fake gh script itself.
     TRACETOON_TEST_RUNNER: process.execPath,
     FAKE_GH_LOG: ghLog,
+    // The skill under test ships beside this runtime; an outer Tracetoon (a
+    // `tracetoon check` running the suite) must not point setup at its own copy.
+    TRACETOON_SKILL_DIR: '',
   };
 });
 
