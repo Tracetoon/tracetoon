@@ -143,7 +143,6 @@ describe('agent surfaces', () => {
       'plugin/.claude-plugin/plugin.json',
       '.claude-plugin/marketplace.json',
       'plugin/plugin.json',
-      'plugin/.cursor-plugin/plugin.json',
       'gemini-extension.json',
     ])
       expect(read(file)).not.toMatch(directive);
@@ -186,10 +185,11 @@ describe('agent surfaces', () => {
     expect(existsSync(join(root, 'plugin/skills/tracetoon/bin/tracetoon'))).toBe(true);
   });
 
-  test('the Cursor plugin and Gemini extension start the MCP server from the npm package', () => {
+  test('the Gemini extension starts the MCP server from the npm package', () => {
     const entry = { command: 'npx', args: ['-y', `tracetoon@${pkg.version}`, 'mcp'] };
-    for (const path of ['plugin/.cursor-plugin/plugin.json', 'gemini-extension.json'])
-      expect(JSON.parse(read(path)).mcpServers).toEqual({ tracetoon: entry });
+    expect(JSON.parse(read('gemini-extension.json')).mcpServers).toEqual({
+      tracetoon: entry,
+    });
     const server = JSON.parse(read('server.json'));
     expect(server.packages[0].identifier).toBe('tracetoon');
     expect(server.packages[0].runtimeHint).toBe(entry.command);
@@ -201,7 +201,6 @@ describe('vendor catalog manifests', () => {
   const MANIFESTS = [
     'plugin/plugin.json',
     'plugin/.codex-plugin/plugin.json',
-    'plugin/.cursor-plugin/plugin.json',
     '.agents/plugins/marketplace.json',
     '.cursor-plugin/marketplace.json',
     'gemini-extension.json',
@@ -214,7 +213,6 @@ describe('vendor catalog manifests', () => {
     for (const path of [
       'plugin/plugin.json',
       'plugin/.codex-plugin/plugin.json',
-      'plugin/.cursor-plugin/plugin.json',
       'plugin/.claude-plugin/plugin.json',
       'gemini-extension.json',
     ]) {
@@ -297,10 +295,11 @@ describe('vendor catalog manifests', () => {
     expect(entry.category.length).toBeGreaterThan(0);
   });
 
-  test('the Cursor plugin and marketplace match cursor/plugin-template', () => {
-    const p = json('plugin/.cursor-plugin/plugin.json');
+  test('the Cursor marketplace matches cursor/plugin-template and names plugins/cursor', () => {
+    const p = json('plugins/cursor/.cursor-plugin/plugin.json');
     expect(p.name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-    expect(existsSync(plugin(p.logo))).toBe(true);
+    expect(existsSync(join(root, 'plugins/cursor', p.logo))).toBe(true);
+    expect(existsSync(join(root, 'plugin/.cursor-plugin'))).toBe(false);
     const market = json('.cursor-plugin/marketplace.json');
     expect(market.owner.name.length).toBeGreaterThan(0);
     const [entry] = market.plugins;

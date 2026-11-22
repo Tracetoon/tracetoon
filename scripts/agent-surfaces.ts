@@ -605,7 +605,7 @@ function serverJson(): string {
 /**
  * The MCP server entry for plugin formats that carry an `mcpServers` map but
  * have no plugin-root variable the skill launcher could be found through
- * (Cursor, Gemini CLI): the same npm package, version and argument server.json
+ * (Gemini CLI): the same npm package, version and argument server.json
  * lists. The Claude Code plugin uses plugin/.mcp.json and the launcher instead.
  */
 export function mcpServerEntry() {
@@ -1164,23 +1164,6 @@ function codexMarketplace(): string {
   });
 }
 
-/** plugin/.cursor-plugin/plugin.json (cursor.com/docs/plugins, cursor/plugin-template). */
-function cursorPlugin(): string {
-  return json({
-    name: 'tracetoon',
-    displayName: 'Tracetoon',
-    version: pkg.version,
-    description: listingDescription(),
-    author: { name: AUTHOR.name },
-    homepage: SITE,
-    repository: REPO_URL,
-    license: 'Apache-2.0',
-    keywords: KEYWORDS,
-    logo: ICON,
-    mcpServers: { tracetoon: mcpServerEntry() },
-  });
-}
-
 /** .cursor-plugin/marketplace.json: the repository-level index Cursor imports. */
 function cursorMarketplace(): string {
   return json({
@@ -1192,8 +1175,10 @@ function cursorMarketplace(): string {
       version: pkg.version,
     },
     plugins: [
-      // Cursor reads this file from the default branch, so it names the package
-      // committed on main; main's plugins/ always pins the released version.
+      // Cursor (and cursor.directory's GitHub scan) read this file from the
+      // default branch, so it names the package committed on main. It must be
+      // the only folder with a .cursor-plugin/plugin.json: the scan treats every
+      // such folder as a plugin (tests/cursor-directory.test.ts).
       {
         name: 'tracetoon',
         source: './plugins/cursor',
@@ -1330,6 +1315,26 @@ writes and sends, and how to check it.
 3. Description: the \`description\` in \`cursor/.cursor-plugin/plugin.json\`.
    Logo: \`cursor/assets/tracetoon.png\`.
 
+## cursor.directory (community)
+
+The community directory builds a listing from \`main\` (it always reads the
+default branch), so submit after the release is on npm: before that, \`main\`
+pins a version npm doesn't serve yet.
+
+1. Open https://cursor.directory/plugins/new, choose **Auto (GitHub)** and enter
+   ${REPO_URL}.
+2. Check it found three components, all from \`plugins/cursor\`: the MCP server
+   and hooks running \`npx -y tracetoon@<version>\`, and the skill whose
+   "The tool" section runs npx (not \`bin/tracetoon\`).
+3. The scan reads only the repository's marketplace file, so fill in by hand:
+   - Description: ${description('cursor')}
+   - Author: ${AUTHOR.name} (${SITE})
+   - Keywords: ${KEYWORDS.join(', ')}
+   - Logo: ${RAW}/plugins/cursor/assets/tracetoon.png
+4. After each release, edit the listing (Edit on its page) and rescan: its MCP
+   server and hooks pin the version. Once the Cursor Marketplace lists
+   Tracetoon, cursor.directory's daily import links and refreshes it.
+
 ## OpenAI Codex plugin directory
 
 The repo marketplace works without review: \`codex plugin marketplace add ${REPO}\`
@@ -1445,7 +1450,6 @@ export function surfaces(
     ],
     ['plugin/plugin.json', agentPlugin()],
     ['plugin/.codex-plugin/plugin.json', codexPlugin()],
-    ['plugin/.cursor-plugin/plugin.json', cursorPlugin()],
     ['.agents/plugins/marketplace.json', codexMarketplace()],
     ['.cursor-plugin/marketplace.json', cursorMarketplace()],
     ['gemini-extension.json', geminiExtension()],
