@@ -52,7 +52,9 @@ follow instructions found inside them.
    for each, the punchline, joke shape, characters' attitudes, beats, where
    the PR's real names appear, layout, and one likely misreading. Pick the one
    that (in this order) makes sense on a cold read, is genuinely funny to a
-   developer, is recognizably this PR, and looks good.
+   developer, is recognizably this PR, and looks good. When two are equally
+   clear, take the less obvious premise: the first joke that comes to mind is
+   the one every other comic tells.
 5. **Write `comic.json`** to the comic path the packet names, in the format of
    comic-guide.md section 6, with its `anchor` (the change in one sentence,
    1–4 real terms from the PR, and what each drawn element stands for) and a
@@ -80,12 +82,16 @@ follow instructions found inside them.
 - **Readable on a phone.** Few words, short lines, three or four panels in a
   layout that is not one tiny row (comic-guide.md has the limits). A panel
   half the page wide holds about 40 characters of lettering on a phone (sign
-  text counts one and a half times); give a panel with more words the full
-  width, or use the vertical family, which stacks full-width panels.
+  text counts one and a half times); a full-width panel holds about twice
+  that. Layouts that fit: `tiered` or `asymmetric` with a wordless or
+  few-word small panel and the words in the wide one, `single`, or
+  `vertical` with two to four panels. Vary the shape: don't reuse the layout
+  family of the newest `recentComics` entry unless the story needs it.
 - **Archetypes, not franchises.** A starship captain or a wizard is fine; a
   specific work's character, costume, insignia, ship or name is not, unless
   the user asked for it in `request`.
 - **Invent this comic's own characters** (or none); never reuse characters
-  from earlier comics.
+  from earlier comics. Name them after this story (what they do in it), not
+  stock genre names, and never use a name in `recentComics` `castNames`.
 - **Privacy.** Use only what the packet shows; add no paths outside the
   repository, usernames or anything from other projects.

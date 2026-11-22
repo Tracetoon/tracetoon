@@ -216,6 +216,16 @@ function presetFamily(style: string): StyleFamily | undefined {
     LEGACY_STYLE_GROUPS.find(([, ids]) => ids.includes(style))?.[0]
   );
 }
+/** Up to six distinct lowercased names, each at most 40 characters. */
+export function castNames(names: unknown[]): string[] {
+  return [
+    ...new Set(
+      names
+        .filter((n): n is string => typeof n === 'string' && !!n.trim())
+        .map((n) => n.trim().toLowerCase().slice(0, 40)),
+    ),
+  ].slice(0, 6);
+}
 export function comicSummary(script: ComicScript): ComicSummary {
   const knownCast =
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
@@ -236,6 +246,9 @@ export function comicSummary(script: ComicScript): ComicSummary {
     panelCount: script.panels.length,
     ...(knownCast
       ? { castKinds: [...new Set(script.characters.map((c) => c.kind!))].sort() }
+      : {}),
+    ...(Array.isArray(script.characters) && script.characters.length
+      ? { castNames: castNames(script.characters.map((c) => c.name)) }
       : {}),
   };
 }
@@ -462,8 +475,10 @@ export function phoneLayout(script: ComicScript): ComicScript | undefined {
   const fit = phoneFit(script);
   if (!fit.length || fit.every((f) => f.fits)) return undefined;
   const n = script.panels.length;
+  // Wide-panel shapes before vertical, so a phone fix doesn't collapse every
+  // comic into one stacked column; vertical stays the last resort.
   const order: Composition['family'][] =
-    n >= 4 ? ['asymmetric', 'vertical'] : ['vertical', 'asymmetric'];
+    n === 1 ? ['single'] : n === 2 ? ['vertical'] : ['tiered', 'asymmetric', 'vertical'];
   let fallback: ComicScript | undefined;
   for (const family of order) {
     if (family === script.composition?.family) continue;

@@ -118,6 +118,8 @@ export interface ComicSummary {
   titleTreatment?: TitleMode;
   /** Missing means unknown; [] means deliberately characterless. */
   castKinds?: CastKind[];
+  /** The comic's invented character names, lowercased: later comics pick new ones. */
+  castNames?: string[];
 }
 
 /** A character's place in one panel. */

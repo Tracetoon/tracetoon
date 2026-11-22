@@ -50,8 +50,10 @@ judgments, not a numeric humor score or a rotation quota.
 
 The candidates must differ in premise or storytelling, not just colors or a
 new animal species. Glance at the last few `recentComics`: if they were
-two-panel before/afters, tell this one as a story. Reusing a style is fine;
-reusing either of the last two genres is not, unless the user asked for it.
+two-panel before/afters, tell this one as a story; if they share a layout
+family, pick another that still fits a phone. Their `castNames` are taken:
+name this comic's characters afresh. Reusing a style is fine; reusing either
+of the last two genres is not, unless the user asked for it.
 
 ## Useful starting compositions
 
