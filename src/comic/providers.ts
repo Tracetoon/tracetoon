@@ -133,9 +133,13 @@ export function scriptStyle(script: ComicScript): string {
 export function genreLine(script: ComicScript): string {
   if (typeof script.genre !== 'string' || !script.genre.trim()) return '';
   const g = genreById(script.genre);
+  // A user request may name specific characters; then it alone decides who appears.
+  const cast = script.request?.trim()
+    ? ''
+    : "; draw genre archetypes, not any specific work's characters";
   return g
-    ? `Genre: ${g.name}, set in ${g.setting}; draw genre archetypes, not any specific work's characters.`
-    : `Genre: ${script.genre.trim()}; draw genre archetypes, not any specific work's characters.`;
+    ? `Genre: ${g.name}, set in ${g.setting}${cast}.`
+    : `Genre: ${script.genre.trim()}${cast}.`;
 }
 
 /** One text-free panel; Tracetoon adds the bubbles (overlay lettering). */

@@ -413,7 +413,7 @@ export function contextCmd(
           config.comic === 'off'
             ? ''
             : config.style && config.style !== 'auto'
-              ? `Comic style: pinned to ${config.style}`
+              ? `Comic style: pinned to ${config.style}; pick the genre first (${genreOptions.map((g) => g.id).join(', ')})`
               : `Comic: pick the genre first (${genreOptions.map((g) => g.id).join(', ')}), then the story, composition and cast; compare recent creative choices (${
                   recent
                     .map((c) => c.style)
