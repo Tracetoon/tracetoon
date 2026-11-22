@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tracetoon",
+  "version": "1.0.0-rc.46",
+  "description": "PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.",
+  "author": {
+    "name": "Cassandra Chin",
+    "url": "https://tracetoon.ai"
+  },
+  "homepage": "https://tracetoon.ai",
+  "repository": "https://github.com/Tracetoon/tracetoon",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pull request",
+    "pr description",
+    "pr summary",
+    "describe my changes",
+    "open a pr",
+    "create a pr",
+    "gh pr create",
+    "github",
+    "code review",
+    "session logs",
+    "tracetoon"
+  ],
+  "extensions": {}
+}
