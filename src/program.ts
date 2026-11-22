@@ -18,6 +18,7 @@ import {
 import { doctor } from './commands/doctor.ts';
 import { guidanceCheckCmd } from './commands/guidance.ts';
 import { imagesCmd } from './commands/images.ts';
+import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
 import {
   contextCmd,
   digestCmd,
@@ -524,6 +525,20 @@ export function buildProgram(cwd: string = process.cwd()): {
       'check everything and print what publishing would do (gh calls, target, title), without pushing or posting',
     )
     .action((o) => publishCmd(cwd, { ...g(), ...o, noReview: o.review === false }));
+
+  const genre = program
+    .command('genre')
+    .description('comic genres: the built-in ones plus your own genre files');
+  genre
+    .command('list')
+    .description(
+      'list the genres a comic can use here (built-in, user and repo genre files) and any genre file that was skipped',
+    )
+    .action(() => genreListCmd(cwd, g()));
+  genre
+    .command('check <file>')
+    .description('check a genre file before adding it (exit 1 when it has errors)')
+    .action((file: string) => genreCheckCmd(cwd, file, g()));
 
   const comic = program.command('comic').description("make this PR's comic");
   comic

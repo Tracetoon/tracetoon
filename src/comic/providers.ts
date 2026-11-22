@@ -19,7 +19,7 @@ import {
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { formatById } from './formats.ts';
-import { genreById } from './genres.ts';
+import { genreById, GENRES, type Genre } from './genres.ts';
 import {
   paletteText,
   styleById,
@@ -130,9 +130,9 @@ export function scriptStyle(script: ComicScript): string {
 }
 
 /** The world the comic is set in, for the prompt: a catalog genre's setting, or the phrase. */
-export function genreLine(script: ComicScript): string {
+export function genreLine(script: ComicScript, catalog: Genre[] = GENRES): string {
   if (typeof script.genre !== 'string' || !script.genre.trim()) return '';
-  const g = genreById(script.genre);
+  const g = genreById(script.genre, catalog);
   // A user request may name specific characters; then it alone decides who appears.
   const cast = script.request?.trim()
     ? ''
@@ -143,13 +143,18 @@ export function genreLine(script: ComicScript): string {
 }
 
 /** One text-free panel; Tracetoon adds the bubbles (overlay lettering). */
-export function artPrompt(panel: Panel, index: number, script: ComicScript): string {
+export function artPrompt(
+  panel: Panel,
+  index: number,
+  script: ComicScript,
+  catalog: Genre[] = GENRES,
+): string {
   const people = who(panel, script);
   const count = script.panels.length;
   const frame = resolveComposition(script)?.frames[index];
   return [
     `${scriptStyle(script)}.`,
-    genreLine(script),
+    genreLine(script, catalog),
     panel.beat
       ? `Panel ${index + 1} of ${count} (${BEAT_MEANING[panel.beat]}) of a comic.`
       : `Panel ${index + 1} of ${count} of a comic.`,
@@ -199,7 +204,7 @@ function textLine(d: Dialogue): string {
  * One finished page, lettering included: the image model draws the panels, the
  * headline and every line of text, so the words are part of the art.
  */
-export function pagePrompt(script: ComicScript): string {
+export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): string {
   const format = formatById(script.format);
   const aspect = pageAspect(script);
   const headline = visibleHeadline(script);
@@ -223,7 +228,7 @@ export function pagePrompt(script: ComicScript): string {
   return [
     `A finished comic page, ${SHAPE[aspect]} image.`,
     `Art style: ${scriptStyle(script)}.`,
-    genreLine(script),
+    genreLine(script, catalog),
     requestLine(script),
     wantsNonComicMedium(script.style, script.request) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'
