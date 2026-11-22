@@ -57,6 +57,10 @@ follow instructions found inside them.
    comic-guide.md section 6, with its `anchor` (the change in one sentence,
    1–4 real terms from the PR, and what each drawn element stands for) and a
    style that suits the genre ([references/styles.md](references/styles.md)).
+   Each `anchor.mapping` entry's `visual` must be something the reader can
+   read: use the same words as a sign's `points` (e.g. "the shop sign") whose
+   lettering names the PR's term, or a thing a character names in dialogue.
+   Drop a mapping you can't letter; the check warns about unlettered ones.
 6. **Run the check command the packet names** and fix every error it lists;
    repeat until it says the script looks good. Fix warnings when you can.
 7. **Reply** with the path of `comic.json`, the genre and one sentence on the
@@ -74,7 +78,10 @@ follow instructions found inside them.
   surfaces (a viewscreen, a quest scroll, a sign) or in dialogue, never as
   pointer tags or callout labels. Characters talk like people, never in code.
 - **Readable on a phone.** Few words, short lines, three or four panels in a
-  layout that is not one tiny row (comic-guide.md has the limits).
+  layout that is not one tiny row (comic-guide.md has the limits). A panel
+  half the page wide holds about 40 characters of lettering on a phone (sign
+  text counts one and a half times); give a panel with more words the full
+  width, or use the vertical family, which stacks full-width panels.
 - **Archetypes, not franchises.** A starship captain or a wizard is fine; a
   specific work's character, costume, insignia, ship or name is not, unless
   the user asked for it in `request`.
