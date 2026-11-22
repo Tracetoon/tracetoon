@@ -7,6 +7,7 @@ import { gh } from '../util/exec.ts';
 import { repoArgs } from './target.ts';
 import { decodeMeta } from './body.ts';
 import { genreKey, MAX_GENRE_CHARS } from '../comic/genres.ts';
+import { castNames } from '../comic/composition.ts';
 import {
   CAST_KINDS,
   LAYOUT_FAMILIES,
@@ -86,6 +87,11 @@ export function recentComics(
             raw.castKinds.every((kind) => CAST_KINDS.includes(kind))
           )
             summary.castKinds = [...new Set(raw.castKinds)];
+          if (
+            Array.isArray(raw.castNames) &&
+            raw.castNames.every((n: unknown) => typeof n === 'string' && n.length <= 40)
+          )
+            summary.castNames = castNames(raw.castNames);
         }
         return Object.keys(summary).length ? [summary] : [];
       })

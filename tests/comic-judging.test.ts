@@ -198,6 +198,20 @@ describe('phone layout', () => {
     expect(phoneFit(next).every((f) => f.fits)).toBe(true);
     expect(next.panels).toEqual(strip(16).panels);
   });
+  test('prefers a wide-panel layout to stacking everything vertically', () => {
+    // Words only in the last panel: tiered's full-width top panel can't take
+    // them, but asymmetric's wide payoff can, so vertical isn't needed.
+    const payoff = {
+      ...strip(0),
+      panels: strip(0).panels.map((p, i) =>
+        i === 3 ? { ...p, dialogue: [{ speaker: 'A', text: 'word '.repeat(14).trim() }] } : p,
+      ),
+    } as ComicScript;
+    expect(phoneFit(payoff).some((f) => !f.fits)).toBe(true);
+    const next = phoneLayout(payoff)!;
+    expect(['tiered', 'asymmetric']).toContain(next.composition!.family);
+    expect(phoneFit(next).every((f) => f.fits)).toBe(true);
+  });
   test('leaves a layout that fits alone', () => {
     const quiet = {
       ...strip(0),

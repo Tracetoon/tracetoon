@@ -260,6 +260,14 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
         'composition',
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
       );
+    const reused = (current.castNames ?? []).filter((n) =>
+      recent.some((r) => r.castNames?.includes(n)),
+    );
+    if (reused.length)
+      warn(
+        'characters',
+        `${reused.map((n) => `"${n}"`).join(', ')} already appeared in a recent comic. Invent this comic's own names, from what the characters do in this story.`,
+      );
     if (
       current.panelCount === 2 &&
       current.layoutFamily === 'comparison' &&
