@@ -121,8 +121,9 @@ describe('cursor.directory GitHub scan', () => {
   const found = scan(tree());
   const folder = (from: string) => posix.normalize(from).replace(/\/$/, '');
 
-  test('finds exactly the Cursor package: one skill, one MCP server, one hooks file', () => {
-    expect(found.map((c) => c.type).sort()).toEqual(['hook', 'mcp_server', 'skill']);
+  test('finds exactly the Cursor package: two skills, one MCP server, one hooks file', () => {
+    // The main skill and the instruction-only draw-cartoon skill beside it.
+    expect(found.map((c) => c.type).sort()).toEqual(['hook', 'mcp_server', 'skill', 'skill']);
     for (const c of found) expect(folder(c.from)).toBe('plugins/cursor');
   });
 

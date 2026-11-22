@@ -49,7 +49,8 @@ test('every packaged SKILL.md has frontmatter a strict YAML parser accepts', () 
   for (const path of skills) {
     const m = /^---\n([\s\S]*?)\n---\n/.exec(text(path));
     const meta = Bun.YAML.parse(m?.[1] ?? '') as Record<string, unknown>;
-    expect(meta.name).toBe('tracetoon');
+    // The name matches the folder (Agent Skills spec).
+    expect(meta.name).toBe(path.split('/').at(-2));
     expect(String(meta.description)).toContain('pull request');
   }
 });
@@ -298,9 +299,11 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
   });
   test('its skill names no environment variable, key or URL (the directory holds those)', () => {
     // MCP_FORWARDS_CREDENTIAL_ENV: an env reference or "key" beside a remote URL is held for review.
-    const skill = text(`${dir}/skills/tracetoon/SKILL.md`);
-    expect(skill).not.toMatch(/https?:\/\//);
-    expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
+    for (const name of ['tracetoon', 'tracetoon-draw-cartoon']) {
+      const skill = text(`${dir}/skills/${name}/SKILL.md`);
+      expect(skill).not.toMatch(/https?:\/\//);
+      expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
+    }
   });
   test('its listing names Claude Code alone, with the Claude Code result', () => {
     const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
@@ -407,8 +410,13 @@ describe('Agent Plugins 1.0.0 conformance', () => {
       );
     }
     // Skills: skills/<name>/SKILL.md, one level deep, nothing deeper named SKILL.md.
-    const skills = pkgFiles(dir).filter((p) => p.endsWith('/SKILL.md'));
-    expect(skills).toEqual([`${OUT}/${dir}/skills/tracetoon/SKILL.md`]);
+    const skills = pkgFiles(dir)
+      .filter((p) => p.endsWith('/SKILL.md'))
+      .sort();
+    expect(skills).toEqual([
+      `${OUT}/${dir}/skills/tracetoon-draw-cartoon/SKILL.md`,
+      `${OUT}/${dir}/skills/tracetoon/SKILL.md`,
+    ].sort());
     const mcpPath = `${OUT}/${dir}/mcp.json`;
     if (!files.has(mcpPath)) return;
     const mcp = parse(mcpPath);
@@ -476,5 +484,8 @@ describe('Agent Plugins (every package; Codex, Copilot CLI and Kiro read it)', (
   test('the skill folder name matches the skill name (Agent Skills spec)', () => {
     const skill = text(`${OUT}/agent/skills/tracetoon/SKILL.md`);
     expect(skill).toMatch(/^name: tracetoon$/m);
+    expect(text(`${OUT}/agent/skills/tracetoon-draw-cartoon/SKILL.md`)).toMatch(
+      /^name: tracetoon-draw-cartoon$/m,
+    );
   });
 });

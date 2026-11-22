@@ -72,6 +72,7 @@ describe('comic expectation', () => {
       askSetup: false,
     });
     expect(comicStep(e)).toContain('draw the comic (references/full-path.md step 5)');
+    expect(comicStep(e)).toContain('tracetoon comic packet --run <run>');
     expect(comicStep(e)).toContain('tracetoon comic skip');
   });
 

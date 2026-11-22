@@ -1475,8 +1475,9 @@ export function stale(): string[] {
 if (import.meta.main) {
   // The thin plugin packages are built from these surfaces (scripts/plugins.ts).
   const plugins = await import('./plugins.ts');
+  const drawCartoon = await import('./draw-cartoon-skill.ts');
   if (process.argv.includes('--check')) {
-    const bad = [...stale(), ...plugins.stalePlugins()];
+    const bad = [...stale(), ...drawCartoon.staleDrawCartoon(), ...plugins.stalePlugins()];
     if (bad.length) {
       console.error(
         `Out of date (run bun scripts/agent-surfaces.ts):\n  ${bad.join('\n  ')}`,
@@ -1490,6 +1491,7 @@ if (import.meta.main) {
       writeFileSync(join(root, path), content);
     }
     console.log('Wrote', [...surfaces().keys()].join(', '));
+    drawCartoon.writeDrawCartoon();
     console.log(`Wrote ${plugins.writePlugins()} files under ${plugins.OUT}/.`);
   }
 }

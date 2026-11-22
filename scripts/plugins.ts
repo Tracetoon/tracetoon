@@ -25,6 +25,7 @@ import {
 import { dirname, join, relative } from 'node:path';
 import pkg from '../package.json';
 import { PR_COMMAND_GLOBS } from '../src/hook/prCommands.ts';
+import { SIBLING_SKILLS } from '../src/skills.ts';
 import {
   ACTIVATION,
   AUTHOR,
@@ -41,6 +42,27 @@ import {
 
 export const OUT = 'plugins';
 export const SKILL_SOURCE = 'plugin/skills/tracetoon';
+
+/** Instruction-only sibling skills, shipped verbatim beside the main skill. */
+export function siblingSkills(): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const name of SIBLING_SKILLS) {
+    const src = join(root, 'plugin', 'skills', name);
+    const walk = (rel: string) => {
+      const entries = readdirSync(join(src, rel), { withFileTypes: true }).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      for (const e of entries) {
+        const path = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) walk(path);
+        else if (e.name.endsWith('.md'))
+          out.set(`${name}/${path}`, readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'));
+      }
+    };
+    walk('');
+  }
+  return out;
+}
 const ISSUES = `${REPO_URL}/issues`;
 /** The privacy policy (PRIVACY.md on main), linked from every package and manifest. */
 export const PRIVACY_URL = `${REPO_URL}/blob/main/PRIVACY.md`;
@@ -551,6 +573,7 @@ Tracetoon is Apache-2.0. The runtime includes Comic Neue (SIL OFL 1.1), resvg
 function common(files: Files, dir: string, host: Host) {
   for (const [path, text] of thinSkill(host.runs !== false))
     files.set(`${dir}/skills/tracetoon/${path}`, text);
+  for (const [path, text] of siblingSkills()) files.set(`${dir}/skills/${path}`, text);
   files.set(`${dir}/${ICON}`, readFileSync(join(root, ICON_SOURCE)));
   files.set(`${dir}/README.md`, readme(host));
   files.set(`${dir}/REVIEW.md`, review(host));

@@ -298,7 +298,9 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
 - **A panel's `characters` lists objects, not names:**
   `{ "name": "Ada", "position": "left", "expression": "worried", "pose": "..." }`.
   `position` is `left`, `center` or `right`; `expression` and `pose` are
-  optional.
+  optional. `expression` is one of `happy`, `excited`, `worried`,
+  `surprised`, `determined`, `thinking`, `sleepy`, `proud` or `angry`; put
+  any other mood (smug, sly, deflated) in `pose` or the scene.
 - **`speaker`** is a character's `name` or `"caption"`.
 - **`kind`** is one of:
   - `speech` (the default);

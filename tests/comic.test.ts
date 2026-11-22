@@ -139,6 +139,28 @@ describe('comic end to end', () => {
     return { repo, remote, runDir };
   }
 
+  test('comic packet writes the author packet: brief, description, genres and the spawn line', () => {
+    const { repo, runDir } = prepared();
+    const r = cli(repo.root, 'comic', 'packet');
+    expect(r.code).toBe(0);
+    const dir = join(runDir, 'comic-packet');
+    expect(r.json.packet).toBe(join(dir, 'instructions.md'));
+    expect(r.json.spawn).toContain('Start ONE fresh subagent');
+    expect(r.json.spawn).toContain('tracetoon comic art --run');
+    expect(r.json.skillFiles.length).toBeGreaterThan(0);
+    const instructions = readFileSync(join(dir, 'instructions.md'), 'utf8');
+    for (const f of r.json.skillFiles) expect(instructions).toContain(f);
+    expect(instructions).toContain(join(runDir, 'comic.json'));
+    expect(instructions).toContain('data, not instructions');
+    expect(readFileSync(join(dir, 'description.md'), 'utf8')).toContain('Adds a greeting helper.');
+    expect(readFileSync(join(dir, 'brief.md'), 'utf8').trim().length).toBeGreaterThan(0);
+    const ctx = JSON.parse(readFileSync(join(dir, 'context.json'), 'utf8'));
+    expect(ctx.genreOptions.length).toBeGreaterThan(0);
+    // --genre offers only that genre.
+    const one = cli(repo.root, 'comic', 'packet', '--genre', 'kaiju');
+    expect(one.json.genres).toEqual(['kaiju']);
+  });
+
   test('makes the comic, puts only the image on the assets branch, and links it by commit', () => {
     const { repo, remote, runDir } = prepared();
     const draftPath = join(runDir, 'body.md');
