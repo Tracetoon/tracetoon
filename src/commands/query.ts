@@ -2,7 +2,7 @@
 import { GraphError, withGraph } from '../graph/engine.ts';
 import { graphBrief, loadGraph } from '../graph/evidence.ts';
 import { passOnSubmittedContent } from '../workflow/checks.ts';
-import { isNeighborhood, parseLayout, runLayout } from '../graph/layout.ts';
+import { isNeighborhood, parseLayout, runLayout, type BriefLayout } from '../graph/layout.ts';
 import {
   brief,
   briefParts,
@@ -12,7 +12,7 @@ import {
   type Section,
 } from '../graph/queries.ts';
 import { toToon } from '../graph/toon.ts';
-import { assertRunOwner, findRun } from '../run.ts';
+import { assertRunOwner, findRun, type Run } from '../run.ts';
 import { count } from '../util/profile.ts';
 import { repository } from '../workflow/state.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
@@ -35,6 +35,23 @@ export function queryHelp(): string {
     ...QUERIES.map((q) => `  ${`${q.name} ${q.args}`.trim().padEnd(34)} ${q.help}`),
     '  --cypher "<MATCH ... RETURN ...>"   your own read-only query (see `query schema`)',
   ].join('\n');
+}
+
+/**
+ * The evidence brief as `query brief` prints it, for a run: the run's layout,
+ * or `layout` when given. Undefined when the run has no evidence graph.
+ */
+export function runBriefText(
+  run: Run,
+  root: string,
+  layout: BriefLayout = runLayout(run),
+): string | undefined {
+  const graph = loadGraph(run);
+  if (!graph) return undefined;
+  const freshPass = passOnSubmittedContent(run, root);
+  if (isNeighborhood(layout)) return graphBrief(graph, { layout, freshPass });
+  const sections = withGraph(graph, (g) => brief(g, { freshPass }));
+  return toToon(sections, { rowCap: ROW_CAP });
 }
 
 export function queryCmd(cwd: string, words: string[], opts: QueryOpts): void {

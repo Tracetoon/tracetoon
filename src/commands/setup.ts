@@ -1,6 +1,6 @@
 /**
- * `tracetoon setup`: put the skill that ships with this runtime into every
- * agent's skill folder and register the PR hook, the way the installers do,
+ * `tracetoon setup`: put the skill that ships with this runtime (and its
+ * instruction-only sibling skills) into every agent's skill folder and register the PR hook, the way the installers do,
  * without downloading anything. Running it again changes nothing.
  */
 import { createHash } from 'node:crypto';
@@ -16,6 +16,7 @@ import {
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { skillDir } from '../contribution/skillSettings.ts';
+import { SIBLING_SKILLS } from '../skills.ts';
 import { hookTargets, installHooks, type HookChange } from '../hook/install.ts';
 import { INTEGRATIONS, integration, skillTargets } from '../integrations/registry.ts';
 import { findSh, fixSh, type ShFix } from '../hook/windowsSh.ts';
@@ -143,14 +144,28 @@ export function setupCmd(opts: SetupOpts): void {
       'Follow https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md',
     );
   const want = tree(source);
+  // Instruction-only skills shipped beside the main one (skills.ts), when present.
+  const siblings = SIBLING_SKILLS.map((name) => ({ name, src: join(dirname(source), name) }))
+    .filter((k) => existsSync(join(k.src, 'SKILL.md')))
+    .map((k) => ({ ...k, want: tree(k.src) }));
   const installed: SkillInstall[] = targets(opts.agent ?? []).map((t) => {
     if (resolve(t.dir) === resolve(source))
       return { agents: t.labels, dir: t.dir, action: 'unchanged' };
+    const existed = existsSync(t.dir);
     const have = tree(t.dir);
-    if (have.size && sameTree(want, have))
-      return { agents: t.labels, dir: t.dir, action: 'unchanged' };
-    const action = existsSync(t.dir) ? 'updated' : 'installed';
-    place(source, t.dir);
+    let changed = false;
+    if (!(have.size && sameTree(want, have))) {
+      place(source, t.dir);
+      changed = true;
+    }
+    for (const k of siblings) {
+      const dir = join(dirname(t.dir), k.name);
+      const there = tree(dir);
+      if (there.size && sameTree(k.want, there)) continue;
+      place(k.src, dir);
+      changed = true;
+    }
+    const action = !changed ? 'unchanged' : existed ? 'updated' : 'installed';
     return { agents: t.labels, dir: t.dir, action };
   });
   let sh: ShFix | undefined;

@@ -32,7 +32,8 @@ export function buildManifest(check = false, stamp = true) {
       else if (e.isFile()) paths.push(path);
     }
   };
-  for (const dir of ['src', 'scripts', 'plugin/skills/tracetoon']) walk(dir);
+  for (const dir of ['src', 'scripts', 'plugin/skills/tracetoon', 'plugin/skills/tracetoon-draw-cartoon'])
+    walk(dir);
   paths.push(
     'package.json',
     'bun.lock',

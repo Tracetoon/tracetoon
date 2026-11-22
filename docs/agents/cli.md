@@ -342,6 +342,15 @@ record why this PR has no comic when one was expected (the user declined, or dra
 | `--mcp` | recorded by the MCP server, which cannot draw |
 | `--by <who>` | user (the user declined the comic) or agent (default: the agent decided) |
 
+## `tracetoon comic packet`
+
+write the comic author's packet (brief, description, genres) and say how to hand it to one fresh subagent with the draw-cartoon skill
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--genre <id>` | offer only this genre (an id or a short phrase) |
+
 ## `tracetoon comic check`
 
 check comic.json before any art is made
