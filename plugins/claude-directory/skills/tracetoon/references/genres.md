@@ -13,6 +13,33 @@ Draw genre **archetypes**, not a particular work: a grizzled starship captain
 in a generic uniform is fine; a specific show's captain, insignia or ship is
 not. Generalize to the class.
 
+**Your own genres.** Users and repos add genres as genre files, and
+`genreOptions` offers them alongside the ones below (an option's `notes` is
+extra direction from its author). A genre file is Markdown in
+`<config dir>/genres/` (beside Tracetoon's `config.json`) or the repo's
+`.github/tracetoon/genres/`; a repo genre replaces a user or built-in one with
+the same id. `tracetoon genre list` shows every genre and where it came from;
+`tracetoon genre check <file>` validates one:
+
+```markdown
+---
+id: build-pirates
+name: Build pirates
+setting: a leaky galleon in a storm of failing builds
+archetypes:
+  - one-eyed captain
+  - parrot that repeats log lines
+props:
+  - treasure map
+  - flag on the mast
+jokeHooks:
+  - the treasure is a green check
+styles:
+  - webcomic
+---
+Optional notes for the comic author.
+```
+
 ## `space-opera`: Space opera
 
 - **Setting:** a starship bridge, docking bays, cargo holds and alien bazaars

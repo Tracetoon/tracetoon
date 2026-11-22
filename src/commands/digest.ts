@@ -17,6 +17,7 @@ import { prTruth, type PrTruth } from '../git/pr.ts';
 import { scan, type ScanResult } from '../pipeline.ts';
 import { recentComics } from '../github/history.ts';
 import { genreOptions as offerGenres } from '../comic/genres.ts';
+import { genreCatalog } from '../comic/genreFile.ts';
 import { describeTitleRules, readTitleRules } from '../github/titleRules.ts';
 import { assertRunOwner, findRun, newRun, readJson, writeJson } from '../run.ts';
 import { recordTiming } from '../workflow/publication.ts';
@@ -341,6 +342,7 @@ export function contextCmd(
   const genreOptions = offerGenres(recentGenres, {
     seed: `${truth.target?.repo ?? originRepo(truth) ?? ''} ${truth.head}`,
     pinned: pinnedGenre,
+    catalog: genreCatalog(truth.toplevel),
   });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,

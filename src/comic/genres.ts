@@ -20,6 +20,12 @@ export interface Genre {
   jokeHooks: string[];
   /** Style ids (styles.ts) that suit it. */
   styles: string[];
+  /** Extra direction for the comic author, from a genre file's body. */
+  notes?: string;
+  /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
+  source?: 'built-in' | 'user' | 'repo';
+  /** The genre file it was read from (user and repo genres). */
+  path?: string;
 }
 
 export const EVERYDAY = 'everyday';
@@ -191,8 +197,8 @@ export const GENRES: Genre[] = [
 
 export const MAX_GENRE_CHARS = 40;
 
-export const genreById = (id: string | undefined) =>
-  id ? GENRES.find((g) => g.id === id.trim().toLowerCase()) : undefined;
+export const genreById = (id: string | undefined, catalog: Genre[] = GENRES) =>
+  id ? catalog.find((g) => g.id === id.trim().toLowerCase()) : undefined;
 
 /** A genre's identity for repeat checks: its id, or the custom phrase lowercased. */
 export const genreKey = (g: string) => (genreById(g)?.id ?? g.trim().toLowerCase());
@@ -203,14 +209,18 @@ export const genreKey = (g: string) => (genreById(g)?.id ?? g.trim().toLowerCase
  * different suggestions even offline. `everyday` goes last among the unused.
  * Used genres follow, oldest use first.
  */
-export function freshGenres(recent: string[] = [], seed = ''): Genre[] {
+export function freshGenres(
+  recent: string[] = [],
+  seed = '',
+  catalog: Genre[] = GENRES,
+): Genre[] {
   const used = recent.map(genreKey);
   const rank = (g: Genre) =>
     createHash('sha256').update(`${seed}\0${g.id}`).digest().readUInt32BE(0);
-  const unused = GENRES.filter((g) => !used.includes(g.id)).sort((a, b) =>
+  const unused = catalog.filter((g) => !used.includes(g.id)).sort((a, b) =>
     a.id === EVERYDAY ? 1 : b.id === EVERYDAY ? -1 : rank(a) - rank(b),
   );
-  const usedOldestFirst = GENRES.filter((g) => used.includes(g.id)).sort(
+  const usedOldestFirst = catalog.filter((g) => used.includes(g.id)).sort(
     (a, b) => used.indexOf(b.id) - used.indexOf(a.id),
   );
   return [...unused, ...usedOldestFirst];
@@ -223,15 +233,18 @@ export interface GenreOption {
   archetypes: string[];
   props: string[];
   jokeHooks: string[];
+  /** A user or repo genre's extra direction for the author. */
+  notes?: string;
 }
 
-const option = ({ id, name, setting, archetypes, props, jokeHooks }: Genre): GenreOption => ({
+const option = ({ id, name, setting, archetypes, props, jokeHooks, notes }: Genre): GenreOption => ({
   id,
   name,
   setting,
   archetypes,
   props,
   jokeHooks,
+  ...(notes ? { notes } : {}),
 });
 
 /**
@@ -240,15 +253,15 @@ const option = ({ id, name, setting, archetypes, props, jokeHooks }: Genre): Gen
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
-    const g = genreById(opts.pinned);
+    const g = genreById(opts.pinned, opts.catalog);
     return [
       g
         ? option(g)
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed).slice(0, opts.count ?? 3).map(option);
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map(option);
 }

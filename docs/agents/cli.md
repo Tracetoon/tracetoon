@@ -315,6 +315,18 @@ create or update the PR with exactly what was rendered
 | `--accept-open` | publish although the last render listed sentences to fix or brief rows to cover (recorded) |
 | `--dry-run` | check everything and print what publishing would do (gh calls, target, title), without pushing or posting |
 
+## `tracetoon genre`
+
+comic genres: the built-in ones plus your own genre files
+
+## `tracetoon genre list`
+
+list the genres a comic can use here (built-in, user and repo genre files) and any genre file that was skipped
+
+## `tracetoon genre check <file>`
+
+check a genre file before adding it (exit 1 when it has errors)
+
 ## `tracetoon comic`
 
 make this PR's comic

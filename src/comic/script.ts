@@ -1,7 +1,7 @@
 /** Checks a comic script before any art is made. */
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
-import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS } from './genres.ts';
+import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre } from './genres.ts';
 import {
   ASPECTS,
   BEATS,
@@ -53,6 +53,8 @@ export interface CheckOpts {
   recentComics?: ComicSummary[];
   /** The run's digest and diff, to notice anchor terms the PR never mentions. */
   evidenceText?: string;
+  /** Genres available here (built-in plus user and repo genre files). */
+  genres?: Genre[];
 }
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
@@ -400,7 +402,7 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   const out: ScriptProblem[] = [];
   const bad = (problem: string) => out.push({ where: 'genre', problem });
   const warn = (problem: string) => out.push({ where: 'genre', problem, severity: 'warning' });
-  const ids = GENRES.map((g) => g.id).join(', ');
+  const ids = (opts.genres ?? GENRES).map((g) => g.id).join(', ');
   if (s.genre === undefined) {
     if (s.composition)
       bad(
@@ -440,7 +442,7 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
  * starship captain, a wizard); a particular franchise's characters, ships and
  * trademarks are not, unless the user asked for them.
  */
-const FRANCHISE_NAMES =
+export const FRANCHISE_NAMES =
   /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man)\b/i;
 
 export function franchiseProblems(s: ComicScript): ScriptProblem[] {
