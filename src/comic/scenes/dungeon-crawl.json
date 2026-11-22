@@ -1,0 +1,142 @@
+[
+  {
+    "id": "skull-cliff-entrance",
+    "title": "The skull-mouthed dungeon gate",
+    "setting": "exterior",
+    "place": "A storm-lit cliff with a dungeon entrance carved as a giant skull, a warning sign nailed to a dead tree, a crow on every branch",
+    "situation": "A freshly formed adventuring party argues about marching order at the gate while lightning flashes and the skull's jaw creaks open",
+    "cast": ["overconfident fighter in shiny armor", "nervous halfling-sized thief", "cleric with too many potions", "wizard reading the map upside down"],
+    "visualTropes": ["a giant stone skull doorway", "a sign reading TURN BACK", "lightning on a cliff face", "crows judging from branches"],
+    "jokeHooks": ["the party argues about marching order like a PR debate over naming", "the warning sign is a deprecation notice everyone ignores", "the wizard packed ten spells and none of them is the one needed"]
+  },
+  {
+    "id": "moonlit-crypt-yard",
+    "title": "Graveyard above the crypt",
+    "setting": "exterior",
+    "place": "A foggy hilltop graveyard under a full moon, tilted tombstones, a crumbling mausoleum with stairs leading down, bony hands poking up",
+    "situation": "Adventurers tiptoe between graves while skeletons pop up one at a time, each politely asking for a password",
+    "cast": ["torch-carrying ranger", "polite skeleton gatekeepers", "jittery bard with a lute", "ghostly groundskeeper"],
+    "visualTropes": ["bony hands poking from soil", "fog swirling at ankle height", "a full moon behind a mausoleum", "lanterns casting long shadows"],
+    "jokeHooks": ["each skeleton requires a separate password like a stack of auth layers", "the graves are old abandoned feature branches", "killing one skeleton just respawns it like a restarting crash loop"]
+  },
+  {
+    "id": "jungle-ziggurat",
+    "title": "Vine-choked jungle ziggurat",
+    "setting": "exterior",
+    "place": "A stepped stone pyramid swallowed by jungle, giant stone heads, vines thick as arms, a waterfall roaring beside the stairs",
+    "situation": "The party climbs the endless stairs to the summit door while monkeys steal their gear and the stone heads watch",
+    "cast": ["sweaty explorer with a whip and hat", "thieving monkeys", "talking stone heads", "porter carrying everything"],
+    "visualTropes": ["vines covering carved faces", "a waterfall beside giant stairs", "monkeys running off with backpacks", "tiny figures on a huge pyramid"],
+    "jokeHooks": ["the stairs are like a build log that never ends", "monkeys steal one item at a time like a memory leak", "the porter is the only one with the right credentials"]
+  },
+  {
+    "id": "desert-pyramid-storm",
+    "title": "Tomb door in the sandstorm",
+    "setting": "exterior",
+    "place": "A half-buried pyramid in rolling dunes, a sandstorm wall approaching, jackal-headed statues guarding a sealed door of hieroglyphs",
+    "situation": "The party races to decode the door's glyph puzzle before the sandstorm buries them, while the statues slowly turn their heads",
+    "cast": ["scholar with a magnifying glass", "camel with an attitude", "mummy peeking out early", "jackal-headed statues"],
+    "visualTropes": ["a towering wall of sand", "hieroglyphs glowing when touched", "statues turning to watch", "a camel refusing to move"],
+    "jokeHooks": ["the glyph puzzle is a regex nobody can read", "the camel refuses to move until its dependencies are satisfied", "the mummy shows up early like a premature deploy"]
+  },
+  {
+    "id": "rolling-boulder-run",
+    "title": "Rolling boulder escape",
+    "setting": "action",
+    "place": "A long sloping stone corridor, spikes shooting from walls, a giant round boulder thundering down behind the party",
+    "situation": "Someone lifted the golden idol off its pedestal and now everyone sprints, dodging darts and leaping a pit, with the boulder gaining",
+    "cast": ["explorer clutching a golden idol", "panicking party members", "giant rolling boulder", "darts flying from the walls"],
+    "visualTropes": ["a boulder filling the corridor", "explorer diving through a closing gap", "darts whizzing past heads", "a hat snatched back at the last second"],
+    "jokeHooks": ["swapping the idol for a bag of sand is like a hotfix with the wrong weight", "one tiny change starts a cascade nobody can stop", "the boulder is the deadline everyone ignored"]
+  },
+  {
+    "id": "mimic-chest-ambush",
+    "title": "The treasure chest has teeth",
+    "setting": "action",
+    "place": "A dusty treasure room with gold piles and an ornate chest in the center, torches flickering, a skeleton slumped next to it",
+    "situation": "The greedy thief opens the chest and it chomps down; the party tries to pry it off while other chests around them sprout tongues",
+    "cast": ["greedy thief with an arm in a chest", "toothy tongue-lolling chest", "fighter hitting it with a shield", "cleric reading a monster manual"],
+    "visualTropes": ["a chest with fangs and a long tongue", "a thief yanked off their feet", "other chests opening one eye", "gold coins flying"],
+    "jokeHooks": ["the chest looked like a free upgrade but bites like a breaking change", "every chest is a dependency that might be a mimic", "the manual says to check for teeth but nobody reads the docs"]
+  },
+  {
+    "id": "jelly-cube-corridor",
+    "title": "The wobbling jelly cube",
+    "setting": "action",
+    "place": "A perfectly square torchlit corridor, a giant transparent wobbling jelly cube sliding toward the party, swallowed junk floating inside",
+    "situation": "The party retreats down a dead end as the cube sucks in everything in its path: swords, boots, a very surprised goblin",
+    "cast": ["gigantic transparent jelly cube", "surprised goblin floating inside", "fighter whose sword got swallowed", "wizard frantically flipping a spellbook"],
+    "visualTropes": ["objects suspended in green jelly", "a corridor filled wall to wall", "a dead-end wall behind the party", "boots squelching on slime"],
+    "jokeHooks": ["the cube absorbs everything like a monorepo", "inside are old artifacts nobody has cleaned up in years", "the cube moves exactly one tile per turn like a slow CI runner"]
+  },
+  {
+    "id": "lich-boss-lair",
+    "title": "Boss fight in the lich's throne room",
+    "setting": "action",
+    "place": "A cavernous throne room over a lava pit, crumbling pillars, floating crystals, a robed skeletal sorcerer with a glowing phylactery",
+    "situation": "The final boss reveals a second phase, then a third, while the party is out of potions and the floor keeps collapsing into lava",
+    "cast": ["skeletal sorcerer king", "exhausted adventuring party", "summoned skeleton minions", "bard writing the ballad mid-fight"],
+    "visualTropes": ["a giant health bar overhead", "floor tiles crumbling into lava", "green magic beams crisscrossing", "a glowing jar on a pedestal"],
+    "jokeHooks": ["every time the boss is beaten a new phase begins, like another review round", "the boss keeps reviving until someone finds the hidden config file", "the bard writes release notes for a fight not yet won"]
+  },
+  {
+    "id": "quest-board-tavern",
+    "title": "Tavern of the quest board",
+    "setting": "crowd",
+    "place": "A rowdy adventurers' tavern with a giant cork quest board, barbarians arm wrestling, a dwarf asleep in the soup, a mysterious hooded patron",
+    "situation": "Adventurers jostle at the quest board; every quest is to kill rats in a cellar for a suspiciously small fee",
+    "cast": ["barbarian with a giant axe", "shady quest giver in a hood", "harried barmaid", "dwarf asleep in his soup"],
+    "visualTropes": ["a board overflowing with paper quests", "arm wrestling on barrels", "a bard dodging thrown bread", "a hooded figure with a sack of coins"],
+    "jokeHooks": ["the quest board is a backlog of tickets all labeled good first issue", "every quest giver wants it done by yesterday for exposure", "the rat cellar quest has been reopened forty times"]
+  },
+  {
+    "id": "goblin-night-bazaar",
+    "title": "Underground goblin bazaar",
+    "setting": "crowd",
+    "place": "A cavern market lit by mushroom lanterns, rickety stalls, goblins hawking cursed rings, potion carts and suspicious used armor",
+    "situation": "The party haggles for a key while goblin vendors swarm, each claiming their key is the real one",
+    "cast": ["fast-talking goblin merchant", "swarm of goblin pickpockets", "potion vendor with dubious labels", "cranky troll security guard"],
+    "visualTropes": ["mushroom lanterns glowing", "rickety stalls piled with junk", "potions in mismatched bottles", "a troll guarding a bridge"],
+    "jokeHooks": ["every key is a slightly different fork of the right one", "potions labeled works on my cauldron", "the troll charges a toll per request"]
+  },
+  {
+    "id": "monster-arena-pit",
+    "title": "Pit arena of the underdark",
+    "setting": "crowd",
+    "place": "A circular pit arena carved from rock, roaring crowds of orcs and goblins on stone tiers, a gate opening to reveal a monster",
+    "situation": "The captured party is thrown into the pit to fight a bull-headed brute while the crowd places bets",
+    "cast": ["bull-headed brute with an axe", "captured adventurers", "orc bookie taking bets", "ring announcer with a megaphone horn"],
+    "visualTropes": ["tiers of cheering monsters", "a portcullis rising slowly", "sand and bones in the pit", "betting slips flying"],
+    "jokeHooks": ["the crowd bets on which test will fail first", "the brute is the legacy module nobody wants to touch", "the announcer reads out the changelog before the fight"]
+  },
+  {
+    "id": "pressure-plate-hall",
+    "title": "Hall of pressure plates",
+    "setting": "interior",
+    "place": "A long torchlit hall with a checkered floor of pressure plates, holes in the walls for darts, a swinging blade at the far end",
+    "situation": "The thief inches across, testing each tile with a ten-foot pole, while the fighter behind them just walks across and triggers everything",
+    "cast": ["cautious thief with a ten-foot pole", "oblivious fighter", "skeleton of a previous adventurer", "clockwork trap mechanism"],
+    "visualTropes": ["a checkered floor of suspicious tiles", "darts flying from walls", "a pendulum blade swinging", "a skeleton mid-step"],
+    "jokeHooks": ["testing each tile with a pole is like writing tests first", "the fighter merges straight to main and triggers every trap", "the previous adventurer's skeleton is the last person who tried a shortcut"]
+  },
+  {
+    "id": "lever-puzzle-room",
+    "title": "Puzzle room with rising water",
+    "setting": "interior",
+    "place": "A sealed stone chamber with six levers, a riddle carved above a locked door, water pouring in from gargoyle mouths",
+    "situation": "The party tries lever combinations as water rises to their necks; the wizard insists on reading the riddle aloud slowly",
+    "cast": ["wizard reading the riddle slowly", "fighter yanking levers randomly", "talking gargoyle spout", "floating rubber duck"],
+    "visualTropes": ["water rising in a sealed room", "a wall of levers", "glowing runes over a door", "heads bobbing above the water"],
+    "jokeHooks": ["pulling levers at random is like bisecting commits by guesswork", "the riddle is ambiguous like a vague ticket", "the gargoyle offers hints only after a timeout"]
+  },
+  {
+    "id": "campfire-safe-room",
+    "title": "Safe room with a crackling fire",
+    "setting": "interior",
+    "place": "A small torchlit stone room with a crackling fire, a glowing save crystal, battered gear drying on racks",
+    "situation": "The bruised party rests before the boss door, counting supplies and arguing about whether to save their progress",
+    "cast": ["injured fighter", "cleric bandaging everyone", "hungry thief roasting mushrooms", "wizard checking the map"],
+    "visualTropes": ["a glowing save crystal", "gear drying on racks", "a fire throwing tall shadows", "a huge ominous boss door"],
+    "jokeHooks": ["the save crystal is a commit right before a risky refactor", "nobody remembers the last checkpoint, like an untagged release", "the party splits the loot like a team splitting tickets"]
+  }
+]

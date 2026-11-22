@@ -1,0 +1,142 @@
+[
+  {
+    "id": "launch-pad-liftoff",
+    "title": "Liftoff from the launch pad",
+    "setting": "action",
+    "place": "A coastal launch pad at dawn, a tall white rocket on a steel tower, umbilical arms swinging away, a wall of flame and steam boiling out",
+    "situation": "Engines ignite, the clamps release, and the rocket rises slowly while every camera, bird and spectator for miles watches",
+    "cast": ["three astronauts strapped on their backs", "pad leader in a hard hat", "launch announcer", "startled flock of pelicans"],
+    "visualTropes": ["clouds of steam billowing sideways", "umbilical arms swinging back", "ice chunks falling off the tank", "a flame tail brighter than the sun"],
+    "jokeHooks": ["the rocket clears the tower the way a build clears its slowest step: very slowly at first", "one umbilical stays attached a second too long, like a lingering lock", "the pelicans arrive for every launch like bots on every PR"]
+  },
+  {
+    "id": "beach-launch-crowd",
+    "title": "Crowds on the beach for launch",
+    "setting": "crowd",
+    "place": "A packed beach and causeway miles from the pad, families on car roofs, cameras on tripods, coolers, flags and a giant countdown clock",
+    "situation": "Thousands of spectators wait through hold after hold, counting down together each time the clock restarts",
+    "cast": ["kid in a cardboard space helmet", "photographer with a huge lens", "retired engineer explaining everything", "ice cream vendor"],
+    "visualTropes": ["a giant countdown clock", "binoculars aimed in unison", "car roofs packed with families", "a distant rocket like a pencil"],
+    "jokeHooks": ["the countdown holds at T-minus 10 like a deploy waiting on one last check", "the crowd counts down together three times for a single launch", "the retired engineer explains the bug to strangers before the report is out"]
+  },
+  {
+    "id": "firing-room-countdown",
+    "title": "Firing room countdown",
+    "setting": "interior",
+    "place": "A long tiered room of glowing consoles, everyone in white shirts and skinny ties, ashtrays and coffee, a big window toward the distant pad",
+    "situation": "The launch director polls each station for go or no-go, and one controller hesitates on a strange reading",
+    "cast": ["crew-cut launch director", "young controller with thick glasses", "flight surgeon", "veteran booster engineer"],
+    "visualTropes": ["rows of headset-wearing engineers", "a wall of blinking lights", "pocket protectors", "a go/no-go poll around the room"],
+    "jokeHooks": ["one station says no-go and the whole release halts, like one red required check", "the go/no-go poll is a code review with fifty approvers", "the strange reading is a flaky sensor that has cried wolf before"]
+  },
+  {
+    "id": "lunar-landing-descent",
+    "title": "Landing on the Moon with seconds left",
+    "setting": "action",
+    "place": "A spindly gold-foil lunar lander descending over a gray cratered plain, dust blowing outward, the black sky and the blue Earth above",
+    "situation": "Alarms blare as the computer overloads; the commander takes manual control and hunts for a flat spot with fuel running out",
+    "cast": ["calm commander at the window", "pilot calling out altitude", "voice of the capsule communicator", "lunar lander"],
+    "visualTropes": ["boulders filling the window", "a fuel gauge almost empty", "dust sheeting away", "a program alarm code flashing"],
+    "jokeHooks": ["the computer throws an alarm code nobody has seen outside a simulation", "landing with seconds of fuel left, like merging minutes before the freeze", "the landing site in the plan turns out to be full of boulders, like the spec versus reality"]
+  },
+  {
+    "id": "moonwalk-flag-planting",
+    "title": "First steps and a stubborn flag",
+    "setting": "exterior",
+    "place": "The gray lunar surface beside a gold-foil lander, footprints in fine dust, a long black shadow, Earth hanging in the black sky",
+    "situation": "Astronauts bounce around planting a flag that will not stay up, collecting rocks and reading a checklist on their cuffs",
+    "cast": ["commander bunny-hopping", "pilot with a camera on the chest", "flag that will not unfurl", "TV camera on a tripod"],
+    "visualTropes": ["boot prints in powdery dust", "a flag with a crooked rod", "astronauts bouncing in slow motion", "a cuff checklist"],
+    "jokeHooks": ["the flag's extension rod jams like a half-applied migration", "the checklist on the cuff is a runbook with a step nobody tested in low gravity", "the TV camera broadcasts upside down, like a log in the wrong timezone"]
+  },
+  {
+    "id": "lunar-rover-joyride",
+    "title": "Lunar rover across the highlands",
+    "setting": "action",
+    "place": "Rolling lunar highlands, a little open-frame electric rover bouncing over craters, rooster tails of dust, mountains on the horizon",
+    "situation": "Two astronauts race the rover to a far crater, bouncing off the seats, with a fender held on by maps and tape",
+    "cast": ["driver gripping the hand controller", "navigator holding a map", "TV camera on the rover", "cheering ground team on radio"],
+    "visualTropes": ["rooster tails of dust", "wheels airborne over a crater", "a fender taped with maps", "a dish antenna on the rover"],
+    "jokeHooks": ["the taped fender is a quick fix that ships to the Moon", "the rover's top speed is an SLA everyone brags about", "the navigation map is cached from orbit, months out of date"]
+  },
+  {
+    "id": "spacewalk-repair",
+    "title": "Spacewalk to fix a broken panel",
+    "setting": "exterior",
+    "place": "Open orbit high above a swirling blue Earth, an astronaut tethered to a space station truss, a jammed solar wing, tools floating",
+    "situation": "An astronaut must free a jammed solar panel with improvised tools while the station races toward the night side",
+    "cast": ["spacewalking astronaut", "second astronaut at the airlock", "robotic arm", "lost wrench drifting away"],
+    "visualTropes": ["a tether looping through space", "Earth's curve and a sunrise line", "a stubborn folded panel", "a wrench floating out of reach"],
+    "jokeHooks": ["the fix is a hand-made tool built from a toothbrush, like a script nobody should ship", "the lost wrench becomes permanent debris, like a dangling feature flag", "the repair window is ninety minutes, the length of a full CI run"]
+  },
+  {
+    "id": "orbital-docking",
+    "title": "Docking in orbit",
+    "setting": "action",
+    "place": "Two spacecraft closing in over the blue Earth, thrusters puffing, a probe aimed at a docking cone, sunlight glinting off foil",
+    "situation": "The pilot nudges the capsule toward the station while the docking target drifts and everyone holds their breath",
+    "cast": ["focused capsule pilot", "station crew watching through a window", "voice of the ground team", "docking target crosshair"],
+    "visualTropes": ["thruster puffs firing sideways", "crosshairs on a target", "a docking latch snapping closed", "Earth sliding past below"],
+    "jokeHooks": ["two systems dock only when both versions agree on the latch protocol", "the docking takes eleven tiny corrections, like iterating on review feedback", "contact and capture are two separate checks, like merged and deployed"]
+  },
+  {
+    "id": "fiery-reentry",
+    "title": "Fiery reentry",
+    "setting": "action",
+    "place": "A cone-shaped capsule plunging heat-shield first through the upper atmosphere, a trail of plasma and glowing debris, stars giving way to blue",
+    "situation": "Radio goes dark during the blackout and everyone waits to hear if the heat shield held",
+    "cast": ["three astronauts pinned in seats", "capsule communicator calling the crew", "tracking ship crew", "capsule"],
+    "visualTropes": ["a plasma glow around the capsule", "chunks of shield streaming away", "a window glowing orange", "a radio static icon"],
+    "jokeHooks": ["the radio blackout is a deploy with no logs for four minutes", "the heat shield ablates on purpose, like a cache built to be thrown away", "the first word after blackout lands like a green check after a long build"]
+  },
+  {
+    "id": "splashdown-recovery",
+    "title": "Splashdown and recovery",
+    "setting": "exterior",
+    "place": "A wide blue Pacific under a bright sky, a capsule bobbing under three orange-and-white parachutes, helicopters and frogmen around it",
+    "situation": "The capsule splashes down, flips upside down, and frogmen leap from a helicopter to attach a flotation collar before it sinks",
+    "cast": ["frogmen in wetsuits", "helicopter crew", "astronauts in the capsule", "seagull riding the capsule"],
+    "visualTropes": ["three parachutes billowing", "a capsule upside down", "a flotation collar inflating", "a helicopter downdraft rippling the sea"],
+    "jokeHooks": ["the capsule lands upside down and must be righted, like a rollback after release", "the parachute count drops from three to two and everyone holds their breath", "the seagull lands first and claims the ship, like the first bot comment"]
+  },
+  {
+    "id": "aircraft-carrier-welcome",
+    "title": "Welcome on the recovery ship",
+    "setting": "crowd",
+    "place": "The deck of an aircraft carrier crowded with sailors in whites, a brass band, a sign WELCOME HOME, a quarantine trailer with a small window",
+    "situation": "Returning astronauts are whisked into a sealed trailer and greet the cheering crew and a dignitary through glass",
+    "cast": ["astronauts behind a quarantine window", "beaming dignitary", "brass band", "sailors cheering"],
+    "visualTropes": ["sailors spelling a word on deck", "a quarantine trailer", "a brass band", "confetti in sea wind"],
+    "jokeHooks": ["the code ships but must sit in quarantine for 21 days, like a staged rollout", "everyone celebrates while the team is still behind glass fixing logs", "the dignitary cuts a ribbon on a feature the crew calls beta"]
+  },
+  {
+    "id": "rocket-rollout-crawler",
+    "title": "Rollout on the giant crawler",
+    "setting": "exterior",
+    "place": "A gravel crawlerway at night under floodlights, a giant tracked transporter carrying an upright rocket at walking pace toward the pad",
+    "situation": "The crawler creeps toward the pad at one mile an hour while engineers walk alongside and one runs back for something forgotten",
+    "cast": ["crawler driver in a tiny cab", "engineers walking beside", "photographer on a ladder", "engineer running back to the hangar"],
+    "visualTropes": ["massive treads crunching gravel", "the rocket glowing in floodlights", "a huge assembly building behind", "a long shadow on gravel"],
+    "jokeHooks": ["the rollout is slower than walking, like a monorepo build", "someone forgot a part and runs back, like a missing file in the release", "the crawler stops every few feet for a check, like CI on every commit"]
+  },
+  {
+    "id": "simulator-swamp-training",
+    "title": "Survival training after a mock splashdown",
+    "setting": "exterior",
+    "place": "A tropical jungle shore and swamp, astronaut trainees in silver suits climbing out of a capsule mockup, trainers in a boat",
+    "situation": "Trainees must survive three days with a survival kit, building shelters from parachutes and fending off curious crabs",
+    "cast": ["sunburned trainee astronaut", "trainer with a clipboard", "curious crab", "trainee making a parachute tent"],
+    "visualTropes": ["a parachute tepee", "silver suits in jungle green", "a capsule mockup on the sand", "a crab stealing a ration bar"],
+    "jokeHooks": ["the survival kit has everything except the one tool the docs require", "the training mirrors production except the crabs are real", "a ration bar labeled lasts forever like a never-expiring token"]
+  },
+  {
+    "id": "launch-abort-escape",
+    "title": "Pad abort with the escape tower",
+    "setting": "action",
+    "place": "A rocket on the pad with a needle-like escape tower on top firing, the capsule yanked skyward away from a fizzling booster",
+    "situation": "A sensor trips at ignition and the escape tower rips the capsule away, landing it in the ocean while the rocket sits there unharmed",
+    "cast": ["startled astronauts", "pad safety officer", "launch director", "puzzled booster"],
+    "visualTropes": ["escape motor blasting", "a capsule shooting away", "a parachute opening above surf", "an untouched rocket on the pad"],
+    "jokeHooks": ["the abort fires because a flaky sensor reported failure, and everything was fine", "a safety net that works perfectly, on a false alarm", "the postmortem finds the culprit was a loose plug, like a missing env var"]
+  }
+]

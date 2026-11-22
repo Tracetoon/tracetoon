@@ -364,12 +364,12 @@ describe('genre first, rotated', () => {
     expect(comicSummary(s).genre).toBe('kaiju');
     expect(pagePrompt(s)).toContain('Genre: Kaiju attack');
     expect(artPrompt(s.panels[0]!, 0, s)).toContain('Genre: Kaiju attack');
-    expect(pagePrompt(s)).toContain('genre archetypes are fine');
+    expect(pagePrompt(s)).toContain('genre parody of familiar tropes and settings is welcome');
     expect(pagePrompt(withGenre())).not.toContain('Genre:');
     // A user request decides the cast: the genre line no longer forbids named characters.
     const asked = { ...s, request: 'the crew of a famous starship' };
     expect(pagePrompt(asked)).toContain('Genre: Kaiju attack');
-    expect(pagePrompt(asked)).not.toContain("not any specific work's characters");
+    expect(pagePrompt(asked)).not.toContain("never any specific work's characters");
   });
 
   test('options rotate: unused first, per-branch order, everyday last, pins win', () => {

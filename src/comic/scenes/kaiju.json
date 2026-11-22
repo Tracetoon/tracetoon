@@ -1,0 +1,142 @@
+[
+  {
+    "id": "bay-monster-rises",
+    "title": "The monster rises from the bay",
+    "setting": "exterior",
+    "place": "A harbor city at dawn, fishing boats bobbing, a lighthouse, and the sea bulging as dorsal spines break the surface",
+    "situation": "A giant scaly lizard rises from the bay, towering over the lighthouse, as fishermen drop their nets and stare",
+    "cast": ["giant spiny sea lizard", "stunned fishermen", "lighthouse keeper with binoculars", "seagulls fleeing in a cloud"],
+    "visualTropes": ["dorsal spines slicing through waves", "a towering silhouette against sunrise", "boats tossed in the swell", "a lighthouse tiny next to a giant"],
+    "jokeHooks": ["the monster shows up every release like a recurring regression", "the lighthouse keeper's warning ticket was closed as won't fix", "the waves it makes capsize every small boat like one change rippling through a monorepo"]
+  },
+  {
+    "id": "power-line-barrier",
+    "title": "High-voltage barrier on the plains",
+    "setting": "exterior",
+    "place": "Open fields outside the city, a hastily built line of giant electric pylons, soldiers in helmets, the monster's silhouette approaching",
+    "situation": "The defense force switches on a million-volt fence; the monster sniffs it, gets zapped, and gets angrier",
+    "cast": ["defense force general with binoculars", "young engineer at the switch", "giant monster sniffing pylons", "soldiers in helmets"],
+    "visualTropes": ["sparking pylons in a line", "lightning arcs across a giant", "soldiers ducking", "a city skyline behind the barrier"],
+    "jokeHooks": ["the fence is a firewall the monster treats as a mild inconvenience", "throwing the switch is like deploying on Friday", "the barrier blocks everything except the actual threat"]
+  },
+  {
+    "id": "monster-island-coast",
+    "title": "Island of the sleeping giants",
+    "setting": "exterior",
+    "place": "A volcanic island ringed by cliffs, steaming jungle, huge footprints in the sand, giant monsters lounging like sunbathers",
+    "situation": "A research team lands on the island and tiptoes past sleeping titans, trying not to wake any of them",
+    "cast": ["excited monster scientist", "nervous expedition guide", "sleeping giant turtle", "baby monster following the team"],
+    "visualTropes": ["footprints big enough to swim in", "giants dozing on beaches", "a volcano smoking", "a tiny boat at the shore"],
+    "jokeHooks": ["tiptoeing past the monsters is like changing legacy code without waking any tests", "the baby monster follows the team like a dependency you can't remove", "one sneeze wakes everything like a cascading alert"]
+  },
+  {
+    "id": "giant-moth-sky",
+    "title": "Giant moth over the mountains",
+    "setting": "exterior",
+    "place": "Misty mountains at sunset, a colossal rainbow-winged moth gliding overhead, tiny twin singers on a hilltop",
+    "situation": "Tiny twin singers summon the gentle giant moth with a song as villagers watch in awe and the wind flattens the trees",
+    "cast": ["tiny twin singers", "colossal gentle moth", "awestruck villagers", "skeptical reporter"],
+    "visualTropes": ["rainbow wings filling the sky", "trees bending in wing-wind", "tiny singers on a rock", "glittering dust falling"],
+    "jokeHooks": ["the twins sing the same tune until the deploy finally succeeds", "the moth arrives only when summoned exactly right, like a strict API", "the wind from its wings blows away all the open tickets"]
+  },
+  {
+    "id": "downtown-titan-brawl",
+    "title": "Titans brawl downtown",
+    "setting": "action",
+    "place": "A neon downtown at night, skyscrapers crumbling, a giant lizard and a three-headed golden dragon wrestling through the streets",
+    "situation": "Two monsters slam each other through buildings as tiny citizens flee and the camera shakes",
+    "cast": ["giant spiny lizard", "three-headed golden dragon", "fleeing citizens", "news helicopter"],
+    "visualTropes": ["buildings crumbling as monsters collide", "lightning breath and atomic breath clashing", "a helicopter dodging tails", "cars flying"],
+    "jokeHooks": ["two monsters fight over the same street like a merge conflict", "every hit takes down a building like a breaking change", "the helicopter live-streams every failed retry"]
+  },
+  {
+    "id": "tank-barrage",
+    "title": "Defense force tank barrage",
+    "setting": "action",
+    "place": "A river crossing at the edge of the city, rows of tanks and ray-cannon trucks firing, the monster wading through the river",
+    "situation": "The defense force fires everything at once; the monster shrugs off the shells and breathes blue fire back",
+    "cast": ["defense force colonel", "ray-cannon truck crews", "tank commanders", "unfazed giant monster"],
+    "visualTropes": ["rows of tanks firing in sync", "a dish-shaped ray cannon beam", "shells bouncing off scales", "blue fire across the river"],
+    "jokeHooks": ["throwing everything at the monster is like adding more retries to a flaky test", "the ray cannon needs a twenty minute warm-up like a cold build", "the shells bounce off like a linter ignored with a comment"]
+  },
+  {
+    "id": "giant-robot-showdown",
+    "title": "Giant robot vs sea monster",
+    "setting": "action",
+    "place": "A stormy harbor at night, waves crashing, a giant piloted robot wading into the sea to fight a glowing crab-like monster",
+    "situation": "The robot's two pilots must move in sync; one is slightly out of step and the robot punches itself",
+    "cast": ["giant piloted robot", "two out-of-sync pilots", "glowing crab monster", "ground crew shouting through radios"],
+    "visualTropes": ["a robot fist meeting a claw", "waves crashing over a robot", "neon glow from the monster", "a helicopter carrying a robot"],
+    "jokeHooks": ["the pilots are two services out of sync", "the robot punches itself like a self-inflicted bug", "the ground crew's checklist is longer than the fight"]
+  },
+  {
+    "id": "bridge-tail-swipe",
+    "title": "Monster on the suspension bridge",
+    "setting": "action",
+    "place": "A suspension bridge at rush hour, cables snapping, cars braking, a winged pterosaur monster perched on a tower",
+    "situation": "The flying monster lands on the bridge and swipes its tail as drivers abandon cars and a bus teeters over the edge",
+    "cast": ["winged pterosaur monster", "bus driver hanging on", "defense force jets", "commuters running"],
+    "visualTropes": ["cables snapping and whipping", "a bus hanging over the edge", "jets streaking past", "wings blocking the sun"],
+    "jokeHooks": ["the bridge holds until one cable fails, like a single point of failure", "the jets keep missing like a test with a bad assertion", "the bus teeters like a deploy waiting for approval"]
+  },
+  {
+    "id": "city-evacuation",
+    "title": "Mass evacuation through the streets",
+    "setting": "crowd",
+    "place": "A packed city avenue, thousands fleeing with suitcases and bicycles, loudspeakers blaring, the monster's footsteps shaking puddles",
+    "situation": "Citizens flee in panic as a calm loudspeaker voice reminds everyone to keep left",
+    "cast": ["calm loudspeaker announcer", "panicked citizens", "kid with a balloon", "businessman still on his phone"],
+    "visualTropes": ["thousands running in one direction", "puddles rippling from footsteps", "a giant shadow over the crowd", "suitcases dropped"],
+    "jokeHooks": ["the announcer's calm voice is an automated status page saying all systems operational", "the businessman keeps working through the outage", "everyone flees to the same exit like a thundering herd"]
+  },
+  {
+    "id": "stadium-monster-crash",
+    "title": "Monster crashes the ballgame",
+    "setting": "crowd",
+    "place": "A packed baseball stadium at night, floodlights blazing, fans in caps, the monster's head rising over the bleachers",
+    "situation": "The monster peers into the stadium mid-game; the crowd freezes, then does the wave",
+    "cast": ["giant curious monster", "frozen pitcher", "fans doing the wave", "hot dog vendor"],
+    "visualTropes": ["a monster head over the stands", "floodlights glaring", "a frozen pitcher mid-throw", "a home run ball bouncing off the monster"],
+    "jokeHooks": ["the crowd does the wave like a rolling deploy", "the game continues like a service ignoring an incident", "the monster catches the home run ball like a cache hit"]
+  },
+  {
+    "id": "monster-press-conference",
+    "title": "Press conference about the monster",
+    "setting": "crowd",
+    "place": "A packed press hall with flashing cameras, a monster model on a table, scientists and generals at a long podium",
+    "situation": "Officials insist the monster is under control just as its footsteps shake the building",
+    "cast": ["sweating minister", "eccentric scientist hiding a secret weapon", "reporters with cameras", "general pointing at a map"],
+    "visualTropes": ["camera flashes", "a toy monster model", "a map with giant footprints", "dust falling from the ceiling"],
+    "jokeHooks": ["the minister declares the incident resolved during the incident", "the scientist explains the bug with a toy model", "the reporters ask when the fix will ship"]
+  },
+  {
+    "id": "defense-war-room",
+    "title": "Defense force war room",
+    "setting": "interior",
+    "place": "A bunker war room with a giant glowing map table, model tanks pushed with sticks, red phones ringing, a monster icon blinking",
+    "situation": "Generals push model tanks around the map while the monster icon keeps walking off the edge of the table",
+    "cast": ["red-faced general", "map table operator with a stick", "scientist with a warning", "aide carrying coffee"],
+    "visualTropes": ["model tanks on a giant map", "red phones ringing", "a blinking monster icon", "smoke rising from ashtrays"],
+    "jokeHooks": ["the map is outdated like docs that missed the last refactor", "generals push tanks around like reassigning tickets", "the monster walks off the edge of the planning board"]
+  },
+  {
+    "id": "deep-sea-lab",
+    "title": "Deep sea research lab",
+    "setting": "interior",
+    "place": "A bubbling underwater research lab with round portholes, tanks of glowing creatures, a giant egg in a tank",
+    "situation": "Scientists study a glowing monster egg as it cracks and a tiny monster pokes its head out",
+    "cast": ["excited marine biologist", "tiny monster hatchling", "worried lab assistant", "octopus pressed against a porthole"],
+    "visualTropes": ["portholes showing deep sea creatures", "a glowing egg cracking", "bubbles rising in tanks", "lab coats splashed with slime"],
+    "jokeHooks": ["the hatchling grows a size every hour like a log file", "the egg was left in the tank like a forgotten temp file", "the assistant wants to delete it before it reaches production"]
+  },
+  {
+    "id": "robot-cockpit",
+    "title": "Inside the giant robot cockpit",
+    "setting": "interior",
+    "place": "A cramped cockpit inside a giant robot's head, harnesses, glowing visors, sparking panels, the monster visible through the eye windows",
+    "situation": "Two pilots in motion-capture suits mirror each other's moves while panels spark and warnings blare",
+    "cast": ["veteran pilot", "rookie co-pilot", "AI voice reading warnings", "monster filling the windows"],
+    "visualTropes": ["pilots in harnesses mirroring moves", "sparks bursting from panels", "a monster eye in the window", "red warning lights"],
+    "jokeHooks": ["the AI reads out every warning like a verbose linter", "the pilots sync like two branches finally rebased", "a sparking panel is the one test nobody fixed"]
+  }
+]

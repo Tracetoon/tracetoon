@@ -1,0 +1,142 @@
+[
+  {
+    "id": "chaotic-breakfast-kitchen",
+    "title": "Chaotic family breakfast",
+    "setting": "interior",
+    "place": "A small family kitchen at 7:45 a.m., pancakes burning, the dog under the table, lunchboxes open, a school bus visible through the window",
+    "situation": "One parent cooks, the other searches for a missing shoe, three kids need three different breakfasts and the bus is coming",
+    "cast": ["frazzled parent with a spatula", "parent holding one shoe", "toddler throwing cereal", "teen glued to a phone", "dog catching pancakes"],
+    "visualTropes": ["smoke from a toaster", "cereal raining from a high chair", "a school bus pulling up outside", "a calendar covered in sticky notes"],
+    "jokeHooks": ["three kids need three builds and there is one toaster, a single CI runner", "the missing shoe is in the last place checked, like the last log line", "the dog catches every dropped pancake like a catch-all exception handler"]
+  },
+  {
+    "id": "moving-day-staircase",
+    "title": "Moving day and the couch",
+    "setting": "action",
+    "place": "A narrow apartment stairwell, boxes stacked everywhere, a big couch wedged at a landing, a moving truck double-parked outside",
+    "situation": "Friends try to carry a couch up four flights, rotating and shouting pivot while it jams at every turn",
+    "cast": ["friend shouting pivot", "friend crushed at the bottom", "neighbor trying to get past", "pizza delivery as payment"],
+    "visualTropes": ["a couch wedged vertically", "boxes labeled misc", "a ticket on the moving truck", "sweaty friends in a tangle"],
+    "jokeHooks": ["the couch fits only after removing its legs, like stripping a feature to ship", "every box is labeled misc, like a utils folder", "the neighbor waiting on the stairs is a blocked PR"]
+  },
+  {
+    "id": "kids-birthday-party",
+    "title": "Kids' birthday party meltdown",
+    "setting": "crowd",
+    "place": "A backyard decorated with balloons, a bouncy castle, a cake table, a pinata swinging, and twenty sugar-fueled kids",
+    "situation": "The cake arrives with the wrong name, the bouncy castle deflates, and the pinata refuses to break",
+    "cast": ["exhausted host parent", "party entertainer in a dinosaur costume", "birthday kid", "uncle holding the hose"],
+    "visualTropes": ["a deflating bouncy castle", "kids swinging at a pinata", "a cake with the wrong name", "balloons drifting away"],
+    "jokeHooks": ["the cake ships with a typo in the name, like a release with the wrong version tag", "the pinata survives every hit like a stubborn test", "the bouncy castle deflates when twenty users connect at once"]
+  },
+  {
+    "id": "rush-hour-subway",
+    "title": "Rush hour subway crush",
+    "setting": "crowd",
+    "place": "A packed subway car at rush hour, commuters pressed together, a busker with an accordion, a door chime, a station platform blurring by",
+    "situation": "Commuters squeeze in as the doors close repeatedly on bags and umbrellas; the train holds at every station",
+    "cast": ["commuter with a giant backpack", "busker with an accordion", "conductor on the speaker", "person reading a novel calmly"],
+    "visualTropes": ["doors closing on an umbrella", "faces pressed to glass", "a hand on every pole", "a station sign blurring"],
+    "jokeHooks": ["the doors reopen for one last bag, like a retry that never ends", "the train holds for congestion ahead, like a merge queue", "the person reading calmly is the only service with good caching"]
+  },
+  {
+    "id": "camping-tent-setup",
+    "title": "Setting up the tent at dusk",
+    "setting": "exterior",
+    "place": "A forest campsite by a lake at dusk, a half-built tent with poles everywhere, a campfire not lighting, mosquitoes swarming",
+    "situation": "A family tries to pitch a tent with instructions written in diagrams only, while the rain begins",
+    "cast": ["parent holding the instructions upside down", "kid with a flashlight", "raccoon stealing marshmallows", "grandparent who has done this before"],
+    "visualTropes": ["tent poles in a heap", "a diagram of a tent that looks nothing like this", "a raccoon at the cooler", "raindrops starting"],
+    "jokeHooks": ["the instructions are a diagram-only spec missing one step", "one extra pole is left over, like an unused import", "the grandparent fixes it in seconds, the senior engineer with old knowledge"]
+  },
+  {
+    "id": "wedding-reception-chaos",
+    "title": "Wedding reception chaos",
+    "setting": "crowd",
+    "place": "A garden wedding reception under string lights, a dance floor, a towering cake, a DJ, an uncle with a microphone",
+    "situation": "The best man's speech runs long, a toddler runs off with the rings, and the cake leans further every minute",
+    "cast": ["nervous best man", "bride and groom", "flower girl with the rings", "DJ playing the wrong song"],
+    "visualTropes": ["a leaning cake", "a dance floor conga line", "a speech with note cards scattering", "fairy lights in trees"],
+    "jokeHooks": ["the best man's speech is a pull request description that runs ten pages", "the cake leans like an unstable build", "the DJ plays the wrong song, like deploying the wrong branch"]
+  },
+  {
+    "id": "city-marathon",
+    "title": "City marathon",
+    "setting": "action",
+    "place": "A city avenue full of runners in bibs, crowds behind barriers with signs, water stations, a finish line arch in the distance",
+    "situation": "A runner hits the wall at mile 20, spectators shout encouragement, and someone in a mascot costume overtakes everyone",
+    "cast": ["exhausted runner", "spectator with a funny sign", "volunteer handing cups", "runner in a giant mascot costume"],
+    "visualTropes": ["cups scattered on the road", "signs held high", "a finish arch with balloons", "a mascot head bobbing past"],
+    "jokeHooks": ["mile 20 is the long build step where everything slows", "the mascot runner finishes first, like the hacky fix beating the elegant one", "the water station is a cache refill every few miles"]
+  },
+  {
+    "id": "black-friday-store-rush",
+    "title": "Store opening rush",
+    "setting": "action",
+    "place": "A big-box store entrance at dawn, a line of shoppers wrapped around the lot, doors opening, carts racing down aisles",
+    "situation": "Doors open and shoppers stampede for a few discounted TVs while staff in vests try to keep order",
+    "cast": ["store manager with a megaphone", "determined shopper with a list", "staff member blocking a pallet", "kid on a cart"],
+    "visualTropes": ["shoppers sprinting through doors", "carts drifting around corners", "a pallet of boxed TVs", "a sale sign falling"],
+    "jokeHooks": ["the first rush is a traffic spike at launch with no rate limit", "only the first ten get the deal, like a queue with a tiny buffer", "the manager's megaphone instructions are ignored like warnings in the log"]
+  },
+  {
+    "id": "family-road-trip",
+    "title": "Family road trip",
+    "setting": "exterior",
+    "place": "A highway through desert canyons, a packed minivan with a cargo box, a roadside giant dinosaur statue, and a gas station ahead",
+    "situation": "The family argues over directions as the GPS insists on a route through a closed road, while kids ask if they are there yet",
+    "cast": ["parent driving", "parent with a paper map", "kids in the back", "GPS voice"],
+    "visualTropes": ["a cargo box strapped crookedly", "a giant roadside dinosaur", "a road closed sign", "kids with faces pressed to windows"],
+    "jokeHooks": ["the GPS recalculates every second like a flaky test rerunning", "are we there yet is the status ping every few minutes", "the paper map is the old docs, which turn out to be right"]
+  },
+  {
+    "id": "beach-day-wind",
+    "title": "Windy day at the beach",
+    "setting": "exterior",
+    "place": "A crowded beach on a windy day, umbrellas tumbling, a sandcastle, seagulls swooping, waves crashing",
+    "situation": "A family sets up camp just as the wind picks up; the umbrella takes off and seagulls raid the picnic",
+    "cast": ["parent chasing an umbrella", "kid building a sandcastle", "seagull gang", "lifeguard on a tower"],
+    "visualTropes": ["an umbrella flying away", "a sandcastle with a moat", "seagulls stealing fries", "a wave about to swamp the castle"],
+    "jokeHooks": ["the sandcastle has a moat but the tide is a breaking change", "seagulls swarm any unguarded snack, like bots on an open endpoint", "the umbrella anchors fail at the first gust, like an untested config"]
+  },
+  {
+    "id": "airport-gate-dash",
+    "title": "Dash to the airport gate",
+    "setting": "action",
+    "place": "A long airport concourse, moving walkways, people with rolling bags, departure boards flipping, a gate closing at the far end",
+    "situation": "A traveler sprints through the airport with a coffee and a carry-on as the final boarding call echoes",
+    "cast": ["sprinting traveler", "gate agent closing the door", "slow family on the walkway", "security officer"],
+    "visualTropes": ["a departure board flipping to Final Call", "a rolling bag airborne", "coffee splashing", "a moving walkway jammed"],
+    "jokeHooks": ["the gate changes at the last minute, like an endpoint moved without notice", "the moving walkway is blocked, like a pipeline stuck behind a slow job", "the agent closes the door at the exact second, like a hard deadline"]
+  },
+  {
+    "id": "office-printer-showdown",
+    "title": "Office printer showdown",
+    "setting": "interior",
+    "place": "An office copy room with a giant printer, blinking error lights, stacks of jammed paper, coworkers lining up behind",
+    "situation": "Someone must print a document before a meeting, and the printer jams, demands toner, and needs an update",
+    "cast": ["desperate coworker", "IT person with a screwdriver", "coworkers waiting", "smug printer"],
+    "visualTropes": ["paper shooting out", "an error light blinking", "a line of coworkers", "a toner cartridge spilled"],
+    "jokeHooks": ["the printer demands a firmware update right before the deadline", "the error code means nothing to anyone", "the line behind the printer is the merge queue"]
+  },
+  {
+    "id": "youth-soccer-game",
+    "title": "Youth soccer game",
+    "setting": "exterior",
+    "place": "A muddy park field on a Saturday, tiny players swarming the ball, parents on folding chairs, a referee with a whistle",
+    "situation": "A swarm of six-year-olds chases the ball as one, one kid picks flowers, and the parents yell conflicting advice",
+    "cast": ["volunteer coach with a clipboard", "kid picking flowers", "loud parent", "referee"],
+    "visualTropes": ["a swarm of kids around one ball", "orange slices at halftime", "folding chairs on the sideline", "a goalkeeper sitting down"],
+    "jokeHooks": ["everyone swarms the same bug while the rest of the field is empty", "the parents shout conflicting reviews from the sidelines", "the flower-picking kid scores, like the random retry that passes"]
+  },
+  {
+    "id": "home-renovation-disaster",
+    "title": "Weekend home renovation",
+    "setting": "action",
+    "place": "A living room half-demolished, dust everywhere, a sledgehammer, a wall opened up to reveal tangled pipes and wires",
+    "situation": "A couple decides to knock down one wall; it turns out to hold up the house and contain every pipe",
+    "cast": ["enthusiastic DIY partner", "worried partner", "contractor friend", "plumber on the phone"],
+    "visualTropes": ["a hole in a wall with a tangle of wires", "dust clouds", "a sledgehammer mid-swing", "a water spray from a pipe"],
+    "jokeHooks": ["removing one wall breaks everything, like deleting an unused function that was used", "the wall had pipes nobody documented, like hidden dependencies", "the weekend project becomes a six-month epic"]
+  }
+]

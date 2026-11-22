@@ -1,0 +1,142 @@
+[
+  {
+    "id": "high-noon-showdown",
+    "title": "Showdown at high noon",
+    "setting": "exterior",
+    "place": "A dusty main street at noon, false-front buildings, a clock tower, tumbleweeds rolling, townsfolk peeking from behind shutters",
+    "situation": "Two gunslingers face off at fifty paces as the clock ticks toward twelve; everyone waits for someone to twitch",
+    "cast": ["squinting stranger in a poncho", "black-hatted outlaw", "nervous sheriff", "undertaker measuring both"],
+    "visualTropes": ["extreme close-ups of narrowed eyes", "hands hovering over holsters", "a tumbleweed rolling between", "a clock hand about to strike"],
+    "jokeHooks": ["two developers wait to see who merges first and gets the conflict", "the undertaker measures both like a reviewer preparing a rejection", "the standoff lasts as long as a CI queue"]
+  },
+  {
+    "id": "saloon-brawl",
+    "title": "Saloon brawl",
+    "setting": "crowd",
+    "place": "A crowded saloon with swinging doors, a long bar, a mirror, a honky-tonk piano, poker tables and a balcony full of onlookers",
+    "situation": "A card cheat is caught and the whole saloon erupts, chairs flying, while the piano player keeps playing",
+    "cast": ["card cheat with aces in a sleeve", "burly cowhand", "unflappable bartender polishing a glass", "piano player"],
+    "visualTropes": ["a man thrown through swinging doors", "a bottle sliding along the bar", "a chair breaking over a back", "a body crashing through the balcony rail"],
+    "jokeHooks": ["one cheating test makes the whole suite brawl", "the bartender polishes the same glass, the one stable service", "the piano player keeps playing like an alert stream nobody reads"]
+  },
+  {
+    "id": "train-robbery-rooftops",
+    "title": "Train robbery on the rooftops",
+    "setting": "action",
+    "place": "A steam train racing through red canyons, bandits galloping alongside, a fight on the roofs of the carriages, a tunnel approaching",
+    "situation": "Bandits leap from horses onto the train to rob the safe car while a lawman fights them along the roof",
+    "cast": ["bandit leader in a bandana", "lawman with a star badge", "panicking conductor", "express agent guarding a safe"],
+    "visualTropes": ["horses galloping beside the cars", "a low tunnel approaching", "a safe blown open in smoke", "coal smoke streaming back"],
+    "jokeHooks": ["everyone ducks just in time for the tunnel, except the one who never reads the release notes", "the safe opens on the third stick of dynamite, the third retry", "the bandits uncouple the wrong car, like reverting the wrong commit"]
+  },
+  {
+    "id": "cattle-drive-river",
+    "title": "Cattle drive across the river",
+    "setting": "exterior",
+    "place": "A wide muddy river on the open plains, a herd of longhorns plunging in, cowboys on horseback, a chuckwagon waiting on the bank",
+    "situation": "The trail boss pushes the herd across the swollen river while a few steers wander off and the cook yells about supper",
+    "cast": ["weathered trail boss", "greenhorn cowpoke", "grumpy chuckwagon cook", "stubborn lead steer"],
+    "visualTropes": ["longhorns swimming", "lassos spinning overhead", "a chuckwagon with a canvas top", "dust and spray in sunlight"],
+    "jokeHooks": ["the herd follows the lead steer anywhere, like a team copying one bad pattern", "counting cattle on the far bank is the post-deploy check", "the stragglers are flaky tests wandering off the trail"]
+  },
+  {
+    "id": "stampede-canyon",
+    "title": "Stampede through the canyon",
+    "setting": "action",
+    "place": "A narrow red-rock canyon with a thundering stampede of cattle, lightning overhead, riders racing at the front to turn the herd",
+    "situation": "A lightning strike spooks the herd; riders gallop alongside trying to turn them before the canyon ends at a cliff",
+    "cast": ["fearless trail rider", "kid on a pony", "panicking cook on a wagon", "lead bull"],
+    "visualTropes": ["horns filling the canyon", "lightning bolts", "a wagon bouncing on two wheels", "dust clouds like smoke"],
+    "jokeHooks": ["one alert spooks every service, and the whole stack stampedes", "the riders turn the herd at the last second, like a hotfix before the cliff", "the cook's wagon loses its pots like dropped packets"]
+  },
+  {
+    "id": "ghost-town-search",
+    "title": "Searching the ghost town",
+    "setting": "exterior",
+    "place": "An abandoned town with sagging buildings, a creaking windmill, a swinging saloon sign, a dry well, and empty boardwalks",
+    "situation": "Two drifters search the ghost town for a hidden stash, and every door creaks, every shadow could be someone",
+    "cast": ["old prospector with a mule", "young drifter", "rattlesnake on the porch", "owl in the bell tower"],
+    "visualTropes": ["a windmill creaking", "a sign swinging on one chain", "a dried-up well", "a dusty piano in a broken saloon"],
+    "jokeHooks": ["a town full of abandoned services nobody shut down", "the old prospector remembers where everything is but not why", "the map to the stash is an old README with dead links"]
+  },
+  {
+    "id": "stagecoach-chase",
+    "title": "Stagecoach chase across the desert",
+    "setting": "action",
+    "place": "A dusty desert road through mesas and cacti, a stagecoach pulled by six horses, riders in pursuit firing rifles",
+    "situation": "The driver whips the horses as passengers fire back; a wheel wobbles loose and a passenger climbs to the roof to fix it",
+    "cast": ["tough stagecoach driver", "card sharp passenger", "prim schoolteacher", "outlaw riders"],
+    "visualTropes": ["a wheel wobbling loose", "luggage tumbling off the roof", "cactus flashing by", "dust trails from pursuers"],
+    "jokeHooks": ["fixing a wheel on a moving coach, like patching production during an incident", "the luggage falling off the roof is the scope being cut", "the schoolteacher turns out to be the best shot, like the quiet junior who finds the bug"]
+  },
+  {
+    "id": "gold-rush-boomtown",
+    "title": "Gold rush boomtown",
+    "setting": "crowd",
+    "place": "A muddy boomtown of tents and plank buildings beside a river, miners panning, an assay office line, a merchant selling shovels",
+    "situation": "Prospectors crowd the assay office with rocks while the shovel merchant gets rich no matter what",
+    "cast": ["fast-talking shovel merchant", "hopeful prospector", "assayer with a magnifier", "town crier"],
+    "visualTropes": ["gold pans in the river", "a line of miners with sacks", "a shovel price chalked high", "mud everywhere"],
+    "jokeHooks": ["the shovel merchant sells tooling to everyone chasing a hype trend", "most nuggets are fool's gold that pass the first check", "the assay line moves as slowly as a review queue"]
+  },
+  {
+    "id": "frontier-jailbreak",
+    "title": "Jailbreak from the sheriff's office",
+    "setting": "interior",
+    "place": "A small sheriff's office with two iron cells, a rack of rifles, a wanted poster wall, a key ring on a nail just out of reach",
+    "situation": "A prisoner tries to hook the keys with a boot while the deputy dozes, and a gang ties a rope to the bars from outside",
+    "cast": ["dozing deputy", "wily prisoner", "gang member with a horse outside", "sheriff's dog"],
+    "visualTropes": ["a key ring on a nail", "a wall ripped away by a horse", "wanted posters with sketches", "a dog sleeping on the keys"],
+    "jokeHooks": ["the keys hang one inch out of reach, like permissions you almost have", "the horse pulls out the whole wall instead of the bars, like an over-eager refactor", "the dog sleeps on the one thing everyone needs, like a lock held by a dead process"]
+  },
+  {
+    "id": "railroad-spike-race",
+    "title": "Race to drive the golden spike",
+    "setting": "exterior",
+    "place": "A vast plain where two railroad crews lay track toward each other, hammers swinging, locomotives behind each crew",
+    "situation": "Two rival crews race to meet; when they do, the rails are a foot apart",
+    "cast": ["rival foremen", "hammer-swinging crew", "dignitary with a golden spike", "photographer under a cloth hood"],
+    "visualTropes": ["two locomotives nose to nose", "rails ending a foot apart", "a golden spike on a pillow", "a camera on a tripod"],
+    "jokeHooks": ["two teams build toward each other and the APIs do not line up", "the photographer captures the moment of the integration failing", "the golden spike is the final merge that needs one more shim"]
+  },
+  {
+    "id": "medicine-show-wagon",
+    "title": "Snake-oil medicine show",
+    "setting": "crowd",
+    "place": "A town square with a painted wagon that folds out into a stage, a banjo player, bottles stacked in pyramids, a crowd of skeptical locals",
+    "situation": "A smooth-talking huckster sells a miracle tonic that cures everything, while a plant in the crowd fakes a miraculous recovery",
+    "cast": ["huckster in a striped vest", "plant in the crowd with crutches", "skeptical doctor", "banjo player"],
+    "visualTropes": ["a pyramid of bottles", "a wagon stage with bunting", "crutches thrown in the air", "a skeptical crowd with arms crossed"],
+    "jokeHooks": ["the tonic is a library that claims to fix everything with one install", "the plant's testimonial is a benchmark run on a cherry-picked case", "the doctor runs the real test and the bottles explode"]
+  },
+  {
+    "id": "campfire-under-stars",
+    "title": "Campfire on the open range",
+    "setting": "exterior",
+    "place": "An open prairie at night, a campfire under a huge starry sky, horses hobbled nearby, coyotes howling on a ridge",
+    "situation": "Cowhands eat beans, tell tall tales and sing, until a coyote steals the cook's last biscuit",
+    "cast": ["cook with a coffee pot", "harmonica-playing cowhand", "tall-tale teller", "sneaky coyote"],
+    "visualTropes": ["a huge starry sky", "a coffee pot on coals", "silhouettes of horses", "coyotes on a ridge"],
+    "jokeHooks": ["each tall tale grows like an incident retold in standup", "the harmonica plays the same song like a looped retry", "the coyote steals the biscuit, like a background job taking the last connection"]
+  },
+  {
+    "id": "bank-heist-vault",
+    "title": "Bank heist with too much dynamite",
+    "setting": "interior",
+    "place": "A small frontier bank with a teller cage, a big iron safe with a dial, and a gang in bandanas stacking dynamite",
+    "situation": "Robbers use far too much dynamite; the safe survives untouched but the bank walls blow away",
+    "cast": ["gang leader with a pocket watch", "dynamite expert", "calm bank teller", "sheriff arriving late"],
+    "visualTropes": ["a pile of dynamite sticks", "walls blown flat around a standing safe", "money fluttering", "bandanas and dust"],
+    "jokeHooks": ["too much dynamite is the agent that rewrites everything for a one-line fix", "the safe survives because it was the only well-tested part", "the teller tells them the safe was never locked"]
+  },
+  {
+    "id": "rodeo-bronco-ride",
+    "title": "Rodeo bronco ride",
+    "setting": "crowd",
+    "place": "A dusty rodeo arena with wooden fences, a packed grandstand, clowns in barrels, a chute gate about to open",
+    "situation": "A rider tries to stay on a bucking bronco for eight seconds while the crowd counts and clowns distract the bull",
+    "cast": ["determined bronco rider", "wild-eyed bronco", "rodeo clown in a barrel", "announcer in a booth"],
+    "visualTropes": ["a rider airborne off the saddle", "a hat flying away", "clowns diving into barrels", "a scoreboard timer"],
+    "jokeHooks": ["staying on for eight seconds is surviving a load test", "the bronco bucks exactly when the reviewer is watching", "the rodeo clown is the on-call engineer who distracts the bull"]
+  }
+]

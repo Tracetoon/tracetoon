@@ -142,7 +142,7 @@ describe('comic look and user requests', () => {
 
   test('an explicit user request is sent and lifts the archetypes-only rule', () => {
     const plain = pagePrompt(pageScript());
-    expect(plain).toContain('genre archetypes are fine');
+    expect(plain).toContain('genre parody of familiar tropes and settings is welcome');
     expect(plain).toContain('never reproduce a specific existing film, TV, cartoon or game character');
     const asked = pageScript({ request: 'stormtroopers arguing about tabs' });
     expect(errors(checkScript(asked))).toEqual([]);

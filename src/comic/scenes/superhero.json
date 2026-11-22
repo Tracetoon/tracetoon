@@ -1,0 +1,142 @@
+[
+  {
+    "id": "gargoyle-perch",
+    "title": "Brooding on the gargoyle",
+    "setting": "exterior",
+    "place": "A gothic city at night in driving rain, spiked cathedral towers, a stone gargoyle ledge, a spotlight signal glowing in the low clouds",
+    "situation": "A brooding caped vigilante crouches on the gargoyle and keeps finishing his brooding while the signal in the sky flashes more urgently",
+    "cast": ["brooding caped vigilante", "tired police commissioner at the spotlight", "kid sidekick in bright colors", "mugger in the alley below"],
+    "visualTropes": ["a cape billowing like wings in the rain", "a spotlight symbol on clouds", "a silhouette on a gargoyle", "lightning behind spiked towers"],
+    "jokeHooks": ["the sky signal is a pager alert the on-call hero acknowledges and ignores", "the commissioner turns around and the hero is gone, like a test that passes when anyone watches", "the bright sidekick asks why every fix has to be so dark"]
+  },
+  {
+    "id": "sunny-skyline-flyover",
+    "title": "Flying over the sunny skyline",
+    "setting": "exterior",
+    "place": "A sunny art-deco megacity of gleaming towers, a newspaper building topped by a giant globe, blue sky with one perfect cloud",
+    "situation": "A cheerful caped hero streaks across the skyline and the crowd below argues whether that's a bird or an aircraft",
+    "cast": ["square-jawed flying hero with a curl", "ace reporter with a notepad", "mild-mannered coworker with glasses", "crowd squinting upward"],
+    "visualTropes": ["a red cape streaking through blue sky", "a giant globe on a rooftop", "crowd heads tilted up in unison", "a cape flapping heroically"],
+    "jokeHooks": ["nobody notices the hero is the coworker in glasses, like a bug hiding in plain sight", "the hero fixes everything before lunch and asks what the fuss was about", "the crowd watches the sky like a team watching a deploy progress bar"]
+  },
+  {
+    "id": "arctic-crystal-retreat",
+    "title": "Crystal retreat in the arctic",
+    "setting": "exterior",
+    "place": "A palace of giant jagged crystals jutting from arctic ice, a green aurora overhead, a giant key lying in the snow",
+    "situation": "The hero flies to the crystal palace for advice, but the hologram of a long-gone parent only answers questions it was recorded for",
+    "cast": ["lonely caped hero", "glowing holographic parent", "curious polar bear", "visiting reporter shivering"],
+    "visualTropes": ["crystal spires shooting from ice", "an aurora rippling green", "a giant hologram head", "a tiny hero in a vast frozen hall"],
+    "jokeHooks": ["the hologram parent is legacy documentation that never answers the actual question", "the giant key is a secret nobody rotated in decades", "flying here to think is like closing every chat to finally read the stack trace"]
+  },
+  {
+    "id": "orbital-watchtower",
+    "title": "The team's orbital watchtower",
+    "setting": "exterior",
+    "place": "A ring-shaped hero satellite in orbit, glass domes, the Earth glowing blue below, heroes floating outside in space",
+    "situation": "Heroes in mismatched suits spacewalk to fix a snapped antenna before a meteor swarm hits, each insisting on their own method",
+    "cast": ["armored tech genius", "lightning-fast speedster", "stoic warrior princess with a lasso", "green alien detective"],
+    "visualTropes": ["the Earth filling the background", "a meteor swarm on the horizon", "capes floating in zero gravity", "a speedster blurring around a dish"],
+    "jokeHooks": ["four heroes fixing one antenna is four agents editing the same file", "the speedster replaces the antenna three times before anyone agrees on the spec", "the meteor swarm is the backlog arriving all at once"]
+  },
+  {
+    "id": "runaway-train-rescue",
+    "title": "Stopping the runaway train",
+    "setting": "action",
+    "place": "An elevated city railway with a section of track torn away, a packed commuter train screaming toward the gap, sparks everywhere",
+    "situation": "A masked wall-crawler shoots web lines to every building and strains to stop the train, while passengers hold their breath",
+    "cast": ["masked wall-crawler", "terrified train driver", "passengers pressed to windows", "multi-armed villain fleeing"],
+    "visualTropes": ["web lines stretched to buildings", "a hero bracing at the train's nose", "sparks fountaining from wheels", "the front car inches from a gap"],
+    "jokeHooks": ["the hero stops the train inches before the gap, like a rollback seconds before customers notice", "passengers carry the exhausted hero overhead like the team after a weekend fix", "each web line is one more retry holding the system together"]
+  },
+  {
+    "id": "villain-team-battle",
+    "title": "Villain team-up in the plaza",
+    "setting": "action",
+    "place": "A downtown plaza turned battlefield, frozen fountain on one side, burning cars on the other, a giant robot stomping through",
+    "situation": "Five villains attack together in perfect coordination, while the hero team argues mid-fight about who's in charge",
+    "cast": ["freeze-ray villain in a cold suit", "fire-throwing villain", "giant robot built by a mad scientist", "squabbling hero team"],
+    "visualTropes": ["ice and fire beams crossing", "a robot foot crushing a car", "heroes pointing at each other mid-fight", "civilians diving behind a bench"],
+    "jokeHooks": ["the villains coordinate better than the heroes, like an attacker reading your public roadmap", "the heroes argue ownership like a ticket bounced between three teams", "the giant robot was built from one villain's side project"]
+  },
+  {
+    "id": "sky-portal-battle",
+    "title": "Battle under the sky portal",
+    "setting": "action",
+    "place": "A skyline with a swirling portal torn open above a tower, alien chariots and giant armored space-whales pouring through",
+    "situation": "Heroes fight in the air and the streets while one flies a bomb into the portal to close it before it swallows the city",
+    "cast": ["armored flying genius", "green rage giant", "archer on a rooftop", "trickster god who opened the portal"],
+    "visualTropes": ["a portal swirling over a tower", "space-whales gliding between buildings", "heroes in a circle back to back", "a flying hero carrying a bomb upward"],
+    "jokeHooks": ["the portal keeps spawning aliens like a job queue no one can drain", "the green giant smashes the trickster like a force push", "closing the portal from inside is the one fix only the person who opened it understands"]
+  },
+  {
+    "id": "speedster-bank-robbery",
+    "title": "Speedster foils the bank robbery",
+    "setting": "action",
+    "place": "A marble bank lobby frozen mid-robbery, bills hanging in the air, shattered glass suspended, a red streak weaving through it all",
+    "situation": "Time slows to a crawl as a speedster tidies the whole robbery up, even hanging the robbers' coats, before anyone blinks",
+    "cast": ["grinning red-suited speedster", "robbers frozen mid-shout", "teller mid-scream", "slow-motion pigeon"],
+    "visualTropes": ["bills suspended in mid-air", "lightning trails crisscrossing the lobby", "robbers tied up before they finish shouting", "glass shards hanging still"],
+    "jokeHooks": ["the speedster answers before the request finishes, like a suspiciously fast cache", "the robbers wake up tied together like flaky tests quarantined overnight", "he also refactors the teller's filing system without asking"]
+  },
+  {
+    "id": "ticker-tape-parade",
+    "title": "Ticker-tape parade for the team",
+    "setting": "crowd",
+    "place": "A canyon of skyscrapers on a bright day, ticker tape snowing down, heroes on floats, balloons shaped like heroes",
+    "situation": "The city throws a parade for the hero team, but a giant hero balloon breaks loose and starts drifting into a tower",
+    "cast": ["heroes waving from floats", "mayor hogging the microphone", "kids in homemade capes", "runaway hero balloon"],
+    "visualTropes": ["ticker tape snowing between towers", "a giant balloon drifting loose", "kids in towel capes", "a marching band"],
+    "jokeHooks": ["the mayor takes credit for the fix in the release notes", "the runaway balloon is the one tiny regression at the launch party", "kids in homemade capes are the junior devs copying senior patterns"]
+  },
+  {
+    "id": "villain-council",
+    "title": "Council of villains in the swamp lair",
+    "setting": "crowd",
+    "place": "A skull-shaped swamp headquarters, a long table of villains in wild costumes, glowing screens of the heroes' faces",
+    "situation": "A dozen villains plan to destroy the hero team but spend the whole meeting arguing about the evil plan's name",
+    "cast": ["bald genius billionaire villain", "giggling clown-faced villain", "gorilla with a brain ray", "henchmen taking minutes"],
+    "visualTropes": ["a skull-shaped lair rising from a swamp", "villains around a long table", "a gorilla in a lab coat", "henchmen holding up name signs"],
+    "jokeHooks": ["the villains bikeshed the plan name for an hour, like a variable naming debate", "every villain wants a giant laser, like every team wanting its own framework", "the henchmen do all the actual work like an unthanked CI runner"]
+  },
+  {
+    "id": "asylum-breakout",
+    "title": "Mass breakout at the villain asylum",
+    "setting": "crowd",
+    "place": "A spiky gothic asylum on an island in a storm, cell doors swinging open, searchlights spinning, villains pouring into the yard",
+    "situation": "Every villain escapes at once after one cell door fails, and the heroes arrive to find a courtyard of grinning costumed escapees",
+    "cast": ["grinning clown-faced villain leading", "riddle-obsessed villain in green", "overwhelmed guards", "heroes landing in the yard"],
+    "visualTropes": ["cell doors swinging open in a row", "searchlights sweeping", "villains in orange jumpsuits and masks", "lightning over the towers"],
+    "jokeHooks": ["one failed cell lock frees everyone, like one bad config taking down every service", "the riddle villain leaves clues like an error message written as a puzzle", "the heroes recapture them one at a time like triaging an incident queue"]
+  },
+  {
+    "id": "hero-cave-lair",
+    "title": "The secret cave headquarters",
+    "setting": "interior",
+    "place": "A vast cave under a mansion, a waterfall hiding the entrance, bats in the rafters, a trophy hall of oversized souvenirs, a sleek car on a turntable",
+    "situation": "The vigilante preps gear for the night while his patient butler brings tea and points out that the car still needs a service",
+    "cast": ["vigilante in half his suit", "patient elderly butler", "colony of bats", "sleek armored car"],
+    "visualTropes": ["a waterfall over the entrance", "a car on a rotating platform", "oversized trophies from old cases", "bats swirling through lights"],
+    "jokeHooks": ["the butler is the one senior dev who actually knows how everything works", "every trophy is a souvenir from a past incident that nobody wrote up", "the utility belt has a tool for everything except the bug at hand"]
+  },
+  {
+    "id": "acid-vat-trap",
+    "title": "Dangling over the bubbling vat",
+    "setting": "interior",
+    "place": "A villain's chemical plant with a huge bubbling green vat, catwalks, steam, a hero tied to a rope lowering slowly",
+    "situation": "The villain explains the whole scheme in detail while the rope slowly lowers the hero toward the green bubbling vat",
+    "cast": ["monologuing villain with a cane", "hero dangling upside down", "henchman at the winch", "sidekick sneaking along the catwalk"],
+    "visualTropes": ["green bubbles popping below", "a rope fraying strand by strand", "steam curling around catwalks", "a villain silhouetted on a gantry"],
+    "jokeHooks": ["the villain explains every step like a verbose log, giving the hero time to escape", "the rope lowers at a fixed rate like a long build bar", "the sidekick arrives just as the timeout expires"]
+  },
+  {
+    "id": "hero-hall-round-table",
+    "title": "Hall of heroes round table",
+    "setting": "interior",
+    "place": "A towering marble hall with giant hero statues, a glowing round table with each hero's symbol, a monitor wall of world threats",
+    "situation": "The team holds an emergency meeting while alarms blare; nobody can agree, and the speedster already solved it",
+    "cast": ["noble team leader", "sarcastic armored genius", "speedster arriving out of breath", "the team's alien heavy hitter"],
+    "visualTropes": ["giant hero statues looming", "glowing symbols at each seat", "a wall of flashing world threats", "a chair spinning after a speedster leaves"],
+    "jokeHooks": ["the meeting about the incident lasts longer than the incident", "the speedster fixes it during the meeting, like a dev who ships while others plan", "every hero's chair has their own symbol like code owners files"]
+  }
+]

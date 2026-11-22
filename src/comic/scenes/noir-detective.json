@@ -1,0 +1,338 @@
+[
+  {
+    "id": "rain-alley-streetlamp",
+    "title": "Alley under a lone streetlamp",
+    "setting": "exterior",
+    "place": "A black-and-white alley in pouring rain, one streetlamp, overflowing trash cans, a fire escape dripping, a long shadow at the far end",
+    "situation": "The gumshoe waits under the lamp for an informant who is late, while a shadow at the end of the alley grows longer",
+    "cast": [
+      "gumshoe in a fedora and trench coat",
+      "jittery informant",
+      "alley cat knocking over cans",
+      "mysterious shadow"
+    ],
+    "visualTropes": [
+      "rain slanting through lamplight",
+      "a cigarette glowing under a hat brim",
+      "a shadow stretching up a brick wall",
+      "puddles reflecting the lamp"
+    ],
+    "jokeHooks": [
+      "the informant is late like a webhook that never fires",
+      "the shadow at the end of the alley is the bug everyone pretends isn't there",
+      "the gumshoe narrates every step like an overly verbose log"
+    ]
+  },
+  {
+    "id": "foggy-pier-handoff",
+    "title": "Handoff on the foggy pier",
+    "setting": "exterior",
+    "place": "A wooden pier at midnight thick with fog, a freighter horn moaning, crates stacked, a dark sedan with its engine running",
+    "situation": "A wrapped statuette changes hands while everyone on the pier claims it's the real one",
+    "cast": [
+      "portly collector in a white suit",
+      "gumshoe with his hands in his pockets",
+      "nervous gunsel",
+      "sailor unloading crates"
+    ],
+    "visualTropes": [
+      "fog swallowing the pier lights",
+      "a wrapped bird statuette",
+      "a freighter looming",
+      "a sedan idling with headlights off"
+    ],
+    "jokeHooks": [
+      "the statuette is a dependency everyone swears is the real version",
+      "every party claims ownership like a file with three authors",
+      "the fog hides everything like a log with no timestamps"
+    ]
+  },
+  {
+    "id": "hollywood-hills-billboard",
+    "title": "Hilltop above the city lights",
+    "setting": "exterior",
+    "place": "A dusty hillside road at night, a giant billboard, the sprawling city glittering below, a convertible parked with its lights on",
+    "situation": "The detective and a client in a fur stole look over the city as she explains why everyone is lying except her",
+    "cast": [
+      "glamorous client in a fur stole",
+      "world-weary detective",
+      "billboard with a smiling face",
+      "lurking photographer"
+    ],
+    "visualTropes": [
+      "city lights spread below",
+      "a convertible at the cliff edge",
+      "a giant billboard face watching",
+      "smoke curling from a cigarette"
+    ],
+    "jokeHooks": [
+      "the client's story changes every time like an unpinned dependency",
+      "the billboard smiles over everything like a green status page",
+      "the photographer captures the exact moment like a flaky test screenshot"
+    ]
+  },
+  {
+    "id": "rainy-cemetery-funeral",
+    "title": "Funeral in the rain",
+    "setting": "exterior",
+    "place": "A hillside cemetery in pouring rain, a sea of black umbrellas, a grave, a mausoleum, a gumshoe watching from behind a tree",
+    "situation": "The detective watches who shows up to the funeral; the dead man's partner is suspiciously cheerful",
+    "cast": [
+      "detective behind a tree",
+      "grieving widow with a veil",
+      "cheerful business partner",
+      "priest with a soggy Bible"
+    ],
+    "visualTropes": [
+      "umbrellas like black mushrooms",
+      "rain streaming off fedoras",
+      "a veil hiding eyes",
+      "a smile hidden behind a hand"
+    ],
+    "jokeHooks": [
+      "the funeral is for a deprecated feature nobody admits killing",
+      "the partner is cheerful like a reviewer who approved the bug",
+      "everyone at the grave has a different story like conflicting logs"
+    ]
+  },
+  {
+    "id": "el-train-chase",
+    "title": "Chase under the elevated train",
+    "setting": "action",
+    "place": "A city street under elevated train tracks, steel girders, a train roaring overhead, vintage sedans weaving between pillars",
+    "situation": "The detective chases a suspect's sedan in a borrowed taxi, ducking under girders as the train thunders above",
+    "cast": [
+      "detective in a taxi",
+      "panicked cabbie",
+      "suspect in a sedan",
+      "beat cop blowing a whistle"
+    ],
+    "visualTropes": [
+      "girders flashing past",
+      "a train overhead throwing sparks",
+      "sedans screeching around pillars",
+      "headlights in rain"
+    ],
+    "jokeHooks": [
+      "the chase loops the same block like an infinite retry",
+      "the cabbie charges for every detour like a cloud bill",
+      "the train overhead is a build that never stops"
+    ]
+  },
+  {
+    "id": "funhouse-mirror-showdown",
+    "title": "Showdown in the hall of mirrors",
+    "setting": "action",
+    "place": "An abandoned amusement pier funhouse, a hall of mirrors, dozens of reflections, glass shattering",
+    "situation": "The detective and the femme fatale circle each other through mirrors; nobody knows which reflection is real",
+    "cast": [
+      "detective with a flashlight",
+      "femme fatale in a slinky gown",
+      "her many reflections",
+      "clown statue"
+    ],
+    "visualTropes": [
+      "dozens of reflections",
+      "glass shattering",
+      "a flashlight beam bouncing",
+      "a clown statue grinning"
+    ],
+    "jokeHooks": [
+      "finding the real reflection is like finding the real error among cascading ones",
+      "every shattered mirror is a mock that stops lying",
+      "the clown statue is the flaky test grinning in CI"
+    ]
+  },
+  {
+    "id": "rooftop-water-tower",
+    "title": "Struggle on the water tower",
+    "setting": "action",
+    "place": "A rooftop at night with a wooden water tower, laundry lines, a neon sign buzzing, the street dizzyingly far below",
+    "situation": "The detective hangs from a ladder on the water tower while the killer tries to pry his fingers loose",
+    "cast": [
+      "detective hanging from a ladder",
+      "killer in a long coat",
+      "pigeon on the tower",
+      "beat cop arriving below"
+    ],
+    "visualTropes": [
+      "fingers gripping a rung",
+      "a neon sign buzzing",
+      "a water tower leaking",
+      "the street far below"
+    ],
+    "jokeHooks": [
+      "hanging on by one rung is like a release held up by one passing test",
+      "the killer pries fingers like a dependency removal",
+      "the cop arrives after the incident report is filed"
+    ]
+  },
+  {
+    "id": "warehouse-brawl",
+    "title": "Brawl in the bootleg warehouse",
+    "setting": "action",
+    "place": "A warehouse full of bootleg crates, a single swinging lightbulb, barrels leaking, a truck backing in",
+    "situation": "The detective fights three thugs as the lightbulb swings, lighting a different scene in each flash",
+    "cast": [
+      "detective swinging punches",
+      "thugs in flat caps",
+      "bootlegger boss",
+      "dog barking"
+    ],
+    "visualTropes": [
+      "a swinging lightbulb",
+      "barrels leaking",
+      "punches in silhouette",
+      "a truck in the doorway"
+    ],
+    "jokeHooks": [
+      "each swing of the bulb shows a different state, like a race condition",
+      "the bootleg crates are vendored dependencies nobody ever checked",
+      "the boss watches from the stairs asking for a status update"
+    ]
+  },
+  {
+    "id": "smoky-jazz-club",
+    "title": "Jazz club with a torch singer",
+    "setting": "crowd",
+    "place": "A smoky basement jazz club, a torch singer in a spotlight, a trumpet wailing, tables of gangsters, a bartender polishing glasses",
+    "situation": "The detective nurses a drink while the torch singer sings straight at him, and every gangster table goes quiet when he stands up",
+    "cast": [
+      "torch singer in a sequined gown",
+      "trumpet player",
+      "gangsters at tables",
+      "bartender who knows everything"
+    ],
+    "visualTropes": [
+      "smoke curling through a single spotlight",
+      "a trumpet raised toward the ceiling",
+      "fedoras tilted low at every table",
+      "a glass polished the same slow way for an hour"
+    ],
+    "jokeHooks": [
+      "the singer's slow ballad is the postmortem of last night's outage",
+      "the bartender remembers every secret like a log nobody rotated",
+      "every gangster table watches the detective like reviewers waiting for him to push"
+    ]
+  },
+  {
+    "id": "steamy-train-station",
+    "title": "Train station in a cloud of steam",
+    "setting": "crowd",
+    "place": "A grand station concourse with a giant clock, steam engines hissing, crowds with suitcases, a newsboy shouting headlines",
+    "situation": "The detective must spot one suspect in a sea of identical hats before the midnight train pulls out under the giant clock",
+    "cast": [
+      "detective scanning the crowd",
+      "suspect with a briefcase",
+      "newsboy shouting",
+      "porter with a cart"
+    ],
+    "visualTropes": [
+      "a giant clock face at five to midnight",
+      "steam clouds rolling across the platform",
+      "a sea of identical grey fedoras",
+      "a conductor raising a whistle"
+    ],
+    "jokeHooks": [
+      "the midnight train is the release cut nobody will hold",
+      "finding one suspect among identical hats is grepping an unstructured log",
+      "the newsboy shouts every headline like an alert channel with no filters"
+    ]
+  },
+  {
+    "id": "racetrack-grandstand",
+    "title": "Racetrack grandstand",
+    "setting": "crowd",
+    "place": "A crowded racetrack in the afternoon, grandstands, betting windows, horses thundering, binoculars everywhere",
+    "situation": "The detective tails a bookie through the roaring grandstand while the favorite horse mysteriously keeps losing by a nose",
+    "cast": [
+      "detective tailing a bookie",
+      "bookie with a chalkboard",
+      "jockey with a secret",
+      "crowd of bettors"
+    ],
+    "visualTropes": [
+      "horses thundering past the rail",
+      "a sea of binoculars and straw hats",
+      "betting slips raining down after a loss",
+      "a jockey whispering to a man in a checked suit"
+    ],
+    "jokeHooks": [
+      "the favorite loses by a nose every time, like a test that fails only in CI",
+      "the bookie's chalkboard odds are a dashboard with stale data",
+      "the fixed race passes because nobody checks the inputs"
+    ]
+  },
+  {
+    "id": "venetian-blind-office",
+    "title": "Office of venetian blind shadows",
+    "setting": "interior",
+    "place": "A cramped detective's office, venetian blinds striping the room with shadows, a whiskey bottle, a ceiling fan, frosted glass door with a name",
+    "situation": "A mysterious client walks in out of the rain with a job that sounds too simple",
+    "cast": [
+      "detective with his feet on the desk",
+      "mysterious client",
+      "secretary filing nails",
+      "ceiling fan"
+    ],
+    "visualTropes": [
+      "striped shadows from blinds",
+      "a silhouette in frosted glass",
+      "a whiskey bottle",
+      "a ceiling fan turning"
+    ],
+    "jokeHooks": [
+      "the job sounds like a one-line fix and takes the whole movie",
+      "the client's story has more holes than the test suite",
+      "the secretary already knows the answer but nobody asked her, like the docs"
+    ]
+  },
+  {
+    "id": "greenhouse-orchid-meeting",
+    "title": "Meeting in the steamy greenhouse",
+    "setting": "interior",
+    "place": "A rich man's steamy greenhouse of orchids, dripping glass, an old man in a wheelchair under blankets, a butler waiting",
+    "situation": "The ailing millionaire hires the detective while the heat makes everyone sweat",
+    "cast": [
+      "ailing millionaire in a wheelchair",
+      "sweating detective",
+      "butler",
+      "wild daughter"
+    ],
+    "visualTropes": [
+      "orchids everywhere",
+      "glass dripping",
+      "a wheelchair under blankets",
+      "sweat on a collar"
+    ],
+    "jokeHooks": [
+      "the millionaire wants the bug found without anyone touching the code",
+      "everyone sweats through their collar like a build server in summer",
+      "the wild daughter keeps creating the incidents the detective was hired to solve"
+    ]
+  },
+  {
+    "id": "bare-bulb-interrogation",
+    "title": "Interrogation under a bare bulb",
+    "setting": "interior",
+    "place": "A bare interrogation room with one hanging bulb, a metal table, an overflowing ashtray, a one-way mirror",
+    "situation": "Two detectives play good cop, bad cop with a smug suspect who sticks to one story and won't crack, while the bulb swings",
+    "cast": [
+      "good cop",
+      "bad cop",
+      "smug suspect",
+      "captain behind the mirror"
+    ],
+    "visualTropes": [
+      "a bare bulb swinging overhead",
+      "cigarette smoke hanging in layers",
+      "a fist slamming the metal table",
+      "a captain's silhouette behind the one-way mirror"
+    ],
+    "jokeHooks": [
+      "the suspect is the bug that won't reproduce when anyone is watching",
+      "good cop, bad cop is a review with one kind reviewer and one nitpicker",
+      "the suspect repeats one alibi like a mocked function returning the same value"
+    ]
+  }
+]

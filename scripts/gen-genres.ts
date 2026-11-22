@@ -13,9 +13,26 @@ of your own for a genre not listed), then find the joke inside that world.
 comics, unless the user asked for it (\`"request"\`) or the repo pins one
 (\`config genre\`).
 
-Draw genre **archetypes**, not a particular work: a grizzled starship captain
-in a generic uniform is fine; a specific show's captain, insignia or ship is
-not. Generalize to the class.
+**Parody the trope, not the property.** Evoke the familiar settings and
+character types of a genre's famous works (a cantina of odd aliens, an away
+team on a painted planet, a masked dark lord); never name the work or its
+characters, and never copy a specific character's design, insignia or ship.
+
+**Scenes.** Each genre has scenes: places and situations to stage a comic in,
+with a cast, visual tropes and joke hooks. \`context.json\` offers a few fresh
+ones per genre in \`sceneOptions\`; set \`"scene"\` to the id you use. A genre
+file adds its own after its notes, one \`## Scene: <id>\` section each:
+
+\`\`\`markdown
+## Scene: leaky-bilge
+title: Bailing out the bilge
+setting: action
+place: The flooded bilge of a galleon in a storm, lanterns swinging, water to the knees
+situation: The crew bails as fast as the leaks open, and every patch springs two more
+cast: one-eyed captain; parrot that repeats log lines; cabin boy with a bucket
+visualTropes: lanterns swinging; water spraying from planks; a chain of buckets
+jokeHooks: every patched leak opens two more, like flaky tests; the parrot repeats the error log
+\`\`\`
 
 **Your own genres.** Users and repos add genres as genre files, and
 \`genreOptions\` offers them alongside the ones below (an option's \`notes\` is
@@ -52,6 +69,7 @@ ${GENRES.map(
 - **Props that carry the PR's words:** ${g.props.join('; ')}
 - **Joke hooks:** ${g.jokeHooks.join('; ')}
 - **Styles that suit it:** ${g.styles.map((s) => `\`${s}\``).join(', ')}
+- **Scenes:** ${(g.scenes ?? []).length} built in, for example ${(g.scenes ?? []).slice(0, 4).map((s) => s.title.toLowerCase()).join('; ') || 'none'}
 `,
 ).join('\n')}`;
 export const GENRES_MD = md;

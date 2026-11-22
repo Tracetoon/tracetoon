@@ -92,6 +92,8 @@ export function recentComics(
             raw.castNames.every((n: unknown) => typeof n === 'string' && n.length <= 40)
           )
             summary.castNames = castNames(raw.castNames);
+          if (typeof raw.scene === 'string' && /^[a-z0-9][a-z0-9-]{0,59}$/.test(raw.scene))
+            summary.scene = raw.scene;
         }
         return Object.keys(summary).length ? [summary] : [];
       })

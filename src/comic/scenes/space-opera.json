@@ -1,0 +1,1230 @@
+[
+  {
+    "id": "ice-planet-patrol",
+    "title": "Blizzard patrol on the ice planet",
+    "setting": "exterior",
+    "place": "A white ice planet under a howling blizzard, snow ridges to the horizon, a hidden rebel base glowing in a glacier face",
+    "situation": "A scout on a shaggy two-legged snow lizard has not come back; a friend rides out into the storm as night temperatures plunge",
+    "cast": [
+      "frost-bearded rebel scout",
+      "shaggy snow lizard mount",
+      "worried rebel commander",
+      "furry ice-cave beast with one big claw"
+    ],
+    "visualTropes": [
+      "breath freezing into icicles on goggles",
+      "a lone rider silhouetted against white-out snow",
+      "a hangar door hidden in a glacier",
+      "glowing eyes in an ice cave",
+      "a spidery probe robot landing in a snowbank"
+    ],
+    "jokeHooks": [
+      "the base shield stays up only because nobody dares restart the service",
+      "the missing scout's heartbeat check times out right at nightfall, and the base doors close on schedule anyway",
+      "a probe robot beams back a photo of the hidden base, like a secret pasted into a public issue"
+    ]
+  },
+  {
+    "id": "painted-backdrop-away-team",
+    "title": "Away team on the painted-backdrop planet",
+    "setting": "exterior",
+    "place": "A planet that looks like a studio set: purple painted sky, foam boulders, a cardboard ridge, fog machine mist around the ankles",
+    "situation": "An away team in color-coded stretchy uniforms beams down to investigate; the new crewman in the red shirt walks ahead to check the suspicious rock",
+    "cast": [
+      "square-jawed captain in a gold tunic",
+      "cool pointy-eared science officer in blue",
+      "nervous ensign in a red shirt",
+      "slow lumpy rock monster"
+    ],
+    "visualTropes": [
+      "identical foam boulders repeated in every shot",
+      "hand scanners beeping at a rock",
+      "the red-shirt ensign stepping in front of everyone",
+      "a rubbery monster lurching from behind a papier-mache crag"
+    ],
+    "jokeHooks": [
+      "the red-shirt ensign is the one test everyone expects to fail, so he gets assigned the risky migration",
+      "every boulder is the same reused prop, like one helper copy-pasted into four files",
+      "the science officer raises one eyebrow at the rock, the same reaction as at every diff"
+    ]
+  },
+  {
+    "id": "jungle-moon-ruins",
+    "title": "Hidden base in jungle-moon ruins",
+    "setting": "exterior",
+    "place": "A steaming jungle moon of giant trees and stepped stone temples, a gas giant hanging huge in the sky, fighters parked on mossy terraces",
+    "situation": "A rebel squadron preps fighters in temple ruins; a lookout on the top step spots the enemy station rising over the horizon",
+    "cast": [
+      "teenage farm-boy pilot",
+      "veteran wingman with a mustache",
+      "lookout with oversized binoculars",
+      "astromech robot on rollers"
+    ],
+    "visualTropes": [
+      "fighters lined up under vine-covered arches",
+      "a giant ringed planet filling half the sky",
+      "a temple top poking above the canopy at dawn",
+      "pilots jogging across a stone hangar with helmets under arms"
+    ],
+    "jokeHooks": [
+      "the whole squadron rides on one briefing slide that says aim for the small hole, a one-line spec",
+      "every fighter needs the same robot patched before launch, a dependency upgrade nobody scheduled",
+      "the enemy station clears the horizon like a progress bar, the deadline arriving in real time"
+    ]
+  },
+  {
+    "id": "twin-sun-dunes",
+    "title": "Robots lost in the twin-sun dunes",
+    "setting": "exterior",
+    "place": "An endless desert under two suns, rippling dunes, a giant bleached creature skeleton, a rusty treaded scavenger fortress crawling on the horizon",
+    "situation": "Two mismatched robots crash-landed in a pod and split up after an argument, each sure the other is heading the wrong way",
+    "cast": [
+      "fussy gold humanoid etiquette robot",
+      "beeping dome-headed barrel robot",
+      "small hooded salvagers with glowing eyes",
+      "desert lizard patrol"
+    ],
+    "visualTropes": [
+      "two suns in a hazy white sky",
+      "a giant skeleton half buried in sand",
+      "a crawler fortress as big as a building",
+      "footprints and wheel tracks heading opposite ways",
+      "glowing eyes under brown hoods"
+    ],
+    "jokeHooks": [
+      "two robots fork the repo in the desert and each insists theirs is main",
+      "the salvagers sweep up every stray robot, an aggressive garbage collector",
+      "the gold robot is fluent in millions of languages and still cannot parse the error message"
+    ]
+  },
+  {
+    "id": "gas-giant-cloud-city",
+    "title": "Cloud city above a gas giant",
+    "setting": "exterior",
+    "place": "A gleaming disk city floating on a stalk in the orange and pink clouds of a gas giant, open terraces, endless sunset, twin-pod cloud cars buzzing by",
+    "situation": "A charming administrator welcomes the smuggler's crew with a feast; the hosts seem a little too eager to keep one door closed",
+    "cast": [
+      "smooth caped city administrator",
+      "battered smuggler captain",
+      "pig-snouted city guards",
+      "princess with side-braided hair"
+    ],
+    "visualTropes": [
+      "a white city floating on clouds",
+      "cloud cars banking past a terrace",
+      "a long dinner table set too politely",
+      "an armored silhouette waiting at the far end of the dining room"
+    ],
+    "jokeHooks": [
+      "the deal keeps getting worse, like terms of service that change after every merge",
+      "the whole city floats on one tiny valve nobody owns, a critical package with a single maintainer",
+      "the feast is a staging environment that looks perfect until someone opens the far door"
+    ]
+  },
+  {
+    "id": "swamp-mystic-hermit",
+    "title": "Training with the swamp hermit",
+    "setting": "exterior",
+    "place": "A misty swamp planet of gnarled roots, giant lizards in the bog, a tiny mud hut glowing warm, a fighter sinking nose-up into black water",
+    "situation": "A small wrinkled big-eared mystic trains a frustrated young pilot by making him lift rocks with his mind while doing handstands",
+    "cast": [
+      "tiny wrinkled big-eared hermit mystic",
+      "frustrated young pilot",
+      "worried barrel robot",
+      "swamp snake with bad timing"
+    ],
+    "visualTropes": [
+      "a pilot doing a one-handed handstand in mud",
+      "rocks floating in a swirl of mist",
+      "a starfighter rising out of the bog dripping water",
+      "a cramped hut with a bubbling cookpot",
+      "a dark cave under a twisted tree"
+    ],
+    "jokeHooks": [
+      "the hermit answers every question with a riddle in backwards word order, like docs written by a minifier",
+      "the pilot says the sunken fighter is too big to lift, the way everyone talks about the legacy module, until the hermit just lifts it",
+      "the cave shows the pilot his own face under the enemy mask, git blame on the worst bug"
+    ]
+  },
+  {
+    "id": "crystal-cave-world",
+    "title": "Singing crystal caverns",
+    "setting": "exterior",
+    "place": "A salt-white planet whose thin crust cracks to bright red soil, opening into caverns of humming glass crystals and skittering crystal foxes",
+    "situation": "Rebels hold a mining outpost while a giant battering-ram cannon trundles across the salt flats; the crystal foxes know a back way out",
+    "cast": [
+      "weary resistance pilot",
+      "glittering crystal fox",
+      "stubborn old mine foreman",
+      "lumbering walker-mounted siege cannon"
+    ],
+    "visualTropes": [
+      "red streaks kicked up behind skimmers on white salt",
+      "humming crystals glowing in a cave",
+      "a translucent fox leading the way",
+      "a huge cannon warming up on the horizon"
+    ],
+    "jokeHooks": [
+      "the crystals sing a different note whenever something breaks, an alert nobody ever tuned",
+      "every skimmer leaves a red trail across the white flats, a diff anyone can read from orbit",
+      "the foxes know the undocumented escape route, like the one dev who knows where the rollback script lives"
+    ]
+  },
+  {
+    "id": "ocean-world-stilt-city",
+    "title": "Storm-lashed ocean world",
+    "setting": "exterior",
+    "place": "A planet of endless gray ocean, rain hammering down, a sleek white city on stilts, tall pale long-necked aliens, huge waves breaking",
+    "situation": "An investigator finds a world erased from the star charts, where polite long-necked locals have quietly built an entire army for someone",
+    "cast": [
+      "rain-soaked bearded investigator",
+      "polite long-necked alien host",
+      "armored bounty hunter with a jetpack",
+      "rows of identical soldiers"
+    ],
+    "visualTropes": [
+      "lightning over endless waves",
+      "a landing pad slick with rain",
+      "tall pale aliens with huge black eyes",
+      "a jetpack fight in a downpour",
+      "endless ranks of identical soldiers in a white hall"
+    ],
+    "jokeHooks": [
+      "the planet was deleted from the archive but its cache entry still points there",
+      "an army ordered years ago finally arrives, like a dependency someone added and forgot",
+      "every soldier is the same container image scaled to a million replicas"
+    ]
+  },
+  {
+    "id": "asteroid-cave-worm",
+    "title": "The cave that is a giant worm",
+    "setting": "exterior",
+    "place": "A huge cratered asteroid in a tumbling field, a damp cave mouth lined with stalactites, a battered freighter parked inside to hide",
+    "situation": "The crew parks in a cave to make repairs; the floor feels soft, leathery bat creatures chew the cables, and the stalactites look like teeth",
+    "cast": [
+      "cocky smuggler captain",
+      "tall furry copilot",
+      "gold robot muttering odds",
+      "giant space worm"
+    ],
+    "visualTropes": [
+      "crew in breath masks on a slimy cave floor",
+      "bat-like creatures chewing power cables",
+      "a cave mouth closing like jaws",
+      "a freighter blasting out between giant teeth"
+    ],
+    "jokeHooks": [
+      "the safe place to hide from the bug turns out to be inside the bug",
+      "the robot announces new odds after every step, a test runner printing percent complete",
+      "the floor is soft and slowly moving, a production database that is not quite read-only"
+    ]
+  },
+  {
+    "id": "hull-spacewalk",
+    "title": "Spacewalk on a crippled hull",
+    "setting": "exterior",
+    "place": "Open space along the scarred hull of a starship, a nebula glowing behind, tether lines snaking, magnetic boots clinging to plates",
+    "situation": "Two crew walk the hull to fix a damaged emitter before the next attack; a tether snaps and a wrench spins away into the dark",
+    "cast": [
+      "chief engineer in a bulky suit",
+      "rookie crewman on a first spacewalk",
+      "maintenance robot clamped to the hull",
+      "anxious captain on the radio"
+    ],
+    "visualTropes": [
+      "a wrench drifting off into a nebula",
+      "visors reflecting stars",
+      "a snapped tether whipping slowly",
+      "a planet curving below the boots",
+      "frost on a cracked sensor dish"
+    ],
+    "jokeHooks": [
+      "the only fix is a hot patch applied outside the ship while it is still flying",
+      "the dropped wrench tumbles away like a stack trace nobody saved",
+      "the captain asks for status every five seconds, like polling an endpoint during an incident"
+    ]
+  },
+  {
+    "id": "lava-refinery-world",
+    "title": "Volcanic mining world",
+    "setting": "exterior",
+    "place": "A planet of erupting volcanoes and rivers of lava, a black refinery on spindly stilts, collector droids skimming the molten flow, ash falling like snow",
+    "situation": "The refinery runs hot with workers in mirrored heat suits; a crack in a collector arm sends a lava river toward the landing pad",
+    "cast": [
+      "soot-faced refinery overseer",
+      "spindly lava-skimming droid",
+      "worker in a mirrored heat suit",
+      "lava-swimming salamander"
+    ],
+    "visualTropes": [
+      "rivers of glowing orange lava",
+      "a black refinery on spindly legs",
+      "ash drifting across a red sky",
+      "droids hovering over molten rock",
+      "a landing pad turning into an island"
+    ],
+    "jokeHooks": [
+      "the refinery has never been rebooted, and the overseer is afraid to find out why",
+      "a collector droid pours lava into the wrong tank, a pipeline writing to the wrong bucket",
+      "the landing pad shrinks to an island as the flow spreads, scope creep made literal"
+    ]
+  },
+  {
+    "id": "forest-moon-furballs",
+    "title": "Treetop village of tiny warriors",
+    "setting": "exterior",
+    "place": "A forest moon of redwood-size trees, rope bridges and hut villages high in the canopy, torches flickering, a bonfire on a wide platform",
+    "situation": "Tiny furry teddy-like warriors capture the heroes and tie them to spits, then decide the gold robot is a god and throw a feast",
+    "cast": [
+      "tiny furry spear warriors",
+      "gold robot hailed as a deity",
+      "heroes tied to poles",
+      "tribal elder in a feather headdress"
+    ],
+    "visualTropes": [
+      "heroes trussed on a pole over a bonfire",
+      "a gold robot on a wicker throne",
+      "rope bridges between giant trunks",
+      "tiny warriors with stone hammers",
+      "a feast drum circle"
+    ],
+    "jokeHooks": [
+      "the robot is treated as an oracle, like the one script everyone trusts and nobody has read",
+      "the tiny warriors beat armored troopers with logs and rocks, a shell one-liner beating the enterprise pipeline",
+      "the robot retells the whole adventure with sound effects, a PR description nobody wanted this long"
+    ]
+  },
+  {
+    "id": "ringworld-arch",
+    "title": "On the inside of a ringworld",
+    "setting": "exterior",
+    "place": "A grassy plain on the inside of a gigantic ring, the band arching up into the sky in both directions, oceans and continents hanging overhead",
+    "situation": "Stranded explorers try to reach the ring's control spire, visible all day but impossibly far away along the curve",
+    "cast": [
+      "stranded explorer in a battered suit",
+      "ancient caretaker machine",
+      "herd of six-legged grazers",
+      "map hologram that keeps zooming out"
+    ],
+    "visualTropes": [
+      "a horizon that curves up instead of down",
+      "continents hanging upside down overhead",
+      "a spire glimmering far along the band",
+      "explorers trudging across endless grass"
+    ],
+    "jokeHooks": [
+      "the spire looks close but is a thousand miles of curve away, like the last ten percent of a feature",
+      "the caretaker machine follows its maintenance routine long after the builders left, a cron job nobody can find",
+      "the map zooms out until the explorers are one pixel in the logs"
+    ]
+  },
+  {
+    "id": "fallen-warship-desert",
+    "title": "Salvagers on a fallen warship",
+    "setting": "exterior",
+    "place": "A desert of shifting sand with a wedge-shaped capital ship crashed and half buried, salvagers rappelling down its rusty hull plates at sunset",
+    "situation": "A lone scavenger loots parts from the wreck to trade for food packets, while a junk boss under a canopy sets the prices",
+    "cast": [
+      "goggled lone scavenger",
+      "rolling ball robot",
+      "greedy junk boss under a canopy",
+      "rival salvagers on speeder sleds"
+    ],
+    "visualTropes": [
+      "a gigantic crashed warship in the sand",
+      "a scavenger sledding down a dune on a metal plate",
+      "parts traded for portion packets",
+      "sunset glinting off a broken hull"
+    ],
+    "jokeHooks": [
+      "every part comes from a ship nobody maintains anymore, a copied-in library pulled from the wreck",
+      "the junk boss changes the price per part, like a usage-based cloud bill",
+      "the ball robot carries one map fragment everyone wants, a commit fought over in three cherry-picks"
+    ]
+  },
+  {
+    "id": "space-whale-nebula",
+    "title": "Space whales in the nebula",
+    "setting": "exterior",
+    "place": "Open space inside a glowing violet nebula, a pod of enormous whale-like creatures drifting past a tiny freighter, glittering dust trails",
+    "situation": "A freighter fleeing pursuers wanders into the migration path; the whales seem calm, until one decides the ship looks like a snack",
+    "cast": [
+      "awestruck young pilot",
+      "gruff mechanic copilot",
+      "huge gentle space whale",
+      "pursuing cruiser captain"
+    ],
+    "visualTropes": [
+      "whales gliding past with stars in their skin",
+      "a tiny ship dwarfed by a fin",
+      "violet clouds lit from inside",
+      "dust trails shimmering behind the pod"
+    ],
+    "jokeHooks": [
+      "the migration is a traffic spike nobody load tested for",
+      "a whale swallows the freighter and every gauge still reports all systems green",
+      "the crew hitches a ride on the pod, a job piggybacking on another team's runner"
+    ]
+  },
+  {
+    "id": "glowing-mushroom-planet",
+    "title": "Glowing mushroom forest at night",
+    "setting": "exterior",
+    "place": "A dark planet of towering bioluminescent mushrooms, spore clouds drifting, lights pulsing blue and green, a crashed shuttle glowing under the caps",
+    "situation": "A survey team stranded overnight realizes the mushrooms flash in patterns, and the flashes are the forest talking about them",
+    "cast": [
+      "survey botanist with a sample case",
+      "skeptical security officer",
+      "small glowing spore sprite",
+      "survey robot with a floodlight"
+    ],
+    "visualTropes": [
+      "mushrooms the size of towers",
+      "spore clouds catching flashlight beams",
+      "waves of light rippling through the forest",
+      "a crashed shuttle half grown over"
+    ],
+    "jokeHooks": [
+      "the forest flashes a pattern back each time someone moves, a status light nobody can decode",
+      "the officer zaps one mushroom and the whole forest lights up, an alert fanning out to every channel",
+      "the sprite copies every gesture exactly, an agent doing precisely what you typed"
+    ]
+  },
+  {
+    "id": "station-trench-run",
+    "title": "Trench run on the battle station",
+    "setting": "action",
+    "place": "A narrow metal trench across a moon-sized battle station, gun towers flashing, fighters screaming low over gray panels toward a tiny exhaust port",
+    "situation": "Three fighters race down the trench to drop one shot into a tiny port while a dark lord's fighter closes behind and the superweapon spins up",
+    "cast": [
+      "young pilot with a hunch",
+      "masked dark lord in a black fighter",
+      "veteran wingman",
+      "astromech robot sparking in its socket"
+    ],
+    "visualTropes": [
+      "fighters skimming metal walls in tight formation",
+      "laser bolts streaking past canopies",
+      "a targeting visor pushed aside",
+      "a black fighter closing in from behind",
+      "a port that is impossibly small"
+    ],
+    "jokeHooks": [
+      "the whole station falls because of one unvalidated input port",
+      "the pilot switches off the targeting computer, a dev turning off the linter to push the fix",
+      "the superweapon countdown is the CI timer on the last merge before release"
+    ]
+  },
+  {
+    "id": "asteroid-field-chase",
+    "title": "Asteroid field chase",
+    "setting": "action",
+    "place": "A dense field of tumbling asteroids, rocks the size of cities and pebbles, a battered freighter weaving with fighters in pursuit",
+    "situation": "A smuggler dives into the asteroid field to shake pursuers while the gold robot recites ever-worse survival odds",
+    "cast": [
+      "cocky smuggler pilot",
+      "tall furry copilot roaring",
+      "panicking gold robot",
+      "pursuing fighter pilots"
+    ],
+    "visualTropes": [
+      "a freighter rolling between spinning rocks",
+      "fighters smashing into asteroids",
+      "the crew pressed into their seats",
+      "a huge rock blotting out the view",
+      "laser streaks in the dust"
+    ],
+    "jokeHooks": [
+      "the robot quotes the survival odds to four decimal places, the flaky test's pass rate",
+      "each pursuer smacks into the next rock, a cascade of failed retries",
+      "the pilot refuses to hear the odds, like merging without reading the CI output"
+    ]
+  },
+  {
+    "id": "forest-moon-fleet-ambush",
+    "title": "Fleet ambush at the shield moon",
+    "setting": "action",
+    "place": "Space above a green forest moon, a half-built battle station under a shield, a rebel fleet dropping out of hyperspace into a waiting armada",
+    "situation": "The rebel fleet arrives to attack, only to find the shield still up and enemy capital ships rolling in from every side",
+    "cast": [
+      "fish-faced rebel admiral",
+      "freighter pilot leading the fighters",
+      "enemy commander in gray",
+      "fighter pilots in orange suits"
+    ],
+    "visualTropes": [
+      "star cruisers trading broadside fire",
+      "fighters swarming like insects",
+      "a half-built station looming like a skeleton",
+      "capital ships exploding in slow motion",
+      "a shield bubble flickering"
+    ],
+    "jokeHooks": [
+      "the fleet attacks before the health check confirms the shield is down",
+      "the admiral realizes the open, unguarded release window was bait",
+      "the fighters need the shield down for five seconds, a narrow deploy window with no rollback"
+    ]
+  },
+  {
+    "id": "corridor-boarding-action",
+    "title": "Boarding the blockade runner",
+    "setting": "action",
+    "place": "Bright white corridors of a small diplomatic ship, smoke pouring from a blasted airlock, red emergency lights, blaster bolts everywhere",
+    "situation": "White-armored troopers storm through the airlock, then a masked, heavy-breathing dark lord in a black cape strides in demanding the stolen plans",
+    "cast": [
+      "masked dark lord in black armor and cape",
+      "white-armored troopers with terrible aim",
+      "rebel crew holding a corridor",
+      "princess hiding a data disc"
+    ],
+    "visualTropes": [
+      "troopers missing every shot",
+      "a black cape billowing through smoke",
+      "an airlock blown open in a glowing ring",
+      "a disc slipped into a robot's slot",
+      "a dark lord lifting someone by the throat"
+    ],
+    "jokeHooks": [
+      "the stolen plans live only in one robot's memory, a secret stored in the worst possible place",
+      "the troopers miss everything, like tests that never hit the changed code path",
+      "the dark lord interrogates everyone who ever touched the branch"
+    ]
+  },
+  {
+    "id": "escape-pod-launch",
+    "title": "Escape pod drop",
+    "setting": "action",
+    "place": "A burning ship over a desert planet, a small escape pod blasting free from its flank, tumbling toward the dunes below",
+    "situation": "Two robots launch in a pod while the enemy gunners decide not to fire because the scanner reports no life forms aboard",
+    "cast": [
+      "gold etiquette robot",
+      "beeping barrel robot",
+      "bored enemy gunner",
+      "supervisor peering at the scope"
+    ],
+    "visualTropes": [
+      "a pod blasting away with a puff of smoke",
+      "gunners shrugging at a screen",
+      "a desert planet rushing up",
+      "the pod plowing into a dune"
+    ],
+    "jokeHooks": [
+      "the scanner skips the pod because it holds no life forms, a filter that skips the one file that matters",
+      "the gunner lets it go without looking, a reviewer approving without opening the diff",
+      "the pod carries the whole plot, a missing artifact turning up in the last place anyone checked"
+    ]
+  },
+  {
+    "id": "tractor-beam-capture",
+    "title": "Caught in the tractor beam",
+    "setting": "action",
+    "place": "A freighter dragged along a glowing blue tractor beam toward a gaping hangar in a gigantic battle station, troopers lining the bay",
+    "situation": "The crew cannot break free, so they hide in smuggling compartments under the deck plates while troopers search the empty ship",
+    "cast": [
+      "smuggler captain",
+      "tall furry copilot",
+      "old hooded mystic",
+      "trooper search squad"
+    ],
+    "visualTropes": [
+      "a ship reeled in along a blue beam",
+      "a huge hangar mouth opening",
+      "crew peeking up from under deck plates",
+      "troopers marching up the ramp"
+    ],
+    "jokeHooks": [
+      "the beam drags the ship in like a dependency resolver dragging in an entire framework",
+      "the crew hides under the floor, a secret buried in a commit nobody inspects",
+      "the search squad finds nothing, a code review that only reads the visible diff"
+    ]
+  },
+  {
+    "id": "station-explosion-escape",
+    "title": "Racing out of the exploding station",
+    "setting": "action",
+    "place": "The core of a collapsing battle station, girders crashing, a fireball chasing ships up twisting tunnels toward a pinpoint of starlight",
+    "situation": "The reactor core is hit; a freighter and a handful of fighters race up maintenance tunnels with the fireball right on their tails",
+    "cast": [
+      "freighter pilot hugging the walls",
+      "fighter squadron",
+      "screaming copilot",
+      "enemy officer who never left his post"
+    ],
+    "visualTropes": [
+      "a giant fireball rolling up a tunnel",
+      "ships scraping pipes and girders",
+      "the exit opening onto stars",
+      "a station blossoming into a ring of fire"
+    ],
+    "jokeHooks": [
+      "blowing up the reactor was the fix; getting out before the deploy finishes is the hard part",
+      "the tunnel narrows at every turn, like a build that keeps adding steps",
+      "the officer at his post is the cron job that never noticed the deprecation notice"
+    ]
+  },
+  {
+    "id": "speeder-bike-forest-chase",
+    "title": "Speeder bike chase through giant trees",
+    "setting": "action",
+    "place": "A forest of enormous redwoods, ferns and fallen logs, hover bikes whipping between trunks at blinding speed",
+    "situation": "Scouts on hover bikes flee to warn their legion while heroes chase them between the trees, sideswiping and dodging trunks",
+    "cast": [
+      "young pilot on a hover bike",
+      "princess on a hover bike",
+      "armored scout troopers",
+      "tiny furry creature hiding in a bush"
+    ],
+    "visualTropes": [
+      "bikes blurring between huge trunks",
+      "scouts slamming into trees in puffs of flame",
+      "heroes leaning low over handlebars",
+      "a tiny creature ambushing with a rock"
+    ],
+    "jokeHooks": [
+      "each scout crashing into a tree is one failed request, until the circuit breaker kicks in",
+      "the chase moves too fast to read the logs, a test run that finishes before the console opens",
+      "a tiny creature topples an armored scout with a rock, the shell script that outruns the framework"
+    ]
+  },
+  {
+    "id": "catwalk-glowing-sword-duel",
+    "title": "Glowing-sword duel over the abyss",
+    "setting": "action",
+    "place": "A narrow catwalk over a bottomless reactor shaft, blue mist rising, glowing energy swords humming, wind howling up from below",
+    "situation": "A young hooded mystic duels a masked dark lord on the catwalk; one shocking family revelation could send someone over the edge",
+    "cast": [
+      "young hooded mystic with a blue glowing sword",
+      "masked dark lord with a red glowing sword",
+      "a hand clutching a railing",
+      "maintenance robot hiding behind a pipe"
+    ],
+    "visualTropes": [
+      "glowing swords clashing in sparks",
+      "a narrow catwalk over a void",
+      "an outstretched black glove",
+      "a hero hanging over the abyss"
+    ],
+    "jokeHooks": [
+      "the dark lord reveals who the hero's father is, the moment git blame shows the bug is yours",
+      "the hero would rather fall than accept the offer, a dev choosing the rewrite over the lock-in deal",
+      "the shaft is bottomless, like the backlog under the ticket marked low priority"
+    ]
+  },
+  {
+    "id": "snow-walker-assault",
+    "title": "Giant walkers assault the ice base",
+    "setting": "action",
+    "place": "A snowy plain with giant four-legged armored walkers stomping toward a rebel ice base, snowspeeders zooming around their legs, trenches full of troops",
+    "situation": "Snowspeeder pilots wrap tow cables around the walkers' legs to trip them while the base evacuates behind",
+    "cast": [
+      "snowspeeder pilot",
+      "tail gunner with a harpoon",
+      "rebel trench troops",
+      "walker crew in gray"
+    ],
+    "visualTropes": [
+      "a tow cable wrapping around giant legs",
+      "a walker toppling in a cloud of snow",
+      "speeders streaking past huge feet",
+      "trenches firing at giant metal knees"
+    ],
+    "jokeHooks": [
+      "the walkers are huge and slow, a legacy monolith marching toward production",
+      "the tow cable trick is an undocumented hack that only one pilot knows",
+      "every blaster bolt bounces off the armor, like comments on a PR that was already merged"
+    ]
+  },
+  {
+    "id": "planet-killer-charging",
+    "title": "Stopping the planet-killer",
+    "setting": "action",
+    "place": "A massive superweapon carved into a planet, a giant dish glowing as it charges, beams converging in space, fighters racing over its surface",
+    "situation": "A strike team has minutes to blow up the shield generator before the planet-killer fires at the rebel base",
+    "cast": [
+      "strike team leader",
+      "nervous demolitions expert",
+      "sneering young general",
+      "robot hauling the explosives"
+    ],
+    "visualTropes": [
+      "beams converging at a glowing focal point",
+      "a planet in the crosshairs",
+      "fighters skimming a giant dish",
+      "a strike team sprinting through snow to a generator"
+    ],
+    "jokeHooks": [
+      "the superweapon charges like a CI job with no cancel button",
+      "the only off switch is a generator on the far side, a feature flag hidden in a config nobody reads",
+      "the demolitions expert asks for one more review just before pressing the button"
+    ]
+  },
+  {
+    "id": "hyperdrive-wont-start",
+    "title": "Hyperdrive will not engage",
+    "setting": "action",
+    "place": "A battered freighter fleeing over a planet, enemy cruisers bearing down, sparks spraying in the cockpit, the hyperspace lever refusing to work",
+    "situation": "The pilot slams the hyperdrive lever again and again while the copilot pounds the console and enemy ships close in",
+    "cast": [
+      "frantic smuggler captain",
+      "tall furry copilot with a wrench",
+      "smug enemy captain",
+      "gold robot reading errors"
+    ],
+    "visualTropes": [
+      "a lever pulled with a sad whine",
+      "a fist banging a panel",
+      "cruisers filling the windows",
+      "stars stretching into lines when it finally works"
+    ],
+    "jokeHooks": [
+      "the hyperdrive fails silently, a build that exits zero without doing anything",
+      "a fist on the console fixes it, the restart nobody can explain",
+      "the robot reads the error aloud and nobody listens until the last second"
+    ]
+  },
+  {
+    "id": "sail-barge-pit-battle",
+    "title": "Battle over the sand pit",
+    "setting": "action",
+    "place": "A huge sail barge hovering over a desert pit with a beaked, tentacled monster in the sand, skiffs alongside, heroes on a plank",
+    "situation": "Heroes forced to walk the plank into the pit flip the fight; a hidden glowing sword arcs through the air into a waiting hand",
+    "cast": [
+      "hooded mystic in black",
+      "princess in chains",
+      "gang of alien guards",
+      "tentacled pit monster"
+    ],
+    "visualTropes": [
+      "a glowing sword thrown through the air",
+      "guards tumbling into a pit maw",
+      "skiffs ramming the barge",
+      "a barge exploding over dunes"
+    ],
+    "jokeHooks": [
+      "the hidden sword is the hotfix stashed in a branch until the exact right moment",
+      "the pit monster is the issue queue that swallows anything that falls in",
+      "the rescue plan depends on everyone's timing, a release with no checklist"
+    ]
+  },
+  {
+    "id": "orbital-drop-pods",
+    "title": "Orbital drop assault",
+    "setting": "action",
+    "place": "A dozen drop pods streaking down through the clouds of a green planet, fire trails behind them, a rocky landing zone and a swamp below",
+    "situation": "Troops dropped from orbit discover the landing coordinates were off by a few miles and they are falling straight toward a swamp",
+    "cast": [
+      "drop squad sergeant",
+      "rookie trooper",
+      "orbital controller",
+      "local swamp creature"
+    ],
+    "visualTropes": [
+      "fiery trails in a green sky",
+      "pods slamming into mud",
+      "troopers climbing out knee-deep",
+      "a creature surfacing next to a pod"
+    ],
+    "jokeHooks": [
+      "the drop coordinates came from a stale cache of an old map",
+      "the pods land in five different places, a deploy that hit half the servers",
+      "the sergeant waves the release notes nobody read"
+    ]
+  },
+  {
+    "id": "spaceport-cantina",
+    "title": "Spaceport cantina",
+    "setting": "crowd",
+    "place": "A dim cantina in a dusty spaceport, round booths, a long counter, a band of bulb-headed musicians, aliens with tentacles and horns",
+    "situation": "A smuggler waits for a client while bounty hunters circle; a hooded old mystic and a farm boy show up to hire a fast ride",
+    "cast": [
+      "smuggler with a blaster",
+      "furry copilot",
+      "green snouted bounty hunter",
+      "old hooded mystic",
+      "bulb-headed alien band"
+    ],
+    "visualTropes": [
+      "a band of bulbous-headed horn players",
+      "aliens with too many eyes in dim booths",
+      "a blaster drawn under the table",
+      "a bartender glaring at robots"
+    ],
+    "jokeHooks": [
+      "the band plays the same tune on loop, a retrying job",
+      "the bartender refuses service to anything without the right badge, a strict linter",
+      "the smuggler brags about a run done in twelve units of distance, like quoting build time in lines of code"
+    ]
+  },
+  {
+    "id": "galactic-senate-pods",
+    "title": "The galactic senate in session",
+    "setting": "crowd",
+    "place": "A vast round chamber lined with floating delegation pods, a central podium, thousands of aliens in robes, holograms flickering",
+    "situation": "A young queen pleads for help while senators argue about procedure and a pale chancellor quietly calls for a vote",
+    "cast": [
+      "young queen in elaborate makeup",
+      "smug pale chancellor",
+      "senators of every species",
+      "long-eared delegate dozing"
+    ],
+    "visualTropes": [
+      "pods floating into the middle of the chamber",
+      "aliens shouting into microphones",
+      "a queen in a huge headdress",
+      "a gavel striking"
+    ],
+    "jokeHooks": [
+      "the senate demands a committee review, like an RFC process for a typo",
+      "every pod floats to the center to argue, a review thread of fifty comments",
+      "the vote passes while everyone was arguing about naming"
+    ]
+  },
+  {
+    "id": "junk-dealer-market",
+    "title": "Junk dealer's market",
+    "setting": "crowd",
+    "place": "A dusty outdoor market of tents and stalls under two suns, junk piled high, hover carts, aliens bartering loudly",
+    "situation": "Heroes need a hyperdrive part; a winged junk dealer refuses their currency and the mind tricks don't work on him",
+    "cast": [
+      "pot-bellied winged junk dealer",
+      "young boy mechanic",
+      "hooded mystic",
+      "bored market guard"
+    ],
+    "visualTropes": [
+      "piles of junk parts",
+      "a winged dealer hovering over a counter",
+      "bartering hands waving",
+      "a hover cart full of scraps"
+    ],
+    "jokeHooks": [
+      "the one part they need is out of stock everywhere, a dependency pinned to an ancient version",
+      "the dealer refuses every currency, a runner that only accepts one config format",
+      "the boy builds the part from scrap, the open source fix nobody expected"
+    ]
+  },
+  {
+    "id": "beast-arena-execution",
+    "title": "Execution arena with three beasts",
+    "setting": "crowd",
+    "place": "A huge rocky arena with stands full of insect-like aliens, heroes chained to tall pillars, gates opening to release monsters",
+    "situation": "Three heroes chained to pillars face three monsters; one has already picked her lock and climbed to the top before the others notice",
+    "cast": [
+      "hooded mystic",
+      "young apprentice",
+      "princess",
+      "insect-like aliens in the stands",
+      "giant horned beast"
+    ],
+    "visualTropes": [
+      "heroes chained to stone pillars",
+      "a crowd of buzzing insects",
+      "a horned beast charging",
+      "a picked lock dropping to the sand"
+    ],
+    "jokeHooks": [
+      "the arena rules change every round, like an unstable API",
+      "the monsters come out one by one, a flaky test after another",
+      "the crowd cheers every failure, a dashboard turning red"
+    ]
+  },
+  {
+    "id": "canyon-hover-race",
+    "title": "Canyon hover race",
+    "setting": "crowd",
+    "place": "A rocky desert canyon lined with packed grandstands, banners snapping in hot wind, spindly twin-engine hover racers roaring on the start grid, a two-headed announcer in a booth",
+    "situation": "A slave-boy prodigy enters a homemade racer in a deadly lap race while a spiky rival sabotages engines and sand people snipe from the cliffs",
+    "cast": [
+      "young racer in goggles",
+      "spiky cheating rival racer",
+      "two-headed announcer",
+      "anxious mother in the crowd",
+      "sand raiders on the cliffs"
+    ],
+    "visualTropes": [
+      "racers screaming through a narrow arch",
+      "engines dragged by glowing energy binders",
+      "a racer exploding in a puff off the course",
+      "a crowd of aliens waving flags",
+      "a pit droid crew fumbling a repair"
+    ],
+    "jokeHooks": [
+      "the homemade racer stalls on the grid and restarts, a flaky job that passes on retry",
+      "the rival tosses a wrench into the boy's engine, a teammate force-pushing over your branch",
+      "the two-headed announcer reports two different leaders at once, two dashboards that disagree"
+    ]
+  },
+  {
+    "id": "medal-ceremony-hall",
+    "title": "Victory medal ceremony",
+    "setting": "crowd",
+    "place": "A grand stone hall with ranks of troops lined up, a long aisle, a princess on a stage with medals, banners and fanfare",
+    "situation": "The heroes walk the long aisle to receive medals, but the furry copilot is left out again",
+    "cast": [
+      "princess presenting medals",
+      "young pilot",
+      "smuggler",
+      "furry copilot without a medal",
+      "rows of troops"
+    ],
+    "visualTropes": [
+      "a long aisle between troops",
+      "medals on a stage",
+      "a furry copilot roaring",
+      "banners overhead"
+    ],
+    "jokeHooks": [
+      "the copilot who did half the work gets no medal, like the CI bot never credited in the release notes",
+      "the long walk to the stage is a deploy waiting on approvals",
+      "the beat-up robot gets polished just for the photo, a dashboard cleaned up for the demo"
+    ]
+  },
+  {
+    "id": "refugee-ragtag-fleet",
+    "title": "Ragtag refugee fleet",
+    "setting": "crowd",
+    "place": "A mile-long line of mismatched ships docked together, people crowding corridors with crates and pets, a hangar full of tents",
+    "situation": "The fleet must jump together, but half the ships run different engines and nobody agrees on coordinates",
+    "cast": [
+      "weary fleet commander",
+      "refugee family with bundles",
+      "mechanic juggling parts",
+      "tiny alien child with a pet"
+    ],
+    "visualTropes": [
+      "ships lashed together with cables",
+      "crowds carrying bundles",
+      "tents in a hangar",
+      "jury-rigged engines"
+    ],
+    "jokeHooks": [
+      "half the ships run different engine versions, a monorepo with five runtime versions",
+      "nobody agrees on coordinates, a config file edited by everyone at once",
+      "the jump happens only when the slowest ship is ready, a pipeline waiting on one job"
+    ]
+  },
+  {
+    "id": "crime-lord-palace-party",
+    "title": "Crime lord's palace party",
+    "setting": "crowd",
+    "place": "A dim palace hall with a giant slug-like crime lord on a dais, dancers, smoke, guards, a trapdoor over a monster pit",
+    "situation": "Heroes arrive in disguise to rescue a friend frozen in a metal slab on display, but the crime lord loves his trapdoor",
+    "cast": [
+      "slug-like crime lord",
+      "disguised bounty hunter",
+      "friend frozen in a metal slab",
+      "nervous gold robot translator"
+    ],
+    "visualTropes": [
+      "a frozen man hung on a wall",
+      "a slug on a dais",
+      "a trapdoor dropping",
+      "a monster in a pit"
+    ],
+    "jokeHooks": [
+      "the frozen friend is a frozen dependency nobody can thaw",
+      "the trapdoor is the force push that drops you into the pit",
+      "the robot translates everything literally, an agent taking instructions too seriously"
+    ]
+  },
+  {
+    "id": "diplomatic-gala",
+    "title": "Diplomatic gala on a starship",
+    "setting": "crowd",
+    "place": "A starship ballroom with a domed window on a ringed planet, dozens of alien delegations in robes and antennae, a buffet of wriggling foods, a quartet of tentacled string players",
+    "situation": "At a peace summit, a delegate keels over into the punch bowl; every species blames another while the real culprit hides among the waiters",
+    "cast": [
+      "flustered captain playing host",
+      "blue-skinned antennaed ambassador",
+      "translator robot",
+      "security chief in a red shirt",
+      "shape-shifting waiter"
+    ],
+    "visualTropes": [
+      "aliens in towering ceremonial headdresses",
+      "a buffet of glowing and wriggling food",
+      "a delegate face-down in a punch bowl",
+      "a circle of delegates all pointing at each other",
+      "a waiter melting into a puddle"
+    ],
+    "jokeHooks": [
+      "every delegation blames another, a blameless postmortem going very wrong",
+      "the translator robot renders the toast word for word and starts a war, an agent that took the instructions literally",
+      "the culprit hides as a waiter, the bug that was in the test fixture all along"
+    ]
+  },
+  {
+    "id": "garbage-compactor",
+    "title": "Trapped in the garbage compactor",
+    "setting": "interior",
+    "place": "A dank metal trash compactor knee-deep in murky water and junk, a one-eyed tentacled creature lurking under the surface, magnetized walls grinding inward",
+    "situation": "Heroes dive down a chute to escape troopers and land in the compactor; the walls start to close and the robots upstairs cannot find the right switch",
+    "cast": [
+      "princess with a blaster",
+      "smuggler bracing a wall",
+      "young pilot pulled under",
+      "tentacled sludge creature",
+      "robots on a comm link"
+    ],
+    "visualTropes": [
+      "walls grinding inward",
+      "a single eyestalk periscoping out of the slime",
+      "heroes jamming a pipe between walls",
+      "a comlink buzzing from a pocket",
+      "junk floating in green sludge"
+    ],
+    "jokeHooks": [
+      "the walls close like disk space filling up from logs nobody rotates",
+      "the robot shuts down every compactor on the level except theirs, a kill command for the wrong process",
+      "the creature in the sludge is the garbage collector, and it finally ran"
+    ]
+  },
+  {
+    "id": "engine-room-overload",
+    "title": "Engine room at max overload",
+    "setting": "interior",
+    "place": "A cavernous starship engine room, a glowing crystal core pulsing in a tall glass column, steam venting from catwalks, pipes rattling, warning klaxons echoing",
+    "situation": "The captain demands more power for one last maneuver; the burly chief engineer insists the engines are already giving everything they have",
+    "cast": [
+      "burly chief engineer with a thick accent",
+      "captain shouting on the intercom",
+      "junior engineer in a jumpsuit",
+      "small maintenance robot"
+    ],
+    "visualTropes": [
+      "steam blasting from catwalk pipes",
+      "a pulsing core shading from blue to red",
+      "an engineer clinging to a rail and yelling",
+      "sparks raining from overhead junctions",
+      "a gauge needle bending past the last mark"
+    ],
+    "jokeHooks": [
+      "the core is redlined, a server pinned at 100 percent CPU while product asks for one more feature",
+      "the engineer pads every estimate by four so he always looks like a miracle worker",
+      "every pipe that bursts gets taped by the robot, a stack of workarounds holding the release together"
+    ]
+  },
+  {
+    "id": "transporter-mishap",
+    "title": "Transporter mishap",
+    "setting": "interior",
+    "place": "A transporter room with a stage of glowing round pads, shimmering columns of sparkles, a twitchy operator at a lever panel, smoke curling from the coils",
+    "situation": "A beam-up in an ion storm splits a crew member into two versions: one gentle and confused, one with a goatee, a scowl and a sash",
+    "cast": [
+      "sweating transporter operator",
+      "crewman and his goateed evil twin",
+      "skeptical ship doctor",
+      "a space dog that came through inside out"
+    ],
+    "visualTropes": [
+      "shimmering columns of sparkles",
+      "two identical crewmen side by side",
+      "a goatee on only one of them",
+      "a dog that came through wearing a different color",
+      "crew backing slowly away from the pad"
+    ],
+    "jokeHooks": [
+      "the evil twin is the forked config file with one value changed",
+      "the operator re-beams until it works, a flaky deploy retried until green",
+      "nobody can tell which copy is production, two branches both named main"
+    ]
+  },
+  {
+    "id": "holodeck-gone-wrong",
+    "title": "Simulation room gone wrong",
+    "setting": "interior",
+    "place": "A yellow-gridded simulation room projecting a smoky old-time gangster club, a jazz band on stage, holographic thugs in pinstripes, the grid showing through the walls",
+    "situation": "The safety limits fail mid-story: the holographic thugs' tommy guns now fire for real, and the exit arch has vanished from the wall",
+    "cast": [
+      "crew officer in a fedora",
+      "holographic mob boss",
+      "pale android in a borrowed suit",
+      "crewman knocking on the walls for the exit"
+    ],
+    "visualTropes": [
+      "a gangster club with yellow grid lines bleeding through",
+      "holographic thugs in pinstripes",
+      "a wall where the exit arch should be",
+      "the android playing detective with a magnifying glass",
+      "a fade-in flicker on a character's edges"
+    ],
+    "jokeHooks": [
+      "the safety limiter was a mock that got disabled in production",
+      "the simulation is so realistic nobody notices they are testing against live data",
+      "the exit disappears like an undo button removed in the last release"
+    ]
+  },
+  {
+    "id": "sickbay-alien-patient",
+    "title": "Medical bay with an alien patient",
+    "setting": "interior",
+    "place": "A gleaming white medical bay with curved biobeds, flashing vital readouts, a projected holographic doctor, and a squishy translucent alien patient glowing on a bed",
+    "situation": "A sarcastic holographic doctor tries to diagnose a jelly-like alien whose symptoms change every time it is scanned",
+    "cast": [
+      "sarcastic holographic doctor",
+      "worried captain",
+      "translucent jelly alien patient",
+      "nurse waving a handheld scanner"
+    ],
+    "visualTropes": [
+      "a glowing biobed outlining a blob",
+      "readouts spiking off the chart",
+      "a hologram doctor flickering mid-sentence",
+      "a scanner that beeps louder near the patient",
+      "the alien splitting into two smaller blobs"
+    ],
+    "jokeHooks": [
+      "the symptoms change every scan, a heisenbug that hides when you add logging",
+      "the doctor flickers off mid-diagnosis, a pod killed during a request",
+      "the patient recovers after a full reboot and nobody can explain why"
+    ]
+  },
+  {
+    "id": "prison-ship-cellblock",
+    "title": "Prison ship cellblock",
+    "setting": "interior",
+    "place": "A huge prison ship hold, tiers of stacked cells sealed by glowing energy bars, catwalks lit red, hovering guard drones, inmates of every species rattling their bars",
+    "situation": "A smuggler escapes by convincing a guard to open the cell next door; within minutes every inmate on the tier is loose in the catwalks",
+    "cast": [
+      "fast-talking smuggler prisoner",
+      "gullible guard",
+      "hulking four-armed cellmate",
+      "warden robot with a clipboard"
+    ],
+    "visualTropes": [
+      "tiers of glowing energy bars",
+      "inmates dangling from catwalks",
+      "a guard drone chasing in circles",
+      "an escape through a ceiling vent",
+      "alarm lights strobing red"
+    ],
+    "jokeHooks": [
+      "the guard opens the wrong cell, a permissions check that compares the wrong field",
+      "the prisoners escape through a vent nobody knew about, an undocumented endpoint",
+      "the warden robot recounts the prisoners and gets a different total every time, a test assertion that is off by one"
+    ]
+  },
+  {
+    "id": "derelict-ghost-ship",
+    "title": "Exploring a derelict ship",
+    "setting": "interior",
+    "place": "The dark ribbed corridors of a derelict starship drifting for centuries, flickering lights, frozen debris floating in zero gravity, glitching log screens",
+    "situation": "A salvage crew boards an abandoned ship and finds the captain's log ends mid-sentence, the coffee still warm, and the airlocks cycling on their own",
+    "cast": [
+      "grizzled salvage captain",
+      "nervous young tech",
+      "ship computer with a soothing voice",
+      "something moving in the vents"
+    ],
+    "visualTropes": [
+      "helmet lamps cutting through the dark",
+      "frozen mugs and floating datapads",
+      "a log screen stuck on one frame",
+      "claw marks on a hatch",
+      "airlock lights cycling green to red"
+    ],
+    "jokeHooks": [
+      "the log ends mid-sentence, a crashed build with no stack trace",
+      "the ship computer answers every question with a cheerful status code",
+      "the airlocks cycle by themselves, a background job nobody remembers scheduling"
+    ]
+  },
+  {
+    "id": "laser-gate-reactor",
+    "title": "Laser gates in the reactor",
+    "setting": "interior",
+    "place": "A tall reactor hall of glowing red laser gates in a corridor, cycling open and shut in sequence, a bottomless melting pit at the end, steam rising from below",
+    "situation": "A mentor, an apprentice and a horned double-bladed duelist are split up by the laser gates and must wait for the cycle before fighting again",
+    "cast": [
+      "young hooded apprentice",
+      "bearded hooded mentor",
+      "horned red-and-black duelist with a double glowing staff",
+      "unseen reactor controller"
+    ],
+    "visualTropes": [
+      "red laser gates slicing the corridor",
+      "a mentor kneeling in meditation behind a gate",
+      "a duelist pacing like a caged cat",
+      "gates flicking open in sequence",
+      "a pit glowing at the end"
+    ],
+    "jokeHooks": [
+      "the gates cycle on a timer, a rate limiter between you and the fix",
+      "the duelists wait in line, jobs stuck in a queue",
+      "the apprentice is one gate too late, a deploy blocked on one last approval"
+    ]
+  },
+  {
+    "id": "cargo-hold-furballs",
+    "title": "Cargo hold full of multiplying furballs",
+    "setting": "interior",
+    "place": "A starship cargo hold stacked with grain crates, now overflowing with tiny purring furballs pouring from crates, vents and storage bins",
+    "situation": "A trader sold the crew one adorable furball; by morning there are thousands, eating the grain and spilling onto every deck",
+    "cast": [
+      "sheepish fast-talking trader",
+      "exasperated captain",
+      "engineer buried to the neck",
+      "the very first furball"
+    ],
+    "visualTropes": [
+      "furballs cascading from a crate",
+      "a captain buried to the waist",
+      "a vent stuffed with purring fur",
+      "an overhead hatch opening and raining furballs"
+    ],
+    "jokeHooks": [
+      "the furballs multiply like log files nobody rotates",
+      "one tiny dependency installs thousands more",
+      "every cleanup attempt adds more, a fix that spawns three new tickets"
+    ]
+  },
+  {
+    "id": "red-alert-bridge",
+    "title": "Bridge under red alert",
+    "setting": "interior",
+    "place": "A round starship bridge with a captain's chair in the center, red alert lights strobing, consoles throwing sparks, crew bracing as the floor tilts",
+    "situation": "The ship takes a hit, the entire bridge crew lurches the same way in unison, and the captain calls for shields that are already gone",
+    "cast": [
+      "captain gripping the armrests",
+      "helmsman flying out of his seat",
+      "pointy-eared science officer",
+      "communications officer with an earpiece"
+    ],
+    "visualTropes": [
+      "consoles exploding in showers of sparks",
+      "the whole crew lurching sideways in unison",
+      "red alert lights strobing",
+      "a big viewscreen showing an enemy ship"
+    ],
+    "jokeHooks": [
+      "every hit sets off a new console, a log with a warning on every line",
+      "the whole crew lurches in sync, a team rolling out together",
+      "shields at twenty percent, a disk almost full"
+    ]
+  },
+  {
+    "id": "dark-emperor-throne-room",
+    "title": "The dark emperor's throne room",
+    "setting": "interior",
+    "place": "A shadowy throne room atop a battle station, a vast round window onto a raging space battle, a high-backed throne, an elevator shaft dropping to the reactor",
+    "situation": "A hooded emperor taunts a captive hero while the battle rages outside; the masked dark lord stands between them, torn",
+    "cast": [
+      "withered hooded emperor",
+      "captive young hero",
+      "masked dark lord",
+      "red-robed guards"
+    ],
+    "visualTropes": [
+      "blue lightning crackling from fingertips",
+      "a huge window onto a space battle",
+      "a high-backed throne swiveling slowly",
+      "red-robed guards motionless at the door",
+      "a deep shaft yawning beside the throne"
+    ],
+    "jokeHooks": [
+      "the emperor insists everything is proceeding as planned, the status page claiming all green during an outage",
+      "lightning arcs at the hero like a stack trace",
+      "the dark lord flips sides at the last second, a reviewer reversing an approval"
+    ]
+  }
+]

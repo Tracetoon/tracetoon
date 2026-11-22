@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadConfig } from '../config.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
-import { genreOptions, type GenreOption } from '../comic/genres.ts';
+import { genreOptions, type GenreOption, sceneOptions } from '../comic/genres.ts';
 import { comicPacketFiles, PACKET_FILES } from '../comic/packet.ts';
 import type { ComicSummary } from '../comic/types.ts';
 import { skillDir } from '../contribution/skillSettings.ts';
@@ -68,6 +68,13 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
         (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.genre ? [c.genre] : [])),
         { seed: `${repo.root} ${repo.branch}`, pinned: pinnedGenre, catalog },
       ));
+  const recentScenes = (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.scene ? [c.scene] : []));
+  const scenes = Object.fromEntries(
+    genres.map((o) => [
+      o.id,
+      sceneOptions(catalog.find((g) => g.id === o.id), recentScenes, { seed: `${repo.root} ${repo.branch}` }),
+    ]),
+  );
   const skillFiles = comicSkillFiles();
   if (!skillFiles.length)
     throw new UserError(
@@ -79,6 +86,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
     description,
     genres,
     recentComics: ctx?.comic?.recentComics,
+    sceneOptions: scenes,
     recentStyles: ctx?.comic?.recentStyles,
     ...(config.style && config.style !== 'auto' ? { pinnedStyle: config.style } : {}),
     ...(pinnedGenre ? { pinnedGenre } : {}),

@@ -1,0 +1,142 @@
+[
+  {
+    "id": "hangar-launch-catapult",
+    "title": "Hangar launch catapult",
+    "setting": "action",
+    "place": "A cavernous underground hangar, a giant robot locked into a rail catapult, warning lights spinning, a tunnel ramp aimed at the city above",
+    "situation": "The robot is clamped in and the countdown is running when someone notices a locking bolt still engaged; the launch fires anyway",
+    "cast": ["teen pilot gripping control sticks", "stern commander on a gantry", "frantic launch technician", "hangar crew in hard hats"],
+    "visualTropes": ["sparks spraying off the launch rail", "restraint arms snapping away one by one", "the pilot pressed flat into the seat by g-force", "a tunnel of rushing lights"],
+    "jokeHooks": ["the launch checklist has one unchecked box labeled tests, and the catapult fires anyway", "every restraint arm releases except the one held by a stale lock file", "the robot exits the tunnel still dragging the staging gantry behind it"]
+  },
+  {
+    "id": "five-machine-combine",
+    "title": "Five machines combine",
+    "setting": "action",
+    "place": "Open sky above a canyon, five color-coded vehicles (a jet, a tank, a truck, a sub, a drill) flying into formation against sunset",
+    "situation": "The team shouts the combine command and the vehicles leap together into one giant robot, but one piece clicks into the wrong socket",
+    "cast": ["hot-headed red-suited leader", "cool blue-suited rival", "big-hearted yellow-suited heavy", "tiny green-suited kid", "mentor on a video screen"],
+    "visualTropes": ["vehicles unfolding into limbs in midair", "a rainbow energy beam binding the parts", "five pilots in a split-screen cockpit shot", "a final heroic pose with a cape of light"],
+    "jokeHooks": ["five services deploy at once and the leg module is on an old version, so the robot walks in circles", "the merge sequence succeeds but the head is installed facing backward", "one pilot skipped the version bump and their vehicle docks as the left foot again"]
+  },
+  {
+    "id": "city-kaiju-brawl",
+    "title": "Downtown robot versus monster",
+    "setting": "action",
+    "place": "A neon downtown at night, skyscrapers knee-high to a giant robot and a scaly sea monster wrestling through intersections and overpasses",
+    "situation": "The robot grapples a monster that keeps sprouting new heads; each punch knocks over a billboard while tiny citizens flee below",
+    "cast": ["rookie pilot shouting attack names", "multi-headed sea beast", "news helicopter reporter", "panicking noodle cart vendor"],
+    "visualTropes": ["a tower bent like a paper straw", "a rocket fist launched on a chain", "falling billboards and sparking power lines", "tiny cars thrown like toys"],
+    "jokeHooks": ["fixing one bug makes the monster grow two more heads, each a new failing test", "the attack name takes longer to shout than the build takes to run", "the robot's punch hits the right monster only on the second retry"]
+  },
+  {
+    "id": "cockpit-sync-test",
+    "title": "Neural sync test in a flooded cockpit",
+    "setting": "interior",
+    "place": "A capsule cockpit filling with glowing orange fluid, the pilot strapped in a body suit, wraparound screens showing sync percentages",
+    "situation": "Scientists watch the pilot's sync rate climb and dip as the robot outside twitches in response to every stray thought",
+    "cast": ["moody young pilot", "lab-coated scientist with clipboard", "chain-smoking chief engineer", "tiny mascot robot"],
+    "visualTropes": ["bubbles rising past the pilot's face", "a sync meter bouncing at 99 percent", "a giant hand outside flexing on its own", "warning text in huge red block letters"],
+    "jokeHooks": ["sync stalls at 99 percent like test coverage that will not reach the threshold", "the pilot thinks about lunch and the robot walks to the cafeteria", "the sync test only passes when nobody is watching, like a flaky test"]
+  },
+  {
+    "id": "repair-gantry-night-shift",
+    "title": "Night shift on the repair gantries",
+    "setting": "interior",
+    "place": "A towering maintenance bay, a battered robot propped in scaffolding with a missing arm, welding sparks raining down from catwalks",
+    "situation": "Mechanics have six hours to rebuild the robot before the next attack, and the replacement arm shipped from a different model",
+    "cast": ["grizzled chief mechanic", "overeager apprentice on a harness", "forklift-driving crane operator", "pilot asleep on a toolbox"],
+    "visualTropes": ["a crane dangling a mismatched arm", "welding masks glowing in the dark", "cables hanging like vines", "a whiteboard countdown timer"],
+    "jokeHooks": ["the replacement arm needs an adapter for the adapter, like a dependency upgrade chain", "the patched robot boots with the new arm waving hello on a loop", "everyone agrees it works on the repair stand, just not in the field"]
+  },
+  {
+    "id": "orbital-mobile-suit-skirmish",
+    "title": "Orbital mobile suit skirmish",
+    "setting": "action",
+    "place": "Open space above a blue planet, drifting debris and a ring-shaped colony station, sleek humanoid suits trading beam fire",
+    "situation": "A masked ace in a custom red suit picks off rookies while a white prototype suit flown by a teenager tries to hold the line",
+    "cast": ["masked ace in a red-trimmed suit", "teen prototype pilot", "carrier ship captain", "rookie wingman"],
+    "visualTropes": ["thruster trails crossing in loops", "beam swords crackling on contact", "an enemy ace moving three times faster", "a battleship's catapult deck"],
+    "jokeHooks": ["the masked ace ships three times faster because they skip code review", "the prototype suit has a brilliant feature flag nobody remembers how to turn on", "the rookie's targeting system caches the enemy's old position"]
+  },
+  {
+    "id": "robot-parade-unveiling",
+    "title": "Grand robot unveiling parade",
+    "setting": "crowd",
+    "place": "A packed city boulevard with confetti, marching bands and grandstands, a veiled giant robot rolling forward on a flatbed",
+    "situation": "The city celebrates its new defense robot; when the tarp is pulled, the robot is clearly unfinished, with exposed wires and one painted leg",
+    "cast": ["beaming mayor with giant scissors", "sweating lead engineer", "crowd of kids with toy robots", "rival corporation executive"],
+    "visualTropes": ["a huge red ribbon", "confetti cannons", "a tarp stuck halfway on a shoulder", "brass band in plumed hats"],
+    "jokeHooks": ["the demo goes live before the feature is done, with a placeholder label on the chest", "the robot waves with the arm whose test was skipped and the hand falls off", "the release notes are read aloud while the engineer frantically tapes wires"]
+  },
+  {
+    "id": "pilot-academy-trials",
+    "title": "Pilot academy trials arena",
+    "setting": "crowd",
+    "place": "A stadium with bleachers full of cadets, training robots in a ring of concrete barriers, a scoreboard showing ranks",
+    "situation": "Cadets pilot clunky training robots through an obstacle course while instructors judge and rivals heckle from the stands",
+    "cast": ["cocky top-ranked cadet", "underdog cadet with a patched robot", "drill-instructor robot master", "cheering classmates"],
+    "visualTropes": ["training robots with big numbers on their chests", "tipped-over robots in the mud", "a flag-capture tower", "a rank board flipping names"],
+    "jokeHooks": ["the underdog's robot passes every obstacle after reading the course docs nobody else read", "the top cadet's robot is fast but fails the linter checkpoint", "the scoreboard ranks cadets by lines changed and the instructor sighs"]
+  },
+  {
+    "id": "desert-walker-march",
+    "title": "Walker march across the dunes",
+    "setting": "exterior",
+    "place": "An endless orange desert under twin moons, a column of long-legged walker robots wading through dunes, a sandstorm wall on the horizon",
+    "situation": "A small squad escorts a slow cargo walker to a distant base; the sandstorm is coming and one walker keeps sinking",
+    "cast": ["weary squad leader", "chatty radio operator", "cargo walker driver", "silent sniper pilot"],
+    "visualTropes": ["footprints the size of swimming pools", "sand pouring off robot joints", "a rising storm wall", "a walker knee-deep in a dune"],
+    "jokeHooks": ["the cargo walker carries one enormous build artifact and slows the whole convoy", "the sinking walker gets pulled out, then sinks again, like a recurring regression", "the radio relays instructions with a ten-minute delay like a slow pipeline"]
+  },
+  {
+    "id": "volcano-lair-showdown",
+    "title": "Showdown at the volcano lair",
+    "setting": "exterior",
+    "place": "A volcanic island with a skull-shaped mountain, lava rivers, and a villain's fortress whose doors open to release monster robots",
+    "situation": "The heroes' robot lands on the beach and the villain's mechanical monsters march out one after another in increasing sizes",
+    "cast": ["cackling scientist villain in a monocle", "heroic pilot", "villain's bumbling henchman", "loyal robot dog"],
+    "visualTropes": ["lava geysers", "a fortress gate shaped like a mouth", "a giant robot silhouetted against an eruption", "monster robots with drill noses"],
+    "jokeHooks": ["each defeated robot spawns a bigger one, like each fix revealing a deeper bug", "the villain's master plan is a YAML file with one wrong indent", "the henchman pushes the wrong button and launches every robot at once, like a deploy to all regions"]
+  },
+  {
+    "id": "arctic-salvage-wreck",
+    "title": "Salvaging a robot from the ice",
+    "setting": "exterior",
+    "place": "A frozen sea under green auroras, a colossal ancient robot half buried in an ice shelf, salvage crews on snow crawlers around it",
+    "situation": "A crew tries to reactivate an ancient robot from a forgotten war; its eyes flicker and it boots in a language nobody speaks",
+    "cast": ["ambitious salvage boss", "nervous linguist", "crane operator in furs", "awakened ancient robot"],
+    "visualTropes": ["a giant hand frozen mid-grasp", "auroras reflected in a cracked visor", "cables snaking from crawlers into the hull", "ice shattering off a shoulder"],
+    "jokeHooks": ["the ancient robot runs on a legacy codebase with comments in a dead language", "it boots only after someone finds the matching ancient power adapter", "the robot's first command is to roll back to a version from centuries ago"]
+  },
+  {
+    "id": "harbor-transform-chase",
+    "title": "Transforming car chase on the harbor",
+    "setting": "action",
+    "place": "A rainy container port at night, cranes overhead, trucks and sports cars racing between stacks that fold into robots mid-chase",
+    "situation": "A truck-robot hero chases a jet-robot villain through the docks, both transforming back and forth with clunky mechanical noises",
+    "cast": ["noble truck-robot leader", "shrieking jet-robot villain", "teen sidekick in a pickup", "dockworker hiding in a crane cab"],
+    "visualTropes": ["a car folding into a robot mid-jump", "shipping containers tumbling", "headlights becoming eyes", "rain sparkling in searchlights"],
+    "jokeHooks": ["the hero transforms halfway and gets stuck, like a migration that only ran on some tables", "the villain changes form so often the type checker gives up", "every transformation adds a dramatic two seconds, like build overhead"]
+  },
+  {
+    "id": "mountain-base-rollout",
+    "title": "Secret base rolls out of the mountain",
+    "setting": "exterior",
+    "place": "A green mountain range at dawn; a cliff face splits open, a waterfall parts, and a runway extends with a giant robot rising on a lift",
+    "situation": "Hidden base machinery theatrically opens to send the robot out, but the sequence takes so long that the enemy has already left",
+    "cast": ["dramatic base commander", "veteran hangar engineer", "impatient pilot", "local goatherd watching"],
+    "visualTropes": ["a waterfall parting like curtains", "a palm grove sliding aside", "a robot rising on a huge elevator", "hidden cannons popping out of rocks"],
+    "jokeHooks": ["the startup sequence has twelve dramatic steps nobody dares remove", "the robot is ready only after the incident is closed", "the goatherd notes the waterfall motor needs an upgrade nobody has scheduled"]
+  },
+  {
+    "id": "underwater-dock-flood",
+    "title": "Flooding undersea robot dock",
+    "setting": "action",
+    "place": "A deep-sea dock beneath the ocean, porthole walls, a bulky diving robot in a flooded bay, water spraying from cracked seals",
+    "situation": "The dock floods while crew race to seal the bulkheads and launch the robot before the pressure crushes the bay",
+    "cast": ["calm dive commander", "panicking pipe fitter", "pilot in a fishbowl helmet", "curious giant squid at the window"],
+    "visualTropes": ["jets of water spraying from seams", "bulkhead doors grinding shut", "fish swimming past alarm lights", "a squid eye filling a porthole"],
+    "jokeHooks": ["every patched leak opens a new one somewhere else, like whack-a-mole flaky tests", "the bulkhead closes only after confirming in three separate dialogs", "the squid at the window watches like a reviewer who never approves"]
+  }
+]

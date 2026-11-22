@@ -1,0 +1,142 @@
+[
+  {
+    "id": "stormy-night-arrival",
+    "title": "Arrival on a stormy night",
+    "setting": "exterior",
+    "place": "A crooked mansion on a hill under lightning, a long gravel drive, dead trees clawing at the sky, one window lit in the attic",
+    "situation": "A stranded group's car breaks down at the gate; they walk up the drive as the door creaks open by itself before they knock",
+    "cast": ["sensible group leader", "scaredy-cat in a varsity jacket", "skeptic with a flashlight", "a large anxious dog"],
+    "visualTropes": ["lightning silhouetting the turrets", "a gate creaking open alone", "bats bursting from a chimney", "a face vanishing from the attic window"],
+    "jokeHooks": ["the door opens before the request is sent, like an optimistic UI", "the attic light flickers in a pattern like a heartbeat check failing", "the car breaks down precisely at the gate, like a pipeline that always fails on the last step"]
+  },
+  {
+    "id": "ghost-hunters-van-unload",
+    "title": "Ghost hunters gear up",
+    "setting": "exterior",
+    "place": "A cracked driveway in front of a boarded-up Victorian house, a converted ambulance with a homemade logo, gear spilling from its open back",
+    "situation": "A scrappy ghost-hunting crew unloads proton-style backpacks, traps and meters, arguing over whose gadget is safe to switch on",
+    "cast": ["nerdy inventor in coveralls", "wisecracking crew leader", "skeptical client in a bathrobe", "sleepy driver"],
+    "visualTropes": ["backpacks with glowing wands", "a trap box on a long cable", "meters beeping wildly", "the crew posed in matching jumpsuits"],
+    "jokeHooks": ["the inventor warns never to aim two wands at the same ghost, the way nobody runs two migrations at once", "the ghost meter alarms on every microwave, like a noisy linter", "the client signs a contract with a clause about unlimited retries"]
+  },
+  {
+    "id": "grand-staircase-chase",
+    "title": "Chase down the grand staircase",
+    "setting": "action",
+    "place": "A sweeping staircase in a dusty ballroom foyer, portraits with moving eyes, a chandelier swinging, suits of armor lining the landing",
+    "situation": "The heroes sprint down the stairs as a sheeted ghost chases them, doors slam in sequence and the staircase flattens into a slide",
+    "cast": ["sheeted ghost with eyeholes", "fleeing teen sleuths", "dog leaping into arms", "suit of armor joining the chase"],
+    "visualTropes": ["stairs folding into a slide", "portrait eyes following", "doors slamming one after another", "legs spinning in a cartoon run"],
+    "jokeHooks": ["doors slam in order like a test suite failing from the first broken setup", "the chase loops through the same hallway, like a retry with no backoff", "the ghost is unmasked and turns out to be the old maintainer"]
+  },
+  {
+    "id": "candlelit-seance",
+    "title": "Seance at the round table",
+    "setting": "interior",
+    "place": "A velvet-draped parlor, a round table with a crystal ball and a spirit board, candles flickering, a floating trumpet overhead",
+    "situation": "A theatrical medium summons a spirit; the table rattles, the planchette spells something, and nobody can agree what it means",
+    "cast": ["dramatic medium in a turban", "skeptical heir holding hands", "nervous butler", "translucent spirit with a grudge"],
+    "visualTropes": ["planchette sliding on its own", "candles bending sideways", "ectoplasm drifting from the crystal ball", "a trumpet floating in the dark"],
+    "jokeHooks": ["the spirit answers only in cryptic error codes", "the planchette spells a commit message nobody wrote", "everyone interprets the message differently, like an ambiguous requirement"]
+  },
+  {
+    "id": "ghostly-ballroom-dance",
+    "title": "Ballroom of dancing ghosts",
+    "setting": "crowd",
+    "place": "A vast ballroom with a cracked chandelier, a long banquet table, and dozens of translucent dancers in old-fashioned gowns waltzing in loops",
+    "situation": "Living guests stumble into an eternal party of ghosts who keep reenacting the same evening, toast after toast",
+    "cast": ["ghostly host raising a glass", "ghostly organist", "dueling ghost gentlemen", "baffled living guest"],
+    "visualTropes": ["ghost dancers passing through each other", "a pipe organ with flying music", "a cake that never gets cut", "pistols at a ghostly duel"],
+    "jokeHooks": ["the party replays the same night like a job retried forever", "the ghosts duel over the same conflict every evening, like a merge conflict nobody resolves", "the living guest spots the one ghost frozen mid-step, a hung process"]
+  },
+  {
+    "id": "foggy-graveyard",
+    "title": "Fog over the family graveyard",
+    "setting": "exterior",
+    "place": "A hillside cemetery behind the mansion, leaning headstones, a mausoleum with an iron gate, fog rolling knee-deep, a raven on every stone",
+    "situation": "Ghost hunters search for the grave of the original owner while hands occasionally poke up through the soil",
+    "cast": ["caretaker with a lantern", "nervous ghost hunter", "raven that comments", "zombie hand poking from soil"],
+    "visualTropes": ["fog curling around headstones", "a mausoleum gate swinging", "a full moon with a bat crossing", "hands rising from graves"],
+    "jokeHooks": ["each headstone is a deprecated feature that keeps coming back", "a grave labeled temporary has been there for a century", "the raven repeats the same error message from every stone"]
+  },
+  {
+    "id": "hedge-maze-pursuit",
+    "title": "Pursuit through the frozen hedge maze",
+    "setting": "action",
+    "place": "A snow-covered hedge maze beside a grand hotel, tall green walls, footprints in fresh snow, a groundskeeper's axe glinting",
+    "situation": "A child flees through the maze in a blizzard, retracing footprints to trick a lurching pursuer who shouts in a singsong voice",
+    "cast": ["clever kid", "lurching snowbound caretaker", "twin ghost girls at a corner", "hotel cook"],
+    "visualTropes": ["footsteps doubling back in snow", "a towering hedge wall", "twin girls standing perfectly still", "hotel windows glowing behind"],
+    "jokeHooks": ["the kid walks backward in their own tracks like reverting a commit", "the maze map in the lobby is out of date", "every turn leads to the same twins, like a redirect loop"]
+  },
+  {
+    "id": "flying-furniture-poltergeist",
+    "title": "Poltergeist in the kitchen",
+    "setting": "action",
+    "place": "A suburban family's kitchen gone wild, chairs stacking themselves, cabinets slamming, a glowing TV static portal in the corner",
+    "situation": "A family dives for cover as pots fly in a whirlwind and the toddler talks calmly to the TV static",
+    "cast": ["frazzled parents", "calm toddler at the TV", "tiny psychic medium", "invisible poltergeist"],
+    "visualTropes": ["chairs stacked in a tower", "pots orbiting in a whirlwind", "a TV glowing with static", "a medium flung across the floor"],
+    "jokeHooks": ["chairs stack into a perfect tower when nobody is looking, then fall when the reviewer walks in", "the toddler is the only one reading the logs", "everything works again after unplugging and replugging the TV"]
+  },
+  {
+    "id": "haunted-attic",
+    "title": "Cobwebbed attic of old trunks",
+    "setting": "interior",
+    "place": "A slanted attic stuffed with trunks, dress forms, a rocking horse and a cracked mirror, moonlight through a round window",
+    "situation": "Searchers dig through generations of junk looking for the cursed object, and every trunk opens to reveal another trunk",
+    "cast": ["determined granddaughter", "nervous ghost hunter", "creepy porcelain doll", "rocking horse that rocks alone"],
+    "visualTropes": ["dress forms that look like people", "a mirror reflecting someone else", "dust motes in a moonbeam", "a rocking horse moving on its own"],
+    "jokeHooks": ["trunks nested inside trunks like dependencies of dependencies", "the attic is the repo folder named old that nobody dares delete", "the doll's head turns each time someone commits"]
+  },
+  {
+    "id": "secret-passage-bookcase",
+    "title": "Secret passage behind the bookcase",
+    "setting": "interior",
+    "place": "A dark library with rolling ladders, a bookcase swinging open when a candlestick is tilted, a spiral stone stair beneath",
+    "situation": "Sleuths pull every book and candlestick to find the hidden lever; the bookcase spins them into the wall and back",
+    "cast": ["curious teen sleuth", "bumbling sidekick", "dog sniffing the floor", "mysterious masked figure"],
+    "visualTropes": ["a revolving bookcase", "a stone spiral stair", "a candlestick lever", "eyes peering from a portrait's cutouts"],
+    "jokeHooks": ["the lever is a hidden config flag documented nowhere", "the bookcase rotates someone into the wall each time the cache refreshes", "pulling the wrong book triggers a cascade, like changing a shared config"]
+  },
+  {
+    "id": "village-torch-mob",
+    "title": "Villagers march on the mansion",
+    "setting": "crowd",
+    "place": "A narrow cobbled lane winding up toward the haunted manor at night, a crowd of villagers with torches and pitchforks",
+    "situation": "Villagers arrive to drive out the ghost but argue at the gate about who exactly should knock first",
+    "cast": ["loud-mouthed burgomaster", "nervous priest with a lantern", "baker with a rolling pin", "friendly ghost in the window"],
+    "visualTropes": ["a river of torches", "pitchforks silhouetted", "a wrought-iron gate", "a ghost waving from a window"],
+    "jokeHooks": ["the mob forms a committee and the ghost waits an entire sprint", "everyone carries a torch, nobody carries the key", "the angry crowd is a pile of issues about one tiny bug"]
+  },
+  {
+    "id": "lake-ghost-ship-dock",
+    "title": "Ghost ship at the lake dock",
+    "setting": "exterior",
+    "place": "A mansion's boathouse dock on a misty black lake, a spectral rowing boat gliding in, a lantern swinging on a rotting post",
+    "situation": "A long-drowned ferryman offers to row the guests to the island crypt; every passenger must pay with a shiny coin",
+    "cast": ["skeletal ferryman in a cloak", "group of sleuths", "frog choir in the reeds", "lighthouse keeper on the far shore"],
+    "visualTropes": ["a boat with no reflection", "mist swirling over oars", "a lantern glowing green", "frogs croaking in chorus"],
+    "jokeHooks": ["the ferryman charges per crossing like a metered API", "the boat appears only when the toll is paid in an obsolete currency", "the frog choir sings the same alert each time a passenger falls in"]
+  },
+  {
+    "id": "haunted-hayride-festival",
+    "title": "Harvest hayride on the haunted grounds",
+    "setting": "crowd",
+    "place": "The mansion's orchard decorated for a harvest festival, pumpkin lanterns, a hay wagon pulled by a tractor, costumed townsfolk everywhere",
+    "situation": "Townsfolk enjoy a fake haunted hayride, not realizing the real ghosts have joined in and are better at scaring",
+    "cast": ["festival organizer with a megaphone", "kid dressed as a ghost", "real headless rider", "teen working the cider stand"],
+    "visualTropes": ["jack-o-lanterns on fence posts", "a headless rider galloping alongside", "a wagon full of screaming kids", "costumes indistinguishable from ghosts"],
+    "jokeHooks": ["nobody can tell the real ghosts from the costumes, like real errors among mock ones", "the headless rider's pumpkin head is the cache: replaced every season", "the organizer announces the ride is fully tested while a real ghost steers"]
+  },
+  {
+    "id": "exorcism-tornado-finale",
+    "title": "Spectral tornado finale",
+    "setting": "action",
+    "place": "The mansion's great hall torn open to the sky, a whirling vortex of ghosts, furniture and portraits funneling up through the roof",
+    "situation": "The ghost hunters fire every gadget at once to trap the head ghost while the house itself tries to shake them out",
+    "cast": ["ghost hunter team leader", "inventor yelling about the trap", "giant ghostly matriarch", "tiny brave dog"],
+    "visualTropes": ["a vortex of portraits and teacups", "beams of light lassoing a ghost", "roof tiles flying off", "a trap box smoking on the floor"],
+    "jokeHooks": ["firing every tool at once cleans the bug but also deletes the staircase", "the trap box is full and asks for a storage upgrade", "the matriarch is a singleton everyone tries to instantiate twice"]
+  }
+]

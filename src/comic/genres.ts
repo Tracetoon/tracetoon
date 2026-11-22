@@ -6,6 +6,7 @@
  * are offered first, so a repo's comics don't all land in the same office.
  */
 import { createHash } from 'node:crypto';
+import { BUILT_IN_SCENES } from './scenes/index.ts';
 
 export interface Genre {
   id: string;
@@ -22,15 +23,39 @@ export interface Genre {
   styles: string[];
   /** Extra direction for the comic author, from a genre file's body. */
   notes?: string;
+  /** Scenes to stage the comic in (built in, or `## Scene:` sections of a genre file). */
+  scenes?: GenreScene[];
   /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
   source?: 'built-in' | 'user' | 'repo';
   /** The genre file it was read from (user and repo genres). */
   path?: string;
 }
 
+export const SCENE_SETTINGS = ['exterior', 'action', 'crowd', 'interior'] as const;
+export type SceneSetting = (typeof SCENE_SETTINGS)[number];
+
+/**
+ * One place and situation a comic in this genre can be staged in. Parody the
+ * trope, not the property: evoke famous works' settings and character types,
+ * never their names or specific character designs.
+ */
+export interface GenreScene {
+  /** Kebab-case, unique within its genre. */
+  id: string;
+  title: string;
+  /** What kind of staging it gives: outdoors, action, a crowd, or a room. */
+  setting: SceneSetting;
+  place: string;
+  situation: string;
+  cast: string[];
+  visualTropes: string[];
+  /** Ways a software moment maps onto the scene. */
+  jokeHooks: string[];
+}
+
 export const EVERYDAY = 'everyday';
 
-export const GENRES: Genre[] = [
+const BASE_GENRES: Genre[] = [
   {
     id: 'space-opera',
     name: 'Space opera',
@@ -195,7 +220,42 @@ export const GENRES: Genre[] = [
   },
 ];
 
+/** The built-in genres, each with its built-in scenes. */
+export const GENRES: Genre[] = BASE_GENRES.map((g) => ({ ...g, scenes: BUILT_IN_SCENES[g.id] ?? [] }));
+
 export const MAX_GENRE_CHARS = 40;
+/** How many recent comics' scenes a new comic avoids. */
+export const SCENE_MEMORY = 10;
+
+/**
+ * Scenes to offer for one genre: fresh ones first (not used by the last
+ * SCENE_MEMORY comics), shuffled by `seed`, and spread across settings so the
+ * author sees an exterior, an action scene, a crowd and a room when it can.
+ */
+export function sceneOptions(
+  genre: Genre | undefined,
+  recentScenes: string[] = [],
+  opts: { seed?: string; count?: number } = {},
+): GenreScene[] {
+  const scenes = genre?.scenes ?? [];
+  const count = opts.count ?? 4;
+  if (!scenes.length) return [];
+  const used = new Set(recentScenes.slice(0, SCENE_MEMORY));
+  const fresh = scenes.filter((s) => !used.has(s.id));
+  const pool = fresh.length >= count ? fresh : scenes;
+  const rank = (s: GenreScene) =>
+    createHash('sha256').update(`${opts.seed ?? ''}\0${genre!.id}\0${s.id}`).digest().readUInt32BE(0);
+  const order = [...pool].sort((a, b) => rank(a) - rank(b));
+  const byKind = new Map<string, GenreScene[]>();
+  for (const s of order) byKind.set(s.setting, [...(byKind.get(s.setting) ?? []), s]);
+  const out: GenreScene[] = [];
+  while (out.length < count && [...byKind.values()].some((v) => v.length))
+    for (const kind of SCENE_SETTINGS) {
+      const next = byKind.get(kind)?.shift();
+      if (next && out.length < count) out.push(next);
+    }
+  return out;
+}
 
 export const genreById = (id: string | undefined, catalog: Genre[] = GENRES) =>
   id ? catalog.find((g) => g.id === id.trim().toLowerCase()) : undefined;

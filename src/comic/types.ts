@@ -125,6 +125,8 @@ export interface ComicSummary {
   castKinds?: CastKind[];
   /** The comic's invented character names, lowercased: later comics pick new ones. */
   castNames?: string[];
+  /** The genre scene it was staged in (an id from sceneOptions), or `custom`. */
+  scene?: string;
 }
 
 /** A character's place in one panel. */
@@ -253,6 +255,8 @@ export const PALETTES: Palette[] = ['full-color', 'bw-accent', 'duotone', 'limit
  */
 export interface ComicScript {
   v: 2;
+  /** The genre scene this comic is staged in: an id from `sceneOptions`, or `custom`. */
+  scene?: string;
   /** Comic title (used in the PR and the transcript). */
   title: string;
   /** The big title drawn into the art; up to 6 words. Defaults to `title`. */

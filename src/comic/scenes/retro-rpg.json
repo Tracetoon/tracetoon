@@ -1,0 +1,142 @@
+[
+  {
+    "id": "overworld-map-trek",
+    "title": "Walking the overworld map",
+    "setting": "exterior",
+    "place": "A tile-based overworld of chunky green forests, blue rivers, tiny castle and town icons, and a party of four sprites marching in single file",
+    "situation": "The party crosses the map toward a distant dark tower, stopping every three steps for a random encounter",
+    "cast": ["spiky-haired hero with an oversized sword", "white-robed healer", "black-hatted mage with glowing eyes", "bulky knight"],
+    "visualTropes": ["sprites walking in a conga line", "a screen-flash swirl before battle", "a tiny castle bigger than the hero", "pixel waves on the coast"],
+    "jokeHooks": ["a random encounter every three steps, like CI rerunning on every commit", "the party walks single file even when the road is wide, like a serial pipeline", "the dark tower on the horizon is the release that never gets closer"]
+  },
+  {
+    "id": "turn-based-slime-battle",
+    "title": "Turn-based battle with slimes",
+    "setting": "action",
+    "place": "A side-view battle screen with a grassy backdrop, the party lined up on the right, a pack of grinning blue slimes on the left, menus at the bottom",
+    "situation": "The party takes turns choosing Fight, Magic, Item or Run while slimes multiply each turn and the menu cursor lags",
+    "cast": ["hero picking Fight", "mage casting fire", "healer spamming heal", "cute grinning slime pack"],
+    "visualTropes": ["blue menu boxes with white borders", "damage numbers floating up", "slimes splitting in two", "a pointing-hand cursor"],
+    "jokeHooks": ["each turn the slimes split, like each fix spawning two new test failures", "the Run option fails every time, like a revert blocked by a required check", "the healer heals for 1 HP, the size of most code review fixes"]
+  },
+  {
+    "id": "item-shop-haggle",
+    "title": "Shopping in the item shop",
+    "setting": "interior",
+    "place": "A cozy pixel shop with shelves of potions, swords on the wall, a cat on the counter, and a shopkeeper behind a big ledger",
+    "situation": "The hero tries to buy the best sword but can only afford a stick; the shopkeeper repeats the same greeting every time",
+    "cast": ["beaming shopkeeper", "broke hero", "shop cat", "rich rival adventurer"],
+    "visualTropes": ["price tags in gold coins", "a dialog box with a blinking arrow", "a sword glowing on the wall", "potions in rainbow colors"],
+    "jokeHooks": ["the shopkeeper greets you the same way every time like a stateless API", "the best sword costs exactly one coin more than the budget", "you can sell your legendary armor for 3 gold, like deleting a battle-tested library"]
+  },
+  {
+    "id": "save-point-crystal",
+    "title": "The glowing save point",
+    "setting": "exterior",
+    "place": "A ledge outside a dungeon entrance, a floating spinning crystal glowing with light, a campfire, and a sign reading Rest here",
+    "situation": "The party nervously debates whether to save before the boss door, and someone saves over the only good file",
+    "cast": ["anxious party leader", "reckless rogue", "sleepy healer", "wise talking crystal"],
+    "visualTropes": ["a slowly spinning crystal", "a save file menu with three slots", "a campfire with sprites sitting around", "an ominous door with a skull"],
+    "jokeHooks": ["saving over the only good slot is a force-push to main", "everyone wants a save point before every refactor", "the crystal autosaves exactly after the party walks into lava"]
+  },
+  {
+    "id": "dragon-boss-fight",
+    "title": "Boss fight with a three-phase dragon",
+    "setting": "action",
+    "place": "A volcanic throne room with a massive pixel dragon filling the screen, lava falls behind it, the party small and battered at the bottom",
+    "situation": "The party finally beats the dragon, only for it to transform into a second, bigger form and then a third",
+    "cast": ["giant multi-form dragon", "exhausted hero", "out-of-mana mage", "healer with one potion left"],
+    "visualTropes": ["a boss health bar the width of the screen", "the dragon morphing in a flash of light", "screen shake on every attack", "an ominous music note icon"],
+    "jokeHooks": ["the bug fix succeeds and the boss transforms into the second failing test", "the final phase only appears in production", "everyone brought fire spells and the boss is fire-resistant, like testing the wrong environment"]
+  },
+  {
+    "id": "starting-village-festival",
+    "title": "Festival in the starting village",
+    "setting": "crowd",
+    "place": "A cheerful pixel village square with a fountain, flower stalls, bunting, villagers wandering in fixed little loops, a chicken coop",
+    "situation": "The village holds a festival but every villager says the same one line, and the hero must talk to all of them to advance",
+    "cast": ["village elder with a long beard", "villager who loves chickens", "guard blocking the exit", "childhood friend"],
+    "visualTropes": ["villagers pacing two tiles back and forth", "chickens running loose", "a guard standing in the only exit", "speech bubbles with ellipses"],
+    "jokeHooks": ["the guard blocks the exit until you complete a mandatory checkbox", "every villager repeats a single line like a log with no context", "the hero opens every pot in every house, like grep across the repo"]
+  },
+  {
+    "id": "airship-sky-voyage",
+    "title": "Airship voyage over the world",
+    "setting": "exterior",
+    "place": "A wooden airship with propellers and balloons gliding over a scrolling world map of oceans and continents at sunset",
+    "situation": "The party finally gets the airship and flies everywhere at once, only to find nowhere they can land",
+    "cast": ["goggled engineer captain", "hero at the wheel", "nervous mage", "stowaway giant yellow riding bird"],
+    "visualTropes": ["propellers spinning", "clouds scrolling below", "the world map wrapping at the edges", "a shadow sliding over the ground"],
+    "jokeHooks": ["the airship lands only on grass tiles, like a deploy that only runs on one OS", "unlocking fast travel late makes the whole earlier walk feel like a slow build", "the world map wraps around and the bug is back where it started"]
+  },
+  {
+    "id": "dungeon-trap-run",
+    "title": "Dungeon of switches and spikes",
+    "setting": "action",
+    "place": "A top-down stone dungeon of pressure plates, rolling boulders, spike floors and locked doors, torches flickering in sconces",
+    "situation": "The party scrambles through a puzzle room as the boulder chases them and the switch order resets every time someone steps wrong",
+    "cast": ["hero pushing a block", "rogue picking a lock", "mage reading a hint tablet", "skeleton guards"],
+    "visualTropes": ["a giant boulder rolling", "spikes popping up in rows", "pushable blocks with arrows", "a locked door with a keyhole"],
+    "jokeHooks": ["stepping wrong resets every switch, like a pipeline that restarts from scratch", "the hint tablet is cryptic documentation written by the dungeon's original author", "the block can only be pushed, never pulled, like an append-only log"]
+  },
+  {
+    "id": "inn-rest-montage",
+    "title": "Resting at the inn",
+    "setting": "interior",
+    "place": "A pixel inn with a cozy fireplace, a row of beds side by side, a jingle playing, and a moon rising through a window",
+    "situation": "The party pays to rest and is fully healed in one jingle, but the night passes and the dark lord's plan has advanced",
+    "cast": ["innkeeper with a candle", "party in nightcaps", "suspicious traveler by the fire", "bard who never stops playing"],
+    "visualTropes": ["screen fading to black and back", "four sprites in identical beds", "a candle snuffed out", "a jingle drawn as music notes"],
+    "jokeHooks": ["one night at the inn restores all HP, like restarting the server fixing everything", "the bard plays the same eight bars, like a retry loop", "the party rests while the review queue keeps growing"]
+  },
+  {
+    "id": "colosseum-tournament",
+    "title": "Colosseum tournament",
+    "setting": "crowd",
+    "place": "A pixel arena with roaring stands of tiny sprite spectators, banners, a champion on a podium, and a bracket board",
+    "situation": "The hero enters a tournament and fights one gimmick opponent after another while the crowd chants",
+    "cast": ["masked champion", "announcer in a top hat", "hero with a rusty sword", "a monster that only uses one attack"],
+    "visualTropes": ["stands of identical sprite fans", "a bracket chart", "trophies glowing", "confetti in eight colors"],
+    "jokeHooks": ["every opponent is a different edge case in the bracket", "the champion uses a cheat code nobody can reproduce", "the announcer's commentary is a log with only INFO lines"]
+  },
+  {
+    "id": "raft-sea-crossing",
+    "title": "Crossing the sea on a raft",
+    "setting": "exterior",
+    "place": "A pixel ocean with chunky waves, a small raft carrying the party, a lighthouse on one island, sea serpent coils in the distance",
+    "situation": "The party sails a tiny raft between islands as a sea serpent circles, and the map shows nothing beyond the edge",
+    "cast": ["hero rowing", "mage looking at the map", "sea serpent", "lighthouse keeper NPC"],
+    "visualTropes": ["blocky waves animating in two frames", "a serpent loop rising", "a fog bank at the map edge", "an island with a single palm"],
+    "jokeHooks": ["the map ends at an unexplored edge like an undocumented API", "the raft holds exactly the party size, like a fixed thread pool", "the serpent appears whenever someone opens the config menu"]
+  },
+  {
+    "id": "final-tower-climb",
+    "title": "Climbing the final tower",
+    "setting": "exterior",
+    "place": "A twisting dark tower piercing purple clouds, stairs spiraling around the outside, a stormy sky, the world map far below",
+    "situation": "The party climbs dozens of floors, each with a mini-boss and a save point, while the dark lord taunts from the top",
+    "cast": ["dark lord in a horned helmet", "determined hero", "loyal knight", "returning rival who joins the party"],
+    "visualTropes": ["stairs spiraling outside the tower", "lightning cracking", "floor numbers in pixel font", "the rival leaping in to help"],
+    "jokeHooks": ["each floor is a review stage, and the last one is the strictest", "the rival returns to help at the last minute, like a teammate approving at midnight", "the dark lord's speech is longer than the release notes"]
+  },
+  {
+    "id": "minecart-escape",
+    "title": "Minecart escape from the mine",
+    "setting": "action",
+    "place": "A collapsing mine with wooden tracks looping through a cavern, a minecart rocketing downhill, lava glowing below",
+    "situation": "The party rides a minecart down broken tracks, leaning to switch rails while a rock golem crashes after them",
+    "cast": ["hero leaning in the cart", "panicking mage", "rock golem", "mole merchant waving"],
+    "visualTropes": ["sparks flying from wheels", "track switches with arrows", "gaps in the rails", "a golem crashing through walls"],
+    "jokeHooks": ["every rail switch is a branch decision made at full speed", "the gap in the tracks is the step nobody tested", "the mole merchant still offers a sale while the mine collapses"]
+  },
+  {
+    "id": "castle-throne-audience",
+    "title": "Audience with the king",
+    "setting": "crowd",
+    "place": "A great castle throne hall with red carpet, banners, rows of guards and courtiers, a tiny king on a giant throne",
+    "situation": "The king gives the hero an epic quest and a reward of 50 gold and a wooden stick while the court applauds",
+    "cast": ["tiny king with a huge crown", "princess with a secret", "scheming chancellor", "hero kneeling"],
+    "visualTropes": ["a long red carpet", "guards with identical spears", "a treasure chest with a meager reward", "courtiers clapping in sync"],
+    "jokeHooks": ["the king assigns a world-saving task with a starter budget, like a sprint with no capacity", "the chancellor approves the quest after a long delay like a slow reviewer", "the reward is a badge on the profile and nothing else"]
+  }
+]
