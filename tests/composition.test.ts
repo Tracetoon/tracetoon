@@ -310,6 +310,11 @@ describe('genre first, rotated', () => {
     expect(errors(checkScript(s, { pinnedGenre: 'heist' }))[0]!.problem).toContain(
       'pins the genre',
     );
+    // A pinned phrase longer than the usual limit is still satisfiable.
+    const long = 'a slow-burn submarine disaster movie set in 1962';
+    expect(long.length).toBeGreaterThan(40);
+    expect(errors(checkScript(withGenre(long), { pinnedGenre: long }))).toEqual([]);
+    expect(errors(checkScript(withGenre(long))).map((p) => p.where)).toContain('genre');
   });
 
   test('everyday is allowed but warned when it keeps coming back', () => {

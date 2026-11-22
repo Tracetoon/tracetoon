@@ -412,14 +412,16 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
     bad('must be a genre id or a short phrase');
     return out;
   }
-  if (s.genre.length > MAX_GENRE_CHARS) {
-    bad(`keep it under ${MAX_GENRE_CHARS} characters`);
-    return out;
-  }
   const key = genreKey(s.genre);
+  // The repo's pin decides first, whatever its length: a long pinned phrase
+  // must not make every comic fail.
   if (opts.pinnedGenre) {
     if (key !== genreKey(opts.pinnedGenre))
       bad(`this repo pins the genre "${opts.pinnedGenre}" (config genre)`);
+    return out;
+  }
+  if (s.genre.length > MAX_GENRE_CHARS) {
+    bad(`keep it under ${MAX_GENRE_CHARS} characters`);
     return out;
   }
   if (s.request?.trim()) return out;
