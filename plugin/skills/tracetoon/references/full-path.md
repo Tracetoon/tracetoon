@@ -46,8 +46,9 @@ image service) apply throughout.
 
 3. **Context.**
    Read the prepared `context.json`; do not repeat preparation. Note the PR template, existing PR,
-   settings, AI policy, and `comic.recentComics` (compact creative choices from
-   recent comics, so this one can differ; missing legacy fields are unknown).
+   settings, AI policy, `comic.recentComics` (compact creative choices from
+   recent comics, so this one can differ; missing legacy fields are unknown)
+   and `comic.genreOptions` (the genres to pick the comic's world from).
    - **Researcher phase.** Launch a separate researcher with the host's native
      subagent tool, using [contribution-workflow.md](contribution-workflow.md).
      Give it `guidance-request.json`, `changes.patch`, `context.json` and repository
@@ -148,26 +149,35 @@ image service) apply throughout.
    [references/comic-guide.md](comic-guide.md). The comic sits in
    the PR, so its first reader is the reviewer: it should make them laugh and
    leave them knowing _what changed_. It must look and read like a real comic:
-   - find the joke first: mine the PR description and digest for what really
-     happened, write the punchline, then compare three distinct concepts in
-     local `comic-design.json` following
+   - pick the genre first: one of `comic.genreOptions` (space opera, fantasy
+     quest, heist, kaiju, ...; see [genres.md](genres.md)), the one this PR's
+     real moment maps onto most naturally, and set `"genre"`. `comic check`
+     refuses a genre used by either of the last two comics unless the user
+     asked for it;
+   - then find the joke inside that genre: mine the PR description and digest
+     for what really happened, write the punchline, then compare three
+     distinct concepts in the chosen genre in local `comic-design.json`
+     following
      [comic-direction.md](comic-direction.md). Pick the one that
      makes sense on a cold read, is genuinely funny, and is recognizably this
      PR. Characters talk like people (never in code), and the PR's real names
-     appear in the scene itself (screens, signs, box stamps) or in dialogue,
-     never as pointer tags or callout labels;
+     appear on the genre's own surfaces (a bridge viewscreen, a quest scroll,
+     a wanted poster, a mission-control board) or in dialogue, never as
+     pointer tags or callout labels;
    - use the beats the joke needs, usually three or four panels; two-panel
      before/afters only when the contrast is the punchline. Vary the layout
      with explicit `composition` geometry (tiered, manga page, vertical,
      hero-inset, ...) and choose `none`, `integrated` or `heading` title
      treatment;
-   - pick a comic style (ideas in [references/styles.md](styles.md),
-     or name a comic tradition); it must look like a drawn comic, not a 3D
+   - pick a comic style that suits the genre (ideas in
+     [references/styles.md](styles.md), or name a comic tradition); it must look like a drawn comic, not a 3D
      render or illustration. Reusing a style is fine. If the user asked for a
      particular look or characters, put their words in `request` and honor it;
    - invent this comic's own characters (or none) and describe each once in
      `comic.json`, with each `kind` (`human`, `creature`, `object`); never reuse
-     characters from earlier comics;
+     characters from earlier comics. Genre archetypes are welcome (a starship
+     captain, a wizard, a detective); never copy a specific work's character,
+     costume, insignia, ship or name unless the user asked for it;
    - write `comic.json` (`"v": 2`) with its `anchor` (the change, 1–4 real
      terms, and what each drawn element stands for), then
      `tracetoon comic check`; at least one term must be lettered in the scene

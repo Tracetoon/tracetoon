@@ -8,7 +8,7 @@ storytelling craft, never the creator's characters, jokes or page artwork.
 |---|---|---|
 | [Julia Evans: Teaching tech with cartoons](https://jvns.ca/teach-tech-with-cartoons/) | System parts as characters with their real names; a warning that a cartoon can be fun and explain nothing | Personify the PR's actual components and let them talk |
 | [PBF: The Report](https://pbfcomics.com/comics/the-report/) | Two smaller setup panels lead to a larger payoff | Give the reveal more space when it needs it |
-| [Sarah's Scribbles: Spooky Cute](https://tapas.io/episode/1908294) | A human reaction completes a short visual pattern | Fictional people make ordinary situations readable |
+| [Sarah's Scribbles: Spooky Cute](https://tapas.io/episode/1908294) | A human reaction completes a short visual pattern | A human reaction makes any situation readable, ordinary or genre |
 | [Poorly Drawn Lines: Cute Animals](https://poorlydrawnlines.com/comic/cute-animals/) | Deadpan dialogue; a wide opening leads into smaller panels | Let the last line undercut the setup |
 | [The Oatmeal: Brainstorming](https://theoatmeal.com/comics/creativity_brainstorming) | Borderless scenes, short sequences and whitespace in one explanation | Vary frames and spacing |
 | [MediBang: Frame layout and screen](https://medibangpaint.com/en/use/2021/09/mangatutorialforbeginners06/) | Different geometry for everyday scenes, action and explanation; diagonal cuts, bleed and camera changes | Match the composition to the scene and keep the reading path clear |
@@ -18,7 +18,14 @@ storytelling craft, never the creator's characters, jokes or page artwork.
 References reviewed October 25–26, 2026. This is a representative creative sample,
 not a claim about which cast or layout is statistically most successful.
 
-## Make three distinct proposals, then draw one
+## Pick the genre, then make three distinct proposals, then draw one
+
+The genre comes first: one of `context.comic.genreOptions`
+([genres.md](genres.md)). All three proposals are set in it; they differ in
+premise. A genre's own tropes (red alert, the prophecy, the heist briefing,
+the showdown) give a joke big stakes to hang on a small, real software
+moment, and its stock characters can be drawn as archetypes without copying
+any one work.
 
 Write brief candidates to `comic-design.json` in the local run. For each, record:
 - the punchline;
@@ -43,7 +50,8 @@ judgments, not a numeric humor score or a rotation quota.
 
 The candidates must differ in premise or storytelling, not just colors or a
 new animal species. Glance at the last few `recentComics`: if they were
-two-panel before/afters, tell this one as a story. Reusing a style is fine.
+two-panel before/afters, tell this one as a story. Reusing a style is fine;
+reusing either of the last two genres is not, unless the user asked for it.
 
 ## Useful starting compositions
 
@@ -68,10 +76,12 @@ deserve four panels.
 - The metadata title need not be a visible headline, and a visible title need
   not be large or at the top.
 
-People, personified objects, creatures and characterless scenes are all valid.
-Use people for human interactions; personified parts when the system carries
-the joke (the actual hook, server, job or cache, called by its real name);
-creatures when their traits help.
+Genre archetypes, people, personified objects, creatures and characterless
+scenes are all valid. Use the genre's stock characters (a captain, a wizard, a
+detective, a monster) when the world carries the joke; personified parts when
+the system carries it (the actual hook, server, job or cache, called by its
+real name, perhaps as the ship's AI or the dungeon's trap); creatures when
+their traits help. Archetypes, never a specific work's characters.
 
 ## The final visual check
 

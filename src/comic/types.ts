@@ -110,6 +110,8 @@ export interface Composition {
 /** Only these compact creative choices are read back from published PRs. */
 export interface ComicSummary {
   style?: string;
+  /** The world it is set in: a genre id (genres.ts) or a short custom phrase. */
+  genre?: string;
   styleFamily?: StyleFamily;
   layoutFamily?: LayoutFamily;
   panelCount?: number;
@@ -222,6 +224,12 @@ export interface ComicScript {
   aspect?: Aspect;
   /** Any art style: a comic preset from styles.ts by id, or the agent's own description. */
   style: string;
+  /**
+   * The world the comic is set in, chosen first: a genre id from genres.ts
+   * (offered in context.comic.genreOptions) or a short custom phrase.
+   * Required for composed scripts.
+   */
+  genre?: string;
   /**
    * What the user explicitly asked to see (a style, characters, a theme), in
    * their words. Sent to the image model as the user's request; it overrides

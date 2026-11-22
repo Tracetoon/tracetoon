@@ -6,6 +6,7 @@ import type { PrTruth } from '../git/pr.ts';
 import { gh } from '../util/exec.ts';
 import { repoArgs } from './target.ts';
 import { decodeMeta } from './body.ts';
+import { genreKey, MAX_GENRE_CHARS } from '../comic/genres.ts';
 import {
   CAST_KINDS,
   LAYOUT_FAMILIES,
@@ -59,6 +60,12 @@ export function recentComics(
         if (typeof meta.style === 'string' && meta.style.length <= 120)
           summary.style = meta.style;
         if (raw && typeof raw === 'object') {
+          if (
+            typeof raw.genre === 'string' &&
+            raw.genre.trim() &&
+            raw.genre.length <= MAX_GENRE_CHARS
+          )
+            summary.genre = genreKey(raw.genre);
           if (raw.styleFamily && KNOWN_STYLE_FAMILIES.includes(raw.styleFamily))
             summary.styleFamily = raw.styleFamily;
           if (raw.layoutFamily && LAYOUT_FAMILIES.includes(raw.layoutFamily))

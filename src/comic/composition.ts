@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { formatById } from './formats.ts';
 import { STYLES } from './styles.ts';
+import { genreKey } from './genres.ts';
 import {
   LAYOUT_FAMILIES,
   type Aspect,
@@ -220,6 +221,9 @@ export function comicSummary(script: ComicScript): ComicSummary {
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
   return {
     style: script.style,
+    ...(typeof script.genre === 'string' && script.genre.trim()
+      ? { genre: genreKey(script.genre) }
+      : {}),
     ...(script.styleFamily || presetFamily(script.style)
       ? { styleFamily: script.styleFamily ?? presetFamily(script.style)! }
       : {}),

@@ -140,19 +140,20 @@ describe('comic look and user requests', () => {
     for (const s of STYLES) expect(s.family).not.toBe('custom');
   });
 
-  test('an explicit user request is sent and lifts the original-characters rule', () => {
+  test('an explicit user request is sent and lifts the archetypes-only rule', () => {
     const plain = pagePrompt(pageScript());
-    expect(plain).toContain('original character designs');
+    expect(plain).toContain('genre archetypes are fine');
+    expect(plain).toContain('never reproduce a specific existing film, TV, cartoon or game character');
     const asked = pageScript({ request: 'stormtroopers arguing about tabs' });
     expect(errors(checkScript(asked))).toEqual([]);
     const prompt = pagePrompt(asked);
     expect(prompt).toContain(
       'The user asked for this; honor it exactly: stormtroopers arguing about tabs.',
     );
-    expect(prompt).not.toContain('original character designs');
+    expect(prompt).not.toContain('never reproduce a specific existing');
     expect(prompt).toContain('no identifiable real-person or celebrity likenesses');
     expect(artPrompt(asked.panels[0]!, 0, asked)).not.toContain(
-      'original character designs',
+      'never reproduce a specific existing',
     );
     expect(
       errors(checkScript(pageScript({ request: '  ' }))).map((p) => p.where),
@@ -169,6 +170,16 @@ describe('skill docs stay in sync', () => {
       'utf8',
     ).replace(/\r\n/g, '\n');
     expect(doc).toBe(STYLES_MD);
+  });
+
+  test('genres.md matches the genre catalog', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { GENRES_MD } = await import('../scripts/gen-genres.ts');
+    const doc = readFileSync(
+      new URL('../plugin/skills/tracetoon/references/genres.md', import.meta.url),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(doc).toBe(GENRES_MD);
   });
 
   test("the comic guide's example passes comic check", async () => {

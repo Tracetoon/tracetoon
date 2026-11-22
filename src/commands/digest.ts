@@ -16,6 +16,7 @@ import { decodeMeta, humanPart, regionContent, regionEdited } from '../github/bo
 import { prTruth, type PrTruth } from '../git/pr.ts';
 import { scan, type ScanResult } from '../pipeline.ts';
 import { recentComics } from '../github/history.ts';
+import { genreOptions as offerGenres } from '../comic/genres.ts';
 import { describeTitleRules, readTitleRules } from '../github/titleRules.ts';
 import { assertRunOwner, findRun, newRun, readJson, writeJson } from '../run.ts';
 import { recordTiming } from '../workflow/publication.ts';
@@ -334,6 +335,13 @@ export function contextCmd(
   // Compact creative choices help this comic differ. Skipped when comics are off.
   const recent =
     config.comic !== 'off' ? recentComics(truth, { offline: opts.offline }) : [];
+  const recentGenres = recent.flatMap((c) => (c.genre ? [c.genre] : []));
+  const pinnedGenre =
+    config.genre && config.genre !== 'auto' ? config.genre.trim() : undefined;
+  const genreOptions = offerGenres(recentGenres, {
+    seed: `${truth.target?.repo ?? originRepo(truth) ?? ''} ${truth.head}`,
+    pinned: pinnedGenre,
+  });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,
     target: truth.target ?? null,
@@ -361,6 +369,10 @@ export function contextCmd(
     comic: {
       recentStyles: recent.flatMap((c) => (c.style ? [c.style] : [])),
       recentComics: recent,
+      recentGenres,
+      // Pick the genre first, from these: the least recently used, shuffled
+      // per branch. A pinned genre replaces them.
+      genreOptions,
       // Decided here, once, so the agent is told before drafting rather than
       // left to judge whether a comic is wanted.
       expectation: comicExpectation(truth.toplevel, policy),
@@ -401,8 +413,8 @@ export function contextCmd(
           config.comic === 'off'
             ? ''
             : config.style && config.style !== 'auto'
-              ? `Comic style: pinned to ${config.style}`
-              : `Comic: choose the story, composition and cast; compare recent creative choices (${
+              ? `Comic style: pinned to ${config.style}; pick the genre first (${genreOptions.map((g) => g.id).join(', ')})`
+              : `Comic: pick the genre first (${genreOptions.map((g) => g.id).join(', ')}), then the story, composition and cast; compare recent creative choices (${
                   recent
                     .map((c) => c.style)
                     .filter(Boolean)

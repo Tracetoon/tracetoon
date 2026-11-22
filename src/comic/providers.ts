@@ -19,6 +19,7 @@ import {
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { formatById } from './formats.ts';
+import { genreById } from './genres.ts';
 import {
   paletteText,
   styleById,
@@ -89,7 +90,7 @@ export type Readiness = 'ready' | 'not ready' | 'unknown';
 
 /** Things image models must avoid, on every comic. */
 export const NEGATIVE =
-  'fictional characters only (human characters are welcome); original character designs that do not resemble existing cartoon, film or game characters; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
+  'fictional characters only (human characters are welcome); genre archetypes are fine (a starship captain, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
 /** With an explicit user request, their characters are allowed; the rest still holds. */
 export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
@@ -128,6 +129,19 @@ export function scriptStyle(script: ComicScript): string {
   return `${styleText(script.style)}${palette ? `; ${paletteText(palette, script.accent)}` : ''}`;
 }
 
+/** The world the comic is set in, for the prompt: a catalog genre's setting, or the phrase. */
+export function genreLine(script: ComicScript): string {
+  if (typeof script.genre !== 'string' || !script.genre.trim()) return '';
+  const g = genreById(script.genre);
+  // A user request may name specific characters; then it alone decides who appears.
+  const cast = script.request?.trim()
+    ? ''
+    : "; draw genre archetypes, not any specific work's characters";
+  return g
+    ? `Genre: ${g.name}, set in ${g.setting}${cast}.`
+    : `Genre: ${script.genre.trim()}${cast}.`;
+}
+
 /** One text-free panel; Tracetoon adds the bubbles (overlay lettering). */
 export function artPrompt(panel: Panel, index: number, script: ComicScript): string {
   const people = who(panel, script);
@@ -135,6 +149,7 @@ export function artPrompt(panel: Panel, index: number, script: ComicScript): str
   const frame = resolveComposition(script)?.frames[index];
   return [
     `${scriptStyle(script)}.`,
+    genreLine(script),
     panel.beat
       ? `Panel ${index + 1} of ${count} (${BEAT_MEANING[panel.beat]}) of a comic.`
       : `Panel ${index + 1} of ${count} of a comic.`,
@@ -208,6 +223,7 @@ export function pagePrompt(script: ComicScript): string {
   return [
     `A finished comic page, ${SHAPE[aspect]} image.`,
     `Art style: ${scriptStyle(script)}.`,
+    genreLine(script),
     requestLine(script),
     wantsNonComicMedium(script.style, script.request) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'

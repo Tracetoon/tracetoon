@@ -365,7 +365,7 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 
 ## `tracetoon comic reroll`
 
-redraw the page in a different style (or the one given), keeping the story
+redraw the page in a different style (or the one given), keeping the story and genre; fresh styles prefer ones that suit the genre
 
 | Option | Description |
 | --- | --- |

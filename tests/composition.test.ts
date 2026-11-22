@@ -21,6 +21,8 @@ import { prTruth } from '../src/git/pr.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 import { anchoredStory, COMIC_STORIES } from './fixtures/comic-stories.ts';
 import { pageScript } from './pageScript.ts';
+import { freshGenres, genreOptions, GENRES } from '../src/comic/genres.ts';
+import { styleById } from '../src/comic/styles.ts';
 import { makeRepo, tempDir } from './helpers.ts';
 
 setDefaultTimeout(90_000);
@@ -176,7 +178,8 @@ describe('story-led compositions', () => {
 
   test('repeat checks are semantic, advisory and respect style pins and unknown history', () => {
     const s = example('diagonal');
-    const recent = Array.from({ length: 3 }, () => comicSummary(s));
+    // Same story shape and cast, different genre: advisory warnings only.
+    const recent = Array.from({ length: 3 }, () => ({ ...comicSummary(s), genre: 'pirates' }));
     const findings = checkScript(s, { recentComics: recent });
     expect(findings.filter((p) => p.severity === 'warning').map((p) => p.where)).toEqual([
       'composition',
@@ -188,7 +191,9 @@ describe('story-led compositions', () => {
       false,
     );
     const pair = example('comparison');
-    const pairs = checkScript(pair, { recentComics: [comicSummary(pair)] });
+    const pairs = checkScript(pair, {
+      recentComics: [{ ...comicSummary(pair), genre: 'pirates' }],
+    });
     expect(
       pairs.some((p) => p.where === 'composition' && p.problem.includes('two-panel')),
     ).toBe(true);
@@ -239,6 +244,7 @@ describe('creative history', () => {
             titleTreatment: 'none',
             castKinds: ['creature'],
             styleFamily: 'ink',
+            genre: 'Space-Opera',
             secret: 'must not escape',
           } as any,
         }),
@@ -256,11 +262,107 @@ describe('creative history', () => {
         panelCount: 2,
         titleTreatment: 'none',
         castKinds: ['creature'],
+        genre: 'space-opera',
       },
       { style: 'noir' },
     ]);
     expect(JSON.stringify(history)).not.toContain('secret');
     expect(recentStyles(truth)).toEqual(['custom ink', 'noir']);
+  });
+});
+
+describe('genre first, rotated', () => {
+  const withGenre = (genre?: string) => {
+    const s = example('vertical');
+    if (genre === undefined) delete s.genre;
+    else s.genre = genre;
+    return s;
+  };
+  const recent = (...genres: string[]) => genres.map((genre) => ({ genre }));
+
+  test('a composed script must name its genre; legacy scripts need not', () => {
+    expect(errors(checkScript(withGenre())).map((p) => p.where)).toContain('genre');
+    expect(errors(checkScript(withGenre('space-opera')))).toEqual([]);
+    expect(errors(checkScript(withGenre('submarine disaster movie')))).toEqual([]);
+    expect(errors(checkScript(withGenre('x'.repeat(41)))).map((p) => p.where)).toContain(
+      'genre',
+    );
+    expect(errors(checkScript(pageScript())).some((p) => p.where === 'genre')).toBe(false);
+  });
+
+  test('repeating either of the last two genres blocks; a request or a pin does not', () => {
+    const s = withGenre('Space-Opera');
+    expect(errors(checkScript(s, { recentComics: recent('space-opera') }))[0]!.where).toBe(
+      'genre',
+    );
+    expect(errors(checkScript(s, { recentComics: recent('heist', 'space-opera') }))).not.toEqual(
+      [],
+    );
+    expect(
+      errors(checkScript(s, { recentComics: recent('heist', 'kaiju', 'space-opera') })),
+    ).toEqual([]);
+    expect(
+      errors(checkScript({ ...s, request: 'a space opera please' }, { recentComics: recent('space-opera') })),
+    ).toEqual([]);
+    expect(
+      errors(checkScript(s, { recentComics: recent('space-opera'), pinnedGenre: 'space-opera' })),
+    ).toEqual([]);
+    expect(errors(checkScript(s, { pinnedGenre: 'heist' }))[0]!.problem).toContain(
+      'pins the genre',
+    );
+  });
+
+  test('everyday is allowed but warned when it keeps coming back', () => {
+    const s = withGenre('everyday');
+    const found = checkScript(s, { recentComics: recent('heist', 'kaiju', 'everyday', 'everyday') });
+    expect(errors(found)).toEqual([]);
+    expect(found.some((p) => p.where === 'genre' && p.severity === 'warning')).toBe(true);
+  });
+
+  test('archetypes pass; a specific franchise character only warns, unless requested', () => {
+    const s = withGenre('space-opera');
+    s.characters[0]!.description = 'a grizzled starship captain in a generic uniform';
+    expect(checkScript(s).some((p) => p.problem.includes('generalize'))).toBe(false);
+    s.characters[0]!.description = 'Captain Picard on the bridge';
+    const found = checkScript(s);
+    expect(errors(found)).toEqual([]);
+    expect(found.find((p) => p.problem.includes('generalize'))!.where).toBe(
+      'characters[0].description',
+    );
+    expect(
+      checkScript({ ...s, request: 'Picard, please' }).some((p) => p.problem.includes('generalize')),
+    ).toBe(false);
+    // Everyday software words are not franchise names.
+    s.characters[0]!.description = 'an enterprise architect who checks the line terminator';
+    expect(checkScript(s).some((p) => p.problem.includes('generalize'))).toBe(false);
+  });
+
+  test('the genre is recorded and sent to the image model with the archetype rule', () => {
+    const s = withGenre('Kaiju');
+    expect(comicSummary(s).genre).toBe('kaiju');
+    expect(pagePrompt(s)).toContain('Genre: Kaiju attack');
+    expect(artPrompt(s.panels[0]!, 0, s)).toContain('Genre: Kaiju attack');
+    expect(pagePrompt(s)).toContain('genre archetypes are fine');
+    expect(pagePrompt(withGenre())).not.toContain('Genre:');
+    // A user request decides the cast: the genre line no longer forbids named characters.
+    const asked = { ...s, request: 'the crew of a famous starship' };
+    expect(pagePrompt(asked)).toContain('Genre: Kaiju attack');
+    expect(pagePrompt(asked)).not.toContain("not any specific work's characters");
+  });
+
+  test('options rotate: unused first, per-branch order, everyday last, pins win', () => {
+    const ids = (r: string[], seed = 'a') => freshGenres(r, seed).map((g) => g.id);
+    expect(ids([])).toEqual(ids([]));
+    expect(ids([], 'a')).not.toEqual(ids([], 'b'));
+    expect(ids([]).at(-1)).toBe('everyday');
+    const used = ids(['heist', 'kaiju']);
+    expect(used.slice(-2)).toEqual(['kaiju', 'heist']);
+    expect(genreOptions(['heist'], { seed: 'x' }).map((g) => g.id)).not.toContain('heist');
+    expect(genreOptions([], { seed: 'x' })).toHaveLength(3);
+    expect(genreOptions([], { pinned: 'noir-detective' })[0]!.name).toBe('Noir detective');
+    expect(genreOptions([], { pinned: 'cozy bakery' })[0]!.id).toBe('cozy bakery');
+    for (const g of GENRES)
+      for (const style of g.styles) expect(styleById(style)?.id ?? `${g.id}: ${style}`).toBe(style);
   });
 });
 
