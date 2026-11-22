@@ -1,3 +1,4 @@
+import { loadGenreCatalog } from '../comic/genreFile.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { graphEngineAvailable } from '../graph/engine.ts';
 import { homedir } from 'node:os';
@@ -295,6 +296,14 @@ export function doctorReport(cwd: string, opts: { probe?: boolean } = {}) {
     push:
       top.ok && ghAuth ? (pushAccess(cwd, target?.origin ?? target?.repo) ?? null) : null,
     evidenceGraph: graphEngineAvailable(),
+    invalidGenres: loadGenreCatalog(top.ok ? top.stdout.trim() : undefined)
+      .files.filter((f) => !f.genre)
+      .map((f) => ({
+        path: f.path,
+        problems: f.problems
+          .filter((p) => p.severity !== 'warning')
+          .map((p) => `${p.where}: ${p.problem}`),
+      })),
   };
   const comics = nextStep(
     report.imageProviders,
@@ -321,6 +330,8 @@ type Found = {
   update: { available: boolean; latest: string | null };
   evidenceGraph: { ok: boolean; reason?: string };
   unknownRecordTypes?: Record<string, ProbeResult>;
+  /** Genre files that were skipped because they have errors. */
+  invalidGenres?: { path: string; problems: string[] }[];
 };
 
 /** The pass/fail list agents read from `doctor --json`, built from what doctor found. */
@@ -443,6 +454,18 @@ function doctorChecks(
     message: report.evidenceGraph.ok
       ? 'evidence graph ready'
       : `evidence graph unavailable: ${report.evidenceGraph.reason ?? 'unknown reason'}`,
+  });
+  const badGenres = report.invalidGenres ?? [];
+  add({
+    id: 'genres',
+    ok: !badGenres.length,
+    severity: 'warn',
+    message: badGenres.length
+      ? `skipped ${badGenres.length} genre file(s) with errors: ${badGenres.map((g) => g.path).join(', ')}`
+      : 'genre files ok',
+    ...(badGenres.length
+      ? { fix: `tracetoon genre check ${badGenres[0]!.path}` }
+      : {}),
   });
   if (report.unknownRecordTypes) {
     const entries = Object.entries(report.unknownRecordTypes);

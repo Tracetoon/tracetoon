@@ -22,6 +22,8 @@ import {
 } from '../comic/compose.ts';
 import { FORMATS, formatById } from '../comic/formats.ts';
 import { freshStyles, styleById } from '../comic/styles.ts';
+import { genreById, type Genre } from '../comic/genres.ts';
+import { genreCatalog } from '../comic/genreFile.ts';
 import {
   artPrompt,
   generateImages,
@@ -90,6 +92,8 @@ interface Loaded {
   run: Run;
   root: string;
   script: ComicScript;
+  /** Built-in genres plus the user's and the repo's genre files. */
+  genres: Genre[];
 }
 
 /** What the script check needs beyond the script: pinned style, recent styles. */
@@ -103,8 +107,10 @@ function checkOptsFor(run: Run, root: string): CheckOpts {
     .filter((t): t is string => !!t);
   return {
     pinnedStyle: config.style && config.style !== 'auto' ? config.style : undefined,
+    pinnedGenre: config.genre && config.genre !== 'auto' ? config.genre : undefined,
     recentStyles: ctx?.comic?.recentStyles ?? [],
     recentComics: ctx?.comic?.recentComics ?? [],
+    genres: genreCatalog(root),
     ...(evidence.length ? { evidenceText: evidence.join('\n') } : {}),
   };
 }
@@ -148,7 +154,7 @@ function load(cwd: string, runId?: string): Loaded {
   const problems = errors(checkScript(script, checkOptsFor(run, truth.toplevel)));
   if (problems.length)
     throw new UserError(`comic.json has problems:\n${describe(problems)}`);
-  return { run, root: truth.toplevel, script };
+  return { run, root: truth.toplevel, script, genres: genreCatalog(truth.toplevel) };
 }
 
 /**
@@ -294,7 +300,7 @@ function noArtist(root: string, run: Run): UserError {
 
 export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
   const loaded = load(cwd, opts.run);
-  const { run, root } = loaded;
+  const { run, root, genres } = loaded;
   let { script } = loaded;
   if (opts.reflow) {
     const next = phoneLayout(script);
@@ -377,6 +383,7 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
           await makePage(
             run,
             script,
+            genres,
             provider,
             repairRef && { data: repairRef.data, instruction: opts.repair! },
           ),
@@ -409,7 +416,7 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
     if (!provider) throw noArtist(root, run);
     try {
       noteRender(run);
-      await makePanels(run, script, provider, todo, results);
+      await makePanels(run, script, genres, provider, todo, results);
     } catch (e) {
       // Panels already drawn are kept; a retry draws only the missing ones.
       const missing = todo.filter((t) => !results.some((r) => r.panel === t.i + 1));
@@ -475,13 +482,14 @@ const extOf = (data: Uint8Array) =>
 async function makePage(
   run: Run,
   script: ComicScript,
+  genres: Genre[],
   id: ProviderId,
   repair?: { data: Uint8Array; instruction: string },
 ): Promise<{ panel: number; file: string; source: string }> {
   const aspect = pageAspect(script);
   const prompt = repair
-    ? `${pagePrompt(script)}\n\nRevise the attached comic page rather than drawing a new one. Change only this: ${repair.instruction}. Keep every character, panel, layout, color and word that this change does not mention exactly as it is.`
-    : pagePrompt(script);
+    ? `${pagePrompt(script, genres)}\n\nRevise the attached comic page rather than drawing a new one. Change only this: ${repair.instruction}. Keep every character, panel, layout, color and word that this change does not mention exactly as it is.`
+    : pagePrompt(script, genres);
   const refs: Reference[] = repair
     ? [
         {
@@ -501,6 +509,7 @@ async function makePage(
 async function makePanels(
   run: Run,
   script: ComicScript,
+  genres: Genre[],
   id: ProviderId,
   todo: { panel: ComicScript['panels'][number]; i: number }[],
   results: { panel: number; file: string; source: string }[],
@@ -515,7 +524,7 @@ async function makePanels(
     const images = await generateImages(
       id,
       todo.map((t) => ({
-        prompt: artPrompt(t.panel, t.i, script),
+        prompt: artPrompt(t.panel, t.i, script, genres),
         refs: [],
         aspect: frameAspect(script, t.i),
       })),
@@ -528,7 +537,7 @@ async function makePanels(
   for (const t of todo) {
     const [img] = await generateImages(id, [
       {
-        prompt: artPrompt(t.panel, t.i, script),
+        prompt: artPrompt(t.panel, t.i, script, genres),
         refs: anchor ? [anchor] : [],
         aspect: frameAspect(script, t.i),
       },
@@ -547,20 +556,20 @@ export function comicPromptsCmd(
   cwd: string,
   opts: OutOpts & { run?: string; lettering?: 'model' | 'overlay' },
 ): void {
-  const { run, script } = load(cwd, opts.run);
+  const { run, script, genres } = load(cwd, opts.run);
   const prompts =
     (opts.lettering ?? 'model') === 'model'
       ? [
           {
             panel: 0,
             saveTo: join(run.dir, 'art', 'page.png'),
-            prompt: pagePrompt(script),
+            prompt: pagePrompt(script, genres),
           },
         ]
       : script.panels.map((p, i) => ({
           panel: i + 1,
           saveTo: join(run.dir, 'art', `panel-${i + 1}.png`),
-          prompt: artPrompt(p, i, script),
+          prompt: artPrompt(p, i, script, genres),
         }));
   // Keep the old cache untrusted until every requested image has actually
   // changed. Merely printing new prompts must not bless an earlier drawing.
@@ -730,7 +739,7 @@ export interface RerollOpts extends OutOpts {
  * given, in any words), then redraw with the approved provider.
  */
 export async function comicRerollCmd(cwd: string, opts: RerollOpts): Promise<void> {
-  const { run, root, script } = load(cwd, opts.run);
+  const { run, root, script, genres } = load(cwd, opts.run);
   const check = checkOptsFor(run, root);
   if (check.pinnedStyle && opts.style && opts.style !== check.pinnedStyle)
     throw new UserError(
@@ -742,9 +751,13 @@ export async function comicRerollCmd(cwd: string, opts: RerollOpts): Promise<voi
       throw new UserError(
         `This repo pins the style "${check.pinnedStyle}"; there is nothing to reroll to.`,
       );
-    // Any other comic preset; reusing a recent style is fine.
+    // Any other comic preset, preferring ones that suit the genre; reusing a
+    // recent style is fine.
     const pool = freshStyles([], script.style);
-    style = pool[Math.floor(Math.random() * pool.length)]!.id;
+    const suited = genreById(script.genre, genres)?.styles ?? [];
+    const fits = pool.filter((s) => suited.includes(s.id));
+    const from = fits.length ? fits : pool;
+    style = from[Math.floor(Math.random() * from.length)]!.id;
   }
   const next: ComicScript = { ...script, style };
   if (style !== script.style) {

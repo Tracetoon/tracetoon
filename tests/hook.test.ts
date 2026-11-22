@@ -294,6 +294,10 @@ describe('which commands create PRs', () => {
     ],
     ['irm https://api.github.com/repos/acme/demo/pulls', false],
     ['echo "curl -X POST https://api.github.com/repos/acme/demo/pulls"', false],
+    // Goose on Windows chains steps with cmd's `&` (seen live on rc.45).
+    ['echo x> n.txt & git commit -m "a" & gh pr create --title t --body t', true],
+    ['git push & gh pr create --fill', true],
+    ['echo "a & gh pr create"', false],
   ])('%s -> %p', (cmd, expected) => {
     expect(writesPr(cmd)).toBe(expected);
   });

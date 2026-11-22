@@ -18,6 +18,8 @@ import {
 import { doctor } from './commands/doctor.ts';
 import { guidanceCheckCmd } from './commands/guidance.ts';
 import { imagesCmd } from './commands/images.ts';
+import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
+import { comicPacketCmd } from './commands/comicPacket.ts';
 import {
   contextCmd,
   digestCmd,
@@ -525,6 +527,20 @@ export function buildProgram(cwd: string = process.cwd()): {
     )
     .action((o) => publishCmd(cwd, { ...g(), ...o, noReview: o.review === false }));
 
+  const genre = program
+    .command('genre')
+    .description('comic genres: the built-in ones plus your own genre files');
+  genre
+    .command('list')
+    .description(
+      'list the genres a comic can use here (built-in, user and repo genre files) and any genre file that was skipped',
+    )
+    .action(() => genreListCmd(cwd, g()));
+  genre
+    .command('check <file>')
+    .description('check a genre file before adding it (exit 1 when it has errors)')
+    .action((file: string) => genreCheckCmd(cwd, file, g()));
+
   const comic = program.command('comic').description("make this PR's comic");
   comic
     .command('skip')
@@ -539,6 +555,14 @@ export function buildProgram(cwd: string = process.cwd()): {
       'user (the user declined the comic) or agent (default: the agent decided)',
     )
     .action((o) => comicSkipCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('packet')
+    .description(
+      "write the comic author's packet (brief, description, genres) and say how to hand it to one fresh subagent with the draw-cartoon skill",
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option('--genre <id>', 'offer only this genre (an id or a short phrase)')
+    .action((o) => comicPacketCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
     .description('check comic.json before any art is made')
@@ -578,7 +602,7 @@ export function buildProgram(cwd: string = process.cwd()): {
   comic
     .command('reroll')
     .description(
-      'redraw the page in a different style (or the one given), keeping the story',
+      'redraw the page in a different style (or the one given), keeping the story and genre; fresh styles prefer ones that suit the genre',
     )
     .option('--run <id>', 'run id (default: latest)')
     .option(

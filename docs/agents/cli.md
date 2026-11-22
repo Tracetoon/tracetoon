@@ -315,6 +315,18 @@ create or update the PR with exactly what was rendered
 | `--accept-open` | publish although the last render listed sentences to fix or brief rows to cover (recorded) |
 | `--dry-run` | check everything and print what publishing would do (gh calls, target, title), without pushing or posting |
 
+## `tracetoon genre`
+
+comic genres: the built-in ones plus your own genre files
+
+## `tracetoon genre list`
+
+list the genres a comic can use here (built-in, user and repo genre files) and any genre file that was skipped
+
+## `tracetoon genre check <file>`
+
+check a genre file before adding it (exit 1 when it has errors)
+
 ## `tracetoon comic`
 
 make this PR's comic
@@ -329,6 +341,15 @@ record why this PR has no comic when one was expected (the user declined, or dra
 | `--reason <text>` | why, in the user's terms (shown after publishing) |
 | `--mcp` | recorded by the MCP server, which cannot draw |
 | `--by <who>` | user (the user declined the comic) or agent (default: the agent decided) |
+
+## `tracetoon comic packet`
+
+write the comic author's packet (brief, description, genres) and say how to hand it to one fresh subagent with the draw-cartoon skill
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--genre <id>` | offer only this genre (an id or a short phrase) |
 
 ## `tracetoon comic check`
 
@@ -365,7 +386,7 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 
 ## `tracetoon comic reroll`
 
-redraw the page in a different style (or the one given), keeping the story
+redraw the page in a different style (or the one given), keeping the story and genre; fresh styles prefer ones that suit the genre
 
 | Option | Description |
 | --- | --- |

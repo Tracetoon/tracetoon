@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 import zipfile
-from package_candidate import TARGETS, package_candidate
+from package_candidate import SIBLING_SKILLS, TARGETS, package_candidate
 
 
 class PortableCandidateTests(unittest.TestCase):
@@ -17,6 +17,10 @@ class PortableCandidateTests(unittest.TestCase):
         release.mkdir()
         (skill / "bin/tracetoon").write_bytes(b"#!/bin/sh\necho synthetic\n")
         (skill / "SKILL.md").write_bytes(b"Synthetic instructions\n")
+        for name in SIBLING_SKILLS:
+            (Path(root) / name / "references").mkdir(parents=True)
+            (Path(root) / name / "SKILL.md").write_bytes(b"Synthetic sibling\n")
+            (Path(root) / name / "references" / "guide.md").write_bytes(b"Guide\n")
         (skill / "build.json").write_text(json.dumps({"recipe": {"native": {"targets": sorted(TARGETS)}}}), encoding="utf-8")
         for target in TARGETS:
             name = "tracetoon-" + target + (".exe" if target.startswith("windows-") else "")
@@ -46,6 +50,23 @@ class PortableCandidateTests(unittest.TestCase):
                     self.assertEqual(archive.read(native), (release / name).read_bytes())
                     self.assertEqual(archive.read(native.filename + ".build.json"), (release / (name + ".build.json")).read_bytes())
                     self.assertEqual(native.external_attr >> 16, stat.S_IFREG | (0o644 if target.startswith("windows-") else 0o755))
+
+    def test_sibling_skills_ship_beside_the_main_skill(self):
+        with tempfile.TemporaryDirectory() as root:
+            skill, release = self.fixture(root)
+            for path in package_candidate(skill, release):
+                with zipfile.ZipFile(path) as archive:
+                    for name in SIBLING_SKILLS:
+                        self.assertEqual(archive.read(name + "/SKILL.md"), b"Synthetic sibling\n")
+                        self.assertEqual(archive.read(name + "/references/guide.md"), b"Guide\n")
+                        self.assertEqual(archive.getinfo(name + "/SKILL.md").external_attr >> 16, stat.S_IFREG | 0o644)
+
+    def test_missing_sibling_skill_is_rejected(self):
+        with tempfile.TemporaryDirectory() as root:
+            skill, release = self.fixture(root)
+            shutil.rmtree(Path(root) / SIBLING_SKILLS[0])
+            with self.assertRaisesRegex(ValueError, "missing the"):
+                package_candidate(skill, release)
 
     def test_stale_platform_runtime_is_rejected(self):
         with tempfile.TemporaryDirectory() as root:

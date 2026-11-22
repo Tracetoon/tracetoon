@@ -72,7 +72,7 @@ export function comicStep(e: ComicExpectation): string {
     ? ` (this repo asks for one: ${e.request.file}:${e.request.line})`
     : '';
   if (e.route.kind === 'ready')
-    return `draw the comic (references/full-path.md step 5)${asked}; if the user declines it or drawing keeps failing, record why with \`tracetoon comic skip --run <run> --reason "<why>"\` (add \`--by user\` when the user declined it)`;
+    return `draw the comic (references/full-path.md step 5)${asked}: once body.md is drafted, \`tracetoon comic packet --run <run>\` writes the comic author's packet; hand it to ONE fresh subagent as it says, then draw, render and run the quality loop; if the user declines it or drawing keeps failing, record why with \`tracetoon comic skip --run <run> --reason "<why>"\` (add \`--by user\` when the user declined it)`;
   if (e.askSetup)
     return `a comic is expected${asked}, but no image route can draw yet: raise this once with the user: ${e.route.text} If they say no, run \`tracetoon images --dismiss\` and offer \`tracetoon config set comic off\`; the PR is published without a comic. Never hold the PR for this answer: if you can't get it before publishing, record \`tracetoon comic skip --run <run> --reason "image setup awaits the user's answer"\`, publish, and ask in your final message`;
   return '';

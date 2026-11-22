@@ -700,6 +700,7 @@ Windows; override with `TRACETOON_CONFIG`). A repo can set shared defaults in
 | `enabled`       | `true`        | Use Tracetoon for PRs (also `tracetoon on`/`off`)                                                         |
 | `comic`         | `allowed`     | `off`, `allowed` (follow the repo's rules) or `always`. Your `off`/`always` beats the repo's. `true`/`false` mean `allowed`/`off` |
 | `style`         | `auto`        | Pin one art style for every comic (an idea from `references/styles.md` or any description)                |
+| `genre`         | `auto`        | Pin one genre for every comic (an id from `references/genres.md` or a short phrase); `auto` rotates genres |
 | `promptQuoting` | `paraphrase`  | `verbatim` quotes your prompts in the PR                                                                  |
 | `disclosure`    | `assisted-by` | Disclosure style (a repo's AI policy can ask for another)                                                 |
 | `hosting`       | `auto`        | Where the comic goes: `branch`, `attach` or `auto`                                                        |

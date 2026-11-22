@@ -35,6 +35,10 @@ export function releaseFixture(
   writeFileSync(join(skill, 'build.json'), JSON.stringify(manifest));
   writeFileSync(join(skill, 'VERSION'), manifest.version);
   writeFileSync(join(skill, 'SKILL.md'), '# Synthetic skill');
+  // An instruction-only sibling skill beside it, as plugin/skills holds.
+  mkdirSync(join(root, 'tracetoon-draw-cartoon', 'references'), { recursive: true });
+  writeFileSync(join(root, 'tracetoon-draw-cartoon', 'SKILL.md'), '# Synthetic sibling');
+  writeFileSync(join(root, 'tracetoon-draw-cartoon', 'references', 'guide.md'), 'guide');
   writeFileSync(join(skill, 'bin', 'tracetoon'), '#!/bin/sh\nexit 3\n');
   writeFileSync(join(skill, 'assets', 'resvg.wasm'), 'synthetic wasm');
   writeFileSync(join(skill, 'dist/tracetoon.mjs'), 'console.log("synthetic");');

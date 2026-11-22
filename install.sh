@@ -15,6 +15,8 @@
 set -eu
 
 REPO="Tracetoon/tracetoon"
+# Instruction-only skills installed beside the main one (src/skills.ts SIBLING_SKILLS).
+SIBLINGS="tracetoon-draw-cartoon"
 say() { printf '%s\n' "$*"; }
 die() { printf 'tracetoon install: %s\n' "$*" >&2; exit 1; }
 
@@ -149,6 +151,7 @@ if [ "${TRACETOON_UNINSTALL:-}" = 1 ]; then
   if [ -x "$stable" ]; then "$stable" hook uninstall || true; fi
   { binary_targets "$stable" || true; targets; } | awk -F'|' '!seen[$2]++' | while IFS='|' read -r name dir; do
     if [ -d "$dir" ]; then rm -rf "$dir" && say "removed from $name ($dir)"; fi
+    for s in $SIBLINGS; do rm -rf "$(dirname "$dir")/$s"; done
   done
   rm -rf "$home_root" "$cache_root"
   # The terminal command, only if it's our link.
@@ -166,7 +169,10 @@ tmp=$(mktemp -d)
 cleanup() {
   # After a failure, leave no half-installed copies beside the real ones.
   if [ -f "$tmp/targets" ]; then
-    while IFS='|' read -r _ d; do rm -rf "$d.new-$$"; done < "$tmp/targets"
+    while IFS='|' read -r _ d; do
+      rm -rf "$d.new-$$"
+      for s in $SIBLINGS; do rm -rf "$(dirname "$d")/$s.new-$$"; done
+    done < "$tmp/targets"
   fi
   rm -f "$stable.new"
   rm -rf "$home_root/assets.new-$$"
@@ -209,6 +215,12 @@ while IFS='|' read -r name dir; do
   [ ! -e "$stage" ] || die "staging directory already exists: $stage"
   mkdir -p "$(dirname "$dir")"
   cp -R "$tmp/skill/tracetoon" "$stage"
+  # Instruction-only skills the archive carries go beside it (older archives have none).
+  for s in $SIBLINGS; do
+    [ -f "$tmp/skill/$s/SKILL.md" ] || continue
+    rm -rf "$(dirname "$dir")/$s.new-$$"
+    cp -R "$tmp/skill/$s" "$(dirname "$dir")/$s.new-$$"
+  done
 done < "$tmp/targets"
 
 mkdir -p "$(dirname "$stable")"
@@ -242,6 +254,17 @@ while IFS='|' read -r name dir; do
     die "could not activate $dir; previous skill restored"
   fi
   rm -rf "$backup"
+  for s in $SIBLINGS; do
+    sdir="$(dirname "$dir")/$s"
+    [ -e "$sdir.new-$$" ] || continue
+    rm -rf "$sdir.old-$$"
+    [ ! -e "$sdir" ] || mv "$sdir" "$sdir.old-$$"
+    if ! mv "$sdir.new-$$" "$sdir"; then
+      [ ! -e "$sdir.old-$$" ] || mv "$sdir.old-$$" "$sdir"
+      die "could not activate $sdir; previous skill restored"
+    fi
+    rm -rf "$sdir.old-$$"
+  done
   say "  $name: $dir"
 done < "$tmp/targets"
 

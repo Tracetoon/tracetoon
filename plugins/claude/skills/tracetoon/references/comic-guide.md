@@ -7,10 +7,33 @@ lettered like a comic, with characters who talk, a setup and a punchline.
 True to the digest (no invented features, no fake results), and about *this*
 change.
 
-## 1. Find the joke first
+The genre comes first. Then the joke is found inside it.
+
+## 1. Pick the genre first
+
+Before looking for the joke, pick the world it happens in. `tracetoon prepare`
+offers three genres in `context.comic.genreOptions`: the ones this repo used
+least recently, in an order shuffled per branch. Each comes with a setting,
+stock characters, props and joke hooks ([genres.md](genres.md) lists them
+all). Pick the one where this PR's real moment maps most naturally onto the
+genre's stakes:
+- a hook that blocks a command becomes an airlock that won't open;
+- a cache becomes a dragon's hoard;
+- a flaky test becomes a showdown at high noon;
+- a retry with backoff becomes a heist crew waiting for the guard to turn.
+
+Set `"genre"` to its id. A genre that isn't listed can be a short phrase of
+your own ("submarine disaster movie"). `tracetoon comic check` refuses a genre
+used by either of the repo's last two comics, unless the user asked for it or
+the repo pins one (`config genre`). `everyday` (an office, a kitchen) is one
+genre among the others, not the default: use it only when it is offered and
+nothing else fits. Record what stands for what in `anchor.mapping`.
+
+## 2. Find the joke inside the genre
 
 Read the PR description you just wrote and the digest. Look for the moment
-that is funny *because it really happened*:
+that is funny *because it really happened*, then tell it in the genre's
+world:
 - a twist (`milestones`: "tests went from failing to passing", "edits did not
   survive");
 - a decision the user made, or a plan that changed;
@@ -34,6 +57,11 @@ Shapes that work for developer comics (tools, not quotas):
   until the payoff.
 - **Personified parts**: the hook, the linter, the cache or the CI job as
   characters with an attitude, called by their real names.
+- **Genre trope, tiny cause**: the genre's biggest stakes (red alert, the
+  prophecy, the doomsday device, the kaiju) turn out to hang on one small,
+  real software thing.
+- **Genre ritual as dev ritual**: the go/no-go poll, the heist briefing or the
+  quest reward played straight for a CI run, a review or a green check.
 
 "The bug is fixed" and "this explains the feature" are not jokes. Aim for a
 laugh, not a polite smile:
@@ -56,16 +84,23 @@ or log lines; a character dealing with "exit status 2" says it the way a person
 would ("It only listens when I slam the gate").
 
 **Bake the PR into the world, not onto it.** A reviewer recognizes the change
-from things that naturally carry words in a scene: a terminal or CI screen, a
-sticky note, a box stamp, a door sign, a mug, a T-shirt, a newspaper headline,
-or a character's line. Use the PR's real names there (`publish --draft`,
+from things in the genre's world that naturally carry words:
+- a bridge viewscreen or a red-alert panel;
+- a quest scroll, a spellbook page or a tavern notice board;
+- a wanted poster or a heist blueprint;
+- a mission-control big board or a cockpit HUD;
+- a breaking-news ticker over a kaiju attack;
+- a character's line.
+
+Each genre in [genres.md](genres.md) lists its own props. Use the PR's real names there (`publish --draft`,
 `comic.json`, "skipped tests"). **Never use pointer tags, arrows or callout
 labels** that annotate the drawing from outside; they make a comic look like a
 diagram. If an element only makes sense with a tag on it, choose another scene.
 
-## 2. Three concepts, then pick one
+## 3. Three concepts, then pick one
 
-Record three genuinely different concepts in local `comic-design.json`: the
+Record three genuinely different concepts in local `comic-design.json`, all
+in the chosen genre and differing in premise: the
 punchline, the joke shape, each character's attitude, the beats it needs,
 where the PR's real names appear in the scene or dialogue, the panel layout,
 and one likely misreading. These are short text concepts, not image requests.
@@ -94,7 +129,7 @@ own blunder are fair game. The user, other contributors and real companies are
 not. Fictional exaggeration is welcome; never invent real test outcomes,
 measured delays, deployments, or decisions by real people.
 
-## 3. Panels and layout follow the beats
+## 4. Panels and layout follow the beats
 
 Use the beats the joke needs. Most jokes are setup → build → turn →
 punchline, three or four panels. Use two panels only when the contrast itself
@@ -143,9 +178,10 @@ otherwise stack them (`vertical`) or use `asymmetric`/`tiered`, and draw signs
 big rather than lettering them small. `tracetoon comic check` warns when a
 panel's text won't fit at phone width and names a layout that does.
 
-## 4. Style and characters
+## 5. Style and characters
 
-**Make it look like a comic.** Pick a comic style that suits the joke from
+**Make it look like a comic.** Pick a comic style that suits the joke and the
+genre (each genre in [genres.md](genres.md) suggests a few) from
 [styles.md](styles.md) by id, or name a comic tradition in your own words
 ("90s alt-weekly strip", "Silver Age romance comic", "gag manga with
 screentone"). Every page should look like a drawn comic: inked line art, comic
@@ -167,9 +203,18 @@ Set `styleFamily` to `webcomic`, `american`, `manga`, `euro`, `newspaper`,
 `indie` or `custom`, and `palette` to `full-color`, `bw-accent` (set `accent`,
 e.g. "red"), `duotone` or `limited`.
 
-**Invent the characters for this comic.** People, personified tools,
-creatures, or no characters at all. Never reuse characters from an earlier
-comic or turn the agents into recurring mascots. Give each one a look and an
+**Invent the characters for this comic.** Genre archetypes, people,
+personified tools, creatures, or no characters at all. Never reuse characters
+from an earlier comic or turn the agents into recurring mascots.
+
+**Archetypes yes, specific characters no.** The genre's stock characters are
+welcome: a grizzled starship captain, an eager ensign, a weary wizard, a
+hard-boiled detective, a giant monster, a pixel hero. Never reproduce a
+specific work's character or unique designs: their face or likeness,
+signature costume, insignia, ship design, catchphrase or name. Draw a
+starship captain in a generic uniform, not a particular show's captain; a
+wizard, not a particular film's wizard. `tracetoon comic check` warns when a
+well-known franchise name shows up. Give each one a look and an
 attitude, and list each once in `"characters"` with a short visual description
 (what they look like, what they wear, their colors) so every panel draws them
 the same way. Set `kind` to `human`, `creature` or `object`. Use fictional
@@ -177,57 +222,66 @@ people for human situations, never identifiable real people. Use creatures or
 personified objects when their traits make this joke work, not as default
 stand-ins for developers.
 
-## 5. comic.json
+## 6. comic.json
 
 ```json
 {
   "v": 2,
   "title": "Why Didn't You Just Say So",
-  "synopsis": "A courier robot ignores every polite note telling it to stop, until a gate slams down with the reason written on it.",
-  "altText": "Three comic panels, a wide one over two. A courier robot rolls past a sticky note reading JSON: please stop, then over a big note reading PLEASE. Finally a striped gate drops in front of it with a sign reading stderr: use the tracetoon skill, and the robot says: Oh. Why didn't you just say so?",
+  "synopsis": "A cargo shuttle ignores every polite comms hail telling it to stop, until a force field slams on with the reason written on it.",
+  "altText": "Three comic panels in a starship docking bay, a wide one over two. A cheerful cargo shuttle named Kiro zooms past a comms screen reading JSON: please stop, then past a flashing screen reading PLEASE while the dock-master waves her arms. Finally a force field slams on in front of it with a sign reading stderr: use the tracetoon skill, and Kiro says: Oh. Why didn't you just say so?",
+  "genre": "space-opera",
   "format": "tiered-strip",
   "composition": { "family": "tiered", "title": { "mode": "none" } },
-  "designReason": "Rule of three: two polite notes ignored, then the gate; the robot's cheerful obliviousness carries it. Tiered, not one row of three, so every sign reads on a phone.",
+  "designReason": "Rule of three: two polite hails ignored, then the force field; the shuttle's cheerful obliviousness carries it, and a docking bay makes a polite hail versus a hard barrier instantly readable. Tiered, not one row of three, so every screen reads on a phone.",
   "anchor": {
     "change": "Tracetoon blocks PR creation in Kiro by exiting with status 2 and writing the reason to stderr, because Kiro ignores JSON answers.",
     "terms": ["Kiro", "stderr", "gh pr create"],
     "mapping": [
-      { "visual": "the sticky notes", "technical": "JSON deny answers, which Kiro ignores" },
-      { "visual": "the sign on the gate", "technical": "exit status 2 with the reason on stderr" }
+      { "visual": "the comms screen", "technical": "JSON deny answers, which Kiro ignores" },
+      { "visual": "the sign on the force field", "technical": "exit status 2 with the reason on stderr" }
     ]
   },
-  "style": "webcomic",
-  "styleFamily": "webcomic",
+  "style": "space-opera",
+  "styleFamily": "euro",
   "characters": [
     {
       "name": "Kiro",
       "kind": "object",
-      "description": "a cheerful one-wheeled courier robot with a round antenna and KIRO painted on its chest, carrying a parcel stamped gh pr create"
+      "description": "a cheerful little cargo shuttle with round headlight eyes and KIRO painted on its hull, towing a crate stamped gh pr create"
+    },
+    {
+      "name": "Dock-master",
+      "kind": "human",
+      "description": "a weary docking-bay controller in a generic grey flight suit and headset, holding a clipboard"
     }
   ],
   "panels": [
     {
-      "scene": "Kiro zooms past a post with a sticky note on it, not even looking",
+      "scene": "Kiro zooms through the docking bay past a comms screen, not even looking",
       "characters": [{ "name": "Kiro", "position": "center", "expression": "happy" }],
       "dialogue": [
-        { "speaker": "caption", "kind": "sign", "points": "the sticky note", "text": "JSON: please stop" },
-        { "speaker": "Kiro", "text": "Delivery coming through!" }
+        { "speaker": "caption", "kind": "sign", "points": "the comms screen", "text": "JSON: please stop" },
+        { "speaker": "Kiro", "text": "Cargo coming through!" }
       ]
     },
     {
-      "scene": "A bigger note is taped across the road; Kiro rolls right over it",
-      "characters": [{ "name": "Kiro", "position": "right", "expression": "excited" }],
+      "scene": "The comms screen flashes red; the dock-master waves both arms as Kiro sails right past",
+      "characters": [
+        { "name": "Dock-master", "position": "left", "expression": "worried" },
+        { "name": "Kiro", "position": "right", "expression": "excited" }
+      ],
       "dialogue": [
-        { "speaker": "caption", "kind": "sign", "points": "the note on the road", "text": "PLEASE" },
-        { "speaker": "Kiro", "text": "Lovely handwriting!" }
+        { "speaker": "caption", "kind": "sign", "points": "the flashing comms screen", "text": "PLEASE" },
+        { "speaker": "Kiro", "text": "Lovely blinking lights!" }
       ]
     },
     {
-      "scene": "A striped gate has slammed down; Kiro, stopped short, reads the sign hanging on it",
+      "scene": "A shimmering force field has slammed on across the bay door; Kiro, stopped short, reads the sign glowing on it",
       "characters": [{ "name": "Kiro", "position": "left", "expression": "surprised" }],
       "dialogue": [
-        { "speaker": "caption", "kind": "sfx", "text": "CLUNK" },
-        { "speaker": "caption", "kind": "sign", "points": "the sign on the gate", "text": "stderr: use the tracetoon skill" },
+        { "speaker": "caption", "kind": "sfx", "text": "VWOMM" },
+        { "speaker": "caption", "kind": "sign", "points": "the sign on the force field", "text": "stderr: use the tracetoon skill" },
         { "speaker": "Kiro", "text": "Oh. Why didn't you just say so?" }
       ]
     }
@@ -244,7 +298,9 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
 - **A panel's `characters` lists objects, not names:**
   `{ "name": "Ada", "position": "left", "expression": "worried", "pose": "..." }`.
   `position` is `left`, `center` or `right`; `expression` and `pose` are
-  optional.
+  optional. `expression` is one of `happy`, `excited`, `worried`,
+  `surprised`, `determined`, `thinking`, `sleepy`, `proud` or `angry`; put
+  any other mood (smug, sly, deflated) in `pose` or the scene.
 - **`speaker`** is a character's `name` or `"caption"`.
 - **`kind`** is one of:
   - `speech` (the default);
@@ -256,8 +312,12 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
 
   `label` is deprecated because it draws as a pointer tag; `comic check` warns
   about it.
+- **`genre`** (required with `composition`): a genre id from
+  `context.comic.genreOptions` / [genres.md](genres.md), or a short phrase (at
+  most 40 characters). It can't repeat either of the repo's last two comics
+  unless `request` asks for it or the repo pins one.
 - **`request`** (optional): what the user explicitly asked for, in their words.
-  It is sent to the image model and overrides the original-characters default.
+  It is sent to the image model and lifts the archetypes-only default.
 - **`anchor`** (required with `composition`; local, never posted):
   - `change` in one sentence;
   - 1–4 `terms` the PR really uses;
@@ -283,10 +343,10 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   - links, @mentions or secrets;
   - real people's names;
   - company logos;
-  - unrequested characters that look like existing cartoon, film or game
-    characters.
+  - unrequested copies of a specific existing cartoon, film, TV or game
+    character, insignia or ship (genre archetypes are fine).
 
-## 6. Make the art, then proofread
+## 7. Make the art, then proofread
 
 `tracetoon comic art` (see SKILL.md for consent) draws the **whole page in one
 image, lettering included**, so the words look like part of the comic. Then:

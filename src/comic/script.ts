@@ -1,6 +1,7 @@
 /** Checks a comic script before any art is made. */
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
+import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre } from './genres.ts';
 import {
   ASPECTS,
   BEATS,
@@ -47,9 +48,13 @@ export interface CheckOpts {
   recentStyles?: string[];
   /** A style the user pinned in config (always allowed, never a repeat). */
   pinnedStyle?: string;
+  /** A genre the repo pinned in config (always allowed, never a repeat). */
+  pinnedGenre?: string;
   recentComics?: ComicSummary[];
   /** The run's digest and diff, to notice anchor terms the PR never mentions. */
   evidenceText?: string;
+  /** Genres available here (built-in plus user and repo genre files). */
+  genres?: Genre[];
 }
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
@@ -141,6 +146,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   }
   if (s.request !== undefined && (typeof s.request !== 'string' || !s.request.trim()))
     bad('request', "must be the user's request in words (or left out)");
+  out.push(...genreProblems(s as ComicScript, opts));
+  out.push(...franchiseProblems(s as ComicScript));
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
   const idea = styleById(s.style);
@@ -384,4 +391,91 @@ export function transcript(script: ComicScript): string {
       })
       .join('\n')
   );
+}
+
+/**
+ * The genre is chosen first and rotates: a composed script names one, and it
+ * can't repeat either of the repo's last two comics. The user's explicit
+ * request or the repo's pinned genre is always allowed.
+ */
+export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  const bad = (problem: string) => out.push({ where: 'genre', problem });
+  const warn = (problem: string) => out.push({ where: 'genre', problem, severity: 'warning' });
+  const ids = (opts.genres ?? GENRES).map((g) => g.id).join(', ');
+  if (s.genre === undefined) {
+    if (s.composition)
+      bad(
+        `is required: pick it first from context.comic.genreOptions (or one of ${ids}, or a short phrase of your own)`,
+      );
+    return out;
+  }
+  if (typeof s.genre !== 'string' || !s.genre.trim()) {
+    bad('must be a genre id or a short phrase');
+    return out;
+  }
+  const key = genreKey(s.genre);
+  // The repo's pin decides first, whatever its length: a long pinned phrase
+  // must not make every comic fail.
+  if (opts.pinnedGenre) {
+    if (key !== genreKey(opts.pinnedGenre))
+      bad(`this repo pins the genre "${opts.pinnedGenre}" (config genre)`);
+    return out;
+  }
+  if (s.genre.length > MAX_GENRE_CHARS) {
+    bad(`keep it under ${MAX_GENRE_CHARS} characters`);
+    return out;
+  }
+  if (s.request?.trim()) return out;
+  const recent = (opts.recentComics ?? []).map((r) => r.genre);
+  if (recent.slice(0, 2).includes(key))
+    bad(
+      `"${s.genre}" repeats one of the last two comics; pick another genre from context.comic.genreOptions`,
+    );
+  else if (key === EVERYDAY && recent.slice(0, 4).filter((g) => g === EVERYDAY).length >= 2)
+    warn(
+      'Recent comics were already set in everyday life. A genre world (space opera, fantasy quest, heist, ...) usually lands harder; keep everyday only if nothing else fits.',
+    );
+  return out;
+}
+
+/**
+ * Names that belong to one specific work. Genre archetypes are welcome (a
+ * starship captain, a wizard); a particular franchise's characters, ships and
+ * trademarks are not, unless the user asked for them.
+ */
+export const FRANCHISE_NAMES =
+  /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man)\b/i;
+
+export function franchiseProblems(s: ComicScript): ScriptProblem[] {
+  if (s.request?.trim()) return [];
+  const texts: [string, string | undefined][] = [
+    ['genre', s.genre],
+    ['title', s.title],
+    ['synopsis', s.synopsis],
+    ...(Array.isArray(s.characters) ? s.characters : []).flatMap(
+      (c, i): [string, string | undefined][] => [
+        [`characters[${i}].name`, c?.name],
+        [`characters[${i}].description`, c?.description],
+      ],
+    ),
+    ...(Array.isArray(s.panels) ? s.panels : []).flatMap((p, i) => [
+      [`panels[${i}].scene`, p?.scene] as [string, string | undefined],
+      ...(Array.isArray(p?.dialogue) ? p.dialogue : []).map(
+        (d, j) => [`panels[${i}].dialogue[${j}].text`, d?.text] as [string, string | undefined],
+      ),
+    ]),
+  ];
+  return texts.flatMap(([where, text]) => {
+    const hit = typeof text === 'string' ? FRANCHISE_NAMES.exec(text) : null;
+    return hit
+      ? [
+          {
+            where,
+            problem: `"${hit[0]}" names a specific work's character, ship or trademark; generalize to the archetype (a starship captain, a wizard, a giant monster) unless the user asked for it`,
+            severity: 'warning' as const,
+          },
+        ]
+      : [];
+  });
 }

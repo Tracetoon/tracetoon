@@ -11,7 +11,7 @@ Shared facts:
 
 - **Name:** Tracetoon
 - **One line:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic.
-- **Description:** Creates your PR with a description written from the session logs of Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.
+- **Description:** PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.
 - **Why use it:**
   - **Written from what happened.** Your agent already logged what you asked for, what it changed and which commands ran; Tracetoon writes the description from that record, so it can say why the change was made and what was tested, not just what the diff shows.
   - **Every claim checked.** Each factual sentence has to trace back to the session evidence, independent reviewers check the draft, and the Validation section comes from recorded test and build runs instead of being typed by the model.
@@ -31,7 +31,7 @@ Shared facts:
 
 Catalogs that review plugins get a text-only package from the `plugins` branch:
 Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
-release's exact version (`npx -y tracetoon@1.0.0-rc.45`). The release workflow
+release's exact version (`npx -y tracetoon@1.0.0-rc.46`). The release workflow
 publishes that branch, and tags it `plugins/v<version>`, once npm serves the
 version. Each package's README.md and REVIEW.md say what runs, what it reads,
 writes and sends, and how to check it.
@@ -72,6 +72,26 @@ writes and sends, and how to check it.
 3. Description: the `description` in `cursor/.cursor-plugin/plugin.json`.
    Logo: `cursor/assets/tracetoon.png`.
 
+## cursor.directory (community)
+
+The community directory builds a listing from `main` (it always reads the
+default branch), so submit after the release is on npm: before that, `main`
+pins a version npm doesn't serve yet.
+
+1. Open https://cursor.directory/plugins/new, choose **Auto (GitHub)** and enter
+   https://github.com/Tracetoon/tracetoon.
+2. Check it found three components, all from `plugins/cursor`: the MCP server
+   and hooks running `npx -y tracetoon@<version>`, and the skill whose
+   "The tool" section runs npx (not `bin/tracetoon`).
+3. The scan reads only the repository's marketplace file, so fill in by hand:
+   - Description: PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.
+   - Author: Cassandra Chin (https://tracetoon.ai)
+   - Keywords: pull-request, pull-request-description, pr-description-generator, github, code-review, agent-skills, session-logs, agent-trace, provenance, ai-provenance, mcp-server, comic
+   - Logo: https://raw.githubusercontent.com/Tracetoon/tracetoon/main/plugins/cursor/assets/tracetoon.png
+4. After each release, edit the listing (Edit on its page) and rescan: its MCP
+   server and hooks pin the version. Once the Cursor Marketplace lists
+   Tracetoon, cursor.directory's daily import links and refreshes it.
+
 ## OpenAI Codex plugin directory
 
 The repo marketplace works without review: `codex plugin marketplace add Tracetoon/tracetoon`
@@ -85,7 +105,7 @@ needs the OpenAI org owner, identity verification and a video:
    PRs written from agent logs. Category: Developer Tools.
 4. Long description:
 
-   > Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex, at 70% lower cost per PR. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
+   > PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top. It creates or updates the PR with the GitHub CLI; needs git and gh signed in. Comic images go to an image service only after you approve one.
 
 5. Test cases. Should start Tracetoon:
    1. "Open a PR for this branch."

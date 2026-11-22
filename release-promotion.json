@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.45",
-  "buildId": "2345c7b4c8bb571bbb335571fa2c3d3cd3522ce0065466bcaee5eca45fd671ba",
+  "version": "1.0.0-rc.46",
+  "buildId": "495827f8ce81f60f444e75b020fc96a53d982dc1ec5c3973eaa80bc015f14331",
   "artifact": {
-    "runId": 44895516452,
-    "id": 14703494725,
-    "name": "tracetoon-candidate-e76fbc16cec5cada1de8eea64fa0036c1262934a-attempt-1",
-    "digest": "sha256:0c72acf2c8638a2b052125c4502ff9c2651774f7691b711dd8a34c117401ec2e"
+    "runId": 45001229945,
+    "id": 14746520913,
+    "name": "tracetoon-candidate-ac189aa0446fc8197edd59393ed91b21cc68a019-attempt-1",
+    "digest": "sha256:21fdfe596184a92aaf03125bcf6a0635ce42b9043ada8a4bd58225684edcaeea"
   },
   "expected": {
-    "manifestSha256": "8c78d5b2107fa351baa94c1ce16c46c2e74e4ef13f38942b413caf4f2b126ae2",
-    "checksumsSha256": "69e6e8052031b6720b20ddcb729ed0d7f6007a3527c7ea245ad7bee0abb829de",
-    "windowsSha256": "a95de0d6dca3e2fffd36b7a28b5f4c460158dcc3395add368a78d031fbe31b5f",
-    "bundleSha256": "f8828c5d2e9796a90261f53ecd2f474a1b25586d834d42667b4373cc4404fd36"
+    "manifestSha256": "f902a578be50f87774fdaabd5f6acf739ebc1749f9e0094d2ee95a3760699124",
+    "checksumsSha256": "5fbaf342565e643697d21471edc8e9e8d0f2c214d0618be1968ba9a840c4a45a",
+    "windowsSha256": "c0ddac09ab5b0a5caa13f567c7da487d1cc5d0ce3211a3046ca3db4675bd7ee3",
+    "bundleSha256": "11e37ef88a8927dd04c15b2a14898b3f528922f0b0843ed16e68eb76725045b1"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-21T10:50:32.000Z",
-    "reason": "The user asked to prepare a release carrying the Goose fixes merged since rc.44 (Goose hooks on Windows desktop with setup --fix-sh, Goose session matching and cmd cd /d, and check receipts that survive a shell change or a task-less run), so Goose works fully with the released version. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-22T08:18:19.000Z",
+    "reason": "The user asked to cut rc.46 after #200 merged, so the plugin packages ship the About-line descriptions (#200) and the Agent Plugins 1.0.0 packaging with conforming mcp.json files (#192), along with the PR-hook and comic changes merged since rc.45. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

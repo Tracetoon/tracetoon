@@ -51,7 +51,7 @@ function fixture() {
       },
     ],
   };
-  return { out, skill, manifest, promotion };
+  return { out, skill, manifest, inventory, promotion };
 }
 test('promotion verifies the exact frozen bytes and requires both full adoption cohorts', () => {
   const { out, manifest, promotion } = fixture();
@@ -84,6 +84,12 @@ test('retained candidate inputs bind extracted skill bytes and the tested source
   );
   writeFileSync(join(skill, 'SKILL.md'), 'changed instructions');
   expect(() => verifyCandidateInputs(out, skill)).toThrow('retained inventory');
+});
+test('the retained inventory covers the sibling skills packaged beside the main one', () => {
+  const { out, skill, inventory } = fixture();
+  expect(inventory.siblingSkills?.map((s) => s.name)).toEqual(['tracetoon-draw-cartoon']);
+  writeFileSync(join(skill, '..', 'tracetoon-draw-cartoon', 'SKILL.md'), 'changed');
+  expect(() => verifyCandidateInputs(out, skill)).toThrow('tracetoon-draw-cartoon skill differs');
 });
 
 function requestedFixture() {

@@ -173,7 +173,9 @@ jobs:
             # (rc.44's 404'd for about 3 minutes), and the plugins pin this exact
             # version, so wait until every tarball answers too.
             for name in tracetoon @tracetoon/cli-linux-x64 @tracetoon/cli-linux-arm64 @tracetoon/cli-darwin-x64 @tracetoon/cli-darwin-arm64 @tracetoon/cli-win32-x64; do
-              tarball="$(npm view "$name@$version" dist.tarball 2>/dev/null)"
+              # npm view exits non-zero on a 404, and under bash -e that would end
+              # the step on the first attempt instead of waiting.
+              tarball="$(npm view "$name@$version" dist.tarball 2>/dev/null || true)"
               if [ -z "$tarball" ] || ! curl -sfIL -o /dev/null "$tarball"; then
                 missing="$missing $name"
               fi

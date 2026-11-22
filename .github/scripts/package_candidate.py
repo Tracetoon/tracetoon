@@ -9,6 +9,8 @@ import stat
 import zipfile
 
 TARGETS = {"linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"}
+# Instruction-only skills shipped beside the main one (src/skills.ts SIBLING_SKILLS).
+SIBLING_SKILLS = ("tracetoon-draw-cartoon",)
 
 
 def executable(name):
@@ -62,6 +64,17 @@ def package_candidate(skill, release):
             members["tracetoon/" + relative] = source
     if "tracetoon/bin/tracetoon" not in members or "tracetoon/SKILL.md" not in members:
         raise ValueError("Candidate skill is missing its launcher or instructions")
+    # Each sibling ships as its own top-level folder; installers that know
+    # only "tracetoon/" ignore it.
+    for name in SIBLING_SKILLS:
+        folder = skill.parent / name
+        if not (folder / "SKILL.md").is_file():
+            raise ValueError("Candidate is missing the " + name + " skill beside the main skill")
+        for source in sorted(folder.rglob("*")):
+            if source.is_symlink():
+                raise ValueError("Candidate skill contains a symbolic link")
+            if source.is_file():
+                members[name + "/" + source.relative_to(folder).as_posix()] = source
     outputs = [release / "tracetoon-skill.zip"]
     write_archive(outputs[0], members)
     for target in targets:

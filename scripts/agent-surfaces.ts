@@ -101,42 +101,39 @@ export const BENEFITS: [string, string][] = [
   ],
 ];
 
-/** The benefit-led description for listings with room for a paragraph. */
-export function listingDescription(): string {
-  return `${pitch()} Every claim is checked against what your agent actually did before the PR is posted. ${RESULTS.sentence}`;
-}
+/** The agents the listing description names; the rest are counted. */
+const NAMED_AGENTS = ['Claude Code', 'Codex', 'Copilot', 'Cursor'];
 
 /**
- * The listing line for one package. Someone installing a Claude Code plugin
- * doesn't need the list of every agent Tracetoon reads, so each package names
- * its own host and, where prbench measured that host, its own result.
+ * The description every plugin and catalog listing uses: the GitHub repository's
+ * About text, so each marketplace shows the same plain line. It names a few
+ * agents and counts the rest instead of listing every host, and quotes no
+ * benchmark (the results compare Tracetoon's own workflows, so they belong in a
+ * Results section that says so, not in a listing line).
  */
-const HOST_COPY: Record<string, { agent: string; result?: string }> = {
-  claude: {
-    agent: 'Claude Code',
-    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
-  },
-  'claude-directory': {
-    agent: 'Claude Code',
-    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
-  },
-  codex: { agent: 'Codex', result: '79 to 38 on Codex, at 70% lower cost per PR' },
-  'codex-directory': {
-    agent: 'Codex',
-    result: '79 to 38 on Codex, at 70% lower cost per PR',
-  },
-  cursor: { agent: 'Cursor' },
-  agent: { agent: 'GitHub Copilot CLI or Kiro' },
-};
+export function listingDescription(): string {
+  const labels = supportedLabels();
+  for (const name of NAMED_AGENTS)
+    if (!labels.includes(name))
+      throw new Error(`listing names ${name}, which is not supported`);
+  const more = labels.length - NAMED_AGENTS.length;
+  return `PRs with receipts. And comics. Tracetoon turns the session logs of ${NAMED_AGENTS.join(', ')} and ${more} more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.`;
+}
+
+/** Plugin packages scripts/plugins.ts writes; each lists with the shared description. */
+const PACKAGE_DIRS = [
+  'claude',
+  'claude-directory',
+  'codex',
+  'codex-directory',
+  'cursor',
+  'agent',
+];
 
 /** A package's listing line (scripts/plugins.ts writes one per package). */
 export function description(dir: string): string {
-  const copy = HOST_COPY[dir];
-  if (!copy) throw new Error(`no listing copy for plugins/${dir}`);
-  const result = copy.result
-    ? `On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
-    : RESULTS.sentence;
-  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. ${result}`;
+  if (!PACKAGE_DIRS.includes(dir)) throw new Error(`no listing copy for plugins/${dir}`);
+  return listingDescription();
 }
 
 /** The npm package description: one benefit-led line plus the command. */
@@ -605,7 +602,7 @@ function serverJson(): string {
 /**
  * The MCP server entry for plugin formats that carry an `mcpServers` map but
  * have no plugin-root variable the skill launcher could be found through
- * (Cursor, Gemini CLI): the same npm package, version and argument server.json
+ * (Gemini CLI): the same npm package, version and argument server.json
  * lists. The Claude Code plugin uses plugin/.mcp.json and the launcher instead.
  */
 export function mcpServerEntry() {
@@ -1164,23 +1161,6 @@ function codexMarketplace(): string {
   });
 }
 
-/** plugin/.cursor-plugin/plugin.json (cursor.com/docs/plugins, cursor/plugin-template). */
-function cursorPlugin(): string {
-  return json({
-    name: 'tracetoon',
-    displayName: 'Tracetoon',
-    version: pkg.version,
-    description: listingDescription(),
-    author: { name: AUTHOR.name },
-    homepage: SITE,
-    repository: REPO_URL,
-    license: 'Apache-2.0',
-    keywords: KEYWORDS,
-    logo: ICON,
-    mcpServers: { tracetoon: mcpServerEntry() },
-  });
-}
-
 /** .cursor-plugin/marketplace.json: the repository-level index Cursor imports. */
 function cursorMarketplace(): string {
   return json({
@@ -1192,8 +1172,10 @@ function cursorMarketplace(): string {
       version: pkg.version,
     },
     plugins: [
-      // Cursor reads this file from the default branch, so it names the package
-      // committed on main; main's plugins/ always pins the released version.
+      // Cursor (and cursor.directory's GitHub scan) read this file from the
+      // default branch, so it names the package committed on main. It must be
+      // the only folder with a .cursor-plugin/plugin.json: the scan treats every
+      // such folder as a plugin (tests/cursor-directory.test.ts).
       {
         name: 'tracetoon',
         source: './plugins/cursor',
@@ -1330,6 +1312,26 @@ writes and sends, and how to check it.
 3. Description: the \`description\` in \`cursor/.cursor-plugin/plugin.json\`.
    Logo: \`cursor/assets/tracetoon.png\`.
 
+## cursor.directory (community)
+
+The community directory builds a listing from \`main\` (it always reads the
+default branch), so submit after the release is on npm: before that, \`main\`
+pins a version npm doesn't serve yet.
+
+1. Open https://cursor.directory/plugins/new, choose **Auto (GitHub)** and enter
+   ${REPO_URL}.
+2. Check it found three components, all from \`plugins/cursor\`: the MCP server
+   and hooks running \`npx -y tracetoon@<version>\`, and the skill whose
+   "The tool" section runs npx (not \`bin/tracetoon\`).
+3. The scan reads only the repository's marketplace file, so fill in by hand:
+   - Description: ${description('cursor')}
+   - Author: ${AUTHOR.name} (${SITE})
+   - Keywords: ${KEYWORDS.join(', ')}
+   - Logo: ${RAW}/plugins/cursor/assets/tracetoon.png
+4. After each release, edit the listing (Edit on its page) and rescan: its MCP
+   server and hooks pin the version. Once the Cursor Marketplace lists
+   Tracetoon, cursor.directory's daily import links and refreshes it.
+
 ## OpenAI Codex plugin directory
 
 The repo marketplace works without review: \`codex plugin marketplace add ${REPO}\`
@@ -1445,7 +1447,6 @@ export function surfaces(
     ],
     ['plugin/plugin.json', agentPlugin()],
     ['plugin/.codex-plugin/plugin.json', codexPlugin()],
-    ['plugin/.cursor-plugin/plugin.json', cursorPlugin()],
     ['.agents/plugins/marketplace.json', codexMarketplace()],
     ['.cursor-plugin/marketplace.json', cursorMarketplace()],
     ['gemini-extension.json', geminiExtension()],
@@ -1471,8 +1472,9 @@ export function stale(): string[] {
 if (import.meta.main) {
   // The thin plugin packages are built from these surfaces (scripts/plugins.ts).
   const plugins = await import('./plugins.ts');
+  const drawCartoon = await import('./draw-cartoon-skill.ts');
   if (process.argv.includes('--check')) {
-    const bad = [...stale(), ...plugins.stalePlugins()];
+    const bad = [...stale(), ...drawCartoon.staleDrawCartoon(), ...plugins.stalePlugins()];
     if (bad.length) {
       console.error(
         `Out of date (run bun scripts/agent-surfaces.ts):\n  ${bad.join('\n  ')}`,
@@ -1486,6 +1488,7 @@ if (import.meta.main) {
       writeFileSync(join(root, path), content);
     }
     console.log('Wrote', [...surfaces().keys()].join(', '));
+    drawCartoon.writeDrawCartoon();
     console.log(`Wrote ${plugins.writePlugins()} files under ${plugins.OUT}/.`);
   }
 }

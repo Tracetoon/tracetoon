@@ -12,10 +12,10 @@ These lettering notes suggest a treatment, not a mandatory headline.
 | Style | Look | Family | Good for | Palettes |
 |---|---|---|---|---|
 | `webcomic` | Modern webcomic | webcomic | gag, relatable, everyday, any | full-color |
-| `superhero` | American superhero | american | heroic, rescue, big win, showdown | full-color |
+| `superhero` | American superhero | american | heroic, rescue, big win, showdown, superhero, kaiju | full-color |
 | `silver-age` | Silver Age comic | american | heroic, melodrama, retro, big claim | full-color, limited |
 | `alt-comix` | Indie alt-comix | indie | deadpan, awkward, dry humor, existential | limited, bw-accent |
-| `shonen-action` | Shonen manga | manga | epic, battle, comeback, speed, rivalry | bw-accent, full-color |
+| `shonen-action` | Shonen manga | manga | epic, battle, comeback, speed, rivalry, mecha | bw-accent, full-color |
 | `manga-ink` | Seinen manga | manga | tense, mystery, debugging, serious-as-a-joke | bw-accent, limited |
 | `shojo` | Shojo manga | manga | dramatic feelings, romance parody, wholesome, devotion | limited, full-color |
 | `chibi-anime` | Chibi manga comedy | manga | silly, panic, small fix, cute | full-color, limited |
@@ -27,8 +27,10 @@ These lettering notes suggest a treatment, not a mandatory headline.
 | `magazine-cartoon` | Magazine gag cartoon | newspaper | dry wit, understatement, one-liner | bw-accent |
 | `webtoon` | Full-color webtoon | webcomic | drama, reaction, slow reveal, vertical | full-color |
 | `saturday-cartoon` | 90s Saturday-morning cartoon | american | zany, chaos, slapstick, villain plan | full-color |
-| `noir` | Noir graphic novel | american | mystery, debugging, investigation, confession | bw-accent, limited |
-| `pixel-16bit` | Pixel comic | webcomic | quest, level up, boss fight, retro | limited, full-color |
+| `noir` | Noir graphic novel | american | mystery, debugging, investigation, confession, noir-detective, heist | bw-accent, limited |
+| `space-opera` | Space-opera comic | euro | sci-fi, space, epic, space-opera, mission-control | full-color, limited |
+| `fantasy-adventure` | Fantasy adventure comic | american | quest, fantasy, dungeon, fantasy-quest, dungeon-crawl | full-color |
+| `pixel-16bit` | Pixel comic | webcomic | quest, level up, boss fight, retro, retro-rpg, dungeon-crawl | limited, full-color |
 
 Details (what the image model is asked for):
 
@@ -49,6 +51,8 @@ Details (what the image model is asked for):
 - **`webtoon`**: full-color webtoon, clean digital lineart, soft gradient cel shading, glossy modern characters, big reaction close-ups, generous space between panels. Lettering: clean digital balloons, oversized reaction text.
 - **`saturday-cartoon`**: 1990s Saturday-morning TV cartoon look drawn as a comic, thick outlines, angular stylized characters, saturated flat colors, squash-and-stretch expressions. Lettering: chunky cartoon lettering in bold balloons, loud sound effects.
 - **`noir`**: noir graphic novel, heavy black ink shadows, venetian-blind light, rain, chiaroscuro, trench coats. Lettering: typewriter caption boxes with hard-boiled narration, tight balloons.
+- **`space-opera`**: inked European science-fiction comic, clean confident line, bold flat colors, sweeping starships and alien vistas, detailed control panels, cinematic wide shots. Lettering: clean uppercase comic lettering in white balloons, readouts on ship screens, bold sound effects.
+- **`fantasy-adventure`**: inked fantasy adventure comic book, heroic poses, castles, dungeons and enchanted forests, rich flat coloring with dramatic torchlight. Lettering: classic comic lettering in balloons, parchment caption boxes, carved-rune signs in the scene.
 - **`pixel-16bit`**: pixel-art comic, crisp 16-bit pixels, clear panel borders, chunky expressive sprites, video-game UI framing. Lettering: pixel-font RPG dialogue boxes.
 
 Palettes: `full-color`; `bw-accent` (black and white with one accent color,

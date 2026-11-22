@@ -13,6 +13,22 @@ describe('splitting command lines', () => {
     ]);
   });
 
+  test('splits on a lone & (cmd chaining, sh background) but not redirections', () => {
+    // Goose on Windows chains steps with cmd's `&`.
+    expect(
+      splitCommands('echo x> n.txt & git add n.txt & gh pr create --title t --body t'),
+    ).toEqual(['echo x> n.txt', 'git add n.txt', 'gh pr create --title t --body t']);
+    expect(splitCommands('sleep 5 & bun test')).toEqual(['sleep 5', 'bun test']);
+    expect(splitCommands('bun test 2>&1 | tail -3')).toEqual(['bun test 2>&1', 'tail -3']);
+    expect(splitCommands('bun test &> out.log; cat <&3')).toEqual([
+      'bun test &> out.log',
+      'cat <&3',
+    ]);
+    expect(splitCommands('echo a ^& b')).toEqual(['echo a ^& b']);
+    expect(splitCommands('bun test |& tail -3')).toEqual(['bun test', 'tail -3']);
+    expect(splitCommands(`echo 'a & b' & ls`)).toEqual([`echo 'a & b'`, 'ls']);
+  });
+
   test('leaves quoted scripts alone', () => {
     const py = `python -c "\nfor c in cmds:\n  if 'bun test' in c: print(c)\n"; git status`;
     expect(splitCommands(py)).toEqual([py.split('; ')[0]!, 'git status']);

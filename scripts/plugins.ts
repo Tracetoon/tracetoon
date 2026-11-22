@@ -25,6 +25,7 @@ import {
 import { dirname, join, relative } from 'node:path';
 import pkg from '../package.json';
 import { PR_COMMAND_GLOBS } from '../src/hook/prCommands.ts';
+import { SIBLING_SKILLS } from '../src/skills.ts';
 import {
   ACTIVATION,
   AUTHOR,
@@ -41,6 +42,27 @@ import {
 
 export const OUT = 'plugins';
 export const SKILL_SOURCE = 'plugin/skills/tracetoon';
+
+/** Instruction-only sibling skills, shipped verbatim beside the main skill. */
+export function siblingSkills(): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const name of SIBLING_SKILLS) {
+    const src = join(root, 'plugin', 'skills', name);
+    const walk = (rel: string) => {
+      const entries = readdirSync(join(src, rel), { withFileTypes: true }).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      for (const e of entries) {
+        const path = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) walk(path);
+        else if (e.name.endsWith('.md'))
+          out.set(`${name}/${path}`, readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'));
+      }
+    };
+    walk('');
+  }
+  return out;
+}
 const ISSUES = `${REPO_URL}/issues`;
 /** The privacy policy (PRIVACY.md on main), linked from every package and manifest. */
 export const PRIVACY_URL = `${REPO_URL}/blob/main/PRIVACY.md`;
@@ -61,6 +83,20 @@ const npx = (...args: string[]) => ['npx', ...NPX_ARGS, ...args].join(' ');
 const pluginHook = (agent: string, event: string) =>
   npx('hook', 'plugin', '--agent', agent, '--event', event);
 const mcpEntry = () => ({ command: 'npx', args: [...NPX_ARGS, 'mcp'] });
+
+/** Agent Plugins 1.0.0 (agent-plugins.org): the schema ids plugin.json and mcp.json declare. */
+export const AGENT_PLUGIN_SCHEMA =
+  'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
+export const AGENT_MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
+/**
+ * A package's MCP config in the Agent Plugins form: `$schema`, and `type` on
+ * every server. Hosts that read `mcpServers` ignore the extra key and accept
+ * `type: "stdio"`.
+ */
+const agentMcp = () => ({
+  $schema: AGENT_MCP_SCHEMA,
+  mcpServers: { tracetoon: { type: 'stdio', ...mcpEntry() } },
+});
 
 export type Files = Map<string, string | Buffer>;
 
@@ -157,7 +193,10 @@ export function thinSkill(hooks = true): Map<string, string> {
     ],
     ['(`gh auth switch`, or a fork)', '(in the GitHub CLI, or a fork)'],
     ['agent after setting a key)', 'agent after adding the setting)'],
-    ["(the launcher's full path if\n  `tracetoon` isn't on their PATH)", '(the pinned npx command)'],
+    [
+      "(the launcher's full path if\n  `tracetoon` isn't on their PATH)",
+      '(the pinned npx command)',
+    ],
   ]) {
     const file = [...files].find(([, text]) => text.includes(from!));
     if (!file) throw new Error(`The skill no longer has: ${from}`);
@@ -534,6 +573,7 @@ Tracetoon is Apache-2.0. The runtime includes Comic Neue (SIL OFL 1.1), resvg
 function common(files: Files, dir: string, host: Host) {
   for (const [path, text] of thinSkill(host.runs !== false))
     files.set(`${dir}/skills/tracetoon/${path}`, text);
+  for (const [path, text] of siblingSkills()) files.set(`${dir}/skills/${path}`, text);
   files.set(`${dir}/${ICON}`, readFileSync(join(root, ICON_SOURCE)));
   files.set(`${dir}/README.md`, readme(host));
   files.set(`${dir}/REVIEW.md`, review(host));
@@ -545,6 +585,7 @@ const host = (dir: string) => HOSTS.find((h) => h.dir === dir)!;
 function claudePackage(files: Files) {
   const dir = `${OUT}/claude`;
   common(files, dir, host('claude'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('claude', {})));
   files.set(
     `${dir}/.claude-plugin/plugin.json`,
     json({
@@ -564,7 +605,12 @@ function claudePackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(claudeHooks()));
-  files.set(`${dir}/.mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  // Claude Code reads .mcp.json; mcp.json is the same server for Agent Plugins hosts.
+  files.set(
+    `${dir}/.mcp.json`,
+    json({ mcpServers: { tracetoon: { type: 'stdio', ...mcpEntry() } } }),
+  );
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /**
@@ -577,6 +623,7 @@ function claudePackage(files: Files) {
 function claudeDirectoryPackage(files: Files) {
   const dir = `${OUT}/claude-directory`;
   common(files, dir, host('claude-directory'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('claude-directory', {})));
   files.set(
     `${dir}/.claude-plugin/plugin.json`,
     json({
@@ -597,6 +644,7 @@ function claudeDirectoryPackage(files: Files) {
 function cursorPackage(files: Files) {
   const dir = `${OUT}/cursor`;
   common(files, dir, host('cursor'));
+  files.set(`${dir}/plugin.json`, json(agentManifest('cursor', {})));
   files.set(
     `${dir}/.cursor-plugin/plugin.json`,
     json({
@@ -613,13 +661,13 @@ function cursorPackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(cursorHooks()));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /** Agent Plugins 1.0.0 (agentplugins/agent-plugins-spec): a closed set of fields. */
 function agentManifest(dir: string, extensions: Record<string, unknown>) {
   return {
-    $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
+    $schema: AGENT_PLUGIN_SCHEMA,
     name: 'tracetoon',
     version: pkg.version,
     description: description(dir),
@@ -665,7 +713,7 @@ function codexPackage(files: Files) {
     }),
   );
   files.set(`${dir}/hooks/hooks.json`, json(codexHooks()));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
 }
 
 /** The OpenAI public directory ZIP: skills only (no hooks, no local MCP). */
@@ -702,7 +750,7 @@ function agentPackage(files: Files) {
   const dir = `${OUT}/agent`;
   common(files, dir, host('agent'));
   files.set(`${dir}/plugin.json`, json(agentManifest('agent', {})));
-  files.set(`${dir}/mcp.json`, json({ mcpServers: { tracetoon: mcpEntry() } }));
+  files.set(`${dir}/mcp.json`, json(agentMcp()));
   files.set(`${dir}/com.github.copilot/hooks/hooks.json`, json(copilotHooks()));
 }
 

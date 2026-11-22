@@ -40,6 +40,10 @@ beforeEach(() => {
     // A compiled binary can't run the fake gh script itself.
     TRACETOON_TEST_RUNNER: process.execPath,
     FAKE_GH_LOG: ghLog,
+    // The skill under test ships beside this runtime; an outer Tracetoon (a
+    // `tracetoon check` running the suite) must not point setup at its own copy.
+    TRACETOON_SKILL_DIR: '',
+    TRACETOON_ASSETS: '',
   };
 });
 
@@ -234,6 +238,12 @@ describe('CLI contract', () => {
     expect(
       existsSync(join(env.CLAUDE_CONFIG_DIR!, 'skills', 'tracetoon', 'SKILL.md')),
     ).toBe(true);
+    // The instruction-only draw-cartoon skill goes beside it.
+    expect(
+      existsSync(
+        join(env.CLAUDE_CONFIG_DIR!, 'skills', 'tracetoon-draw-cartoon', 'references', 'comic-guide.md'),
+      ),
+    ).toBe(true);
     const claudeHook = first.json.hooks.find((h: any) => h.agent === 'claude');
     expect(claudeHook.result).toBe('installed');
     expect(first.json.restartRequired).toBe(true);
@@ -274,5 +284,9 @@ describe('CLI contract', () => {
       '# Shipped by the npm wrapper\n',
     );
     expect(existsSync(join(target, 'references', 'marker.md'))).toBe(true);
+    // No sibling skill ships beside this one, so none is installed.
+    expect(existsSync(join(env.CLAUDE_CONFIG_DIR!, 'skills', 'tracetoon-draw-cartoon'))).toBe(
+      false,
+    );
   });
 });

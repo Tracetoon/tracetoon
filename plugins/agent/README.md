@@ -1,6 +1,6 @@
 # Tracetoon for GitHub Copilot CLI and Kiro
 
-Creates your PR with a description written from your GitHub Copilot CLI or Kiro session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.
+PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.
 
 ## Why use it
 
@@ -22,7 +22,7 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.45`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.46`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -32,8 +32,8 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** Copilot CLI: before a shell command it asks the runtime whether the command creates a PR; at session start it records the session. Kiro runs the skill and MCP server only.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.45, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.45, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.46, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.46, published from GitHub Actions with npm provenance.
 
 ## What it reads
 

@@ -46,8 +46,9 @@ image service) apply throughout.
 
 3. **Context.**
    Read the prepared `context.json`; do not repeat preparation. Note the PR template, existing PR,
-   settings, AI policy, and `comic.recentComics` (compact creative choices from
-   recent comics, so this one can differ; missing legacy fields are unknown).
+   settings, AI policy, `comic.recentComics` (compact creative choices from
+   recent comics, so this one can differ; missing legacy fields are unknown)
+   and `comic.genreOptions` (the genres to pick the comic's world from).
    - **Researcher phase.** Launch a separate researcher with the host's native
      subagent tool, using [contribution-workflow.md](contribution-workflow.md).
      Give it `guidance-request.json`, `changes.patch`, `context.json` and repository
@@ -140,38 +141,28 @@ image service) apply throughout.
      useful issue/PR/doc references, and expand clipped facts with
      `tracetoon expand <refs...> --run <id>` as needed (`S1`, `D1`, `P1`, `R1`,
      `V1` or `commit:<sha>`).
-5. **Have the drafter write the comic, then draw it** whenever prepare's
+5. **Hand the comic to a comic author, then draw it** whenever prepare's
    `comic.expected` is true. It is false when `comic` is `off` or the repo says
    no under `allowed`; then there is nothing to do or mention. If the user
    declines this one, record it with `tracetoon comic skip --reason "the user
-   declined it" --by user`. Follow
-   [references/comic-guide.md](comic-guide.md). The comic sits in
-   the PR, so its first reader is the reviewer: it should make them laugh and
-   leave them knowing _what changed_. It must look and read like a real comic:
-   - find the joke first: mine the PR description and digest for what really
-     happened, write the punchline, then compare three distinct concepts in
-     local `comic-design.json` following
-     [comic-direction.md](comic-direction.md). Pick the one that
-     makes sense on a cold read, is genuinely funny, and is recognizably this
-     PR. Characters talk like people (never in code), and the PR's real names
-     appear in the scene itself (screens, signs, box stamps) or in dialogue,
-     never as pointer tags or callout labels;
-   - use the beats the joke needs, usually three or four panels; two-panel
-     before/afters only when the contrast is the punchline. Vary the layout
-     with explicit `composition` geometry (tiered, manga page, vertical,
-     hero-inset, ...) and choose `none`, `integrated` or `heading` title
-     treatment;
-   - pick a comic style (ideas in [references/styles.md](styles.md),
-     or name a comic tradition); it must look like a drawn comic, not a 3D
-     render or illustration. Reusing a style is fine. If the user asked for a
-     particular look or characters, put their words in `request` and honor it;
-   - invent this comic's own characters (or none) and describe each once in
-     `comic.json`, with each `kind` (`human`, `creature`, `object`); never reuse
-     characters from earlier comics;
-   - write `comic.json` (`"v": 2`) with its `anchor` (the change, 1–4 real
-     terms, and what each drawn element stands for), then
-     `tracetoon comic check`; at least one term must be lettered in the scene
-     or dialogue;
+   declined it" --by user`. The comic sits in the PR, so its first reader is
+   the reviewer: it should make them laugh and leave them knowing _what
+   changed_.
+   - once `body.md` is drafted, run `tracetoon comic packet --run <id>`. It
+     writes the author's packet (the evidence brief, the description, the
+     genres to choose from and recent comics) and prints a spawn line. Start
+     ONE fresh subagent, as it says (not a fork, no PR or drafting context;
+     Claude Code: `Agent`, general-purpose; Codex: `spawn_agent` with
+     `fork_turns: "none"`), whose whole instruction is the packet's
+     `instructions.md`. It follows the `tracetoon-draw-cartoon` skill (or the
+     comic references the packet names), picks the genre, writes
+     `comic-design.json` and `comic.json`, and runs `tracetoon comic check`
+     until it passes. If the user asked for a particular look, genre or
+     characters, put their words in `request` in `comic.json` afterwards (or
+     `comic packet --genre <id>` for a genre) and run the check again;
+   - when it returns, run `tracetoon comic check --run <id>` yourself; fix a
+     remaining error in place or send it back to the same subagent. Don't
+     rewrite its joke;
    - make the art: `tracetoon comic art` draws the whole page with its lettering
      through the Codex or Antigravity CLI, or the OpenAI or Gemini API, after the
      user agrees once (exit code 4 means: ask them, then add `--consent`). Or

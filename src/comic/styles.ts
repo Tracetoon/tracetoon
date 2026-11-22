@@ -40,7 +40,7 @@ export const STYLES: Style[] = [
     prompt:
       'modern American superhero comic book, dynamic foreshortened poses, confident inking with feathered shadows, rich digital coloring, dramatic lighting',
     palettes: ['full-color'],
-    moods: ['heroic', 'rescue', 'big win', 'showdown'],
+    moods: ['heroic', 'rescue', 'big win', 'showdown', 'superhero', 'kaiju'],
     lettering:
       'uppercase comic-book lettering in oval balloons, bold caption boxes, big angular sound effects',
   },
@@ -72,7 +72,7 @@ export const STYLES: Style[] = [
     prompt:
       'shonen manga page, energetic black ink, screentone shading, speed lines and impact frames, exaggerated reactions, dynamic camera angles',
     palettes: ['bw-accent', 'full-color'],
-    moods: ['epic', 'battle', 'comeback', 'speed', 'rivalry'],
+    moods: ['epic', 'battle', 'comeback', 'speed', 'rivalry', 'mecha'],
     lettering:
       'manga balloons with bold lettering, huge hand-drawn sound effects integrated into the art',
   },
@@ -196,8 +196,30 @@ export const STYLES: Style[] = [
     prompt:
       'noir graphic novel, heavy black ink shadows, venetian-blind light, rain, chiaroscuro, trench coats',
     palettes: ['bw-accent', 'limited'],
-    moods: ['mystery', 'debugging', 'investigation', 'confession'],
+    moods: ['mystery', 'debugging', 'investigation', 'confession', 'noir-detective', 'heist'],
     lettering: 'typewriter caption boxes with hard-boiled narration, tight balloons',
+  },
+  {
+    id: 'space-opera',
+    name: 'Space-opera comic',
+    family: 'euro',
+    prompt:
+      'inked European science-fiction comic, clean confident line, bold flat colors, sweeping starships and alien vistas, detailed control panels, cinematic wide shots',
+    palettes: ['full-color', 'limited'],
+    moods: ['sci-fi', 'space', 'epic', 'space-opera', 'mission-control'],
+    lettering:
+      'clean uppercase comic lettering in white balloons, readouts on ship screens, bold sound effects',
+  },
+  {
+    id: 'fantasy-adventure',
+    name: 'Fantasy adventure comic',
+    family: 'american',
+    prompt:
+      'inked fantasy adventure comic book, heroic poses, castles, dungeons and enchanted forests, rich flat coloring with dramatic torchlight',
+    palettes: ['full-color'],
+    moods: ['quest', 'fantasy', 'dungeon', 'fantasy-quest', 'dungeon-crawl'],
+    lettering:
+      'classic comic lettering in balloons, parchment caption boxes, carved-rune signs in the scene',
   },
   {
     id: 'pixel-16bit',
@@ -206,7 +228,7 @@ export const STYLES: Style[] = [
     prompt:
       'pixel-art comic, crisp 16-bit pixels, clear panel borders, chunky expressive sprites, video-game UI framing',
     palettes: ['limited', 'full-color'],
-    moods: ['quest', 'level up', 'boss fight', 'retro'],
+    moods: ['quest', 'level up', 'boss fight', 'retro', 'retro-rpg', 'dungeon-crawl'],
     lettering: 'pixel-font RPG dialogue boxes',
   },
 ];
