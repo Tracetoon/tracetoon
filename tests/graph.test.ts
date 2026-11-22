@@ -470,6 +470,25 @@ describe('evidence graph', () => {
     }
   });
 
+  test('a check run after prepare reaches Validation without task begin (candidate69 regression)', () => {
+    const { repo, cli } = scenario();
+    const prepared = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'main');
+    const run = prepared.json.run;
+    expect(existsSync(join(prepared.json.runDir, 'task.json'))).toBe(false);
+    const check = cli(repo.root, '--json', 'check', '--run', run, '--name', 'tests', '--', process.execPath, '-e', '1');
+    expect(check.code).toBe(0);
+    writeFileSync(join(prepared.json.runDir, 'title.txt'), 'Greet by name');
+    writeFileSync(
+      join(prepared.json.runDir, 'body.md'),
+      'Greets by name.\n\n<!-- tracetoon:validation -->\n',
+    );
+    const r = cli(repo.root, '--json', 'render', '--run', run, '--no-comic');
+    expect(r.code).toBe(0);
+    const body = readFileSync(join(prepared.json.runDir, 'final-body.md'), 'utf8');
+    const validation = body.split('## Validation')[1] ?? '';
+    expect(validation).toMatch(/passed.*run on the submitted content|Checks passed on the submitted content/);
+  });
+
   test('lean render writes the Validation section and checks ref tags', () => {
     const { repo, cli } = scenario();
     // The single-reviewer plan (the shipped SKILL asks for more; see below).

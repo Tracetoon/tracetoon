@@ -58,9 +58,9 @@ not switch to another run.
 0. **Setup, in ONE command.** Keep the request's repository, head/base,
    draft status and explicit title (`--base <branch>` when given; draft →
    `publish --draft`; apply labels, reviewers and assignees with normal PR
-   tools after creation). Run status, doctor and prepare as ONE Bash call,
+   tools after creation). Run task begin, status, doctor and prepare as ONE Bash call,
    after any `git commit` (never in the same call as a commit):
-   `T=<launcher>; $T status; $T doctor; $T prepare --json --layout <layout>
+   `T=<launcher>; $T task begin --json; $T status; $T doctor; $T prepare --json --layout <layout>
    --review-passes <n> …` with the flags from the lines below
    (`--review-lenses`, `--reviewer-model`, `--reviewer-effort`,
    `--reviewer-runner`, `--review-recheck <once|contested|none>`,

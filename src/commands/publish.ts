@@ -383,8 +383,9 @@ export function renderCmd(cwd: string, opts: RenderOpts): Approval {
   // New check receipts since the digest (a `tracetoon check` ran): refresh the
   // digest in place instead of failing. Writers stopped at this error and
   // returned an unrendered draft.
+  // With or without `task begin`: the receipts alone decide (as digest does).
   const checksStale = () =>
-    readTask(run) &&
+    (readTask(run) || receipts(run).length > 0) &&
     digest!.checksSha !==
       (receipts(run).length ? fileHash(run, 'checks.json') : undefined);
   if (checksStale()) {
