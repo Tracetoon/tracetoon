@@ -567,6 +567,12 @@ export function buildProgram(cwd: string = process.cwd()): {
     .command('check')
     .description('check comic.json before any art is made')
     .option('--run <id>', 'run id (default: latest)')
+    .option('--file <path>', "check this comic.json instead of a run's (no repository needed)")
+    .option('--context <path>', "with --file: a comic packet's context.json (recent comics, pins)")
+    .option(
+      '--evidence <paths...>',
+      'with --file: the brief or diff, to warn about anchor terms the PR never uses',
+    )
     .action((o) => comicCheckCmd(cwd, { ...g(), ...o }));
   comic
     .command('prompts')
