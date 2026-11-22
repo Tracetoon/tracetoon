@@ -353,9 +353,15 @@ describe('vendor catalog manifests', () => {
 });
 
 describe('public listings sell the project', () => {
-  test('long descriptions open with the pitch and quote the latest published results', () => {
-    expect(listingDescription().startsWith(pitch())).toBe(true);
-    expect(listingDescription()).toContain(RESULTS.sentence);
+  test('listings share the About line and quote no benchmark', () => {
+    expect(listingDescription()).toStartWith('PRs with receipts. And comics.');
+    expect(listingDescription()).toContain(
+      `and ${supportedLabels().length - 4} more coding agents`,
+    );
+    // The results compare Tracetoon's own workflows: they go in a Results section
+    // that says so, never in a one-line listing.
+    expect(listingDescription()).not.toContain(RESULTS.sentence);
+    expect(listingDescription()).not.toMatch(/\d+ to \d+|% lower cost/);
     // The comparison is with Tracetoon's earlier workflow; listings must say so.
     expect(RESULTS.sentence).toContain('earlier multi-agent workflow');
     expect(RESULTS.url).toStartWith('https://tracetoon.ai/');

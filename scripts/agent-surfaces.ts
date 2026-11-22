@@ -101,42 +101,39 @@ export const BENEFITS: [string, string][] = [
   ],
 ];
 
-/** The benefit-led description for listings with room for a paragraph. */
-export function listingDescription(): string {
-  return `${pitch()} Every claim is checked against what your agent actually did before the PR is posted. ${RESULTS.sentence}`;
-}
+/** The agents the listing description names; the rest are counted. */
+const NAMED_AGENTS = ['Claude Code', 'Codex', 'Copilot', 'Cursor'];
 
 /**
- * The listing line for one package. Someone installing a Claude Code plugin
- * doesn't need the list of every agent Tracetoon reads, so each package names
- * its own host and, where prbench measured that host, its own result.
+ * The description every plugin and catalog listing uses: the GitHub repository's
+ * About text, so each marketplace shows the same plain line. It names a few
+ * agents and counts the rest instead of listing every host, and quotes no
+ * benchmark (the results compare Tracetoon's own workflows, so they belong in a
+ * Results section that says so, not in a listing line).
  */
-const HOST_COPY: Record<string, { agent: string; result?: string }> = {
-  claude: {
-    agent: 'Claude Code',
-    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
-  },
-  'claude-directory': {
-    agent: 'Claude Code',
-    result: '60 to 21 on Claude Code, at 43% lower cost per PR',
-  },
-  codex: { agent: 'Codex', result: '79 to 38 on Codex, at 70% lower cost per PR' },
-  'codex-directory': {
-    agent: 'Codex',
-    result: '79 to 38 on Codex, at 70% lower cost per PR',
-  },
-  cursor: { agent: 'Cursor' },
-  agent: { agent: 'GitHub Copilot CLI or Kiro' },
-};
+export function listingDescription(): string {
+  const labels = supportedLabels();
+  for (const name of NAMED_AGENTS)
+    if (!labels.includes(name))
+      throw new Error(`listing names ${name}, which is not supported`);
+  const more = labels.length - NAMED_AGENTS.length;
+  return `PRs with receipts. And comics. Tracetoon turns the session logs of ${NAMED_AGENTS.join(', ')} and ${more} more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.`;
+}
+
+/** Plugin packages scripts/plugins.ts writes; each lists with the shared description. */
+const PACKAGE_DIRS = [
+  'claude',
+  'claude-directory',
+  'codex',
+  'codex-directory',
+  'cursor',
+  'agent',
+];
 
 /** A package's listing line (scripts/plugins.ts writes one per package). */
 export function description(dir: string): string {
-  const copy = HOST_COPY[dir];
-  if (!copy) throw new Error(`no listing copy for plugins/${dir}`);
-  const result = copy.result
-    ? `On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow ${copy.result}.`
-    : RESULTS.sentence;
-  return `Creates your PR with a description written from your ${copy.agent} session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. ${result}`;
+  if (!PACKAGE_DIRS.includes(dir)) throw new Error(`no listing copy for plugins/${dir}`);
+  return listingDescription();
 }
 
 /** The npm package description: one benefit-led line plus the command. */

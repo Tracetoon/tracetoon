@@ -17,6 +17,7 @@ import {
   PRIVACY_URL,
   stalePlugins,
 } from '../scripts/plugins.ts';
+import { listingDescription } from '../scripts/agent-surfaces.ts';
 import { PR_COMMAND_GLOBS } from '../src/hook/prCommands.ts';
 import { writesPr } from '../src/hook/prHook.ts';
 
@@ -305,12 +306,10 @@ describe('Anthropic plugin directory (unverified publisher)', () => {
       expect(skill).not.toMatch(/\$env:|\$\{[A-Z_]+\}|setting a key|TRACETOON=|gh auth/);
     }
   });
-  test('its listing names Claude Code alone, with the Claude Code result', () => {
+  test('its listing is the shared About line, with no benchmark', () => {
     const { description } = parse(`${dir}/.claude-plugin/plugin.json`);
-    expect(description).toContain('Claude Code session logs');
-    expect(description).toContain('60 to 21 on Claude Code');
-    for (const other of ['Codex', 'Cursor', 'Antigravity', 'Copilot', 'Kiro'])
-      expect(description).not.toContain(other);
+    expect(description).toBe(listingDescription());
+    expect(description).not.toMatch(/\d+ to \d+|% lower cost/);
   });
   test('its README and REVIEW say there is no hook, and how to get one', () => {
     expect(text(`${dir}/README.md`)).toContain(

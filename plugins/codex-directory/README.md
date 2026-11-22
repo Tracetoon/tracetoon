@@ -1,6 +1,6 @@
 # Tracetoon for the OpenAI plugin directory (skills only)
 
-Creates your PR with a description written from your Codex session logs, and an optional one-off comic. Every claim is checked against what your agent actually did before the PR is posted. On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex, at 70% lower cost per PR.
+PRs with receipts. And comics. Tracetoon turns the session logs of Claude Code, Codex, Copilot, Cursor and 11 more coding agents into a pull request where every claim is checked against what actually ran, with a comic on top.
 
 ## Why use it
 
