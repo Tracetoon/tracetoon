@@ -256,7 +256,7 @@ export const PALETTES: Palette[] = ['full-color', 'bw-accent', 'duotone', 'limit
 export interface ComicScript {
   v: 2;
   /**
-   * The lead character's look in a few plain words (age, build, hair, skin,
+   * The lead character's look in a few plain words (age, build, hair,
    * clothes), as drawn. Recorded so later comics don't cast the same design.
    */
   leadLook?: string;

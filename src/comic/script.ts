@@ -277,7 +277,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
     if (lookAlike)
       warn(
         'leadLook',
-        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast someone who looks different in age, build, hair, skin or clothes`,
+        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast someone who looks different in age, build, hair or clothes`,
       );
     const reused = (current.castNames ?? []).filter((n) =>
       recent.some((r) => r.castNames?.includes(n)),

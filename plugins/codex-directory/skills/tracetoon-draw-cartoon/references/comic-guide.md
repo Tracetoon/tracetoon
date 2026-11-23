@@ -339,9 +339,9 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   `low-angle`, `high-angle`, `overhead`, `dutch`, `over-shoulder` or
   `silhouette`. **`effects`** (per panel): any of `speed-lines`,
   `impact-burst`, `focus-lines`, `motion-blur`, `emanata`, `shake`.
-- **`leadLook`** (optional): the lead's look in a few plain words, as drawn
-  ("wiry old man, bald, orange flight suit"). `comic check` warns when it
-  matches a recent comic's lead.
+- **`leadLook`** (optional): the lead's age, build, hair and clothes in a
+  few plain words ("wiry old man, bald, orange flight suit"). `comic check`
+  warns when it matches a recent comic's lead.
 - **`genre`** (required with `composition`): a genre id from
   `context.comic.genreOptions` / [genres.md](genres.md), or a short phrase (at
   most 40 characters). It can't repeat either of the repo's last two comics
