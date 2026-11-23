@@ -6,7 +6,7 @@
 <title>Tracetoon: PRs with receipts. And comics.</title>
 <meta name="description" content="Tracetoon writes pull requests from the AI agent session logs already on your machine. An embedded evidence graph makes them more accurate and cheaper to write, and it follows each repo's rules, comics included.">
 <meta property="og:title" content="Tracetoon: PRs with receipts. And comics.">
-<meta property="og:description" content="Pull requests written from what your agent actually did. Judged better on 61 real PRs, 43–70% cheaper, and each one can come with a comic.">
+<meta property="og:description" content="Pull requests written from what your agent actually did. Judged better than your agent alone on 61 real PRs, at 28–73% lower cost, and each one can come with a comic.">
 <meta property="og:image" content="https://tracetoon.ai/img/og-image.png">
 <meta property="og:url" content="https://tracetoon.ai/">
 <meta name="twitter:card" content="summary_large_image">
@@ -311,7 +311,7 @@
       <a href="#install">Install</a>
       <a href="#why" class="opt">Why</a>
       <a href="#talk" class="opt">Talk</a>
-      <a href="evidence-graph-61.html">Results</a>
+      <a href="vs-native.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -353,11 +353,11 @@
         </div>
 
         <div class="proof">
-          <div><b>79–38 · 60–21</b><span>judges' picks for the graph PR over Tracetoon without the graph (Codex · Claude Code, 61 real PRs)</span></div>
-          <div><b>82%</b><span>of key facts conveyed, vs 72% without the graph (Codex)</span></div>
-          <div><b>−70%</b><span>cost per PR on Codex: $0.13 vs $0.45</span></div>
+          <div><b>72–9 · 111–19</b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
+          <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
+          <div><b>−28% · −73%</b><span>cost per PR in a long session (Opus · Sol)</span></div>
         </div>
-        <a class="more" href="evidence-graph-61.html">Read the full results →</a> <a class="more" href="prbench.html" style="margin-left:.8rem">How we test: prbench →</a>
+        <a class="more" href="vs-native.html">Read the full results →</a> <a class="more" href="prbench.html" style="margin-left:.8rem">How we test: prbench →</a>
       </div>
       <div class="hero-art">
         <img src="img/hero.webp" width="1400" height="837" fetchpriority="high"
@@ -376,7 +376,7 @@
       </div>
       <div class="copytext">
         <span class="kicker">Better PRs</span>
-        <h2 class="big display">Judged blind. Picked over 2 to 1.</h2>
+        <h2 class="big display">Judged blind. Picked over 5 to 1.</h2>
         <p>AI-written PRs are usually vague and padded, and they sound sure about tests nobody saw pass. Tracetoon writes from the session logs that Claude Code, Codex, Copilot, Cursor and 11 other agents already keep. The PR says <strong>why</strong> the change was made, <strong>what</strong> changed, and <strong>what actually ran</strong>.</p>
         <p>Here is one real PR from our first test, written three ways and scored 0–100 by the same judges:</p>
         <ul class="score" aria-label="Composite quality score, 0 to 100">
@@ -384,7 +384,7 @@
           <li>Tracetoon, old workflow <span class="bar"><i style="width:65.3%"></i></span><b>65</b></li>
           <li>Tracetoon + graph <span class="bar"><i class="win" style="width:80.4%"></i></span><b>80</b></li>
         </ul>
-        <div class="stat"><b>79–38 · 60–21</b><span>Head-to-head picks for the graph PR over Tracetoon's own no-graph workflow on Codex and Claude Code, across 61 real PRs. A pick only counts when two judges each read both orders and agree.</span></div>
+        <div class="stat"><b>72–9 · 111–19</b><span>Head-to-head picks for the Tracetoon PR over the same agent writing it alone, on Claude Code (Opus 5.5) and Codex (Sol 6.1), across 61 real PRs. A pick only counts when two judges each read both orders and agree. <a href="vs-native.html">See the results →</a></span></div>
       </div>
     </div>
   </section>
@@ -447,20 +447,20 @@
       </div>
       <div class="copytext">
         <span class="kicker">Cost savings</span>
-        <h2 class="big display">A sharp brief lets cheap workers check the work.</h2>
-        <p>Without a map, an expensive model rereads your source to check its own claims, two or three times per PR. With the graph, that work is done once, before any model runs. Then:</p>
+        <h2 class="big display">Your long session stays out of the writing.</h2>
+        <p>After an hour of coding, your agent carries a huge conversation, and every request it makes re-reads it. Asked to write a PR alone, Opus made 10 such requests and Sol 30. With Tracetoon, your agent makes about 4 to 6. The graph builds the evidence brief before any model runs, and then:</p>
         <ul>
-          <li><strong>One strong writer</strong> drafts from a 2–3K-token brief instead of the whole session history, and writes 7K tokens instead of 22K.</li>
-          <li><strong>Two cheap reviewers</strong> (Haiku or Luna, at extra-high reasoning effort) check a short packet. That costs about 6¢ per PR on Claude and under 1¢ on Codex.</li>
-          <li><strong>One edit pass.</strong> The reviewers' findings merge into a single list. There are no repeat review rounds and no forked subagents.</li>
+          <li><strong>A fresh drafter</strong> on your session's model, at low effort, writes from a short brief and the diff instead of your whole conversation, and runs the repository's checks.</li>
+          <li><strong>Two cheap reviewers</strong> (Haiku or Luna, at extra-high reasoning effort) check a short packet: one for missing behaviour, one for every claim.</li>
+          <li><strong>One edit pass.</strong> The reviewers' findings merge into a single list, and the drafter publishes.</li>
         </ul>
-        <ul class="score" aria-label="Cost per PR in US dollars">
-          <li>Claude, no graph <span class="bar"><i style="width:100%"></i></span><b>$0.65</b></li>
-          <li>Claude + graph <span class="bar"><i class="win" style="width:52.6%"></i></span><b>$0.34</b></li>
-          <li>Codex, no graph <span class="bar"><i style="width:68.3%"></i></span><b>$0.45</b></li>
-          <li>Codex + graph <span class="bar"><i class="win" style="width:19.5%"></i></span><b>$0.13</b></li>
+        <ul class="score" aria-label="Cost per PR in US dollars, in a session carrying 500k tokens">
+          <li>Sol 6.1 alone <span class="bar"><i style="width:100%"></i></span><b>$3.50</b></li>
+          <li>Sol 6.1 + Tracetoon <span class="bar"><i class="win" style="width:26.5%"></i></span><b>$0.93</b></li>
+          <li>Opus 5.5 alone <span class="bar"><i style="width:36.7%"></i></span><b>$1.29</b></li>
+          <li>Opus 5.5 + Tracetoon <span class="bar"><i class="win" style="width:26.6%"></i></span><b>$0.93</b></li>
         </ul>
-        <div class="stat"><b>−43% · −70%</b><span>typical cost per PR on Claude Code and Codex (paired per PR; the bars show averages), while judges picked the graph PRs more often on both. <a href="evidence-graph-61.html#cost">See the cost data →</a></span></div>
+        <div class="stat"><b>−28% · −73%</b><span>cost per PR on Claude Code (Opus 5.5) and Codex (Sol 6.1), in a session carrying 500k tokens with subscription caching, while judges picked the Tracetoon PR far more often on both. <a href="vs-native.html#cost">See the cost data →</a></span></div>
       </div>
     </div>
   </section>
@@ -586,7 +586,19 @@
     <div class="wrap">
       <details>
         <summary>How we measured (and what's not perfect yet)</summary>
-        <p>The numbers come from <strong><a href="prbench.html">prbench</a></strong>: 61 real PRs from 12 repositories, each with its original agent session logs, and 3 drafts per PR for each setup (the brief was tuned on 25 of them; on the 36 untouched PRs judges picked the graph 51–21 on Codex and 42–11 on Claude Code). Each PR has a fact sheet drafted from the diff and the sessions and reviewed by a six-model expert panel. Two AI judges per provider scored every draft against that fact sheet with a 10-item reviewer rubric: Opus 5.5 and Sonnet 5.5 for Claude Code, Sol 6.1 and Terra 6.1 for Codex. A head-to-head pick counts only when both judges, each reading the pair in both orders, pick the same draft. Every factual error a judge flagged was checked against the evidence by two more models. Each comparison uses the same model with the graph and without it.</p>
+        <p><strong>Tracetoon vs your agent alone.</strong> The same 61 PRs, written 3 times each by Claude Code on Opus 5.5 and Codex on Sol 6.1, once with no skill and once with Tracetoon, in the same session. Same judges and rules as below. Cost assumes a session carrying 500k tokens with subscription caching; with a short session the saving shrinks, and with none Tracetoon costs more because it runs the checks and two reviews.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th></th><th>Claude Code · Opus 5.5</th><th>Codex · Sol 6.1</th></tr></thead>
+            <tbody>
+              <tr><td>Head-to-head picks (Tracetoon–alone)</td><td>72–9</td><td>111–19</td></tr>
+              <tr><td>Quality score (0–100)</td><td>68.3 vs 52.8</td><td>78.1 vs 64.1</td></tr>
+              <tr><td>Judge-flagged factual errors per PR</td><td>0.16 vs 0.32</td><td>0.15 vs 0.18</td></tr>
+              <tr><td>Cost per PR, 500k-token session</td><td>$0.93 vs $1.29 (−28%)</td><td>$0.93 vs $3.50 (−73%)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>The evidence graph vs Tracetoon's original workflow.</strong> The numbers below come from <strong><a href="prbench.html">prbench</a></strong>: 61 real PRs from 12 repositories, each with its original agent session logs, and 3 drafts per PR for each setup (the brief was tuned on 25 of them; on the 36 untouched PRs judges picked the graph 51–21 on Codex and 42–11 on Claude Code). Each PR has a fact sheet drafted from the diff and the sessions and reviewed by a six-model expert panel. Two AI judges per provider scored every draft against that fact sheet with a 10-item reviewer rubric: Opus 5.5 and Sonnet 5.5 for Claude Code, Sol 6.1 and Terra 6.1 for Codex. A head-to-head pick counts only when both judges, each reading the pair in both orders, pick the same draft. Every factual error a judge flagged was checked against the evidence by two more models. Each comparison uses the same model with the graph and without it.</p>
         <div class="tablewrap">
           <table>
             <thead><tr><th></th><th>Claude Code · Sonnet 5.5</th><th>Codex · Terra 6.1</th></tr></thead>
@@ -603,7 +615,7 @@
           <li>Not perfect yet: on Claude Code, graph drafts respect fewer of the open questions in the evidence, convey slightly fewer key facts, and take about 1.6× as long to write.</li>
           <li>On Codex the graph made more confirmed factual errors (0.33 vs 0.16 per PR), so it fails our own strict error margin there. About a third come from two known bugs in the generated Validation section, which are being fixed. The full write-up lists every criterion.</li>
         </ul>
-        <p><a href="evidence-graph-61.html">Read the full write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
+        <p><a href="vs-native.html">Tracetoon vs your agent alone: the full results →</a> <a href="evidence-graph-61.html">The evidence-graph write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
       </details>
     </div>
   </section>
@@ -640,6 +652,7 @@
   <div class="wrap">
     <span>Tracetoon is open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
+    <a href="vs-native.html">Tracetoon vs your agent alone</a>
     <a href="evidence-graph-61.html">Evidence graph results</a>
     <a href="prbench.html">prbench benchmark</a>
     <a href="#faq">Problems it solves</a>
