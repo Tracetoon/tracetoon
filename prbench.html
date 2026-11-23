@@ -250,7 +250,7 @@
       <a href="./#install">Install</a>
       <a href="./#why" class="opt">Why</a>
       <a href="./#talk" class="opt">Talk</a>
-      <a href="evidence-graph-61.html">Results</a>
+      <a href="vs-native.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -439,6 +439,20 @@
         <div>
           <div class="scorecard">
             <table>
+              <caption class="site-sr">Flagship run: Tracetoon versus the same agent writing alone</caption>
+              <thead><tr><th scope="col">Tracetoon vs agent alone</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Session model · judges</th><td>Sol 6.1<span class="sub">Sol + Terra</span></td><td>Opus 5.5<span class="sub">Opus + Sonnet</span></td></tr>
+                <tr><th scope="row">Picked by both judges</th><td class="win">111–19<span class="sub">45 without consensus</span></td><td class="win">72–9<span class="sub">79 without consensus</span></td></tr>
+                <tr><th scope="row">Score (0–100)</th><td class="win">+14.0<span class="sub">78.1 vs 64.1 · ±1.2</span></td><td class="win">+15.5<span class="sub">68.3 vs 52.8 · ±2.0</span></td></tr>
+                <tr><th scope="row">Cost per PR, 500k-token session</th><td class="win">−73%<span class="sub">$0.93 vs $3.50</span></td><td class="win">−28%<span class="sub">$0.93 vs $1.29</span></td></tr>
+                <tr><th scope="row">Judge-flagged errors per PR</th><td class="win">0.15 vs 0.18</td><td class="win">0.16 vs 0.32</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="honest"><b>Against your agent alone.</b> The same 61 PRs, each written 3 times by Claude Code on Opus 5.5 and Codex on Sol 6.1 with and without Tracetoon in the same session. Cost assumes a session carrying 500k tokens; with a short session the saving shrinks. <a href="vs-native.html">Full results →</a> · <a href="https://github.com/Tracetoon/prbench/tree/main/golden/v4-flagship-c70b">data</a></p>
+          <div class="scorecard">
+            <table>
               <caption class="site-sr">Golden run: evidence-graph brief versus the original workflow</caption>
               <thead><tr><th scope="col">Graph vs original</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
               <tbody>
@@ -549,6 +563,7 @@ prbench score results/my-run --dataset real-cases@4.0.0</code></pre><button clas
         <a href="https://github.com/Tracetoon/prbench"><b>prbench on GitHub</b><span>Source, issues and releases. Apache-2.0.</span></a>
         <a href="https://github.com/Tracetoon/prbench/blob/main/datasets/DATASET_CARD.md"><b>Dataset card</b><span>What's in the cases, consent, redaction, license and limits.</span></a>
         <a href="https://github.com/Tracetoon/prbench/blob/main/docs/methodology.md"><b>Methodology</b><span>Sandbox, session slices, judging and statistics in detail.</span></a>
+        <a href="vs-native.html"><b>Tracetoon vs your agent alone</b><span>The flagship benchmark on Opus 5.5 and Sol 6.1: quality, errors and cost in a long session.</span></a>
         <a href="evidence-graph-61.html"><b>Evidence graph results</b><span>The full golden-run write-up: charts, a worked example, every caveat.</span></a>
       </div>
     </div>
@@ -571,6 +586,7 @@ prbench score results/my-run --dataset real-cases@4.0.0</code></pre><button clas
     <span>prbench and Tracetoon are open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/prbench">github.com/Tracetoon/prbench</a>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
+    <a href="vs-native.html">Tracetoon vs your agent alone</a>
     <a href="evidence-graph-61.html">Evidence graph results</a>
     <a href="llms.txt">llms.txt (for agents)</a>
     <a href="https://github.com/relatedb/relate">Built on Relate</a>

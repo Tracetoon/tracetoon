@@ -11,11 +11,14 @@ write, and there's a comic on top.
 
 | | |
 | --- | --- |
-| **79–38** | both judges preferred the evidence-graph PR on Codex |
-| **60–21** | both judges preferred it on Claude Code |
-| **−70% / −43%** | cost per PR on Codex / Claude Code |
+| **72–9** | both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing it alone |
+| **111–19** | the same against Codex (Sol 6.1) alone |
+| **−50%** | factual errors per PR on Opus 5.5 (0.16 vs 0.32) |
+| **−28% / −73%** | cost per PR on Opus / Sol, in a session carrying 500k tokens |
 
-prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. Full results: https://tracetoon.ai/evidence-graph-61.html
+prbench: 61 real PRs from 12 repositories, each written 3 times by each system, 2 AI judges per provider in both orders. Compared with the same agent in the same session writing the PR alone. Full results: https://tracetoon.ai/vs-native.html
+
+Against Tracetoon's earlier multi-agent workflow, the evidence graph was preferred 79–38 (Codex) and 60–21 (Claude Code) at 70% / 43% lower cost: https://tracetoon.ai/evidence-graph-61.html
 
 > **For AI agents:** start with [agents.md](https://tracetoon.ai/agents.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
