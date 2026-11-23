@@ -6,8 +6,10 @@ import { join } from 'node:path';
 import { writeResearchPacket } from '../contribution/guidance.ts';
 import { loadConfig } from '../config.ts';
 import {
+  COMIC_SETUP_LINE,
   comicExpectation,
   comicStep,
+  drafterComicStep,
   type ComicExpectation,
 } from '../comic/expectation.ts';
 import { buildDigestPair, type TraceDigest } from '../digest/build.ts';
@@ -34,6 +36,17 @@ import { evidenceNotes } from '../digest/notes.ts';
 import { repository, workFingerprint } from '../workflow/state.ts';
 import type { Run } from '../run.ts';
 import { count } from '../util/profile.ts';
+import { hostAgent, type HostAgent } from '../util/host.ts';
+import { skillDir } from '../contribution/skillSettings.ts';
+import { launcher } from '../util/launcher.ts';
+import {
+  coordinatorNext,
+  drafterPacket,
+  resolveDrafterModel,
+  resolveDrafterEffort,
+  DRAFTER_FILE,
+  DRAFTER_PACKET,
+} from '../workflow/drafter.ts';
 import {
   graphEnricher,
   graphBrief,
@@ -448,10 +461,30 @@ function comicPart(run: string, comic?: ComicExpectation): string {
 export const DRAFTING_RULES =
   'Drafting rules (references/drafting.md has the detail): lead with the problem and why, stated as the PR\'s purpose (quote the request; never "a later request in the session"), then the design, then its consequences; no file-by-file inventory; 250–450 words, no fixed section list. When a change row has `was` or `before`, say what the code did in one "Previously …" sentence. Give each behavior its guarding condition (from `behavior`); "always", "only", "every" only when every branch does it. State each open `limits` row that matters and that you can back, in its own scope with its tag ("the recorded tests fake the network"); skip a row you can\'t support; never "untested" or "nothing ran". Render writes only a stale session run and a failed push under Validation: don\'t restate those. At most one sentence on CI/push status; housekeeping (version bumps, lockfiles, rebuilt bundles) at most one clause; a claim from a commit message or code comment is attributed or dropped unless the diff shows it. End with a "Where to start" line (the `entry` row\'s function and file, with only the behaviors it owns) and a "Feedback wanted" line (one concrete question for reviewers). Describe the goal as the PR\'s purpose, never as session history; never use brief vocabulary ("the brief", "limits row") in the body. Tag each factual sentence with brief refs ([CH1, commit:<sha>#2], [L1], [T1]) and put `<!-- tracetoon:validation -->` where the Validation section belongs; never write run results yourself.';
 
+/** How a delegated drafter starts the reviewers and the comic at once, per host. */
+const PARALLEL_RULE: Record<HostAgent, string> = {
+  claude:
+    'two foreground Bash calls in ONE message, each with `timeout: 600000` (never run_in_background, and do nothing else until both return; if one is moved to the background anyway, run that same command again in the foreground: comic run waits for the running one)',
+  codex:
+    'ONE `exec` call whose script begins with `// @exec: {"yield_time_ms": 900000}` and runs both with `exec_command` inside `Promise.all`; while it runs, `write_stdin` with empty `chars` and `yield_time_ms: 300000` until both have exited (never short waits or `sleep` loops, no other work in between). Each prints nothing until it is done, then one summary',
+};
+
+/**
+ * How prepare's next step is addressed: to the agent that drafts itself
+ * (default), or to a fresh delegated drafter (`drafter`, written to
+ * drafter-packet.md). A Claude Code drafter can't start reviewer agents, so it
+ * stops when the packets are ready and the coordinator starts them.
+ */
+export interface NextRole {
+  role: 'drafter';
+  host: HostAgent;
+}
+
 export function graphNext(
   run: string,
   plan?: ReviewPlan,
   comic?: ComicExpectation,
+  as?: NextRole,
 ): string {
   const enforced = planEnforced(plan);
   const settings = enforced
@@ -462,15 +495,47 @@ export function graphNext(
     : '';
   const tracetoonReview = enforced && plan.runner === 'tracetoon' && !!plan.reviewerModel;
   const n = enforced ? requiredPasses(plan) : 1;
+  const reviewRunAll = tracetoonReview
+    ? `\`tracetoon review run --all --run ${run}\` (Tracetoon runs ${n === 1 ? 'the reviewer' : `all ${n} reviewer passes${plan.lenses.length ? ` (lenses ${plan.lenses.join(', ')}${n > plan.lenses.length ? ' plus general' : ''})` : ''} in parallel`} on ${plan.reviewerModel}, imports each and writes one merged list, review-findings-merged.md; don't start a reviewer agent)`
+    : '';
   const onePass = `apply it in ONE edit pass of body.md (check each finding against the lines it cites; fix or reject every flagged claim), \`tracetoon finish --run ${run}\` again, then ${recheckStep(run, plan)}`;
-  const review = tracetoonReview
-    ? `\`tracetoon review run --all --run ${run}\` (Tracetoon runs ${n === 1 ? 'the reviewer' : `all ${n} reviewer passes${plan.lenses.length ? ` (lenses ${plan.lenses.join(', ')}${n > plan.lenses.length ? ' plus general' : ''})` : ''} in parallel`} on ${plan.reviewerModel}, imports each and writes one merged list, review-findings-merged.md; don't start a reviewer agent; ${BLOCKING_RULE}); ${onePass}`
+  const handBack =
+    as && !tracetoonReview
+      ? `finish writes the review packets; you can't start agents, so stop there and reply exactly \`PACKETS READY\` (nothing else). The coordinator starts the fresh reviewers and messages you each reviewer's agent id and lens; then import each with \`tracetoon review import --run ${run} [--lens <lens>] --agent-id <its id>${flags}\` (a general reviewer: no --lens, and \`--findings <its file>\` when it isn't review-findings.json), \`tracetoon review merge --run ${run}\` and ${onePass}`
+      : undefined;
+  const drafterComic = as && comic ? drafterComicStep(comic, run) : '';
+  const review = handBack
+    ? handBack
+    : drafterComic && tracetoonReview
+    ? `start BOTH ${reviewRunAll} and ${drafterComic} at the same time: ${PARALLEL_RULE[as!.host]}. When both have exited, ${onePass}`
+    : tracetoonReview
+    ? `${reviewRunAll.replace(/\)$/, `; ${BLOCKING_RULE})`)}; ${onePass}`
     : !enforced
       ? `finish writes review-packet.md (\`tracetoon review-packet --lean --run ${run}\`); one fresh independent reviewer (not a fork) gets review-packet.md plus references/reviewer-lean.md and writes review-findings.json; \`tracetoon review import --run ${run} --agent-id <its id>\`; one correction round, then ${recheckStep(run, plan)}`
       : plan.lenses.length
         ? `finish writes one packet per lens ${plan.lenses.join(', ')} (\`tracetoon review-packet --lean --lens <lens> --run ${run}\`)${requiredPasses(plan) > plan.lenses.length ? ' and review-packet.md' : ''}; start one fresh reviewer per lens${requiredPasses(plan) > plan.lenses.length ? ` and ${requiredPasses(plan) - plan.lenses.length} general reviewer(s) (review-packet.md)` : ''} IN PARALLEL (all in one message; Claude Code: foreground Agent calls, never run_in_background, and don't end the turn until they return)${settings} (packet plus references/reviewer-lens-<lens>.md); import each with \`tracetoon review import --run ${run} --lens <lens> --agent-id <its id>${flags}\`; then \`tracetoon review merge --run ${run}\` and ${onePass}`
         : `finish writes review-packet.md (\`tracetoon review-packet --lean --run ${run}\`); ${requiredPasses(plan)} fresh reviewer pass(es), each a NEW reviewer${settings} (packet plus references/reviewer-lean.md)${requiredPasses(plan) > 1 ? ', all started in one message' : ''}; import each with \`tracetoon review import --run ${run} --agent-id <its id>${flags}\`; then \`tracetoon review merge --run ${run}\` and ${onePass}`;
-  return `take the reviewed brief path (SKILL step 2b): draft title.txt and body.md yourself from the evidence brief (\`tracetoon query brief --run ${run}\`) and the patch. ${DRAFTING_RULES} Run each of the repository's required checks once, in the FOREGROUND, each as its own \`tracetoon check --run ${run} --name <check> -- <program> <args>\` (it blocks until done, stops after 15 min and prints a short summary with the path of the full log; a timeout is "timed out (incomplete)", never a failure: don't rerun it. Never start it in the background, poll it (sleep/until loops) or end your turn while it runs; on Claude Code give the Bash call \`timeout: 600000\`, and if a check is moved to the background anyway, run the same command again in the foreground: it waits for the running one. One command per check, never chained in \`bash -c '… && …'\`; record a check that can't run here with \`--skip "<reason>"\`. ${BLOCKING_RULE}) ${QUICK_RULE} Then \`tracetoon finish --run ${run}\`: it renders, runs the brief check (fix what it lists and run finish again, up to three rounds), writes the review packets and prints the one next step; then ${review}; ${comicPart(run, comic)}publish (\`tracetoon publish --run ${run}\`) when finish says so the review is current${enforced ? ` (publish refuses until the review plan is met: ${planSummary(plan)})` : ''}. Always render, review and publish before ending the turn and before any optional waiting (CI, a long rerun). Only on the user's request: the quick path (SKILL step 2a) or the three-role thorough path.`;
+  const opening = as
+    ? `You draft title.txt and body.md in the run folder from the evidence brief (at the end of this packet; \`tracetoon query brief --run ${run}\` prints it again) and the patch.`
+    : `take the reviewed brief path (SKILL step 2b): draft title.txt and body.md yourself from the evidence brief (\`tracetoon query brief --run ${run}\`) and the patch.`;
+  // Without tracetoon review run (agent reviewers), the comic runs on its own before publish.
+  const serialComic = drafterComic && !tracetoonReview ? drafterComic : '';
+  const closing = as
+    ? `${serialComic ? `run ${serialComic.replace(/\)$/, `; ${BLOCKING_RULE})`)}; then ` : ''}when finish says \`tracetoon publish --run ${run}\`, run it yourself (add \`--draft\` if the coordinator's message asks for a draft PR; follow what publish prints if it refuses), then reply with ONE message: \`PUBLISHED <PR URL>\`, plus one line for any AI-policy note${drafterComic ? ` and the \`${COMIC_SETUP_LINE}\` line if the comic step calls for one` : ''}. Send no other messages: no progress updates, no questions; your final reply is the only message the coordinator reads. Never end your turn earlier${handBack ? ', except at PACKETS READY' : ''}, and never wait on optional things (CI, a long rerun).`
+    : `${comicPart(run, comic)}publish (\`tracetoon publish --run ${run}\`) when finish says so the review is current${enforced ? ` (publish refuses until the review plan is met: ${planSummary(plan)})` : ''}. Always render, review and publish before ending the turn and before any optional waiting (CI, a long rerun). Only on the user's request: the quick path (SKILL step 2a) or the three-role thorough path.`;
+  return `${opening} ${DRAFTING_RULES} Run each of the repository's required checks once, in the FOREGROUND, each as its own \`tracetoon check --run ${run} --name <check> -- <program> <args>\` (it blocks until done, stops after 15 min and prints a short summary with the path of the full log; a timeout is "timed out (incomplete)", never a failure: don't rerun it. Never start it in the background, poll it (sleep/until loops) or end your turn while it runs; on Claude Code give the Bash call \`timeout: 600000\`, and if a check is moved to the background anyway, run the same command again in the foreground: it waits for the running one. One command per check, never chained in \`bash -c '… && …'\`; record a check that can't run here with \`--skip "<reason>"\`. ${BLOCKING_RULE}) ${QUICK_RULE} Then \`tracetoon finish --run ${run}\`: it renders, runs the brief check (fix what it lists and run finish again, up to three rounds), writes the review packets and prints the one next step; then ${review}; ${closing}`;
+}
+
+/**
+ * The command a delegated drafter runs Tracetoon with: the pinned npx command
+ * when a host plugin started this runtime, else the skill's own launcher.
+ */
+function drafterLauncher(dir: string): string {
+  const started = launcher();
+  if (started.kind === 'npx' || started.kind === 'npm')
+    return `npx -y tracetoon@${started.version}`;
+  if (started.kind === 'script') return started.path;
+  return join(dir, 'bin', process.platform === 'win32' ? 'tracetoon.cmd' : 'tracetoon');
 }
 
 export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
@@ -562,15 +627,57 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
       'Use fresh role contexts where supported. Read the cold-read packet before the reviewer evidence. Expand referenced evidence in batches; missing evidence remains unknown. Drafter and reviewer: ask the evidence graph with `tracetoon query <name> --run <id>` (start with `brief`) before reading the whole patch; its diff refs are citable as change-map behaviorChecks evidence.',
   };
   writeJson(prepared.run, 'role-packets.json', roles);
+  // Delegated drafting: the drafter gets the self-drafter's next step and the
+  // brief in drafter-packet.md; this agent gets only the coordinator steps.
+  const host = hostAgent() ?? null;
+  const comic = context.context.comic.expectation;
+  const drafterModel =
+    prepared.graph && prepared.brief && host
+      ? resolveDrafterModel((opts as { drafterModel?: unknown }).drafterModel, host)
+      : undefined;
+  let next = prepared.graph ? graphNext(prepared.run.id, plan, comic) : undefined;
+  let drafterPath: string | undefined;
+  if (drafterModel && host) {
+    const dir = skillDir() ?? '';
+    const paths = {
+      run: prepared.run.id,
+      runDir: prepared.run.dir,
+      repoRoot: repo.root,
+      launcher: drafterLauncher(dir),
+      skillDir: dir,
+    };
+    drafterPath = join(prepared.run.dir, DRAFTER_PACKET);
+    writeFileSync(
+      drafterPath,
+      drafterPacket(paths, graphNext(prepared.run.id, plan, comic, { role: 'drafter', host }), prepared.brief!),
+      'utf8',
+    );
+    const drafterEffort = resolveDrafterEffort((opts as { drafterEffort?: unknown }).drafterEffort);
+    writeJson(prepared.run, DRAFTER_FILE, {
+      v: 1,
+      host,
+      model: drafterModel,
+      ...(drafterEffort ? { effort: drafterEffort } : {}),
+    });
+    next = coordinatorNext(
+      paths,
+      host,
+      drafterModel,
+      plan,
+      planEnforced(plan) && plan.runner === 'tracetoon' && !!plan.reviewerModel,
+      drafterEffort,
+      // The drafter draws the comic or reports image setup; this agent only relays that.
+      !!comic && !!drafterComicStep(comic, prepared.run.id),
+    );
+  }
   emit(
     opts,
     {
       run: prepared.run.id,
-      ...(prepared.graph
-        ? { next: graphNext(prepared.run.id, plan, context.context.comic.expectation) }
-        : {}),
+      ...(next ? { next } : {}),
       // One JSON line, so piping through `head` still shows the whole map.
-      ...(prepared.brief ? { brief: prepared.brief } : {}),
+      ...(prepared.brief && !drafterPath ? { brief: prepared.brief } : {}),
+      ...(drafterPath ? { drafter: { model: drafterModel, packet: drafterPath } } : {}),
       ...(planEnforced(plan) ? { reviewPlan: plan } : {}),
       runDir: prepared.run.dir,
       rolePackets: join(prepared.run.dir, 'role-packets.json'),
@@ -582,12 +689,12 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
     () =>
       [
         `Run ${prepared.run.id}: digest, context and role-packets.json prepared from one snapshot.`,
-        prepared.graph
-          ? `Next: ${graphNext(prepared.run.id, plan, context.context.comic.expectation)}`
+        next
+          ? `Next: ${next}`
           : comicPart(prepared.run.id, context.context.comic.expectation)
             ? `Comic: ${comicPart(prepared.run.id, context.context.comic.expectation)}`
             : '',
-        prepared.brief ? `Evidence brief:\n${prepared.brief}` : '',
+        prepared.brief && !drafterPath ? `Evidence brief:\n${prepared.brief}` : '',
       ]
         .filter(Boolean)
         .join('\n'),

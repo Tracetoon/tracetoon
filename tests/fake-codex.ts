@@ -6,6 +6,7 @@
  */
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { comicReply } from './fake-comic-agent.ts';
 
 // A 1x1 PNG.
 const PNG = Buffer.from(
@@ -21,6 +22,27 @@ if (args[0] === 'login') {
 }
 const prompt = readFileSync(0, 'utf8');
 const images = args.flatMap((a, i) => (args[i - 1] === '--image' ? [a] : []));
+// `tracetoon comic run`'s author and judges: one reply, and a rollout naming the model.
+const comic = comicReply(prompt);
+if (comic !== undefined) {
+  const thread = args.includes('resume')
+    ? args[args.indexOf('-') - 1]!
+    : `thread-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  if (process.env.FAKE_CODEX_LOG)
+    appendFileSync(process.env.FAKE_CODEX_LOG, JSON.stringify({ args, images, prompt }) + '\n');
+  const sessions = join(process.env.CODEX_HOME!, 'sessions');
+  mkdirSync(sessions, { recursive: true });
+  writeFileSync(
+    join(sessions, `rollout-${thread}.jsonl`),
+    JSON.stringify({ type: 'session_meta', payload: { id: thread, model: process.env.FAKE_CODEX_MODEL ?? 'gpt-6.1' } }) + '\n',
+  );
+  const out = args[args.indexOf('-o') + 1];
+  if (args.includes('-o') && out) writeFileSync(out, comic);
+  console.log(JSON.stringify({ type: 'thread.started', thread_id: thread }));
+  console.log(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: comic } }));
+  console.log(JSON.stringify({ type: 'turn.completed' }));
+  process.exit(0);
+}
 const wanted = (prompt.match(/^\d+\. /gm) ?? []).length;
 const make = process.env.FAKE_CODEX_MAKE ? Number(process.env.FAKE_CODEX_MAKE) : wanted;
 if (process.env.FAKE_CODEX_LOG)
