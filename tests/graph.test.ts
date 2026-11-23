@@ -412,7 +412,7 @@ describe('evidence graph', () => {
         expect(prepared.json.brief).toBeUndefined();
         expect(prepared.json.drafter.model).toBe(model);
         expect(prepared.json.next).toContain("Coordinate; don't draft.");
-        expect(prepared.json.next).toContain(`model "${model}"`);
+        expect(prepared.json.next).toContain(host === 'codex' ? `model: "${model}"` : `model "${model}"`);
         // The drafter publishes; the coordinator only relays its one reply.
         expect(prepared.json.next).toContain('PUBLISHED <url>');
         expect(prepared.json.next).not.toContain(`tracetoon publish --run ${run}`);
@@ -449,6 +449,22 @@ describe('evidence graph', () => {
       expect(p.json.next).toContain('effort "low"');
       expect(p.json.next).toContain('no model argument (it runs on your model)');
       expect(p.json.next).not.toContain('model "inherit"');
+    } finally {
+      if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
+      else process.env.TRACETOON_HOST_AGENT = saved;
+    }
+  });
+
+  test('Codex coordinator names the exact spawn_agent arguments, reasoning_effort required', () => {
+    const saved = process.env.TRACETOON_HOST_AGENT;
+    process.env.TRACETOON_HOST_AGENT = 'codex';
+    try {
+      const { repo, cli } = scenario();
+      const p = cli(repo.root, '--json', 'prepare', '--offline', '--drafter-model', 'inherit', '--drafter-effort', 'low');
+      expect(p.json.next).toContain('`reasoning_effort: "low"` (required');
+      expect(p.json.next).toContain('`fork_turns: "none"`');
+      expect(p.json.next).not.toContain('if spawn_agent takes one');
+      expect(p.json.next).not.toContain('model: "inherit"');
     } finally {
       if (saved === undefined) delete process.env.TRACETOON_HOST_AGENT;
       else process.env.TRACETOON_HOST_AGENT = saved;
