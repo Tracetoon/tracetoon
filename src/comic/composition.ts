@@ -300,6 +300,9 @@ export function castNames(names: unknown[]): string[] {
     ),
   ].slice(0, 6);
 }
+/** Characters in a lead look: a few words, not a description. */
+export const MAX_LEAD_LOOK = 80;
+
 export function comicSummary(script: ComicScript): ComicSummary {
   const knownCast =
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
@@ -323,6 +326,9 @@ export function comicSummary(script: ComicScript): ComicSummary {
       : {}),
     ...(Array.isArray(script.characters) && script.characters.length
       ? { castNames: castNames(script.characters.map((c) => c.name)) }
+      : {}),
+    ...(typeof script.leadLook === 'string' && script.leadLook.trim()
+      ? { leadLook: script.leadLook.trim().toLowerCase().slice(0, MAX_LEAD_LOOK) }
       : {}),
   };
 }

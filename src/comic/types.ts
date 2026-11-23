@@ -125,6 +125,8 @@ export interface ComicSummary {
   castKinds?: CastKind[];
   /** The comic's invented character names, lowercased: later comics pick new ones. */
   castNames?: string[];
+  /** How the lead looks, in a few words: later comics cast someone who looks different. */
+  leadLook?: string;
 }
 
 /** A character's place in one panel. */
@@ -253,6 +255,11 @@ export const PALETTES: Palette[] = ['full-color', 'bw-accent', 'duotone', 'limit
  */
 export interface ComicScript {
   v: 2;
+  /**
+   * The lead character's look in a few plain words (age, build, hair, skin,
+   * clothes), as drawn. Recorded so later comics don't cast the same design.
+   */
+  leadLook?: string;
   /** Comic title (used in the PR and the transcript). */
   title: string;
   /** The big title drawn into the art; up to 6 words. Defaults to `title`. */

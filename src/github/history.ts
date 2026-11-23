@@ -92,6 +92,8 @@ export function recentComics(
             raw.castNames.every((n: unknown) => typeof n === 'string' && n.length <= 40)
           )
             summary.castNames = castNames(raw.castNames);
+          if (typeof raw.leadLook === 'string' && raw.leadLook.trim() && raw.leadLook.length <= 80)
+            summary.leadLook = raw.leadLook.trim().toLowerCase();
         }
         return Object.keys(summary).length ? [summary] : [];
       })

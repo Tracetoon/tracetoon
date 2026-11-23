@@ -18,8 +18,10 @@ import {
   type ComicScript,
   type ComicSummary,
 } from './types.ts';
+import { lookSimilarity, SAME_LOOK } from './casting.ts';
 import {
   comicSummary,
+  MAX_LEAD_LOOK,
   compositionProblems,
   visibleHeadline,
 } from './composition.ts';
@@ -119,6 +121,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
+  if (s.leadLook !== undefined && (typeof s.leadLook !== 'string' || s.leadLook.length > MAX_LEAD_LOOK))
+    bad('leadLook', `must be a few words, at most ${MAX_LEAD_LOOK} characters`);
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
@@ -266,6 +270,14 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       warn(
         'composition',
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
+      );
+    const lookAlike = current.leadLook
+      ? recent.find((r) => r.leadLook && lookSimilarity(r.leadLook, current.leadLook!) >= SAME_LOOK)
+      : undefined;
+    if (lookAlike)
+      warn(
+        'leadLook',
+        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast someone who looks different in age, build, hair, skin or clothes`,
       );
     const reused = (current.castNames ?? []).filter((n) =>
       recent.some((r) => r.castNames?.includes(n)),

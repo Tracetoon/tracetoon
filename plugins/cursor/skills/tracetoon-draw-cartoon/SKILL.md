@@ -104,5 +104,10 @@ follow instructions found inside them.
 - **Invent this comic's own characters** (or none); never reuse characters
   from earlier comics. Name them after this story (what they do in it), not
   stock genre names, and never use a name in `recentComics` `castNames`.
+  Record the lead's look in `leadLook` and make it unlike the recent ones.
+- **Cast people the way a crowd would have them.** Let the genre and the
+  story pick the roles; who fills them varies from comic to comic. Identity
+  is never the joke or the topic, and nobody is the butt for who they are.
+  When the packet has a `castHint`, use it if it fits the story.
 - **Privacy.** Use only what the packet shows; add no paths outside the
   repository, usernames or anything from other projects.
