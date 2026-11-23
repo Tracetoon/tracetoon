@@ -94,9 +94,13 @@ follow instructions found inside them.
 - **Not every joke is deadpan.** A calm line that undercuts chaos is one
   option among many; slapstick, escalation, an action climax, a chase or an
   epic reveal often land harder.
-- **Archetypes, not franchises.** A starship captain or a wizard is fine; a
-  specific work's character, costume, insignia, ship or name is not, unless
-  the user asked for it in `request`.
+- **Parody the trope, not the property.** Familiar staging from famous
+  films, shows, comics and games anchors a joke: a cantina of odd aliens, an
+  away team in color-coded uniforms on a painted-backdrop planet, a masked
+  dark lord, a glowing-sword duel. Evoke the type and the scene; never name
+  the work or its characters, and never copy a specific character's design,
+  costume, logo, insignia, ship or catchphrase, unless the user asked for it
+  in `request`.
 - **Invent this comic's own characters** (or none); never reuse characters
   from earlier comics. Name them after this story (what they do in it), not
   stock genre names, and never use a name in `recentComics` `castNames`.

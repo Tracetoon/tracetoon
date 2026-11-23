@@ -24,8 +24,8 @@ The genre comes first: one of `context.comic.genreOptions`
 ([genres.md](genres.md)). All three proposals are set in it; they differ in
 premise. A genre's own tropes (red alert, the prophecy, the heist briefing,
 the showdown) give a joke big stakes to hang on a small, real software
-moment, and its stock characters can be drawn as archetypes without copying
-any one work.
+moment, and its stock characters and famous scenes can be parodied without
+naming or copying any one work.
 
 Write brief candidates to `comic-design.json` in the local run. For each, record:
 - the punchline;
@@ -83,7 +83,7 @@ scenes are all valid. Use the genre's stock characters (a captain, a wizard, a
 detective, a monster) when the world carries the joke; personified parts when
 the system carries it (the actual hook, server, job or cache, called by its
 real name, perhaps as the ship's AI or the dungeon's trap); creatures when
-their traits help. Archetypes, never a specific work's characters.
+their traits help. Parody the type, never a specific work's characters.
 
 ## The final visual check
 

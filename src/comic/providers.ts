@@ -90,7 +90,7 @@ export type Readiness = 'ready' | 'not ready' | 'unknown';
 
 /** Things image models must avoid, on every comic. */
 export const NEGATIVE =
-  'fictional characters only (human characters are welcome); genre archetypes are fine (a starship captain, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
+  'fictional characters only (human characters are welcome); genre parody of familiar tropes and settings is welcome (a cantina of odd aliens, an away team on a strange planet, a masked dark lord, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
 /** With an explicit user request, their characters are allowed; the rest still holds. */
 export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
@@ -136,7 +136,7 @@ export function genreLine(script: ComicScript, catalog: Genre[] = GENRES): strin
   // A user request may name specific characters; then it alone decides who appears.
   const cast = script.request?.trim()
     ? ''
-    : "; draw genre archetypes, not any specific work's characters";
+    : "; parody the genre's familiar character types, never any specific work's characters";
   return g
     ? `Genre: ${g.name}, set in ${g.setting}${cast}.`
     : `Genre: ${script.genre.trim()}${cast}.`;

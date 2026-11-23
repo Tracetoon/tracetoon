@@ -225,14 +225,16 @@ e.g. "red"), `duotone` or `limited`.
 personified tools, creatures, or no characters at all. Never reuse characters
 from an earlier comic or turn the agents into recurring mascots.
 
-**Archetypes yes, specific characters no.** The genre's stock characters are
-welcome: a grizzled starship captain, an eager ensign, a weary wizard, a
-hard-boiled detective, a giant monster, a pixel hero. Never reproduce a
-specific work's character or unique designs: their face or likeness,
-signature costume, insignia, ship design, catchphrase or name. Draw a
-starship captain in a generic uniform, not a particular show's captain; a
-wizard, not a particular film's wizard. `tracetoon comic check` warns when a
-well-known franchise name shows up. Give each one a look and an
+**Parody the trope, not the property.** Parody of what everyone has seen
+makes a comic land faster: the genre's stock characters (a grizzled starship
+captain, an eager ensign, a weary wizard, a hard-boiled detective, a giant
+monster, a pixel hero) and the famous works' familiar staging (a smoky
+cantina of googly-eyed aliens, an away team in color-coded stretch uniforms
+on a painted-backdrop planet, a masked dark lord in a cape, a rolling-boulder
+escape). Evoke the type and the scene. Never name the work, its characters,
+places or ships, and never reproduce a specific character's face, signature
+costume, insignia, ship design or catchphrase. `tracetoon comic check` warns
+when a well-known franchise name shows up. Give each one a look and an
 attitude, and list each once in `"characters"` with a short visual description
 (what they look like, what they wear, their colors) so every panel draws them
 the same way. Set `kind` to `human`, `creature` or `object`. Use fictional
@@ -342,7 +344,7 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   most 40 characters). It can't repeat either of the repo's last two comics
   unless `request` asks for it or the repo pins one.
 - **`request`** (optional): what the user explicitly asked for, in their words.
-  It is sent to the image model and lifts the archetypes-only default.
+  It is sent to the image model and lifts the parody-only default.
 - **`anchor`** (required with `composition`; local, never posted):
   - `change` in one sentence;
   - 1–4 `terms` the PR really uses;
@@ -371,7 +373,7 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   - real people's names;
   - company logos;
   - unrequested copies of a specific existing cartoon, film, TV or game
-    character, insignia or ship (genre archetypes are fine).
+    character, insignia or ship (parody of genre tropes and staging is fine).
 
 ## 7. Make the art, then proofread
 

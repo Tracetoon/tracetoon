@@ -13,9 +13,10 @@ of your own for a genre not listed), then find the joke inside that world.
 comics, unless the user asked for it (\`"request"\`) or the repo pins one
 (\`config genre\`).
 
-Draw genre **archetypes**, not a particular work: a grizzled starship captain
-in a generic uniform is fine; a specific show's captain, insignia or ship is
-not. Generalize to the class.
+**Parody the trope, not the property.** Evoke the familiar settings and
+character types of a genre's famous works (a cantina of odd aliens, an away
+team on a painted planet, a masked dark lord); never name the work or its
+characters, and never copy a specific character's design, insignia or ship.
 
 **Your own genres.** Users and repos add genres as genre files, and
 \`genreOptions\` offers them alongside the ones below (an option's \`notes\` is
