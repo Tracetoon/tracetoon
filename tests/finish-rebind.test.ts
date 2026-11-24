@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { findingsAgentId, parseFindings } from '../src/contribution/leanReview.ts';
-import { newWordShare } from '../src/workflow/rebind.ts';
+import { newWordShare, withoutComic } from '../src/workflow/rebind.ts';
+import { pageScript } from './pageScript.ts';
 import { BLOCKING_RULE } from '../src/commands/finish.ts';
 import { graphNext } from '../src/commands/digest.ts';
 import { lifecycle } from '../src/hook/lifecycle.ts';
@@ -16,6 +17,11 @@ import { makeRepo, tempDir } from './helpers.ts';
 setDefaultTimeout(180_000);
 
 const CLI = resolve(import.meta.dir, '../src/cli.ts');
+// A 1x1 PNG.
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
 let previous: string | undefined;
 let config: string;
 beforeEach(() => {
@@ -196,6 +202,42 @@ describe('finish and publish rebind', () => {
     expect(review.inputFingerprint).toBe(
       readLocal<any>(join(run.dir, 'review-input.json'))!.fingerprint,
     );
+  });
+
+  test('a comic added after the review never invalidates the review of the prose', () => {
+    const { repo, run } = preparedRun('none');
+    ok(repo.root, 'finish', '--run', run.id);
+    ok(
+      repo.root,
+      'review',
+      'import',
+      '--run',
+      run.id,
+      '--agent-id',
+      'a7c3e19f2b',
+      '--reviewer-model',
+      'sonnet',
+    );
+    // The correction round, while comic run draws the comic beside the reviews.
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      "The greeting uses the given name, or says hello when there is none.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n",
+    );
+    writeFileSync(join(run.dir, 'comic.json'), JSON.stringify(pageScript()));
+    mkdirSync(join(run.dir, 'out'), { recursive: true });
+    writeFileSync(join(run.dir, 'out', 'comic.png'), PIXEL);
+    // The comic's image and transcript are far more words than this short body.
+    const text = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(text.stdout + text.stderr).not.toContain('of the description is new');
+    expect(text.stdout).toContain('bound the review to this render');
+    expect(readFileSync(join(run.dir, 'final-body.md'), 'utf8')).toContain('Comic transcript');
+    // Prose that really grew past the review still refuses.
+    expect(
+      newWordShare(
+        'a b c d',
+        withoutComic(`a b c d\n\n<p align="center"><img src="{{tracetoon:comic-src}}" alt="x y z" width="760"></p>\n\n<details>\n<summary>Comic transcript</summary>\n\n1. q r s t\n\n</details>`),
+      ),
+    ).toBe(0);
   });
 
   test('with Review recheck: once, or unrendered edits, publish still refuses and says why', () => {
