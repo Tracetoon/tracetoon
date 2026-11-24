@@ -143,6 +143,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
     bad('request', "must be the user's request in words (or left out)");
   out.push(...genreProblems(s as ComicScript, opts));
   out.push(...personaProblems(s as ComicScript, opts));
+  out.push(...offerProblems(s as ComicScript, opts));
   out.push(...franchiseProblems(s as ComicScript));
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
@@ -466,6 +467,30 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
     warn(
       'Recent comics were already set in everyday life. A genre world (space opera, fantasy quest, heist, ...) usually lands harder; keep everyday only if nothing else fits.',
     );
+  return out;
+}
+
+/**
+ * The rest of the host's offer for the chosen genre: a meme the comic uses must
+ * be one of the three offered, and an assigned style is drawn as assigned.
+ */
+export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  if (!option) return out;
+  if (s.meme !== undefined && s.meme !== '') {
+    const ids = (option.memeOffer ?? []).map((m) => m.id);
+    if (typeof s.meme !== 'string' || !ids.includes(s.meme))
+      out.push({
+        where: 'meme',
+        problem: ids.length
+          ? `"${String(s.meme)}" wasn't offered; use one of ${ids.join(', ')}, or leave meme out`
+          : 'this genre offered no memes; leave meme out',
+      });
+  }
+  if (option.assignedStyle && !opts.pinnedStyle && typeof s.style === 'string' && !same(s.style, option.assignedStyle))
+    out.push({ where: 'style', problem: `this comic is assigned the style "${option.assignedStyle}" (genreOptions assignedStyle)` });
   return out;
 }
 

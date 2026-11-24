@@ -7,6 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { castOffer, parseCastEntry, type CastOffer, type CastPersona } from './casting.ts';
+import { BUILT_IN_MEMES, memeOffer, stylePick, type Meme } from './memes.ts';
 
 export interface Genre {
   id: string;
@@ -28,6 +29,10 @@ export interface Genre {
    * whole: each comic is offered five personas picked by seed.
    */
   cast?: CastPersona[];
+  /** Famous scenes, lines and tropes of the genre; each comic is offered three (memes.ts). */
+  memes?: Meme[];
+  /** Style weights; when present the host assigns each comic's style from them. */
+  styleMix?: Record<string, number>;
   /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
   source?: 'built-in' | 'user' | 'repo';
   /** The genre file it was read from (user and repo genres). */
@@ -36,7 +41,7 @@ export interface Genre {
 
 export const EVERYDAY = 'everyday';
 
-export const GENRES: Genre[] = [
+const BUILT_IN_GENRES: Genre[] = [
   {
     id: 'space-opera',
     name: 'Space opera',
@@ -309,6 +314,17 @@ export const GENRES: Genre[] = [
   },
 ];
 
+/** Anime fantasy is mostly full-color anime, with a manga page about one comic in six. */
+const STYLE_MIXES: Record<string, Record<string, number>> = {
+  'anime-fantasy': { 'anime-fantasy': 7, 'chibi-anime': 2, webtoon: 1, 'shonen-action': 2 },
+};
+
+export const GENRES: Genre[] = BUILT_IN_GENRES.map((g) => ({
+  ...g,
+  ...(BUILT_IN_MEMES[g.id]?.length ? { memes: BUILT_IN_MEMES[g.id] } : {}),
+  ...(STYLE_MIXES[g.id] ? { styleMix: STYLE_MIXES[g.id] } : {}),
+}));
+
 export const MAX_GENRE_CHARS = 40;
 
 export const genreById = (id: string | undefined, catalog: Genre[] = GENRES) =>
@@ -351,10 +367,23 @@ export interface GenreOption {
   notes?: string;
   /** The five personas this comic casts from, when the genre has a roster. */
   castOffer?: CastOffer;
+  /** Three genre memes this comic may use, when the genre has a pool. */
+  memeOffer?: Meme[];
+  /** The style the host assigned this comic, when the genre has a style mix. */
+  assignedStyle?: string;
 }
 
-const option = ({ id, name, setting, archetypes, props, jokeHooks, notes, cast }: Genre, seed = ''): GenreOption => {
+const option = (
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix }: Genre,
+  seed = '',
+  recentMemes: string[] = [],
+): GenreOption => {
   const offer = castOffer(cast, `${seed}\0${id}`);
+  const memePicks = memeOffer(memes, `${seed}\0${id}`, {
+    recent: recentMemes,
+    ...(offer ? { roles: [...new Set(offer.personas.map((p) => p.role))] } : {}),
+  });
+  const style = stylePick(styleMix, `${seed}\0${id}`);
   return {
     id,
     name,
@@ -365,6 +394,8 @@ const option = ({ id, name, setting, archetypes, props, jokeHooks, notes, cast }
     jokeHooks,
     ...(notes ? { notes } : {}),
     ...(offer ? { castOffer: offer } : {}),
+    ...(memePicks ? { memeOffer: memePicks } : {}),
+    ...(style ? { assignedStyle: style } : {}),
   };
 };
 
@@ -383,15 +414,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed)
+        ? option(g, opts.seed, opts.recentMemes)
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes));
 }

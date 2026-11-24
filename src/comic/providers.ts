@@ -96,7 +96,7 @@ export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
 /** Keeps the page a drawn comic rather than an illustration or render. */
 export const COMIC_MEDIUM =
-  "It must look like a drawn comic: inked line art with cel or painted coloring, dynamic staging and acting, real panel borders and gutters, lettering in balloons and caption boxes, and comic effects such as speed lines, impact bursts and sound effects where the scene calls for them. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
+  "It must look like a drawn comic: inked line art with cel or painted coloring, dynamic staging and acting, real panel borders and gutters, lettering in balloons and caption boxes, and comic effects such as speed lines, impact bursts and sound effects where the scene calls for them. Backgrounds follow each panel's focus: soft, out-of-focus or speed-line backgrounds behind dialogue and reaction panels so faces and lettering read cleanly; full detail for establishing shots and complex scenes. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
 
 /** The avoid-list for this script. */
 export function negativeFor(script: ComicScript): string {

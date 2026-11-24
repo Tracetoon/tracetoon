@@ -53,6 +53,18 @@ picked by seed (usually three main-cast roles, a nemesis and a side character;
 about one comic in five gets side characters only). Cast from those five and
 list their ids in the script's \`personas\`; \`comic check\` rejects any other.
 
+**Genre memes (optional).** A \`memes:\` list of up to 400 famous scenes, lines
+and tropes veteran fans know, each \`tier roles: meme — use\` (tier 1 iconic to
+3 deep cut; roles comma-separated, or \`any\`). Write each as an allusion,
+never naming the work. Each comic's \`genreOptions\` entry carries a
+\`memeOffer\` of three, weighted toward the best known, matched to the cast and
+never one a recent comic used. Use one when it fits the joke and set the
+script's \`meme\` to its id.
+
+**Style mix (optional).** A \`styleMix:\` list of \`style-id weight\` items. The
+host then assigns each comic's style (\`assignedStyle\`) from those weights, and
+\`comic check\` holds the script to it.
+
 ${GENRES.map(
   (g) => `## \`${g.id}\`: ${g.name}
 
@@ -61,7 +73,7 @@ ${GENRES.map(
 - **Props that carry the PR's words:** ${g.props.join('; ')}
 - **Joke hooks:** ${g.jokeHooks.join('; ')}
 - **Styles that suit it:** ${g.styles.map((s) => `\`${s}\``).join(', ')}
-${g.cast?.length ? `- **Cast:** a roster of ${g.cast.length} personas; each comic is offered five in \`castOffer\`. Cast from those.\n` : ''}`,
+${g.cast?.length ? `- **Cast:** a roster of ${g.cast.length} personas; each comic is offered five in \`castOffer\`. Cast from those.\n` : ''}${g.memes?.length ? `- **Memes:** ${g.memes.length} famous scenes and lines; each comic is offered three in \`memeOffer\`.\n` : ''}${g.styleMix ? `- **Style mix:** ${Object.entries(g.styleMix).map(([k, v]) => `\`${k}\` ${v}`).join(', ')}; each comic's style is assigned in \`assignedStyle\`.\n` : ''}`,
 ).join('\n')}`;
 export const GENRES_MD = md;
 if (import.meta.main)

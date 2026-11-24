@@ -127,6 +127,8 @@ export interface ComicSummary {
   castNames?: string[];
   /** How the lead looks, in a few words: later comics cast someone who looks different. */
   leadLook?: string;
+  /** The genre meme used, so later comics are offered others. */
+  meme?: string;
 }
 
 /** A character's place in one panel. */
@@ -260,6 +262,8 @@ export interface ComicScript {
    * castOffer), when the chosen genre has a roster.
    */
   personas?: string[];
+  /** The id of the offered genre meme this comic uses (context genreOptions memeOffer), if any. */
+  meme?: string;
   /**
    * The lead character's look in a few plain words (age, build, hair,
    * clothes), as drawn. Recorded so later comics don't cast the same design.

@@ -49,6 +49,18 @@ picked by seed (usually three main-cast roles, a nemesis and a side character;
 about one comic in five gets side characters only). Cast from those five and
 list their ids in the script's `personas`; `comic check` rejects any other.
 
+**Genre memes (optional).** A `memes:` list of up to 400 famous scenes, lines
+and tropes veteran fans know, each `tier roles: meme — use` (tier 1 iconic to
+3 deep cut; roles comma-separated, or `any`). Write each as an allusion,
+never naming the work. Each comic's `genreOptions` entry carries a
+`memeOffer` of three, weighted toward the best known, matched to the cast and
+never one a recent comic used. Use one when it fits the joke and set the
+script's `meme` to its id.
+
+**Style mix (optional).** A `styleMix:` list of `style-id weight` items. The
+host then assigns each comic's style (`assignedStyle`) from those weights, and
+`comic check` holds the script to it.
+
 ## `space-opera`: Space opera
 
 - **Setting:** anywhere a space saga goes: starship decks, docking bays, alien bazaars, strange planets and open space
@@ -56,6 +68,7 @@ list their ids in the script's `personas`; `comic check` rejects any other.
 - **Props that carry the PR's words:** bridge viewscreen; red-alert panel; cargo manifest; airlock warning sign; comms hail
 - **Joke hooks:** the ship AI takes an order literally; red alert over something tiny; the hull breach is one loose bolt; retries are wave after wave of fighters at the same shield; a race condition is two fighters diving for one docking slot; a cache is a decoy fleet the enemy keeps shooting; a flaky test is a blaster that fires every other pull
 - **Styles that suit it:** `space-opera`, `superhero`, `ligne-claire`
+- **Memes:** 313 famous scenes and lines; each comic is offered three in `memeOffer`.
 
 ## `anime-fantasy`: Anime fantasy
 
@@ -65,6 +78,8 @@ list their ids in the script's `personas`; `comic check` rejects any other.
 - **Joke hooks:** a status window announces a level up for something tiny; a time loop sends the hero back to the last save point; the mage casts one enormous spell a day, then collapses; one stray stroke in a drawn glyph turns the spell into something else; the elf calls a ten-year-old bug recent; the guild clerk rejects the quest form over one missing field
 - **Styles that suit it:** `anime-fantasy`, `chibi-anime`, `webtoon`, `shonen-action`
 - **Cast:** a roster of 39 personas; each comic is offered five in `castOffer`. Cast from those.
+- **Memes:** 256 famous scenes and lines; each comic is offered three in `memeOffer`.
+- **Style mix:** `anime-fantasy` 7, `chibi-anime` 2, `webtoon` 1, `shonen-action` 2; each comic's style is assigned in `assignedStyle`.
 
 ## `cyberpunk`: Cyberpunk
 

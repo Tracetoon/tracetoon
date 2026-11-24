@@ -343,6 +343,7 @@ export function contextCmd(
     seed: `${truth.target?.repo ?? originRepo(truth) ?? ''} ${truth.head}`,
     pinned: pinnedGenre,
     catalog: genreCatalog(truth.toplevel),
+    recentMemes: recent.flatMap((c) => (c.meme ? [c.meme] : [])),
   });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,

@@ -330,6 +330,7 @@ export function comicSummary(script: ComicScript): ComicSummary {
     ...(typeof script.leadLook === 'string' && script.leadLook.trim()
       ? { leadLook: script.leadLook.trim().toLowerCase().slice(0, MAX_LEAD_LOOK) }
       : {}),
+    ...(typeof script.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(script.meme) ? { meme: script.meme } : {}),
   };
 }
 

@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { userConfigPath } from '../config.ts';
 import { GENRES, MAX_GENRE_CHARS, type Genre } from './genres.ts';
 import { CAST_ROLES, MAX_CAST_ENTRY, parseCastEntry, type CastPersona } from './casting.ts';
+import { MAX_MEME_ENTRY, parseMemeEntry, parseStyleMixEntry, withIds } from './memes.ts';
 import { FRANCHISE_NAMES } from './script.ts';
 import { styleById } from './styles.ts';
 
@@ -38,6 +39,8 @@ const LISTS = {
   jokeHooks: { min: 0, max: 8 },
   styles: { min: 0, max: 6 },
   cast: { min: 0, max: 48 },
+  memes: { min: 0, max: 400 },
+  styleMix: { min: 0, max: 6 },
 } as const;
 type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
@@ -154,7 +157,7 @@ export function parseGenreFile(
     const items = v.map((s) => s.trim()).filter(Boolean);
     if (items.length < LISTS[key].min || items.length > LISTS[key].max)
       bad(key, `needs ${LISTS[key].min}–${LISTS[key].max} items (has ${items.length})`);
-    const limit = key === 'cast' ? MAX_CAST_ENTRY : LIMITS.item;
+    const limit = key === 'cast' ? MAX_CAST_ENTRY : key === 'memes' ? MAX_MEME_ENTRY : LIMITS.item;
     items.forEach((s, i) => {
       if (s.length > limit) bad(`${key}[${i}]`, `keep it under ${limit} characters`);
     });
@@ -173,6 +176,21 @@ export function parseGenreFile(
     else if (cast.some((c) => c.id === persona.id)) bad(`cast[${i}]`, `"${persona.name}" repeats another persona's name`);
     else cast.push(persona);
   });
+  // Genre memes: `tier roles: meme — use`. Each comic is offered three.
+  const memeEntries = list('memes');
+  const rawMemes = memeEntries.flatMap((e, i) => {
+    const m = parseMemeEntry(e);
+    if (!m) bad(`memes[${i}]`, 'write it as "tier roles: meme — use", tier 1 (iconic) to 3 (deep cut), roles comma-separated or any');
+    return m ? [m] : [];
+  });
+  // Style mix: `style weight`; the host assigns each comic's style from it.
+  const styleMix: Record<string, number> = {};
+  list('styleMix').forEach((e, i) => {
+    const pair = parseStyleMixEntry(e);
+    if (!pair) bad(`styleMix[${i}]`, 'write it as "style-id weight", e.g. "anime-fantasy 7"');
+    else if (!styleById(pair[0])) bad(`styleMix[${i}]`, `"${pair[0]}" is not a Tracetoon style id (see references/styles.md)`);
+    else styleMix[pair[0]] = pair[1];
+  });
   styles.forEach((s, i) => {
     if (!styleById(s)) bad(`styles[${i}]`, `"${s}" is not a Tracetoon style id (see references/styles.md)`);
   });
@@ -185,6 +203,7 @@ export function parseGenreFile(
     ...props.map((s, i): [string, string] => [`props[${i}]`, s]),
     ...jokeHooks.map((s, i): [string, string] => [`jokeHooks[${i}]`, s]),
     ...castEntries.map((s, i): [string, string] => [`cast[${i}]`, s]),
+    ...memeEntries.map((s, i): [string, string] => [`memes[${i}]`, s]),
     ['body', body],
   ];
   for (const [where, s] of texts) {
@@ -209,6 +228,8 @@ export function parseGenreFile(
       styles,
       ...(body ? { notes: body } : {}),
       ...(cast.length ? { cast } : {}),
+      ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
+      ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),
       ...(opts.path ? { path: opts.path } : {}),
     },

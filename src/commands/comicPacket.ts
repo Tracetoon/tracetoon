@@ -63,11 +63,21 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
   const catalog = genreCatalog(repo.root);
   const asked = opts.genre?.trim();
   const genres = asked
-    ? genreOptions([], { pinned: asked, catalog, seed: `${repo.root} ${repo.branch} ${run.id}` })
+    ? genreOptions([], {
+        pinned: asked,
+        catalog,
+        seed: `${repo.root} ${repo.branch} ${run.id}`,
+        recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
+      })
     : (ctx?.comic?.genreOptions ??
       genreOptions(
         (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.genre ? [c.genre] : [])),
-        { seed: `${repo.root} ${repo.branch}`, pinned: pinnedGenre, catalog },
+        {
+          seed: `${repo.root} ${repo.branch}`,
+          pinned: pinnedGenre,
+          catalog,
+          recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
+        },
       ));
   const hint = castHint(`${repo.root} ${repo.branch} ${run.id}`);
   const skillFiles = comicSkillFiles();
