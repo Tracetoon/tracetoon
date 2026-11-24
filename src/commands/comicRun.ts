@@ -377,29 +377,50 @@ async function drive(root: string, run: Run, opts: ComicRunOpts): Promise<ComicR
       if (++failures >= 2) break;
       continue;
     }
-    try {
-      writeFileSync(String(n.result), JSON.stringify(extractJson(r.reply), null, 2) + '\n');
-    } catch {
-      writeFileSync(String(n.result), r.reply);
+    const task = String(n.task);
+    const importAnswer = async (reply: string) => {
+      let parsed = true;
+      try {
+        writeFileSync(String(n.result), JSON.stringify(extractJson(reply), null, 2) + '\n');
+      } catch {
+        writeFileSync(String(n.result), reply);
+        parsed = false;
+      }
+      const imported = await tt(['comic', 'loop-import', '--task', task, '--agent-id', r.sessionId]);
+      return { parsed, imported };
+    };
+    let { parsed, imported } = await importAnswer(r.reply);
+    if (imported.code !== 0) {
+      // One correction in the same judge session: a reply that wasn't the JSON
+      // answer (the live run asked a checker six times), or one the loop rejected.
+      try {
+        r = await call(
+          'judge',
+          {
+            prompt: parsed
+              ? `Tracetoon could not use that answer:\n${firstLine(imported.json.error)}\n${String(imported.json.error ?? '').split('\n').slice(1).join('\n')}\nReply with ONLY the corrected JSON answer (no prose, no code fence, no files).`
+              : 'Your reply was not the JSON answer. Reply with ONLY the JSON object in the schema the packet gives (no prose, no code fence, no files, no commands).',
+            cwd: dir,
+            timeoutMs: timeoutMs(),
+            tag: task.replace(/:/g, '-'),
+            resume: r.sessionId,
+          },
+          task,
+        );
+        ({ imported } = await importAnswer(r.reply));
+      } catch {
+        /* counted below */
+      }
     }
-    const imported = await tt([
-      'comic',
-      'loop-import',
-      '--task',
-      String(n.task),
-      '--agent-id',
-      r.sessionId,
-    ]);
-    // An unusable answer still spent its judge call; the loop asks again within its budget.
     if (imported.code === 0) {
-      recordJudgeProvenance(run, String(n.task), {
+      recordJudgeProvenance(run, task, {
         source: 'tracetoon-run',
         runner: agent.runner,
         sessionId: r.sessionId,
         verifiedModel: r.verifiedModel,
       });
       failures = 0;
-    }
+    } else if (++failures >= 2) break;
   }
   // The loop could not finish: keep the image already rendered, if any.
   if (existsSync(png)) {

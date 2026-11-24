@@ -98,10 +98,12 @@ not switch to another run.
 
    **2b. Reviewed brief path (the default).** With `Drafter model:` set,
    prepare's `next` makes you the coordinator: start ONE fresh drafter with
-   `drafter-packet.md` (it holds steps 1–8, the brief, the reviews and the
-   comic, which Tracetoon runs in parallel, and publish), wait for its single reply `PUBLISHED <url>`, and relay the
-   URL, plus its `COMIC SETUP:` line if it has one. Follow that `next`
-   exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
+   `drafter-packet.md` (it holds steps 1–9, the brief, the reviews and the
+   comic, which Tracetoon runs in parallel), wait for its single reply
+   `READY TO PUBLISH`, then run `tracetoon publish --run <id>` yourself (the
+   drafter never publishes: your session may push and open the PR, a
+   subagent's may not) and relay the URL, plus the drafter's `COMIC SETUP:`
+   line if it has one. Follow that `next` exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
    check the PR afterwards: every call you make re-reads the whole session, the
    drafter's don't. The steps below are for the drafter, or for you when
    prepare's `next` says to draft yourself. A drafter drafts; fresh independent
@@ -138,7 +140,10 @@ not switch to another run.
       lists, then finish again; up to three rounds) and writes the review
       packets. Follow its `Next:` and run finish after each step until it
       says `tracetoon publish --run <id>`. Tags left in a body mean it was
-      never rendered.
+      never rendered. finish, `review run` and `comic run` are long blocking
+      calls like checks: if one is moved to the background, run the same
+      command again in the foreground (it waits for the running one and
+      prints its result); never start a different one on the run meanwhile.
    5. **Runner tracetoon** (`next` says `review run`): no reviewer agent; run
       `tracetoon review run --all --run <id>` once, as one blocking call. It
       runs every planned pass in parallel, imports each and prints one merged

@@ -733,6 +733,11 @@ describe('tracetoon review run under Claude Code', () => {
     expect(call.args.slice(0, 3)).toEqual(['-p', '--model', 'haiku']);
     expect(call.args).toContain('--effort');
     expect(call.args[call.args.indexOf('--tools') + 1]).toBe('');
+    // The empty MCP config goes through a file: a JSON argument would lose its
+    // quotes when Claude Code is a .cmd shim run through a Windows shell.
+    const mcp = call.args[call.args.indexOf('--mcp-config') + 1]!;
+    expect(mcp).not.toContain('{');
+    expect(JSON.parse(readFileSync(mcp, 'utf8'))).toEqual({ mcpServers: {} });
     expect(call.prompt).toContain('reply with ONLY that JSON object');
     // The parent session's id is not handed to the nested reviewer.
     expect((call as any).env.session).toBeNull();
@@ -750,6 +755,19 @@ describe('tracetoon review run under Claude Code', () => {
       FAKE_CLAUDE_MODEL: 'claude-sonnet-5-5',
     });
     expect(out.warnings.join('\n')).toContain('not claude-haiku-5-5');
+  });
+});
+
+describe('Windows shell arguments', () => {
+  test('shellArgs keeps empty arguments and quotes paths with spaces', async () => {
+    const { shellArgs } = await import('../src/comic/providers.ts');
+    expect(shellArgs(['-p', '--tools', '', '--mcp-config', 'C:\\Users\\A B\\.tracetoon-empty-mcp.json'])).toEqual([
+      '-p',
+      '--tools',
+      '""',
+      '--mcp-config',
+      '"C:\\Users\\A B\\.tracetoon-empty-mcp.json"',
+    ]);
   });
 });
 

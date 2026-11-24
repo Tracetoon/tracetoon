@@ -420,15 +420,17 @@ describe('evidence graph', () => {
         expect(prepared.json.drafter.model).toBe(model);
         expect(prepared.json.next).toContain("Coordinate; don't draft.");
         expect(prepared.json.next).toContain(host === 'codex' ? `model: "${model}"` : `model "${model}"`);
-        // The drafter publishes; the coordinator only relays its one reply.
-        expect(prepared.json.next).toContain('PUBLISHED <url>');
-        expect(prepared.json.next).not.toContain(`tracetoon publish --run ${run}`);
+        // The drafter stops at READY TO PUBLISH; the coordinator publishes (its
+        // permissions may push and open the PR, a subagent's may not).
+        expect(prepared.json.next).toContain('READY TO PUBLISH');
+        expect(prepared.json.next).toContain(`tracetoon publish --run ${run}`);
         expect(prepared.json.next).not.toContain('Drafting rules');
         const packet = readFileSync(prepared.json.drafter.packet, 'utf8');
         expect(packet).toContain('## Evidence brief');
         expect(packet).toContain('Drafting rules');
-        expect(packet).toContain(`tracetoon publish --run ${run}`);
-        expect(packet).toContain('PUBLISHED <PR URL>');
+        expect(packet).toContain(`tracetoon publish --run ${run}\`, stop there: don't run publish`);
+        expect(packet).toContain('READY TO PUBLISH');
+        expect(packet).not.toContain('PUBLISHED <PR URL>');
         expect(packet).toContain('Send no other messages');
         expect(packet).not.toContain('quick path');
         const brief = cli(repo.root, '--json', 'query', 'brief', '--run', run);
