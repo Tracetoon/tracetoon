@@ -8,8 +8,8 @@
  */
 import { createHash } from 'node:crypto';
 
-/** Roughly one comic in three gets a suggestion. */
-export const CAST_HINT_RATE = 1 / 3;
+/** Roughly one comic in five gets a suggestion: noticeable across a run, not the point of every comic. */
+export const CAST_HINT_RATE = 1 / 5;
 
 /**
  * People a comic might include. Backgrounds, ages, bodies and LGBTQ+ people

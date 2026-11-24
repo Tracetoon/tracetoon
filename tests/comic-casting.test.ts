@@ -8,12 +8,12 @@ import type { ComicScript } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
 
 describe('casting by rotation', () => {
-  test('about one comic in three gets a hint, stable for its seed', () => {
+  test('about one comic in five gets a hint, stable for its seed', () => {
     const seeds = Array.from({ length: 3000 }, (_, i) => `repo branch run-${i}`);
     const hints = seeds.map((s) => castHint(s));
     const share = hints.filter(Boolean).length / seeds.length;
-    expect(share).toBeGreaterThan(0.28);
-    expect(share).toBeLessThan(0.39);
+    expect(share).toBeGreaterThan(0.15);
+    expect(share).toBeLessThan(0.25);
     expect(castHint('repo branch run-7')).toBe(hints[7]);
   });
 
