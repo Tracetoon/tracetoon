@@ -339,6 +339,9 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   `low-angle`, `high-angle`, `overhead`, `dutch`, `over-shoulder` or
   `silhouette`. **`effects`** (per panel): any of `speed-lines`,
   `impact-burst`, `focus-lines`, `motion-blur`, `emanata`, `shake`.
+- **`personas`**: when the chosen genre came with a `castOffer`, the ids
+  of the offered personas the comic casts. `comic check` rejects an id that
+  wasn't offered.
 - **`leadLook`** (optional): the lead's age, build, hair and clothes in a
   few plain words ("wiry old man, bald, orange flight suit"). `comic check`
   warns when it matches a recent comic's lead.

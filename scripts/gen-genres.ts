@@ -45,6 +45,14 @@ styles:
 Optional notes for the comic author.
 \`\`\`
 
+**A persona roster (optional).** A genre file can add a \`cast:\` list of up to
+48 personas, each written \`role: name — details\` with the role one of hero,
+mage, warrior, healer, scout, nemesis or side. The author never sees the whole
+roster: each comic's \`genreOptions\` entry carries a \`castOffer\` of five,
+picked by seed (usually three main-cast roles, a nemesis and a side character;
+about one comic in five gets side characters only). Cast from those five and
+list their ids in the script's \`personas\`; \`comic check\` rejects any other.
+
 ${GENRES.map(
   (g) => `## \`${g.id}\`: ${g.name}
 
@@ -53,7 +61,7 @@ ${GENRES.map(
 - **Props that carry the PR's words:** ${g.props.join('; ')}
 - **Joke hooks:** ${g.jokeHooks.join('; ')}
 - **Styles that suit it:** ${g.styles.map((s) => `\`${s}\``).join(', ')}
-`,
+${g.cast?.length ? `- **Cast:** a roster of ${g.cast.length} personas; each comic is offered five in \`castOffer\`. Cast from those.\n` : ''}`,
 ).join('\n')}`;
 export const GENRES_MD = md;
 if (import.meta.main)

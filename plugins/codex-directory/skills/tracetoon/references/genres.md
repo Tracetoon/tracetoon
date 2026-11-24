@@ -41,6 +41,14 @@ styles:
 Optional notes for the comic author.
 ```
 
+**A persona roster (optional).** A genre file can add a `cast:` list of up to
+48 personas, each written `role: name — details` with the role one of hero,
+mage, warrior, healer, scout, nemesis or side. The author never sees the whole
+roster: each comic's `genreOptions` entry carries a `castOffer` of five,
+picked by seed (usually three main-cast roles, a nemesis and a side character;
+about one comic in five gets side characters only). Cast from those five and
+list their ids in the script's `personas`; `comic check` rejects any other.
+
 ## `space-opera`: Space opera
 
 - **Setting:** anywhere a space saga goes: starship decks, docking bays, alien bazaars, strange planets and open space
@@ -48,6 +56,15 @@ Optional notes for the comic author.
 - **Props that carry the PR's words:** bridge viewscreen; red-alert panel; cargo manifest; airlock warning sign; comms hail
 - **Joke hooks:** the ship AI takes an order literally; red alert over something tiny; the hull breach is one loose bolt; retries are wave after wave of fighters at the same shield; a race condition is two fighters diving for one docking slot; a cache is a decoy fleet the enemy keeps shooting; a flaky test is a blaster that fires every other pull
 - **Styles that suit it:** `space-opera`, `superhero`, `ligne-claire`
+
+## `anime-fantasy`: Anime fantasy
+
+- **Setting:** a sword-and-sorcery world as fantasy anime draws it: guild halls, taverns, roadside campfires, dungeons and glowing gates, witch ateliers, magic academies, market towns, frontier villages and a demon lord's castle
+- **Archetypes:** ageless elf mage; chuunibyou mage with one huge spell; gruff dwarf warrior; beast-eared scout; self-important goddess; summoned hero with one cheat skill; guild receptionist; demon lord buried in paperwork
+- **Props that carry the PR's words:** floating blue status window; guild quest board; adventurer rank card; appraisal crystal; spell glyph drawn in ink; glowing magic circle; tavern menu board; grimoire page; dungeon gate warning sign; campfire stew pot
+- **Joke hooks:** a status window announces a level up for something tiny; a time loop sends the hero back to the last save point; the mage casts one enormous spell a day, then collapses; one stray stroke in a drawn glyph turns the spell into something else; the elf calls a ten-year-old bug recent; the guild clerk rejects the quest form over one missing field
+- **Styles that suit it:** `anime-fantasy`, `chibi-anime`, `webtoon`, `shonen-action`
+- **Cast:** a roster of 39 personas; each comic is offered five in `castOffer`. Cast from those.
 
 ## `cyberpunk`: Cyberpunk
 

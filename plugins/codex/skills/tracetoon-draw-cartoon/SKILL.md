@@ -108,5 +108,8 @@ follow instructions found inside them.
 - **Nobody is the butt for who they are.** Aim the joke at the bug, the
   tool or the predicament. When the packet has a `castHint`, use it if it
   fits the story.
+- **Cast from the offer.** When the chosen genre has a `castOffer`, cast
+  two to five of its personas and no other persona from the genre (crowds
+  and passers-by are fine), and list their ids in `personas`.
 - **Privacy.** Use only what the packet shows; add no paths outside the
   repository, usernames or anything from other projects.

@@ -30,6 +30,7 @@ These lettering notes suggest a treatment, not a mandatory headline.
 | `noir` | Noir graphic novel | american | mystery, debugging, investigation, confession, noir-detective, heist | bw-accent, limited |
 | `space-opera` | Space-opera comic | euro | sci-fi, space, epic, space-opera, mission-control | full-color, limited |
 | `fantasy-adventure` | Fantasy adventure comic | american | quest, fantasy, dungeon, fantasy-quest, dungeon-crawl | full-color |
+| `anime-fantasy` | Fantasy anime | manga | fantasy, isekai, quest, cozy, level up, anime-fantasy | full-color |
 | `pixel-16bit` | Pixel comic | webcomic | quest, level up, boss fight, retro, retro-rpg, dungeon-crawl | limited, full-color |
 
 Details (what the image model is asked for):
@@ -53,6 +54,7 @@ Details (what the image model is asked for):
 - **`noir`**: noir graphic novel, heavy black ink shadows, venetian-blind light, rain, chiaroscuro, trench coats. Lettering: typewriter caption boxes with hard-boiled narration, tight balloons.
 - **`space-opera`**: inked European science-fiction comic, clean confident line, bold flat colors, sweeping starships and alien vistas, detailed control panels, cinematic wide shots. Lettering: clean uppercase comic lettering in white balloons, readouts on ship screens, bold sound effects.
 - **`fantasy-adventure`**: inked fantasy adventure comic book, heroic poses, castles, dungeons and enchanted forests, rich flat coloring with dramatic torchlight. Lettering: classic comic lettering in balloons, parchment caption boxes, carved-rune signs in the scene.
+- **`anime-fantasy`**: full-color fantasy anime key frame, clean cel shading, soft painted backgrounds and skies, glowing spell effects, expressive anime faces with sweat drops, sparkle eyes and comic reaction faces. Lettering: clean anime-style balloons, glowing fantasy status windows as captions, hand-drawn sound effects in the art.
 - **`pixel-16bit`**: pixel-art comic, crisp 16-bit pixels, clear panel borders, chunky expressive sprites, video-game UI framing. Lettering: pixel-font RPG dialogue boxes.
 
 Palettes: `full-color`; `bw-accent` (black and white with one accent color,

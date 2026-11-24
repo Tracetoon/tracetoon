@@ -256,6 +256,11 @@ export const PALETTES: Palette[] = ['full-color', 'bw-accent', 'duotone', 'limit
 export interface ComicScript {
   v: 2;
   /**
+   * The ids of the offered personas this comic casts (context genreOptions
+   * castOffer), when the chosen genre has a roster.
+   */
+  personas?: string[];
+  /**
    * The lead character's look in a few plain words (age, build, hair,
    * clothes), as drawn. Recorded so later comics don't cast the same design.
    */

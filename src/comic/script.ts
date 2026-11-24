@@ -1,7 +1,7 @@
 /** Checks a comic script before any art is made. */
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
-import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
 import {
   ASPECTS,
   BEATS,
@@ -61,6 +61,8 @@ export interface CheckOpts {
   evidenceText?: string;
   /** Genres available here (built-in plus user and repo genre files). */
   genres?: Genre[];
+  /** The genres offered for this comic (context genreOptions), with any cast offers. */
+  genreOptions?: GenreOption[];
 }
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
@@ -140,6 +142,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.request !== undefined && (typeof s.request !== 'string' || !s.request.trim()))
     bad('request', "must be the user's request in words (or left out)");
   out.push(...genreProblems(s as ComicScript, opts));
+  out.push(...personaProblems(s as ComicScript, opts));
   out.push(...franchiseProblems(s as ComicScript));
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
@@ -467,12 +470,43 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
 }
 
 /**
+ * When the chosen genre came with a cast offer, the comic casts from it: the
+ * host picks the five personas so a run of comics doesn't settle on the same
+ * favourites. `personas` lists the offered ids used.
+ */
+export function personaProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const offer = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!))?.castOffer;
+  if (!offer) return out;
+  const offered = new Map(offer.personas.map((p) => [p.id, p]));
+  const list = offer.personas.map((p) => `${p.id} (${p.role})`).join(', ');
+  if (!Array.isArray(s.personas) || !s.personas.length) {
+    out.push({ where: 'personas', problem: `is required for this genre: list the ids of the offered personas you cast, from ${list}` });
+    return out;
+  }
+  for (const [i, id] of s.personas.entries()) {
+    if (typeof id !== 'string' || !offered.has(id))
+      out.push({
+        where: `personas[${i}]`,
+        problem:
+          offer.kind === 'side-only'
+            ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
+            : `"${String(id)}" wasn't offered; cast from ${list}`,
+      });
+  }
+  if (s.personas.length < 2)
+    out.push({ where: 'personas', problem: 'cast at least two of the offered personas', severity: 'warning' });
+  return out;
+}
+
+/**
  * Names that belong to one specific work. Genre archetypes are welcome (a
  * starship captain, a wizard); a particular franchise's characters, ships and
  * trademarks are not, unless the user asked for them.
  */
 export const FRANCHISE_NAMES =
-  /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man)\b/i;
+  /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man|frieren|himmel|konosuba|megumin|kazuma|re: ?zero|solo leveling|jinwoo|witch hat atelier|rimuru|ainz)\b/i;
 
 export function franchiseProblems(s: ComicScript): ScriptProblem[] {
   if (s.request?.trim()) return [];

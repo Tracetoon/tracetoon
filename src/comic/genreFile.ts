@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { userConfigPath } from '../config.ts';
 import { GENRES, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { CAST_ROLES, MAX_CAST_ENTRY, parseCastEntry, type CastPersona } from './casting.ts';
 import { FRANCHISE_NAMES } from './script.ts';
 import { styleById } from './styles.ts';
 
@@ -36,6 +37,7 @@ const LISTS = {
   props: { min: 1, max: 10 },
   jokeHooks: { min: 0, max: 8 },
   styles: { min: 0, max: 6 },
+  cast: { min: 0, max: 48 },
 } as const;
 type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
@@ -152,8 +154,9 @@ export function parseGenreFile(
     const items = v.map((s) => s.trim()).filter(Boolean);
     if (items.length < LISTS[key].min || items.length > LISTS[key].max)
       bad(key, `needs ${LISTS[key].min}–${LISTS[key].max} items (has ${items.length})`);
+    const limit = key === 'cast' ? MAX_CAST_ENTRY : LIMITS.item;
     items.forEach((s, i) => {
-      if (s.length > LIMITS.item) bad(`${key}[${i}]`, `keep it under ${LIMITS.item} characters`);
+      if (s.length > limit) bad(`${key}[${i}]`, `keep it under ${limit} characters`);
     });
     return items;
   };
@@ -161,6 +164,15 @@ export function parseGenreFile(
   const props = list('props');
   const jokeHooks = list('jokeHooks');
   const styles = list('styles').map((s) => s.toLowerCase());
+  // A persona roster: `role: name — details`. The author is offered five per comic.
+  const castEntries = list('cast');
+  const cast: CastPersona[] = [];
+  castEntries.forEach((e, i) => {
+    const persona = parseCastEntry(e);
+    if (!persona) bad(`cast[${i}]`, `write it as "role: name — details", role one of ${CAST_ROLES.join(', ')}`);
+    else if (cast.some((c) => c.id === persona.id)) bad(`cast[${i}]`, `"${persona.name}" repeats another persona's name`);
+    else cast.push(persona);
+  });
   styles.forEach((s, i) => {
     if (!styleById(s)) bad(`styles[${i}]`, `"${s}" is not a Tracetoon style id (see references/styles.md)`);
   });
@@ -172,6 +184,7 @@ export function parseGenreFile(
     ...archetypes.map((s, i): [string, string] => [`archetypes[${i}]`, s]),
     ...props.map((s, i): [string, string] => [`props[${i}]`, s]),
     ...jokeHooks.map((s, i): [string, string] => [`jokeHooks[${i}]`, s]),
+    ...castEntries.map((s, i): [string, string] => [`cast[${i}]`, s]),
     ['body', body],
   ];
   for (const [where, s] of texts) {
@@ -195,6 +208,7 @@ export function parseGenreFile(
       jokeHooks,
       styles,
       ...(body ? { notes: body } : {}),
+      ...(cast.length ? { cast } : {}),
       ...(opts.source ? { source: opts.source } : {}),
       ...(opts.path ? { path: opts.path } : {}),
     },

@@ -22,7 +22,7 @@ import {
 } from '../comic/compose.ts';
 import { FORMATS, formatById } from '../comic/formats.ts';
 import { freshStyles, styleById } from '../comic/styles.ts';
-import { genreById, type Genre } from '../comic/genres.ts';
+import { genreById, type Genre, type GenreOption } from '../comic/genres.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
 import {
   artPrompt,
@@ -99,7 +99,7 @@ interface Loaded {
 function checkOptsFor(run: Run, root: string): CheckOpts {
   const config = loadConfig(root);
   const ctx = readJson<{
-    comic?: { recentStyles?: string[]; recentComics?: ComicSummary[] };
+    comic?: { recentStyles?: string[]; recentComics?: ComicSummary[]; genreOptions?: GenreOption[] };
   }>(run, 'context.json');
   const evidence = ['digest.json', 'changes.patch']
     .map((f) => readText(run, f))
@@ -110,6 +110,7 @@ function checkOptsFor(run: Run, root: string): CheckOpts {
     recentStyles: ctx?.comic?.recentStyles ?? [],
     recentComics: ctx?.comic?.recentComics ?? [],
     genres: genreCatalog(root),
+    ...(ctx?.comic?.genreOptions ? { genreOptions: ctx.comic.genreOptions } : {}),
     ...(evidence.length ? { evidenceText: evidence.join('\n') } : {}),
   };
 }

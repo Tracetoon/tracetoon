@@ -63,7 +63,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
   const catalog = genreCatalog(repo.root);
   const asked = opts.genre?.trim();
   const genres = asked
-    ? genreOptions([], { pinned: asked, catalog })
+    ? genreOptions([], { pinned: asked, catalog, seed: `${repo.root} ${repo.branch} ${run.id}` })
     : (ctx?.comic?.genreOptions ??
       genreOptions(
         (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.genre ? [c.genre] : [])),
