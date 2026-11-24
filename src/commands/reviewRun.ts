@@ -24,7 +24,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import { codexBin, codexHome, runCli } from '../comic/providers.ts';
+import { codexBin, codexHome, emptyMcpConfig, runCli } from '../comic/providers.ts';
 import { hostAgent } from '../util/host.ts';
 import {
   FINDING_KINDS,
@@ -636,7 +636,7 @@ async function runPass(
       '',
       '--strict-mcp-config',
       '--mcp-config',
-      '{"mcpServers":{}}',
+      emptyMcpConfig(run.dir),
       '--output-format',
       'json',
     ];

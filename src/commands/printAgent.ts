@@ -12,7 +12,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { codexBin, runCli } from '../comic/providers.ts';
+import { codexBin, emptyMcpConfig, runCli } from '../comic/providers.ts';
 import {
   claudeBin,
   claudeChildEnv,
@@ -87,7 +87,7 @@ export async function runPrint(agent: PrintAgent, call: PrintCall): Promise<Prin
       ...(call.readDirs ?? []).flatMap((d) => ['--add-dir', d]),
       '--strict-mcp-config',
       '--mcp-config',
-      '{"mcpServers":{}}',
+      emptyMcpConfig(call.cwd),
       '--output-format',
       'json',
     ];
