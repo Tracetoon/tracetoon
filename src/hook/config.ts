@@ -10,11 +10,17 @@ import {
 import { dirname } from 'node:path';
 import type { Json } from '../integrations/types.ts';
 
-/** A hook command Tracetoon registered (recognized by "tracetoon … hook pre-pr/lifecycle"). */
+/**
+ * A hook command Tracetoon registered: "tracetoon … hook pre-pr/lifecycle", or the
+ * same subcommand with its `--agent` flag when it runs from a checkout whose path
+ * doesn't say tracetoon (`bun /work/wt-fix/src/cli.ts hook pre-pr --agent claude`).
+ * Without the second form a rerun of setup added a duplicate, and removing the
+ * checkout left hooks that fail on every tool call.
+ */
 export const isOurs = (command: unknown): command is string =>
   typeof command === 'string' &&
-  /tracetoon/i.test(command) &&
-  /hook (?:pre-pr|lifecycle)\b/.test(command);
+  /hook (?:pre-pr|lifecycle)\b/.test(command) &&
+  (/tracetoon/i.test(command) || /\bhook (?:pre-pr|lifecycle)\b.*\s--agent [a-z-]+/.test(command));
 
 /** A JSON object from the file; {} if missing or empty. Throws on anything else. */
 export function readStrict(file: string): Json {
