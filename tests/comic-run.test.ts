@@ -79,8 +79,11 @@ describe('tracetoon comic run', () => {
       env.FAKE_COMIC_AUTHOR_FIRST = 'bad';
       const { repo, runDir } = prepared();
       const r = cli(repo.root, '--json', 'comic', 'run');
-      expect(r.json.state).toBe('drawn');
-      expect(r.code).toBe(0);
+      // State and reason together, so a failure says why the comic was skipped.
+      expect({ code: r.code, state: r.json?.state, reason: r.json?.reason ?? r.json?.error ?? r.stderr }).toMatchObject({
+        code: 0,
+        state: 'drawn',
+      });
       expect(r.json.selected).toBe('c1');
       expect(r.json.comicSetup).toBeUndefined();
       expect(existsSync(join(runDir, 'out', 'comic.png'))).toBe(true);
@@ -107,7 +110,7 @@ describe('tracetoon comic run', () => {
       }
       expect(loop.incumbent).toBe('c1');
       // The cold reader saw only its packet: no script, no PR text.
-      const observe = calls().find((c) => c.prompt.includes('/judge/observe-c1/'))!;
+      const observe = calls().find((c) => c.prompt.includes(join('judge', 'observe-c1')))!;
       expect(observe.prompt).not.toContain('Where is this file?');
       expect(observe.prompt).not.toContain('Adds a greeting helper');
       if (runner === 'codex') {
