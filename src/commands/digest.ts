@@ -1,6 +1,6 @@
 import { currentSessionId } from '../integrations/registry.ts';
 import { createHash } from 'node:crypto';
-import { BLOCKING_RULE, QUICK_RULE } from '../workflow/blocking.ts';
+import { BLOCKING_RULE, LONG_RULE, QUICK_RULE } from '../workflow/blocking.ts';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeResearchPacket } from '../contribution/guidance.ts';
@@ -132,13 +132,35 @@ export function digestHash(d: TraceDigest): string {
   return createHash('sha256').update(JSON.stringify(stable)).digest('hex').slice(0, 12);
 }
 
+/**
+ * The base an existing run was prepared with. A refresh (digest --run, or the
+ * one render and finish do when check receipts changed) keeps it: offline, the
+ * default base can be a stale local branch, and the brief was rebuilt against
+ * hundreds of unrelated files.
+ */
+export function storedBase(cwd: string, runId: string): string | undefined {
+  try {
+    const run = findRun(repository(cwd).gitDir, runId);
+    return (
+      readJson<TraceDigest>(run, 'digest.json')?.pr?.base ??
+      readJson<{ base?: string }>(run, 'context.json')?.base ??
+      readJson<{ base?: string }>(run, 'submission.json')?.base ??
+      undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export function digestCmd(
   cwd: string,
   opts: DigestOpts,
   shared?: ScanResult,
   display = true,
 ) {
-  const { truth, matches } = shared ?? scan(cwd, { base: opts.base, noGh: opts.offline });
+  const { truth, matches } =
+    shared ??
+    scan(cwd, { base: opts.base ?? (opts.run ? storedBase(cwd, opts.run) : undefined), noGh: opts.offline });
   let layout;
   let search;
   try {
@@ -464,7 +486,7 @@ export const DRAFTING_RULES =
 /** How a delegated drafter starts the reviewers and the comic at once, per host. */
 const PARALLEL_RULE: Record<HostAgent, string> = {
   claude:
-    'two foreground Bash calls in ONE message, each with `timeout: 600000` (never run_in_background, and do nothing else until both return; if one is moved to the background anyway, run that same command again in the foreground: comic run waits for the running one)',
+    'two foreground Bash calls in ONE message, each with `timeout: 600000` (never run_in_background, and do nothing else until both return; if one is moved to the background anyway, run that same command again in the foreground: it waits for the running one and prints its result)',
   codex:
     'ONE `exec` call whose script begins with `// @exec: {"yield_time_ms": 900000}` and runs both with `exec_command` inside `Promise.all`; while it runs, `write_stdin` with empty `chars` and `yield_time_ms: 300000` until both have exited (never short waits or `sleep` loops, no other work in between). Each prints nothing until it is done, then one summary',
 };
@@ -523,7 +545,7 @@ export function graphNext(
   const closing = as
     ? `${serialComic ? `run ${serialComic.replace(/\)$/, `; ${BLOCKING_RULE})`)}; then ` : ''}when finish says \`tracetoon publish --run ${run}\`, stop there: don't run publish (it pushes and opens the PR, which the coordinator does with its own permissions). Reply with ONE message: \`READY TO PUBLISH\`, then the PR title on its own line, plus one line for any AI-policy note${drafterComic ? ` and the \`${COMIC_SETUP_LINE}\` line if the comic step printed one` : ''}. Send no other messages: no progress updates, no questions; your final reply is the only message the coordinator reads. Never end your turn earlier${handBack ? ', except at PACKETS READY' : ''}, and never wait on optional things (CI, a long rerun).`
     : `${comicPart(run, comic)}publish (\`tracetoon publish --run ${run}\`) when finish says so the review is current${enforced ? ` (publish refuses until the review plan is met: ${planSummary(plan)})` : ''}. Always render, review and publish before ending the turn and before any optional waiting (CI, a long rerun). Only on the user's request: the quick path (SKILL step 2a) or the three-role thorough path.`;
-  return `${opening} ${DRAFTING_RULES} Run each of the repository's required checks once, in the FOREGROUND, each as its own \`tracetoon check --run ${run} --name <check> -- <program> <args>\` (it blocks until done, stops after 15 min and prints a short summary with the path of the full log; a timeout is "timed out (incomplete)", never a failure: don't rerun it. Never start it in the background, poll it (sleep/until loops) or end your turn while it runs; on Claude Code give the Bash call \`timeout: 600000\`, and if a check is moved to the background anyway, run the same command again in the foreground: it waits for the running one. One command per check, never chained in \`bash -c '… && …'\`; record a check that can't run here with \`--skip "<reason>"\`. ${BLOCKING_RULE}) ${QUICK_RULE} Then \`tracetoon finish --run ${run}\`: it renders, runs the brief check (fix what it lists and run finish again, up to three rounds), writes the review packets and prints the one next step; then ${review}; ${closing}`;
+  return `${opening} ${DRAFTING_RULES} Run each of the repository's required checks once, in the FOREGROUND, each as its own \`tracetoon check --run ${run} --name <check> -- <program> <args>\` (it blocks until done, stops after 15 min and prints a short summary with the path of the full log; a timeout is "timed out (incomplete)", never a failure: don't rerun it. Never start it in the background, poll it (sleep/until loops) or end your turn while it runs; on Claude Code give the Bash call \`timeout: 600000\`, and if a check is moved to the background anyway, run the same command again in the foreground: it waits for the running one. One command per check, never chained in \`bash -c '… && …'\`; record a check that can't run here with \`--skip "<reason>"\`. ${BLOCKING_RULE}) ${QUICK_RULE} ${LONG_RULE} Then \`tracetoon finish --run ${run}\`: it renders, runs the brief check (fix what it lists and run finish again, up to three rounds), writes the review packets and prints the one next step; then ${review}; ${closing}`;
 }
 
 /**
@@ -541,7 +563,10 @@ function drafterLauncher(dir: string): string {
 export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
   const repo = repository(cwd);
   const before = workFingerprint(repo.root);
-  const shared = scan(cwd, { base: given.base, noGh: given.offline });
+  const shared = scan(cwd, {
+    base: given.base ?? (given.run ? storedBase(cwd, given.run) : undefined),
+    noGh: given.offline,
+  });
   // Unset options default to the skill's own variant lines, so a configured
   // reviewer plan or brief layout holds even when the agent doesn't pass it.
   // A run that already stored a layout or plan keeps it.

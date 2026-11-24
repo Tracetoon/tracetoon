@@ -149,7 +149,10 @@ not switch to another run.
       lists, then finish again; up to three rounds) and writes the review
       packets. Follow its `Next:` and run finish after each step until it
       says `tracetoon publish --run <id>`. Tags left in a body mean it was
-      never rendered.
+      never rendered. finish, `review run` and `comic run` are long blocking
+      calls like checks: if one is moved to the background, run the same
+      command again in the foreground (it waits for the running one and
+      prints its result); never start a different one on the run meanwhile.
    5. **Runner tracetoon** (`next` says `review run`): no reviewer agent; run
       `tracetoon review run --all --run <id>` once, as one blocking call. It
       runs every planned pass in parallel, imports each and prints one merged
