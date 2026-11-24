@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0-rc.46",
-  "buildId": "495827f8ce81f60f444e75b020fc96a53d982dc1ec5c3973eaa80bc015f14331",
-  "revision": "ac189aa0446fc8197edd59393ed91b21cc68a019",
+  "version": "1.0.0-rc.47",
+  "buildId": "44557cdaee4331c9a6f63dae1d1e4bee7e140676a7e9b50ac55d97abf3e64ba0",
+  "revision": "26a726bdbd85741d0f701e69df524c7ca86e11a7",
   "protocol": 2,
   "dependencies": [
     {

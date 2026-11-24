@@ -550,12 +550,36 @@ async function openai(job: ImageJob): Promise<Uint8Array> {
 
 const IMAGE_EXT = /\.(png|jpe?g|webp)$/i;
 
+/**
+ * Arguments for a Windows .cmd/.bat shim run through a shell: anything with a
+ * space or quote is wrapped in double quotes (inner quotes dropped), and an
+ * empty argument becomes "" so the shell keeps it (`--tools ""`). JSON can't
+ * survive this, so callers pass JSON through files (see emptyMcpConfig).
+ */
+/**
+ * An empty MCP configuration as a file, for `claude -p --strict-mcp-config
+ * --mcp-config <file>`: a JSON argument would lose its quotes when Claude Code
+ * is a .cmd shim run through a Windows shell.
+ */
+export function emptyMcpConfig(dir: string): string {
+  const file = join(dir, '.tracetoon-empty-mcp.json');
+  if (!existsSync(file)) writeFileSync(file, '{"mcpServers":{}}\n', 'utf8');
+  return file;
+}
+
+export function shellArgs(args: string[]): string[] {
+  return args.map((a) =>
+    a === '' ? '""' : /[\s"]/.test(a) ? `"${a.replace(/"/g, '')}"` : a,
+  );
+}
+
 export function runCli(
   bin: string,
   args: string[],
   cwd: string,
   timeoutMs: number,
   input?: string,
+  env?: Record<string, string>,
 ): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolveRun) => {
     // Script stand-ins (tests) run with this runtime. Windows .cmd shims need a
@@ -563,9 +587,7 @@ export function runCli(
     // prompts always go through stdin or a file, never the command line.
     const script = /\.(ts|js|mjs)$/i.test(bin);
     const shell = !script && process.platform === 'win32' && /\.(cmd|bat)$/i.test(bin);
-    const quoted = shell
-      ? args.map((a) => (/[\s"]/.test(a) ? `"${a.replace(/"/g, '')}"` : a))
-      : args;
+    const quoted = shell ? shellArgs(args) : args;
     const child = spawn(
       script ? process.execPath : bin,
       script ? [bin, ...quoted] : quoted,
@@ -573,6 +595,7 @@ export function runCli(
         cwd,
         shell,
         windowsHide: true,
+        ...(env ? { env } : {}),
         stdio: ['pipe', 'pipe', 'pipe'],
       },
     );

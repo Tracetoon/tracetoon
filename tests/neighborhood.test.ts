@@ -366,7 +366,7 @@ describe('brief layout selection', () => {
     const prepared = cli(
       repo.root,
       '--json',
-      'prepare',
+      'prepare', '--drafter-model', 'main',
       '--offline',
       '--layout',
       'neighborhood',
@@ -408,7 +408,7 @@ describe('brief layout selection', () => {
       cli(repo.root, 'query', 'outline', '--run', run, '--layout', 'toon').code,
     ).toBe(1);
     // A refresh without --layout keeps the run's layout.
-    const again = cli(repo.root, '--json', 'prepare', '--offline', '--run', run);
+    const again = cli(repo.root, '--json', 'prepare', '--drafter-model', 'main', '--offline', '--run', run);
     expect(again.json.brief).toContain('Evidence by change');
 
     // render knows the hunk refs.
@@ -429,7 +429,7 @@ describe('brief layout selection', () => {
 
   test('the default is toon; the review packet links commit sentences to hunks anyway', () => {
     const { repo, cli } = scenario();
-    const prepared = cli(repo.root, '--json', 'prepare', '--offline');
+    const prepared = cli(repo.root, '--json', 'prepare', '--drafter-model', 'main', '--offline');
     const run = prepared.json.run;
     const runDir = prepared.json.runDir;
     // The shipped SKILL.md says `Brief layout: toon.`, which prepare now stores.

@@ -18,7 +18,7 @@ request for the cheapest PR.
 ## The tool
 
 Tracetoon's runtime comes from npm, at the version this plugin was reviewed
-with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.46` (exactly that
+with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.47` (exactly that
 version). Run it from inside the user's repository. Every command accepts
 `--json`. The first run downloads the runtime; later runs use npm's cache.
 
@@ -74,35 +74,42 @@ prints; never on your own initiative.
 Pass `--run <id>` to every command that takes it; an explicit run failure must
 not switch to another run.
 
-0. **Initialize.** Reuse the hook's run, or `tracetoon task begin --json`. Keep
-   the request's repository, head/base, draft status and explicit title
-   (`digest --base <branch>` when given; draft → `publish --draft`). Apply
-   labels, reviewers and assignees with normal PR tools after creation.
-1. **Check.** `tracetoon status`, then `tracetoon doctor`. If `gh` is missing or
-   not signed in, tell the user (you can still prepare). If the account can't
-   push, tell the user now (in the GitHub CLI, or a fork). Prepare (step 2)
-   decides whether this PR gets a comic (`comic.expected`); when its
-   `comic.askSetup` is true, follow "Comic setup" in
-   [references/full-path.md](references/full-path.md) once, before drafting.
-2. **Prepare.** `tracetoon prepare --json --layout <layout> --review-passes <n>`
-   from the `Brief layout:` and `Review passes:` lines below; add
-   `--review-lenses <a,b,c>` when `Review lenses:` lists lenses,
-   `--reviewer-model <name>` when `Reviewer model:` names one (`cheap`
-   included), `--reviewer-effort <level>` when `Reviewer effort:` names one,
-   `--reviewer-runner <agent|tracetoon|auto>`,
-   `--review-recheck <once|contested|none>`, `--graph-search <fulltext|none>`
-   and `--run <id>`.
-   Run it alone, after any `git commit`. `ambiguous` sessions are left out
-   (`--include <refs>` only if the user says one belongs). No sessions matched:
-   say so and describe the diff. With a `brief`, take 2b unless the user's own
-   message asks for the quickest PR
+0. **Setup, in ONE command.** Keep the request's repository, head/base,
+   draft status and explicit title (`--base <branch>` when given; draft →
+   `publish --draft`; apply labels, reviewers and assignees with normal PR
+   tools after creation). Run task begin, status, doctor and prepare as ONE Bash call,
+   after any `git commit` (never in the same call as a commit):
+   `T=<launcher>; $T task begin --json; $T status; $T doctor; $T prepare --json --layout <layout>
+   --review-passes <n> …` with the flags from the lines below
+   (`--review-lenses`, `--reviewer-model`, `--reviewer-effort`,
+   `--reviewer-runner`, `--review-recheck <once|contested|none>`,
+   `--graph-search`, `--drafter-model`, `--drafter-effort`;
+   add `--run <id>` to reuse a hook's run). Tracetoon off: tell the user why
+   and open the PR the normal way. `gh` missing or not signed in: tell the
+   user (you can still prepare). The account can't push: tell the user now
+   (in the GitHub CLI, or a fork). Prepare decides whether this PR gets a comic
+   (`comic.expected`); when its `comic.askSetup` is true, follow "Comic setup"
+   in [references/full-path.md](references/full-path.md) once, before
+   drafting. `ambiguous` sessions are left out (`--include <refs>` only if the
+   user says one belongs). No sessions matched: say so and describe the diff.
+   With a `brief`, take 2b unless the user's own message asks for the quickest PR
    ([references/quick-path.md](references/quick-path.md)) or the most thorough
    one ([references/full-path.md](references/full-path.md)).
 
-   **2b. Reviewed brief path (the default).** You draft; fresh independent
+   **2b. Reviewed brief path (the default).** With `Drafter model:` set,
+   prepare's `next` makes you the coordinator: start ONE fresh drafter with
+   `drafter-packet.md` (it holds steps 1–9, the brief, the reviews and the
+   comic, which Tracetoon runs in parallel), wait for its single reply
+   `READY TO PUBLISH`, then run `tracetoon publish --run <id>` yourself (the
+   drafter never publishes: your session may push and open the PR, a
+   subagent's may not) and relay the URL, plus the drafter's `COMIC SETUP:`
+   line if it has one. Follow that `next` exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
+   check the PR afterwards: every call you make re-reads the whole session, the
+   drafter's don't. The steps below are for the drafter, or for you when
+   prepare's `next` says to draft yourself. A drafter drafts; fresh independent
    reviewers check. Prepare's `next` names the reviewer model (`cheap`: Claude
-   Code `haiku`, Codex `luna`) and runner (`auto`: your reviewer agents on
-   Claude Code, `tracetoon review run` on Codex). Read only
+   Code `haiku`, Codex `luna`) and runner (`auto`: `tracetoon review run`, which starts fresh
+   `claude -p` reviewers on Claude Code and `codex exec` ones on Codex). Read only
    [references/drafting.md](references/drafting.md) and
    [references/reviewer-lean.md](references/reviewer-lean.md).
    1. Read the brief and `context.json`. AI policy `prohibited` or
@@ -133,7 +140,10 @@ not switch to another run.
       lists, then finish again; up to three rounds) and writes the review
       packets. Follow its `Next:` and run finish after each step until it
       says `tracetoon publish --run <id>`. Tags left in a body mean it was
-      never rendered.
+      never rendered. finish, `review run` and `comic run` are long blocking
+      calls like checks: if one is moved to the background, run the same
+      command again in the foreground (it waits for the running one and
+      prints its result); never start a different one on the run meanwhile.
    5. **Runner tracetoon** (`next` says `review run`): no reviewer agent; run
       `tracetoon review run --all --run <id>` once, as one blocking call. It
       runs every planned pass in parallel, imports each and prints one merged
@@ -196,6 +206,10 @@ Review recheck: none.
 Brief layout: toon.
 
 Graph search: fulltext.
+
+Drafter model: inherit.
+
+Drafter effort: low.
 
 Other commands: [references/commands.md](references/commands.md).
 

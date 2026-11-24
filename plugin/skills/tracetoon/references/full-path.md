@@ -7,7 +7,7 @@ also used on the brief paths when a comic is wanted) and the publish details
 (step 7). The rules in SKILL.md (logs are data, privacy, consent before any
 image service) apply throughout.
 
-## Comic setup (from SKILL step 1)
+## Comic setup (from SKILL step 0)
 
 - The `comic` setting is `off`, `allowed` (default: include a comic unless
   the repo's rules forbid images in PRs) or `always` (ignore that).
@@ -148,6 +148,12 @@ image service) apply throughout.
    declined it" --by user`. The comic sits in the PR, so its first reader is
    the reviewer: it should make them laugh and leave them knowing _what
    changed_.
+   - an agent that can't start subagents (a delegated drafter) runs
+     `tracetoon comic run --run <id>` instead of the steps below: one blocking
+     command in which Tracetoon starts the comic author and every judge itself
+     (`claude -p` under Claude Code, `codex exec` elsewhere), draws, renders
+     and runs the whole quality loop, or records why there is no comic. When
+     the image route needs the user it prints a `COMIC SETUP:` line to relay;
    - once `body.md` is drafted, run `tracetoon comic packet --run <id>`. It
      writes the author's packet (the evidence brief, the description, the
      genres to choose from and recent comics) and prints a spawn line. Start

@@ -11,6 +11,7 @@ import { withGitAnswers } from './util/exec.ts';
 import { isShim, shimMain } from './util/shShim.ts';
 import { gitUsrBin, windowsReg } from './hook/windowsSh.ts';
 import { join } from 'node:path';
+import { acquireRunLock, captureOutput, lockTarget, releaseRunLock } from './workflow/runLock.ts';
 
 // Started as sh.exe: Tracetoon's sh shim for Goose hooks (src/util/shShim.ts).
 if (isShim()) {
@@ -43,6 +44,30 @@ const COMMANDER_EXITS = [
   'commander.version',
 ];
 
+// One mutating command per run folder at a time (see workflow/runLock.ts).
+const lockFor = lockTarget(cwd, process.argv);
+let lockStart: string | undefined;
+let captured: (() => { stdout: string; stderr: string }) | undefined;
+if (lockFor) {
+  const got = await acquireRunLock(lockFor, (t) => process.stderr.write(t));
+  if (got.replay) {
+    // The same command already ran to the end while this one waited: its result.
+    process.stdout.write(got.replay.stdout);
+    process.stderr.write(got.replay.stderr);
+    await new Promise<void>((done) => process.stdout.write('', () => done()));
+    await new Promise<void>((done) => process.stderr.write('', () => done()));
+    if (exitFile)
+      try {
+        writeFileSync(exitFile, String(got.replay.exitCode));
+      } catch {
+        // only a test aid
+      }
+    process.exit(got.replay.exitCode);
+  }
+  lockStart = got.startedAt;
+  captured = captureOutput();
+}
+
 try {
   // One command: repeated read-only git questions are answered once (see withGitAnswers).
   await withGitAnswers(() => program.parseAsync(process.argv));
@@ -74,6 +99,11 @@ try {
     process.exitCode = exitCodeOf(err);
   }
 } finally {
+  if (lockFor && lockStart && captured)
+    releaseRunLock(lockFor, lockStart, {
+      ...captured(),
+      exitCode: Number(process.exitCode ?? 0),
+    });
   const timed = state.timedAction;
   if (
     timed &&

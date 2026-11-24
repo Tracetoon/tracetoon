@@ -20,6 +20,7 @@ import { guidanceCheckCmd } from './commands/guidance.ts';
 import { imagesCmd } from './commands/images.ts';
 import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
 import { comicPacketCmd } from './commands/comicPacket.ts';
+import { comicRunCmd } from './commands/comicRun.ts';
 import {
   contextCmd,
   digestCmd,
@@ -340,6 +341,14 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--review-recheck <mode>',
       'review plan (SKILL "Review recheck:"): once (each reviewer confirms the correction round), contested (only reviewers whose findings were rejected) or none; publish never requires a recheck',
     )
+    .option(
+      '--drafter-effort <level>',
+      'delegated drafting (SKILL "Drafter effort:"): the drafter agent\'s effort (low, medium, high, xhigh, max) or default',
+    )
+    .option(
+      '--drafter-model <name>',
+      'delegated drafting (SKILL "Drafter model:"): a fresh drafter agent on this model drafts from drafter-packet.md while this agent only coordinates; standard = Claude Code sonnet, Codex gpt-6.1-terra; inherit = the session\'s model; main (default) = draft yourself',
+    )
     .action((o) => {
       prepareCmd(cwd, { ...g(), ...o });
     });
@@ -563,6 +572,18 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--run <id>', 'run id (default: latest)')
     .option('--genre <id>', 'offer only this genre (an id or a short phrase)')
     .action((o) => comicPacketCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('run')
+    .description(
+      'the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)',
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option(
+      '--model <name>',
+      "the author's and judges' model (default: the host's default model, as the subagent flow's 'same model class')",
+    )
+    .option('--creative', 'experimental: the loop may also rewrite a flat joke or weak script')
+    .action(async (o) => comicRunCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
     .description('check comic.json before any art is made')

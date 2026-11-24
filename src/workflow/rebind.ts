@@ -59,6 +59,18 @@ export function newWordShare(before: string, now: string): number {
   return fresh / Math.max(1, words(before).length);
 }
 
+/**
+ * The description without the comic: its image, its transcript and the meta
+ * line that records it. A comic drawn beside the review (or after it) adds
+ * many words the reviewers never had to check; they are not description.
+ */
+export function withoutComic(body: string): string {
+  return body
+    .replace(/<p align="center"><img src="\{\{tracetoon:comic-src\}\}"[^\n]*<\/p>/g, '')
+    .replace(/<details>\s*<summary>Comic transcript<\/summary>[\s\S]*?<\/details>/g, '')
+    .replace(/<!-- tracetoon:meta [^\n]*-->/g, '');
+}
+
 /** Most of the body may change in the correction round; not more than this share may be new. */
 export const MAX_NEW_WORDS = 0.5;
 
@@ -96,7 +108,7 @@ export function rebindProblem(
     .sort((a, b) => a.importedAt.localeCompare(b.importedAt))
     .at(-1);
   if (latest?.reviewedBody && input.body) {
-    const share = newWordShare(latest.reviewedBody, input.body);
+    const share = newWordShare(withoutComic(latest.reviewedBody), withoutComic(input.body));
     if (share > MAX_NEW_WORDS)
       return `${Math.round(share * 100)}% of the description is new since the last review`;
   }
