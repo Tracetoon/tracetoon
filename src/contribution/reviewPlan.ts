@@ -29,7 +29,8 @@ export type ReviewerRunner = (typeof REVIEWER_RUNNERS)[number];
  * when the host is unknown.
  */
 export const AUTO_RUNNER: Record<HostAgent, ReviewerRunner> = {
-  claude: 'agent',
+  // Claude Code: print-mode Claude Code reviewers started by tracetoon review run.
+  claude: 'tracetoon',
   codex: 'tracetoon',
 };
 /**
@@ -58,6 +59,15 @@ export const CODEX_MODELS: Record<string, string> = {
 export const resolveCodexModel = (name: string): string =>
   CODEX_MODELS[name.trim().toLowerCase()] ?? name.trim();
 
+/** SKILL short Claude model names → model ids, as Claude Code reports them in modelUsage. */
+export const CLAUDE_MODELS: Record<string, string> = {
+  haiku: 'claude-haiku-5-5',
+  sonnet: 'claude-sonnet-5-5',
+  opus: 'claude-opus-5-5',
+};
+export const resolveClaudeModel = (name: string): string =>
+  CLAUDE_MODELS[name.trim().toLowerCase()] ?? name.trim();
+
 export interface ReviewPlan {
   v: 1;
   /** Fresh reviewer passes, from distinct reviewer agents. */
@@ -84,7 +94,7 @@ export interface ReviewPass {
   importedAt: string;
   /** Set by `tracetoon review run`: Tracetoon started the reviewer itself. */
   source?: 'tracetoon-run';
-  runner?: 'codex-exec';
+  runner?: 'codex-exec' | 'claude-print';
   /** The Codex session (thread) id of the reviewer. */
   sessionId?: string;
   /** The model the session rollout says it ran on; null when no rollout was found. */
@@ -340,8 +350,11 @@ export function planMissing(
       );
   }
   if (tracetoonRuns(plan)) {
-    const want = resolveCodexModel(plan.reviewerModel!);
     for (const p of list) {
+      const want =
+        p.runner === 'claude-print'
+          ? resolveClaudeModel(plan.reviewerModel!)
+          : resolveCodexModel(plan.reviewerModel!);
       const rerun = `tracetoon review run${p.lens ? ` --lens ${p.lens}` : ''}`;
       if (p.source !== 'tracetoon-run')
         missing.push(

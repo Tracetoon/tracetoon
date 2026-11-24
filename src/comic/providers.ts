@@ -556,6 +556,7 @@ export function runCli(
   cwd: string,
   timeoutMs: number,
   input?: string,
+  env?: Record<string, string>,
 ): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolveRun) => {
     // Script stand-ins (tests) run with this runtime. Windows .cmd shims need a
@@ -573,6 +574,7 @@ export function runCli(
         cwd,
         shell,
         windowsHide: true,
+        ...(env ? { env } : {}),
         stdio: ['pipe', 'pipe', 'pipe'],
       },
     );

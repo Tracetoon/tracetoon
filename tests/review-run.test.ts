@@ -38,7 +38,8 @@ afterEach(() => {
   if (previous === undefined) delete process.env.TRACETOON_CONFIG;
   else process.env.TRACETOON_CONFIG = previous;
 });
-const env = () => ({ ...process.env, CI: '', TRACETOON: '1' });
+// These tests drive the codex exec runner (fake codex), whatever host runs them.
+const env = () => ({ ...process.env, CI: '', TRACETOON: '1', TRACETOON_REVIEW_RUNNER: 'codex' });
 
 function cli(root: string, args: string[], extra: Record<string, string> = {}) {
   const result = spawnToFiles(process.execPath, [CLI, '--json', ...args], {
@@ -711,3 +712,44 @@ describe('review run --all and the merged list', () => {
     }
   });
 });
+
+describe('tracetoon review run under Claude Code', () => {
+  const FAKE_CLAUDE = resolve(import.meta.dir, 'fake-claude-review.ts');
+  const claudeEnv = {
+    TRACETOON_REVIEW_RUNNER: 'claude',
+    TRACETOON_CLAUDE_BIN: FAKE_CLAUDE,
+    CLAUDE_CODE_SESSION_ID: 'parent-session',
+  };
+  test('runs claude -p on the plan model with no tools, verifies it from modelUsage, and passes the plan gate', () => {
+    const { repo, run, reply, plan } = renderedRun();
+    plan({ passes: 1, reviewerModel: 'haiku', reviewerEffort: 'xhigh', runner: 'tracetoon' });
+    const out = ok(repo.root, ['review', 'run', '--run', run.id], {
+      ...claudeEnv,
+      FAKE_REVIEW_OUTPUT: reply('The greeting always uses the given name.'),
+    });
+    expect(out.verifiedModel).toBe('claude-haiku-5-5');
+    expect(out.model).toBe('claude-haiku-5-5');
+    const call = calls().at(-1)!;
+    expect(call.args.slice(0, 3)).toEqual(['-p', '--model', 'haiku']);
+    expect(call.args).toContain('--effort');
+    expect(call.args[call.args.indexOf('--tools') + 1]).toBe('');
+    expect(call.prompt).toContain('reply with ONLY that JSON object');
+    // The parent session's id is not handed to the nested reviewer.
+    expect((call as any).env.session).toBeNull();
+    const passes = JSON.parse(readFileSync(join(run.dir, 'review-passes.json'), 'utf8'));
+    const pass = (passes.passes ?? passes).at(-1);
+    expect(pass.runner).toBe('claude-print');
+    expect(pass.verifiedModel).toBe('claude-haiku-5-5');
+    expect(pass.findings).toBe(1);
+  });
+  test('a session on another model is refused by the plan gate', () => {
+    const { repo, run, plan } = renderedRun();
+    plan({ passes: 1, reviewerModel: 'haiku', runner: 'tracetoon' });
+    const out = ok(repo.root, ['review', 'run', '--run', run.id], {
+      ...claudeEnv,
+      FAKE_CLAUDE_MODEL: 'claude-sonnet-5-5',
+    });
+    expect(out.warnings.join('\n')).toContain('not claude-haiku-5-5');
+  });
+});
+

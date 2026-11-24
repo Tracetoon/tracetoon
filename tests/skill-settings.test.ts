@@ -73,6 +73,8 @@ describe('skill settings', () => {
       reviewerRunner: 'auto',
       reviewRecheck: 'none',
       layout: 'toon',
+      drafterModel: 'inherit',
+      drafterEffort: 'low',
       graphSearch: 'fulltext',
     });
   });
@@ -100,7 +102,7 @@ describe('shipped defaults resolve per host', () => {
       {},
       parseSkillSettings(await Bun.file('plugin/skills/tracetoon/SKILL.md').text()),
     );
-  test('Claude Code: haiku reviewers it starts itself', async () => {
+  test('Claude Code: haiku reviewers started by tracetoon review run (claude -p)', async () => {
     const plan = planFromOptions(await shipped(), 'claude')!;
     expect(plan).toEqual({
       v: 1,
@@ -108,11 +110,12 @@ describe('shipped defaults resolve per host', () => {
       lenses: ['d'],
       reviewerModel: 'haiku',
       reviewerEffort: 'xhigh',
+      runner: 'tracetoon',
       recheck: 'none',
     });
     const next = graphNext('R1', plan);
-    expect(next).toContain('on model haiku at effort xhigh');
-    expect(next).not.toContain('tracetoon review run');
+    expect(next).toContain('tracetoon review run --all --run R1');
+    expect(next).toContain('on haiku');
   });
   test('Codex: luna, run and verified by tracetoon review run', async () => {
     const plan = planFromOptions(await shipped(), 'codex')!;
@@ -136,7 +139,7 @@ describe('shipped defaults resolve per host', () => {
     expect(plan.reviewerModel).toBe('sonnet');
     expect(plan.runner).toBe('tracetoon');
     expect(parseRunner('auto', 'codex')).toBe('tracetoon');
-    expect(parseRunner('auto', 'claude')).toBe('agent');
+    expect(parseRunner('auto', 'claude')).toBe('tracetoon');
     expect(parseRunner('auto', null)).toBe('agent');
     expect(parseModel('Cheap', 'claude')).toBe('haiku');
     expect(() => parseRunner('robot', 'claude')).toThrow(/agent, tracetoon or auto/);

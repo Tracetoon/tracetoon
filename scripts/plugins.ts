@@ -148,7 +148,7 @@ plugin's runtime and says so.`;
  */
 const SKILL_ONLY = `This copy of the skill came without hooks (the catalog it was listed in
 doesn't allow them). So a plain \`gh pr create\` isn't routed here, and
-\`prepare\` matches sessions from the agent's own logs. In step 1, if
+\`prepare\` matches sessions from the agent's own logs. In step 0, if
 \`tracetoon doctor --json\` reports the \`pr-hook\` check failing, tell the user
 once that the standalone install (linked from this plugin's README) adds the
 hook, then carry on.
