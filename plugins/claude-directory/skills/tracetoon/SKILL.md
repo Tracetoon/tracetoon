@@ -106,10 +106,12 @@ not switch to another run.
 
    **2b. Reviewed brief path (the default).** With `Drafter model:` set,
    prepare's `next` makes you the coordinator: start ONE fresh drafter with
-   `drafter-packet.md` (it holds steps 1–8, the brief, the reviews and the
-   comic, which Tracetoon runs in parallel, and publish), wait for its single reply `PUBLISHED <url>`, and relay the
-   URL, plus its `COMIC SETUP:` line if it has one. Follow that `next`
-   exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
+   `drafter-packet.md` (it holds steps 1–9, the brief, the reviews and the
+   comic, which Tracetoon runs in parallel), wait for its single reply
+   `READY TO PUBLISH`, then run `tracetoon publish --run <id>` yourself (the
+   drafter never publishes: your session may push and open the PR, a
+   subagent's may not) and relay the URL, plus the drafter's `COMIC SETUP:`
+   line if it has one. Follow that `next` exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
    check the PR afterwards: every call you make re-reads the whole session, the
    drafter's don't. The steps below are for the drafter, or for you when
    prepare's `next` says to draft yourself. A drafter drafts; fresh independent
