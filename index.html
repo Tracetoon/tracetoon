@@ -134,7 +134,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#fffdf6; --fg:#1b1913; --muted:#5a5548; --line:#e4dccb; --card:#ffffff;
@@ -162,6 +162,8 @@
   code { font:.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--line); padding:.08em .35em; border-radius:4px; }
   .wrap { max-width:1120px; margin:0 auto; padding:0 16px; }
   .wrap > * { min-width:0; }
+  /* Figures use Lilita One: Bangers draws 1 as a bare stroke, easy to misread next to 7 (-13% vs -73%). */
+  :root { --num:"Lilita One","Comic Neue",system-ui,sans-serif; }
   .display { font-family:Bangers,"Comic Neue",system-ui,sans-serif; letter-spacing:.03em; font-weight:400; }
 
   /* shared site header: identical on index.html and evidence-graph.html */
@@ -221,7 +223,7 @@
   /* proof strip */
   .proof { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin:1.1rem 0 .3rem; }
   .proof div { border-left:4px solid var(--accent); padding:.1rem 0 .1rem .6rem; }
-  .proof b { display:block; font-family:Bangers,system-ui,sans-serif; font-weight:400; font-size:1.9rem; line-height:1; letter-spacing:.03em; }
+  .proof b { display:block; font-family:var(--num); font-weight:400; font-size:1.8rem; line-height:1.05; white-space:nowrap; letter-spacing:.01em; }
   .proof span { font-size:.8rem; color:var(--muted); line-height:1.3; display:block; }
   .more { font-size:.88rem; font-weight:600; }
 
@@ -238,7 +240,7 @@
   .copytext ul { padding-left:1.1rem; margin:.4rem 0 1rem; }
   .copytext li { margin:.35rem 0; }
   .stat { display:flex; align-items:center; gap:.9rem; background:var(--card); border:2px solid var(--ink); border-radius:8px; padding:.65rem .9rem; box-shadow:3px 3px 0 var(--ink); }
-  .stat b { font-family:Bangers,system-ui,sans-serif; font-weight:400; font-size:2.2rem; line-height:1; color:var(--accent); white-space:nowrap; letter-spacing:.03em; }
+  .stat b { font-family:var(--num); font-weight:400; font-size:2.1rem; line-height:1; color:var(--accent); white-space:nowrap; letter-spacing:.01em; }
   .stat span { font-size:.9rem; line-height:1.35; }
   @media (max-width:880px) { section.adv .wrap { grid-template-columns:1fr; gap:1.5rem; } section.adv.flip .art { order:0; } section.adv { padding:2.5rem 0; } }
   @media (max-width:420px) { .stat { flex-direction:column; align-items:flex-start; gap:.3rem; } }
@@ -264,7 +266,7 @@
   .how { padding:3.5rem 0 2.5rem; }
   .steps { list-style:none; padding:0; margin:1.2rem 0 0; display:grid; grid-template-columns:repeat(5,1fr); gap:.8rem; counter-reset:s; }
   .steps li { counter-increment:s; background:var(--card); border:2px solid var(--ink); border-radius:8px; padding:.9rem .8rem; box-shadow:3px 3px 0 var(--ink); font-size:.9rem; line-height:1.4; }
-  .steps li::before { content:counter(s); font-family:Bangers,system-ui,sans-serif; font-size:1.6rem; color:var(--accent); display:block; line-height:1; margin-bottom:.3rem; }
+  .steps li::before { content:counter(s); font-family:var(--num); font-size:1.6rem; color:var(--accent); display:block; line-height:1; margin-bottom:.3rem; }
   .steps b { display:block; margin-bottom:.25rem; font-size:.98rem; }
   @media (max-width:880px) { .steps { grid-template-columns:1fr 1fr; } }
   @media (max-width:520px) { .steps { grid-template-columns:1fr; } }
@@ -353,9 +355,9 @@
         </div>
 
         <div class="proof">
-          <div><b>72–9 · 111–19</b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
+          <div><b>72–9<br>111–19</b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
           <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
-          <div><b>−28% · −73%</b><span>cost per PR in a long session (Opus · Sol)</span></div>
+          <div><b>−28%<br>−73%</b><span>cost per PR in a long session (Opus · Sol)</span></div>
         </div>
         <a class="more" href="vs-native.html">Read the full results →</a> <a class="more" href="prbench.html" style="margin-left:.8rem">How we test: prbench →</a>
       </div>
