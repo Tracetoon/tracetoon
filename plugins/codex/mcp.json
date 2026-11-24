@@ -6,7 +6,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "tracetoon@1.0.0-rc.46",
+        "tracetoon@1.0.0-rc.47",
         "mcp"
       ]
     }

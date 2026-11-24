@@ -18,7 +18,7 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.46`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.47`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,8 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** None: the directory accepts no lifecycle hooks or local MCP servers, so the skill starts when you ask for a PR.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.46, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.46, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.47, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.47, published from GitHub Actions with npm provenance.
 
 ## What it reads
 

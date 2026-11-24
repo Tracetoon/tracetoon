@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.46",
-  "buildId": "495827f8ce81f60f444e75b020fc96a53d982dc1ec5c3973eaa80bc015f14331",
+  "version": "1.0.0-rc.47",
+  "buildId": "44557cdaee4331c9a6f63dae1d1e4bee7e140676a7e9b50ac55d97abf3e64ba0",
   "artifact": {
-    "runId": 45001229945,
-    "id": 14746520913,
-    "name": "tracetoon-candidate-ac189aa0446fc8197edd59393ed91b21cc68a019-attempt-1",
-    "digest": "sha256:21fdfe596184a92aaf03125bcf6a0635ce42b9043ada8a4bd58225684edcaeea"
+    "runId": 45369724191,
+    "id": 14907724961,
+    "name": "tracetoon-candidate-26a726bdbd85741d0f701e69df524c7ca86e11a7-attempt-1",
+    "digest": "sha256:017470682998495df9d52a12551e5e9ce5fc74f00a3124f89b6d87f6c7910795"
   },
   "expected": {
-    "manifestSha256": "f902a578be50f87774fdaabd5f6acf739ebc1749f9e0094d2ee95a3760699124",
-    "checksumsSha256": "5fbaf342565e643697d21471edc8e9e8d0f2c214d0618be1968ba9a840c4a45a",
-    "windowsSha256": "c0ddac09ab5b0a5caa13f567c7da487d1cc5d0ce3211a3046ca3db4675bd7ee3",
-    "bundleSha256": "11e37ef88a8927dd04c15b2a14898b3f528922f0b0843ed16e68eb76725045b1"
+    "manifestSha256": "dd0606da62bd05c1520c15d54d596ac6a5fe5cc3b9033af09c71b3ba6c3e83d6",
+    "checksumsSha256": "8b6f1a9e2e8f75c91fc5793e136ea1d673c7a1ee39123931cceea5f2c6e81553",
+    "windowsSha256": "8e545518b014dfca2b578c4faf63f4e830ce08d843b05f4037bc5e2887f1c61a",
+    "bundleSha256": "519fd657f2cfcb680876dd236fa81a7fdbf3d433a18ef068ef7f69f31cc63293"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-22T08:18:19.000Z",
-    "reason": "The user asked to cut rc.46 after #200 merged, so the plugin packages ship the About-line descriptions (#200) and the Agent Plugins 1.0.0 packaging with conforming mcp.json files (#192), along with the PR-hook and comic changes merged since rc.45. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-24T10:07:31.000Z",
+    "reason": "The user asked for a release once the delegated-drafter work worked in a live test, so the packages ship the delegated drafter with the review and comic runners (#208) and the Windows-safe claude -p arguments, the review binding that survives the comic and the cross-platform run lock (#209). The live test (#209 and #210, each written by Tracetoon with a comic) passed. The flagship prbench comparison for this design ran as a separate benchmark and is not the calibration/admission/confirmation round this contract records, so the CI-tested candidate is released without one. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
