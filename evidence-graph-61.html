@@ -1,9 +1,9 @@
-<!doctype html><html><head><title>Tracetoon Evidence Results</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon's evidence-graph PR descriptions to its original multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR."><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta property="og:title" content="An embedded Relate graph made our PR writer better and cheaper"><meta property="og:image" content="https://tracetoon.ai/img/comic-cost.webp"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
+<!doctype html><html><head><title>Tracetoon Evidence Results</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon's evidence-graph PR descriptions to its original multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR."><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta property="og:title" content="An embedded Relate graph made our PR writer better and cheaper"><meta property="og:description" content="On 61 real PRs, judges picked Tracetoon's evidence-graph PRs over its original multi-agent workflow 79–38 on Codex and 60–21 on Claude Code, at 70% and 43% lower cost per PR."><meta property="og:image" content="https://tracetoon.ai/img/og-graph-61.jpg"><meta property="og:url" content="https://tracetoon.ai/evidence-graph-61.html"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://tracetoon.ai/img/og-graph-61.jpg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
   :root { --sh-bg:#fffdf6; --sh-fg:#1b1913; --sh-ink:#1b1913; --sh-accent:#c2410c; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; } }
   :root[data-theme="dark"] { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; }
   .site-top { position:sticky; top:0; z-index:50; background:var(--sh-bg); border-bottom:2px solid var(--sh-ink); font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  .site-top .site-wrap { max-width:1120px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
+  .site-top .site-wrap { max-width:1600px; margin:0 auto; padding:0 clamp(16px,4vw,48px); display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
   .site-brand { display:flex; align-items:center; gap:.45rem; text-decoration:none; color:var(--sh-fg); }
   .site-brand img { width:36px; height:36px; display:block; }
   .site-brand .site-wordmark { height:30px; width:auto; display:block; }
@@ -24,7 +24,7 @@ html{scroll-padding-top:70px} .toc{top:calc(env(safe-area-inset-top,0px) + 82px)
       <a href="./#install">Install</a>
       <a href="./#why" class="opt">Why</a>
       <a href="./#talk" class="opt">Talk</a>
-      <a href="evidence-graph-61.html" aria-current="page">Results</a>
+      <a href="results.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -55,8 +55,10 @@ html{scroll-padding-top:70px} .toc{top:calc(env(safe-area-inset-top,0px) + 82px)
   --warn:#ef8a6d; --warn-soft:#46231a; --over:#e6be5a; --over-soft:#3d3115; --add-soft:#163a32; --miss-soft:#252e2a;
   --note:#1c2622; --code:#1d2622; --neutral:#6d7a74; color-scheme:dark }
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
-.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:44px}
+.wrap{max-width:1400px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:44px}
 @media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}.toc{display:none}}
+main p,main li{max-width:78ch}
+.back{display:inline-block;font-size:13px;font-weight:600;color:var(--graph);text-decoration:none;margin-bottom:10px}.back:hover{text-decoration:underline}
 .toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:13px;line-height:1.5}
 .toc a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
 .toc a:hover,.toc a:focus-visible{color:var(--graph)}
@@ -154,6 +156,7 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
 </nav>
 <main>
 <header id="result">
+  <a class="back" href="results.html">← All results</a>
   <div class="kicker">Tracetoon · evidence graph results · 61 real pull requests · November 2026</div>
   <h1>An embedded Relate graph made our PR writer better and cheaper</h1>
   <div class="hero">
@@ -164,8 +167,8 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
   <p class="meta" style="margin-top:6px">This page compares two versions of Tracetoon. For Tracetoon against your agent writing the PR alone (Opus 5.5 and Sol 6.1), see <a href="vs-native.html">Tracetoon vs your agent alone</a>.</p>
   <div class="tbl"><table class="summary"><thead><tr><th></th><th>Codex (GPT-6.1 Terra)</th><th>Claude Code (Sonnet 5.5)</th></tr></thead><tbody><tr><td>Preferred by both judges (wins–losses)</td><td>79–38 (68%, 95% CI 56%–79%)</td><td>60–21 (74%, 95% CI 62%–85%)</td></tr><tr><td>Score difference (0–100, 95% CI)</td><td>+3.3 [+1.0, +5.5]</td><td>+3.5 [+0.8, +6.1]</td></tr><tr><td>Cost per PR, graph vs original</td><td>70% lower (paired ratio 0.30, 95% CI 0.28–0.32); $0.128 vs $0.447 average</td><td>43% lower (paired ratio 0.57, 95% CI 0.53–0.62); $0.344 vs $0.654 average</td></tr><tr><td>Key facts conveyed</td><td>82% vs 72%</td><td>73% vs 77%</td></tr></tbody></table></div>
   <p class="meta">61 real PRs from 12 repositories · each written 3 times by each workflow · 2 judges per provider, both orders · factual errors checked by two expert models · <a href="prbench.html">prbench</a></p>
-  <figure class="comic"><img src="img/comic-cost.webp" alt="Two-panel comic. Left, labeled Without the graph: three tired robots hunch over an enormous unrolled scroll labeled session logs, saying Re-reading it. Again. Right, labeled With the graph: one small robot holds up a folded map labeled evidence graph while two tiny drones with magnifying glasses, labeled reviewers, check it; the robot says Done. Two checks. Half the tokens." style="display:block;width:100%;height:auto">
-  <figcaption>Drawn by Tracetoon's own comic step, the same way it can add a comic to a PR.</figcaption></figure>
+  <figure class="comic"><img src="img/comic-graph-61.webp" width="1400" height="934" alt="Two-panel comic. The old way: three sweating robots pass towering stacks of log pages along a conveyor belt as pages fly everywhere. One map: under a banner reading 61 REAL PRs, one cheerful robot points at a board of red dots joined by string while the developer happily holds a short, checked-off pull request." style="display:block;width:100%;height:auto">
+  <figcaption>Drawn with Tracetoon's comic image route (Codex), the same one it uses to add a comic to a PR.</figcaption></figure>
   <p style="margin-top:22px">Compared with Tracetoon's original multi-agent workflow on 61 real pull requests, when both judges agreed they preferred the graph-written description 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. The graph did not let us use a weaker writer. It let the same model write a description reviewers would rather receive while spending fewer tokens, because a deterministic graph does the structural work the model used to redo on every PR. The gains are smaller than in our earlier 5-PR report (+3.5 and +5.2 points then, +3.3 and +3.5 now), and they are not free of trade-offs: on Codex the graph drafts carry more expert-confirmed factual errors than the original, which fails our own strict accuracy gate (<a href="#accuracy">details below</a>); on Claude Code they state fewer of the open uncertainties, and convey slightly fewer key facts. The rest of this page shows one PR written three ways, explains how the judges score, where the gain comes from, what the graph does, and what we disclose.</p>
 </header>
 
