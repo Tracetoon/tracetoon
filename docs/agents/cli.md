@@ -370,6 +370,9 @@ check comic.json before any art is made
 | Option | Description |
 | --- | --- |
 | `--run <id>` | run id (default: latest) |
+| `--file <path>` | check this comic.json instead of a run's (no repository needed) |
+| `--context <path>` | with --file: a comic packet's context.json (recent comics, pins) |
+| `--evidence <paths...>` | with --file: the brief or diff, to warn about anchor terms the PR never uses |
 
 ## `tracetoon comic prompts`
 

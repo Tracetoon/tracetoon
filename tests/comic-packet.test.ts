@@ -6,6 +6,40 @@ import { genreOptions } from '../src/comic/genres.ts';
 import { comicPacketFiles, PACKET_FILES } from '../src/comic/packet.ts';
 import { EXPRESSIONS } from '../src/comic/types.ts';
 import { tempDir } from './helpers.ts';
+import { pageScript } from './pageScript.ts';
+import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
+
+const CLI = process.env.TRACETOON_TEST_CLI ?? resolve(import.meta.dir, '../src/cli.ts');
+
+describe('comic check --file', () => {
+  const check = (cwd: string, ...args: string[]) =>
+    spawnSync(process.execPath, [CLI, '--json', 'comic', 'check', ...args], {
+      cwd,
+      encoding: 'utf8',
+      env: { ...process.env, TRACETOON_CONFIG: join(cwd, 'config.json') },
+    });
+
+  test('checks a comic.json outside any repository or run', () => {
+    const dir = tempDir('tracetoon-check-file-');
+    writeFileSync(join(dir, 'comic.json'), JSON.stringify(pageScript()));
+    const ok = check(dir, '--file', 'comic.json');
+    expect(ok.status).toBe(0);
+    expect(JSON.parse(ok.stdout).ok).toBe(true);
+
+    writeFileSync(join(dir, 'bad.json'), JSON.stringify({ v: 2, panels: [] }));
+    const bad = check(dir, '--file', 'bad.json');
+    expect(bad.status).toBe(1);
+    expect(JSON.parse(bad.stdout).ok).toBe(false);
+  });
+
+  test('--context and --evidence need --file', () => {
+    const dir = tempDir('tracetoon-check-file-');
+    writeFileSync(join(dir, 'context.json'), '{}');
+    const r = check(dir, '--context', 'context.json');
+    expect(r.status).toBe(2);
+  });
+});
 import { DRAW_CARTOON_DIR, staleDrawCartoon } from '../scripts/draw-cartoon-skill.ts';
 
 const input = () => ({

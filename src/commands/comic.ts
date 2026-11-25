@@ -7,7 +7,8 @@
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { git } from '../util/exec.ts';
 import {
   contributionPolicy,
   loadGuidance,
@@ -191,15 +192,68 @@ export function comicSkipCmd(
   );
 }
 
-export function comicCheckCmd(cwd: string, opts: OutOpts & { run?: string }): void {
-  const truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, opts.run);
-  const script = readJson<unknown>(run, 'comic.json');
-  if (script === undefined)
-    throw new UserError(
-      `Write the comic script to ${join(run.dir, 'comic.json')} first.`,
-    );
-  const problems = checkScript(script, checkOptsFor(run, truth.toplevel));
+export interface ComicCheckOpts extends OutOpts {
+  run?: string;
+  /** A comic.json outside any run (a comic author's packet output, comicbench). */
+  file?: string;
+  /** With --file: a packet's context.json (recent comics, pinned genre or style). */
+  context?: string;
+  /** With --file: the brief or diff, to notice anchor terms the PR never mentions. */
+  evidence?: string[];
+}
+
+/** Check options for a comic.json outside a run: from the packet's files, if given. */
+function fileCheckOpts(cwd: string, opts: ComicCheckOpts): CheckOpts {
+  const read = (path: string) => {
+    if (!existsSync(path)) throw new UserError(`No such file: ${path}`);
+    return readFileSync(path, 'utf8');
+  };
+  const ctx = opts.context
+    ? (JSON.parse(read(resolve(cwd, opts.context))) as {
+        recentComics?: ComicSummary[];
+        recentStyles?: string[];
+        pinnedStyle?: string;
+        pinnedGenre?: string;
+      })
+    : {};
+  const evidence = (opts.evidence ?? []).map((f) => read(resolve(cwd, f)));
+  const top = git(cwd, ['rev-parse', '--show-toplevel']);
+  return {
+    recentComics: ctx.recentComics ?? [],
+    recentStyles: ctx.recentStyles ?? [],
+    ...(ctx.pinnedStyle ? { pinnedStyle: ctx.pinnedStyle } : {}),
+    ...(ctx.pinnedGenre ? { pinnedGenre: ctx.pinnedGenre } : {}),
+    genres: genreCatalog(top.ok ? top.stdout.trim() : undefined),
+    ...(evidence.length ? { evidenceText: evidence.join('\n') } : {}),
+  };
+}
+
+export function comicCheckCmd(cwd: string, opts: ComicCheckOpts): void {
+  let script: unknown;
+  let checkOpts: CheckOpts;
+  if (opts.file) {
+    if (opts.run) throw new UserError('Use --file or --run, not both.', 2, { code: 'USAGE' });
+    const path = resolve(cwd, opts.file);
+    if (!existsSync(path)) throw new UserError(`No such file: ${path}`);
+    try {
+      script = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (e) {
+      throw new UserError(`${path} is not JSON: ${(e as Error).message}`);
+    }
+    checkOpts = fileCheckOpts(cwd, opts);
+  } else {
+    if (opts.context || opts.evidence?.length)
+      throw new UserError('--context and --evidence go with --file.', 2, { code: 'USAGE' });
+    const truth = prTruth(cwd, { noGh: true });
+    const run = findRun(truth.gitDir, opts.run);
+    script = readJson<unknown>(run, 'comic.json');
+    if (script === undefined)
+      throw new UserError(
+        `Write the comic script to ${join(run.dir, 'comic.json')} first.`,
+      );
+    checkOpts = checkOptsFor(run, truth.toplevel);
+  }
+  const problems = checkScript(script, checkOpts);
   const blocking = errors(problems);
   emit(opts, { ok: blocking.length === 0, problems }, () =>
     [
