@@ -9,13 +9,18 @@ This branch is the website at https://tracetoon.ai. The code and docs live on `m
 
 ## Pages
 
-- `index.html`: the landing page. Plain HTML with inline CSS and one small inline script for the install tabs and copy buttons. The page still works with JavaScript off. No build step.
+- `index.html`: the landing page. Plain HTML with inline CSS and one small inline script for the install tabs and copy buttons. The page still works with JavaScript off. No build step. Its headline figures come from `vs-native.html`, and its graph figures (82% vs 72%, the method tables) from `evidence-graph-61.html`.
+- `results.html`: the results hub, linked as "Results" from every page's top bar. It lists every report newest first, with a comic, a short summary and the headline figures of each. When you publish a new report, add a card at the top and move the "Newest" tag.
+- `vs-native.html`: Tracetoon vs your agent alone (61 real PRs, Opus 5.5 and Sol 6.1), the flagship report.
+- `evidence-graph-61.html`: the evidence graph vs Tracetoon's original workflow on 61 real PRs.
+- `evidence-graph.html`: the first, 5-PR evidence graph study, kept as an archive. Mermaid loads from jsDelivr.
 - `prbench.html`: what prbench (the benchmark behind the results) does, the golden-run table and how to run it. Plain HTML with inline CSS and SVG, one small script for the copy buttons. Its numbers come from `evidence-graph-61.html`; change both together.
-- `evidence-graph.html`: the evidence graph results write-up, linked from the landing page as "Results". It is an export of the article with a site nav bar added. Mermaid loads from jsDelivr.
+
+The three report pages are exports of the articles with the site top bar and an "All results" link added. Every page shares the same top bar CSS: content grows to 1600px (1840px and 2500px with larger type on very wide screens) and running text stays near 70 characters a line.
 
 ## Agent files
 
-These come from the `tracetoon-site-kit.zip` attached to each Tracetoon release (`scripts/site-kit.ts` on `main`); this copy is from 1.0.0-rc.36. Don't edit them here; after a release, download the kit and copy the same files over.
+These come from the `tracetoon-site-kit.zip` attached to each Tracetoon release (`scripts/site-kit.ts` on `main`); this copy is from 1.0.0-rc.47 (`index.md` and `llms-full.txt` were rebuilt from the README on `main` after it switched its headline to the flagship results). Don't edit them here; after a release, download the kit and copy the same files over.
 
 - `llms.txt`, `llms-full.txt`: the index agents read first, and the same pages inlined.
 - `index.md`, `agents.md`, `skill.md`, `docs/agents/*.md`: markdown versions of the pages, for agents.
@@ -32,13 +37,14 @@ GitHub Pages can't answer `Accept: text/markdown`, so agents find the markdown t
 2. Change the text or HTML.
 3. Commit directly to `gh-pages`. GitHub rebuilds the site in about a minute; check Actions > "pages build and deployment".
 
-Every number on the landing page comes from `evidence-graph.html` (round 23, the shipped build). If you change one, change both.
+A figure on the landing page or `results.html` must match the report it comes from. If you change one, change all of them: `index.html`, `results.html`, the report page, and the README on `main` (its headline block is generated from `RESULTS` in `scripts/agent-surfaces.ts`).
 
 ## Images
 
 - `img/hero.webp`: the "No more PR slop" top image (from `docs/tracetoon-hero.png` on `main`).
-- `img/comic-*.webp`: one comic per section (quality, graph, embedded, cost, workflow, pr17). To swap one, keep the file name, or update the `src`, `width`, `height` and `alt` in `index.html`. Use WebP at about 1400 px wide and under 250 KB: `cwebp -q 80 -resize 1400 0 in.png -o img/comic-x.webp`.
-- `img/og-image.png`: the 1200×630 card shown when the link is shared, with the Tracetoon logo on a comic panel.
+- `img/comic-*.webp`: one comic per landing section (quality, graph, embedded, cost, workflow, pr17), plus one per results page: `comic-results` (the hub), `comic-vs-native`, `comic-graph-61`, and `comic-cost` (also the 5-PR report). To swap one, keep the file name, or update the `src`, `width`, `height` and `alt` in `index.html`. Use WebP at about 1400 px wide and under 250 KB: `cwebp -q 80 -resize 1400 0 in.png -o img/comic-x.webp`.
+- `img/og-image.png`: the 1200×630 card shown when the landing page is shared, with the Tracetoon logo on a comic panel.
+- `img/og-*.jpg`: the share cards for `results.html` and each report (JPEG, because some link previews don't read WebP).
 - `img/tracetoon-wordmark.svg`: the "Tracetoon" wordmark in the top bar.
 - `favicon.svg`: the logo icon (a POW burst with a checkmark), also used in the top bar. Its impact lines turn cream in dark mode.
 - `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `site.webmanifest`: the browser tab, iOS home screen and app install icons.

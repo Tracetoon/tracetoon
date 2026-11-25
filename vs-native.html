@@ -1,9 +1,9 @@
-<!doctype html><html><head><title>Tracetoon vs No Tracetoon</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon&#x27;s PR descriptions to the same agent writing alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), at 28% and 73% lower cost per PR in a long session."><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta property="og:title" content="Tracetoon vs your agent alone: better PRs for less"><meta property="og:image" content="https://tracetoon.ai/img/comic-quality.webp"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
+<!doctype html><html><head><title>Tracetoon vs No Tracetoon</title><meta name="description" content="On 61 real pull requests, judges preferred Tracetoon&#x27;s PR descriptions to the same agent writing alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), at 28% and 73% lower cost per PR in a long session."><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta property="og:title" content="Tracetoon vs your agent alone: better PRs for less"><meta property="og:description" content="Judges picked the Tracetoon PR over the same agent writing alone 72–9 (Opus 5.5) and 111–19 (Sol 6.1) on 61 real PRs, at 28% and 73% lower cost per PR in a long session."><meta property="og:image" content="https://tracetoon.ai/img/og-vs-native.jpg"><meta property="og:url" content="https://tracetoon.ai/vs-native.html"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://tracetoon.ai/img/og-vs-native.jpg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet"><style>  /* shared site header: identical on index.html and evidence-graph.html */
   :root { --sh-bg:#fffdf6; --sh-fg:#1b1913; --sh-ink:#1b1913; --sh-accent:#c2410c; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; } }
   :root[data-theme="dark"] { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; }
   .site-top { position:sticky; top:0; z-index:50; background:var(--sh-bg); border-bottom:2px solid var(--sh-ink); font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  .site-top .site-wrap { max-width:1120px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
+  .site-top .site-wrap { max-width:1600px; margin:0 auto; padding:0 clamp(16px,4vw,48px); display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
   .site-brand { display:flex; align-items:center; gap:.45rem; text-decoration:none; color:var(--sh-fg); }
   .site-brand img { width:36px; height:36px; display:block; }
   .site-brand .site-wordmark { height:30px; width:auto; display:block; }
@@ -24,7 +24,7 @@ html{scroll-padding-top:70px} .toc{top:calc(env(safe-area-inset-top,0px) + 82px)
       <a href="./#install">Install</a>
       <a href="./#why" class="opt">Why</a>
       <a href="./#talk" class="opt">Talk</a>
-      <a href="evidence-graph-61.html" aria-current="page">Results</a>
+      <a href="results.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -55,8 +55,10 @@ html{scroll-padding-top:70px} .toc{top:calc(env(safe-area-inset-top,0px) + 82px)
   --warn:#ef8a6d; --warn-soft:#46231a; --over:#e6be5a; --over-soft:#3d3115; --add-soft:#163a32; --miss-soft:#252e2a;
   --note:#1c2622; --code:#1d2622; --neutral:#6d7a74; color-scheme:dark }
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
-.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:44px}
+.wrap{max-width:1400px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:44px}
 @media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}.toc{display:none}}
+main p,main li{max-width:78ch}
+.back{display:inline-block;font-size:13px;font-weight:600;color:var(--graph);text-decoration:none;margin-bottom:10px}.back:hover{text-decoration:underline}
 .toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:13px;line-height:1.5}
 .toc a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
 .toc a:hover,.toc a:focus-visible{color:var(--graph)}
@@ -154,6 +156,7 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
 </nav>
 <main>
 <header id="result">
+  <a class="back" href="results.html">← All results</a>
   <div class="kicker">Tracetoon · against your agent alone · 61 real pull requests · November 2026</div>
   <h1>Your agent writes better PRs with Tracetoon, and spends less doing it</h1>
   <div class="hero">
@@ -169,6 +172,8 @@ svg .box-n{fill:var(--note);stroke:var(--rule)} svg .box-g{fill:var(--graph-soft
   <tr><td>Cost per PR, 500k-token session</td><td>$1.29 → $0.93 (28% lower)</td><td>$3.50 → $0.93 (73% lower)</td></tr>
   </tbody></table></div>
   <p class="meta">61 real PRs from 12 repositories · each written 3 times by each system · 2 judges per provider, both orders · <a href="prbench.html">prbench</a></p>
+  <figure class="comic"><img src="img/comic-vs-native.webp" width="1400" height="934" alt="Two-panel comic. Agent alone: a frazzled robot buried in session logs hands an unimpressed developer a crumpled page that says 'Fixed stuff.' while coins spill from a cracked jar labelled $3.50. Same agent + Tracetoon: the same robot, smiling, hands over a neat pull request with green check marks and a comic pinned to it; a small jar labelled $0.93 sits on the desk and the developer gives a thumbs up." style="display:block;width:100%;height:auto">
+  <figcaption>Drawn with Tracetoon's comic image route (Codex), the same one it uses to add a comic to a PR.</figcaption></figure>
   <p style="margin-top:22px">Most people ask the agent they are already coding with to open the pull request. We compared exactly that, with Claude Code on Opus 5.5 and Codex on Sol 6.1, against the same agent in the same session using Tracetoon. Judges preferred the Tracetoon description far more often, it scored about 15 points higher on a 100-point quality scale, and it carried fewer factual errors. It also cost less: your session's model only coordinates, while a fresh drafter and two small reviewers do the writing and checking without dragging your whole conversation along. This is a separate benchmark from our <a href="evidence-graph-61.html">evidence-graph results</a>, which compared two versions of Tracetoon.</p>
 </header>
 

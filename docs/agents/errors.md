@@ -53,7 +53,7 @@ Successful JSON objects also carry `schemaVersion`; JSON arrays (such as
 | `GITHUB_UNREACHABLE` | 7 | GitHub could not be reached, timed out or rate-limited the call | Rerun the same command in a minute | yes | no |
 | `CONSENT_REQUIRED` | 4 | Sending comic prompts to this image route needs the user’s agreement | Ask the user; rerun with --consent only after they agree | no | yes |
 | `NO_IMAGE_ROUTE` | 5 | No approved image route can draw the comic | Offer the printed options, or skip the comic | no | yes |
-| `COMIC_UNEXPLAINED` | 1 | A comic was expected and an image route could draw it, but none was drawn or skipped with a reason | Draw it (SKILL step 5), or `tracetoon comic skip --reason "<why>"`, then render again | no | no |
+| `COMIC_UNEXPLAINED` | 1 | A comic was expected and an image route could draw it, but none was drawn or skipped with a reason | Draw it (references/full-path.md step 5), or `tracetoon comic skip --reason "<why>"`, then render again | no | no |
 | `UPDATES_DISABLED` | 1 | `TRACETOON_DISABLE_UPDATES=1` is set here |  | no | no |
 | `UPDATE_LOOKUP_FAILED` | 7 | The release list could not be fetched | Rerun the same command in a minute | yes | no |
 | `SKILL_SOURCE_NOT_FOUND` | 1 | `setup` found no skill folder shipped with this runtime | Follow docs/agents/install.md | no | no |

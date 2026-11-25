@@ -11,14 +11,14 @@ write, and there's a comic on top.
 
 | | |
 | --- | --- |
-| **72–9** | both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing it alone |
-| **111–19** | the same against Codex (Sol 6.1) alone |
+| **72–9** | both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing alone |
+| **111–19** | the same on Codex (Sol 6.1) |
 | **−50%** | factual errors per PR on Opus 5.5 (0.16 vs 0.32) |
-| **−28% / −73%** | cost per PR on Opus / Sol, in a session carrying 500k tokens |
+| **−28% / −73%** | cost per PR on Claude Code / Codex in a 500k-token session |
 
-prbench: 61 real PRs from 12 repositories, each written 3 times by each system, 2 AI judges per provider in both orders. Compared with the same agent in the same session writing the PR alone. Full results: https://tracetoon.ai/vs-native.html
+prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching. Full results: https://tracetoon.ai/vs-native.html
 
-Against Tracetoon's earlier multi-agent workflow, the evidence graph was preferred 79–38 (Codex) and 60–21 (Claude Code) at 70% / 43% lower cost: https://tracetoon.ai/evidence-graph-61.html
+Every report, including the evidence graph against Tracetoon's earlier workflow: https://tracetoon.ai/results.html
 
 > **For AI agents:** start with [agents.md](https://tracetoon.ai/agents.md) (how to run Tracetoon,
 > exit codes, which commands publish) and
@@ -93,7 +93,7 @@ on a best-effort basis.
 | Cline (CLI, VS Code and JetBrains extensions)                         | ✅ supported ([see notes](https://tracetoon.ai/docs/agents/support.md#notes))                          |
 | Junie (CLI and JetBrains IDE plugin)                                  | ✅ supported                                                                      |
 | Devin (CLI and Devin Desktop, formerly Windsurf)                      | ✅ supported (uses Claude Code's hook; [see notes](https://tracetoon.ai/docs/agents/support.md#notes)) |
-| Goose (CLI and desktop app)                                           | ✅ supported                                                                      |
+| Goose (CLI and desktop app)                                           | ✅ supported ([see notes](https://tracetoon.ai/docs/agents/support.md#notes))                          |
 | Qwen Code (CLI)                                                       | ✅ supported                                                                      |
 | Crush (CLI)                                                           | ✅ supported                                                                      |
 | Amp (CLI)                                                             | 🟡 partial (no session logs; [see notes](https://tracetoon.ai/docs/agents/support.md#notes))          |

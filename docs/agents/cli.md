@@ -83,6 +83,8 @@ run validation and record exact tested content
 | `--cwd <path>` | directory inside the repository |
 | `--skip <reason>` | explicit CI-only or unavailable check |
 | `--force` | rerun even if unchanged |
+| `--timeout <minutes>` | stop the check after this long (default 15); a timeout is reported as incomplete, never as failed |
+| `--progress` | echo the first output lines on stderr while it runs (default: quiet until the one-line summary, unless stderr is a terminal; live output is in check-logs/running.log) |
 | `--input <path>` | also fingerprint an ignored generated artifact (repeatable) (default: `[]`) |
 
 ## `tracetoon images`
@@ -122,6 +124,7 @@ check git, gh and which agent logs are on this machine
 | --- | --- |
 | `--probe` | also list record types the log readers do not recognize |
 | `--strict` | exit 6 if a required check fails; with --probe: exit 5 if unknown record types are found |
+| `--verbose` | the full report (agents, installs, hooks, image routes) |
 
 ## `tracetoon scan`
 
@@ -185,6 +188,8 @@ prepare digest and contribution context from one repository snapshot
 | `--reviewer-effort <level>` | review plan (SKILL "Reviewer effort:"): low, medium, high, xhigh, max or default; every pass must record it |
 | `--reviewer-runner <runner>` | review plan (SKILL "Reviewer runner:"): agent (the drafter starts the reviewer) or tracetoon (tracetoon review run starts it with the model pinned; publish requires that) |
 | `--review-recheck <mode>` | review plan (SKILL "Review recheck:"): once (each reviewer confirms the correction round), contested (only reviewers whose findings were rejected) or none; publish never requires a recheck |
+| `--drafter-effort <level>` | delegated drafting (SKILL "Drafter effort:"): the drafter agent's effort (low, medium, high, xhigh, max) or default |
+| `--drafter-model <name>` | delegated drafting (SKILL "Drafter model:"): a fresh drafter agent on this model drafts from drafter-packet.md while this agent only coordinates; standard = Claude Code sonnet, Codex gpt-6.1-terra; inherit = the session's model; main (default) = draft yourself |
 
 ## `tracetoon source <paths...>`
 
@@ -229,6 +234,16 @@ freeze body.md into the final PR body, scan it, and report the review results
 | `--lean` | lean brief path: drafted inline from the evidence brief, no separate reviewer needed to publish |
 | `--check` | brief path: check the draft against the evidence brief before the slim review |
 | `--reviewed` | reviewed brief path: drafted inline from the evidence brief, then checked by one slim reviewer (reviewer-notes.md) |
+| `--verbose` | text mode: also print optional author notes and evidence-graph leads |
+
+## `tracetoon finish`
+
+after drafting: render (with the brief check), write the review packets or bind the review to the final render, and print the one next step
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--verbose` | also print render's full report |
 
 ## `tracetoon review-packet`
 
@@ -283,6 +298,7 @@ turn the lean reviewer's review-findings.json into review.json v2 for the curren
 | `--pass <n>` | which reviewer pass this is (default: this reviewer's earlier pass with the same lens, else the next) |
 | `--lens <a\|b\|c>` | the lens this reviewer checked (default findings file: review-findings-<lens>.json) |
 | `--rebind` | rebuild review.json for the current render from the passes already imported (claims whose quote is gone count as fixed) |
+| `--verbose` | list every warning, not only those that need an action |
 
 ## `tracetoon publish`
 
@@ -301,6 +317,18 @@ create or update the PR with exactly what was rendered
 | `--accept-open` | publish although the last render listed sentences to fix or brief rows to cover (recorded) |
 | `--dry-run` | check everything and print what publishing would do (gh calls, target, title), without pushing or posting |
 
+## `tracetoon genre`
+
+comic genres: the built-in ones plus your own genre files
+
+## `tracetoon genre list`
+
+list the genres a comic can use here (built-in, user and repo genre files) and any genre file that was skipped
+
+## `tracetoon genre check <file>`
+
+check a genre file before adding it (exit 1 when it has errors)
+
 ## `tracetoon comic`
 
 make this PR's comic
@@ -314,6 +342,26 @@ record why this PR has no comic when one was expected (the user declined, or dra
 | `--run <id>` | run id (default: latest) |
 | `--reason <text>` | why, in the user's terms (shown after publishing) |
 | `--mcp` | recorded by the MCP server, which cannot draw |
+| `--by <who>` | user (the user declined the comic) or agent (default: the agent decided) |
+
+## `tracetoon comic packet`
+
+write the comic author's packet (brief, description, genres) and say how to hand it to one fresh subagent with the draw-cartoon skill
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--genre <id>` | offer only this genre (an id or a short phrase) |
+
+## `tracetoon comic run`
+
+the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--model <name>` | the author's and judges' model (default: the host's default model, as the subagent flow's 'same model class') |
+| `--creative` | experimental: the loop may also rewrite a flat joke or weak script |
 
 ## `tracetoon comic check`
 
@@ -350,7 +398,7 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 
 ## `tracetoon comic reroll`
 
-redraw the page in a different style (or the one given), keeping the story
+redraw the page in a different style (or the one given), keeping the story and genre; fresh styles prefer ones that suit the genre
 
 | Option | Description |
 | --- | --- |
@@ -430,6 +478,15 @@ the agent hook that routes PRs through Tracetoon
 | `--agent <agent>` | claude, codex, antigravity, factory, copilot, cursor, opencode, kilo, kiro, cline, junie, goose, qwen, crush, amp (required) |
 | `--event <event>` | SessionStart, PreToolUse, PostToolUse or Stop (required) |
 
+## `tracetoon hook plugin`
+
+called by Tracetoon host plugins: the PR check and session observation in one process
+
+| Option | Description |
+| --- | --- |
+| `--agent <agent>` | claude, codex, antigravity, factory, copilot, cursor, opencode, kilo, kiro, cline, junie, goose, qwen, crush, amp (required) |
+| `--event <event>` | SessionStart, PreToolUse or PostToolUse (required) |
+
 ## `tracetoon hook pre-pr`
 
 called by agents before shell commands; routes PR creation through Tracetoon
@@ -472,6 +529,7 @@ install the skill shipped with this runtime into each agent's skill folder, and 
 | --- | --- |
 | `--agent <id>` | only this agent (repeatable; see tracetoon integrations) (default: `[]`) |
 | `--no-hook` | leave the PR hook alone |
+| `--fix-sh` | Windows: add Git for Windows' usr\bin (or Tracetoon's sh shim) to the user PATH so Goose can run hooks |
 
 ## `tracetoon guide`
 

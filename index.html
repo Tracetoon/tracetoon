@@ -32,9 +32,9 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "macOS, Linux, Windows",
   "license": "https://www.apache.org/licenses/LICENSE-2.0",
-  "softwareVersion": "1.0.0-rc.36",
+  "softwareVersion": "1.0.0-rc.47",
   "url": "https://tracetoon.ai",
-  "downloadUrl": "https://github.com/Tracetoon/tracetoon/releases/tag/v1.0.0-rc.36",
+  "downloadUrl": "https://github.com/Tracetoon/tracetoon/releases/tag/v1.0.0-rc.47",
   "codeRepository": "https://github.com/Tracetoon/tracetoon",
   "programmingLanguage": "TypeScript",
   "offers": {
@@ -160,7 +160,8 @@
   a { color:var(--accent); }
   img { max-width:100%; height:auto; display:block; }
   code { font:.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--line); padding:.08em .35em; border-radius:4px; }
-  .wrap { max-width:1120px; margin:0 auto; padding:0 16px; }
+  /* Wide screens: sections grow to 1600px (1840px with larger type past 2200px); running text stays near 70 characters a line. */
+  .wrap { max-width:1600px; margin:0 auto; padding:0 clamp(16px,4vw,48px); }
   .wrap > * { min-width:0; }
   /* Figures use Lilita One: Bangers draws 1 as a bare stroke, easy to misread next to 7 (-13% vs -73%). */
   :root { --num:"Lilita One","Comic Neue",system-ui,sans-serif; }
@@ -171,7 +172,7 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; } }
   :root[data-theme="dark"] { --sh-bg:#14130f; --sh-fg:#f2ede0; --sh-ink:#000000; --sh-accent:#fb8a4c; }
   .site-top { position:sticky; top:0; z-index:50; background:var(--sh-bg); border-bottom:2px solid var(--sh-ink); font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  .site-top .site-wrap { max-width:1120px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
+  .site-top .site-wrap { max-width:1600px; margin:0 auto; padding:0 clamp(16px,4vw,48px); display:flex; align-items:center; gap:1rem; height:58px; box-sizing:border-box; }
   .site-brand { display:flex; align-items:center; gap:.45rem; text-decoration:none; color:var(--sh-fg); }
   .site-brand img { width:36px; height:36px; display:block; }
   .site-brand .site-wordmark { height:30px; width:auto; display:block; }
@@ -180,17 +181,20 @@
   .site-top nav a:hover, .site-top nav a[aria-current="page"] { color:var(--sh-accent); }
   .site-top nav a.ext { display:inline-flex; align-items:center; gap:.2em; }
   .site-top nav a.ext svg { width:.8em; height:.8em; }
+  @media (min-width:2200px) { html { font-size:18px; } body, .site-top { font-size:19px; } .wrap, .site-top .site-wrap { max-width:1840px; } }
+  @media (min-width:3000px) { html { font-size:24px; } body, .site-top { font-size:25px; } .wrap, .site-top .site-wrap { max-width:2500px; } .site-top .site-wrap { height:76px; } .site-brand img { width:46px; height:46px; } .site-brand .site-wordmark { height:38px; } }
   .site-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
   @media (max-width:600px) { .site-top nav a.opt { display:none; } .site-top nav { gap:.85rem; } .site-brand .site-wordmark { height:26px; } }
 
   /* hero */
   .hero { padding:2rem 0 2.5rem; }
-  .hero .wrap { display:grid; grid-template-columns:1.05fr 1fr; gap:2.5rem; align-items:center; }
+  .hero .wrap { display:grid; grid-template-columns:1fr 1.1fr; gap:clamp(2rem,4vw,4rem); align-items:start; }
+  .hero-side { display:grid; gap:1.1rem; }
   .tagline { font-size:clamp(2.6rem,6vw,4.4rem); line-height:.98; margin:0 0 .8rem; }
   .tagline em { font-style:normal; background:var(--pow); color:var(--pow-fg); padding:0 .18em; border:3px solid var(--ink); box-shadow:var(--shadow); display:inline-block; transform:rotate(-2deg); }
   .lede { font-size:1.12rem; color:var(--muted); margin:0 0 1.25rem; max-width:34em; }
   .lede strong { color:var(--fg); }
-  .hero-art { border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink); border-radius:6px; overflow:hidden; background:#fff; }
+  .hero-art { margin:0; border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink); border-radius:6px; overflow:hidden; background:#fff; }
   @media (max-width:880px) { .hero .wrap { grid-template-columns:1fr; gap:1.75rem; } .hero { padding-top:1.25rem; } }
 
   /* install card */
@@ -221,11 +225,21 @@
   .chips-also li { color:var(--fg); }
 
   /* proof strip */
-  .proof { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin:1.1rem 0 .3rem; }
+  .proof { display:grid; grid-template-columns:1.6fr 1fr 1.4fr; gap:.8rem; margin:0; }
   .proof div { border-left:4px solid var(--accent); padding:.1rem 0 .1rem .6rem; }
-  .proof b { display:block; font-family:var(--num); font-weight:400; font-size:1.8rem; line-height:1.05; white-space:nowrap; letter-spacing:.01em; }
-  .proof span { font-size:.8rem; color:var(--muted); line-height:1.3; display:block; }
+  .proof b { display:block; font-family:var(--num); font-weight:400; font-size:clamp(1.45rem,1.9vw,1.85rem); line-height:1.1; letter-spacing:.01em; margin-bottom:.15rem; }
+  .nw { white-space:nowrap; }
+  .proof div > span { font-size:.8rem; color:var(--muted); line-height:1.3; display:block; }
   .more { font-size:.88rem; font-weight:600; }
+  .proof-links { display:flex; flex-wrap:wrap; gap:.3rem 1.2rem; margin:-.3rem 0 0; }
+  @media (max-width:520px) { .proof { grid-template-columns:1fr; } .proof b { font-size:1.9rem; } }
+
+  /* results teaser under the hero comic */
+  .teaser { display:flex; align-items:center; gap:1rem; background:var(--card); border:2px solid var(--ink); border-radius:8px; box-shadow:3px 3px 0 var(--ink); padding:.6rem; text-decoration:none; color:var(--fg); }
+  .teaser img { width:clamp(96px,22%,170px); border:2px solid var(--ink); border-radius:4px; flex:none; }
+  .teaser b { display:block; font-family:Bangers,system-ui,sans-serif; font-weight:400; letter-spacing:.04em; font-size:1.3rem; line-height:1.1; color:var(--accent); }
+  .teaser span { font-size:.86rem; color:var(--muted); line-height:1.35; display:block; }
+  .teaser:hover b { text-decoration:underline; }
 
   /* sections */
   section.adv { padding:3.5rem 0; border-top:2px dashed var(--line); }
@@ -236,7 +250,7 @@
   .art figcaption { font-size:.82rem; color:var(--muted); margin-top:.8rem; }
   .kicker { display:inline-block; font-family:Bangers,system-ui,sans-serif; letter-spacing:.06em; font-size:1rem; background:var(--pow); color:var(--pow-fg); border:2px solid var(--ink); padding:0 .55rem; transform:rotate(-1.5deg); margin-bottom:.6rem; }
   h2.big { font-size:clamp(2rem,4.2vw,2.9rem); line-height:1.02; margin:0 0 .8rem; }
-  .copytext p { margin:0 0 .8rem; }
+  .copytext p { margin:0 0 .8rem; max-width:68ch; }
   .copytext ul { padding-left:1.1rem; margin:.4rem 0 1rem; }
   .copytext li { margin:.35rem 0; }
   .stat { display:flex; align-items:center; gap:.9rem; background:var(--card); border:2px solid var(--ink); border-radius:8px; padding:.65rem .9rem; box-shadow:3px 3px 0 var(--ink); }
@@ -277,6 +291,7 @@
   .faq-list details { background:var(--card); border:2px solid var(--ink); box-shadow:3px 3px 0 var(--ink); }
   .faq-list summary { line-height:1.35; }
   .faq-list p { color:var(--muted); font-size:.92rem; margin:.6rem 0 0; }
+  @media (min-width:1360px) { .faq-list { grid-template-columns:1fr 1fr 1fr; } }
   @media (max-width:880px) { .faq-list { grid-template-columns:1fr; } }
 
   /* fine print */
@@ -313,7 +328,7 @@
       <a href="#install">Install</a>
       <a href="#why" class="opt">Why</a>
       <a href="#talk" class="opt">Talk</a>
-      <a href="vs-native.html">Results</a>
+      <a href="results.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -354,16 +369,22 @@
           <p class="chips-more">Plus Claude Code and Codex inside Zed. <a href="https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/support.md">Verification results →</a></p>
         </div>
 
-        <div class="proof">
-          <div><b>72–9<br>111–19</b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
-          <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
-          <div><b>−28%<br>−73%</b><span>cost per PR in a long session (Opus · Sol)</span></div>
-        </div>
-        <a class="more" href="vs-native.html">Read the full results →</a> <a class="more" href="prbench.html" style="margin-left:.8rem">How we test: prbench →</a>
       </div>
-      <div class="hero-art">
-        <img src="img/hero.webp" width="1400" height="837" fetchpriority="high"
-             alt="Comic titled NO MORE PR SLOP. Before: a developer recoils from a pull request reading 'Improves robustness and code quality. All tests pass (probably)'. After: the same developer grins and points at a pull request reading 'What you asked. What ran. What changed.' with a comic pinned to it.">
+      <div class="hero-side">
+        <div class="proof">
+          <div><b><span class="nw">72–9</span> · <span class="nw">111–19</span></b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
+          <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
+          <div><b><span class="nw">−28%</span> · <span class="nw">−73%</span></b><span>cost per PR in a long session (Opus · Sol)</span></div>
+        </div>
+        <p class="proof-links"><a class="more" href="results.html">All results →</a> <a class="more" href="prbench.html">How we test: prbench →</a></p>
+        <figure class="hero-art">
+          <img src="img/hero.webp" width="1400" height="837" fetchpriority="high"
+               alt="Comic titled NO MORE PR SLOP. Before: a developer recoils from a pull request reading 'Improves robustness and code quality. All tests pass (probably)'. After: the same developer grins and points at a pull request reading 'What you asked. What ran. What changed.' with a comic pinned to it.">
+        </figure>
+        <a class="teaser" href="results.html">
+          <img src="img/comic-vs-native.webp" width="1400" height="934" loading="lazy" alt="">
+          <div><b>Three reports, one verdict</b><span>Tracetoon vs your agent alone, the evidence graph on 61 real PRs, and where it started. See all results →</span></div>
+        </a>
       </div>
     </div>
   </section>
@@ -411,7 +432,7 @@
           <li><strong>Validation comes from receipts.</strong> Tracetoon writes the Validation section from the test and build runs on the final code. The model never gets to type "all tests pass."</li>
           <li><strong>The why, not just the what.</strong> Plans, decisions and the original request come along with the code. On Codex, graph drafts conveyed 82% of the expert fact sheet's claims, against 72% without it.</li>
         </ul>
-        <div class="stat"><b>82% vs 72%</b><span>of the expert fact sheet's key facts conveyed on Codex, with and without the graph, across 61 real PRs (about even on Claude Code: 75% vs 76%).</span></div>
+        <div class="stat"><b>82% vs 72%</b><span>of the expert fact sheet's key facts conveyed on Codex, with and without the graph, across 61 real PRs (slightly fewer on Claude Code: 73% vs 77%).</span></div>
       </div>
     </div>
   </section>
@@ -617,7 +638,7 @@
           <li>Not perfect yet: on Claude Code, graph drafts respect fewer of the open questions in the evidence, convey slightly fewer key facts, and take about 1.6× as long to write.</li>
           <li>On Codex the graph made more confirmed factual errors (0.33 vs 0.16 per PR), so it fails our own strict error margin there. About a third come from two known bugs in the generated Validation section, which are being fixed. The full write-up lists every criterion.</li>
         </ul>
-        <p><a href="vs-native.html">Tracetoon vs your agent alone: the full results →</a> <a href="evidence-graph-61.html">The evidence-graph write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
+        <p><a href="results.html">All results, with a summary of each report →</a> <a href="vs-native.html">Tracetoon vs your agent alone: the full results →</a> <a href="evidence-graph-61.html">The evidence-graph write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
       </details>
     </div>
   </section>
@@ -654,6 +675,7 @@
   <div class="wrap">
     <span>Tracetoon is open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
+    <a href="results.html">All results</a>
     <a href="vs-native.html">Tracetoon vs your agent alone</a>
     <a href="evidence-graph-61.html">Evidence graph results</a>
     <a href="prbench.html">prbench benchmark</a>
