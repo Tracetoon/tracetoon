@@ -658,9 +658,13 @@ export async function comicRenderCmd(
   if (manifest?.fingerprint && manifest.fingerprint !== fingerprint)
     // Art drawn by an earlier build: adopt it under today's fingerprint.
     writeJson(run, 'art/manifest.json', { ...manifest, fingerprint });
+  // The "made with Tracetoon" footer: on unless the user or repo turned it off.
+  const credit = loadConfig(root).comicCredit !== false;
   let svg: string;
   if (page) {
-    svg = pageWithFooter({ mime: page.mime, data: readFileSync(page.path) });
+    svg = pageWithFooter({ mime: page.mime, data: readFileSync(page.path) }, undefined, {
+      credit,
+    });
   } else {
     const found = script.panels.map((_, i) => existingPanel(run, i));
     const missing = found.flatMap((f, i) => (f ? [] : [i + 1]));
@@ -678,7 +682,7 @@ export async function comicRenderCmd(
       data: readFileSync(f!.path),
     }));
     const layout = readJson<Layout>(run, 'layout.json');
-    svg = composePage(script, images, layout);
+    svg = composePage(script, images, layout, { credit });
   }
   mkdirSync(join(run.dir, 'out'), { recursive: true });
   const svgPath = join(run.dir, 'out', 'comic.svg');
