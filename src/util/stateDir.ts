@@ -30,6 +30,10 @@ export function ensureStateDir(dir: string): string {
   mkdirSync(dir, { recursive: true });
   const ignore = join(dir, '.gitignore');
   if (basename(dir) === STATE_FOLDER && !existsSync(ignore))
-    writeFileSync(ignore, '# Tracetoon scratch: runs and caches, never committed.\n*\n', 'utf8');
+    writeFileSync(
+      ignore,
+      '# Tracetoon scratch: runs and caches, never committed.\n*\n',
+      'utf8',
+    );
   return dir;
 }

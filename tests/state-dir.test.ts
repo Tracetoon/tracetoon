@@ -43,7 +43,9 @@ describe('where a checkout keeps its runs', () => {
 
     // The folder ignores itself: no untracked files, and the PR diff never sees it.
     expect(readFileSync(join(state, '.gitignore'), 'utf8')).toContain('*');
-    expect(git(worktree, ['status', '--porcelain', '--untracked-files=all']).stdout).toBe('');
+    expect(git(worktree, ['status', '--porcelain', '--untracked-files=all']).stdout).toBe(
+      '',
+    );
     expect(prTruth(worktree, { noGh: true }).files.map((f) => f.path)).toEqual([]);
 
     // Runs stay apart per checkout and still map back to their worktree.
