@@ -135,7 +135,7 @@ const alive = (pid: number) => {
 
 export async function comicRunCmd(cwd: string, opts: ComicRunOpts): Promise<void> {
   const repo = repository(cwd);
-  const run = findRun(repo.gitDir, opts.run);
+  const run = findRun(repo.stateDir, opts.run);
   assertRunOwner(run, repo.root, repo.branch);
   const lock = join(run.dir, LOCK_FILE);
   let result: ComicRunResult | undefined;

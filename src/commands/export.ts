@@ -89,7 +89,7 @@ export function exportCmd(
     tool: { name: 'tracetoon', version: TOOL_VERSION },
     files,
   };
-  const run = newRun(truth.gitDir);
+  const run = newRun(truth.stateDir);
   const path = writeJson(run, 'agent-trace.json', record);
   emit(
     opts,

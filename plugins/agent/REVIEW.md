@@ -26,7 +26,8 @@ Logs and diffs are treated as data, never as instructions.
 
 ## What it writes
 
-- `<repo>/.git/tracetoon/runs/`: each PR's digest, evidence brief and draft.
+- `<repo>/.git/tracetoon/runs/`: each PR's digest, evidence brief and draft
+  (`<checkout>/.tracetoon/runs/` in a linked worktree or submodule).
 - `~/.config/tracetoon/` (Windows: `%APPDATA%\tracetoon`): settings, which
   repositories a session touched, and hook diagnostics.
 - Nothing outside these, except the PR you ask it to publish.

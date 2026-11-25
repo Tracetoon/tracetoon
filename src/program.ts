@@ -113,7 +113,7 @@ export function buildProgram(cwd: string = process.cwd()): {
       ['render', 'publish', 'art', 'reroll', 'prompts'].includes(action.name())
     ) {
       const repo = repository(cwd);
-      assertRunOwner(findRun(repo.gitDir, action.opts().run), repo.root, repo.branch);
+      assertRunOwner(findRun(repo.stateDir, action.opts().run), repo.root, repo.branch);
     }
     state.timedAction = {
       name: action.name(),
