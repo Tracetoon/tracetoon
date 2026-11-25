@@ -358,12 +358,12 @@ describe('public listings sell the project', () => {
     expect(listingDescription()).toContain(
       `and ${supportedLabels().length - 4} more coding agents`,
     );
-    // The results compare Tracetoon's own workflows: they go in a Results section
-    // that says so, never in a one-line listing.
+    // The results go in a Results section that names the comparison, never in a
+    // one-line listing.
     expect(listingDescription()).not.toContain(RESULTS.sentence);
     expect(listingDescription()).not.toMatch(/\d+ to \d+|% lower cost/);
-    // The comparison is with Tracetoon's earlier workflow; listings must say so.
-    expect(RESULTS.sentence).toContain('earlier multi-agent workflow');
+    // The comparison is with the same agent writing alone; listings must say so.
+    expect(RESULTS.sentence).toContain('same agent writing the PR alone');
     expect(RESULTS.url).toStartWith('https://tracetoon.ai/');
   });
   test('the npm README lists every benefit and the results, and npm leads with the benefit', () => {
