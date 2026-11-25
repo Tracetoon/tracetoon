@@ -119,7 +119,11 @@ describe('cast offers', () => {
     const base = { ...pageScript(), genre: 'anime-fantasy' } as ComicScript;
     const opts = { genreOptions: [option] };
     expect(errors(checkScript(base, opts)).map((p) => p.where)).toContain('personas');
-    expect(errors(checkScript({ ...base, personas: offered.slice(0, 3) }, opts)).filter((p) => p.where.startsWith('personas'))).toHaveLength(0);
+    // A required archetype in the offer (about one comic in five) must be among them.
+    const required = option.castOffer!.personas.find((p) => p.required)?.id;
+    const cast = [...new Set([...offered.slice(0, 3), ...(required ? [required] : [])])];
+    expect(errors(checkScript({ ...base, personas: cast }, opts)).filter((p) => p.where.startsWith('personas'))).toHaveLength(0);
+    if (required) expect(errors(checkScript({ ...base, personas: offered.filter((id) => id !== required).slice(0, 2) }, opts)).map((p) => p.where)).toContain('personas');
     const stranger = roster.find((p) => !offered.includes(p.id))!.id;
     expect(errors(checkScript({ ...base, personas: [offered[0]!, stranger] }, opts)).map((p) => p.where)).toContain('personas[1]');
     // No offer, no requirement.

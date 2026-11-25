@@ -1,67 +1,19 @@
 /**
- * Casting by rotation. A single comic can't show that a repo's comics include
- * all kinds of people; a run of comics can. Asking every author to "be
- * diverse" made each comic answer with the same one character, so instead
- * the host occasionally offers one concrete, optional suggestion, drawn by
- * seed from a broad pool. Most comics get none and simply cast what the
- * story and genre call for.
+ * Casting by rotation, true to the genre. A single comic can't show that a
+ * repo's comics include all kinds of people; a run of comics can. Asking each
+ * author to "be diverse" made every comic answer with the same one character,
+ * and a generic pool of real-world identities ("a Lebanese woman", "a trans
+ * man") dropped people into genres they don't belong to. So each genre carries
+ * its own diverse archetypes, drawn from the genre's source works (a
+ * dark-skinned elf knight, two heroines in love, a station commander), and the
+ * host requires one in about one comic in five.
  */
 import { createHash } from 'node:crypto';
 
-/** Roughly one comic in five gets a suggestion: noticeable across a run, not the point of every comic. */
-export const CAST_HINT_RATE = 1 / 5;
-
-/**
- * People a comic might include. Backgrounds, ages, bodies and LGBTQ+ people
- * all appear, each a person rather than a role, so the author fits them into
- * whatever role the story needs.
- */
-export const CAST_POOL: readonly string[] = [
-  'a Mexican-American woman in her fifties',
-  'a young Korean man',
-  'a broad-shouldered Samoan man',
-  'a South Asian teenage girl',
-  'a Nigerian man in his sixties',
-  'a Vietnamese grandmother',
-  'a Lebanese woman',
-  'a Navajo man',
-  'a Brazilian woman with freckles',
-  'a Japanese man who uses a wheelchair',
-  'a Filipino teenager',
-  'a Puerto Rican man with a big beard',
-  'a Scottish woman in her seventies',
-  'a Ghanaian woman',
-  'a Chinese-Canadian man',
-  'a Māori woman',
-  'an Ethiopian man',
-  'a Peruvian woman',
-  'a lanky Polish man',
-  'an Indian man in his forties',
-  'a Hawaiian woman',
-  'a deaf crew member who signs',
-  'an Iranian woman with a cane',
-  'a Jamaican man with grey dreadlocks',
-  'a gay man who mentions his husband',
-  'two women who are married to each other',
-  'a man who mentions his boyfriend',
-  'an older lesbian couple',
-  'a trans woman',
-  'a trans man',
-  'a nonbinary person who uses they/them',
-  'a nonbinary teenager',
-  'a bisexual pilot who mentions their partner',
-];
+/** About one comic in five must cast one of its genre's diverse archetypes. */
+export const DIVERSE_RATE = 1 / 5;
 
 const hash = (s: string) => createHash('sha256').update(s).digest().readUInt32BE(0);
-
-/**
- * One optional casting suggestion for this comic, or undefined (most of the
- * time). Stable for a seed, so a rerun of the same run sees the same hint.
- */
-export function castHint(seed: string, rate = CAST_HINT_RATE): string | undefined {
-  if (hash(`hint\0${seed}`) / 0x1_0000_0000 >= rate) return undefined;
-  return CAST_POOL[hash(`pick\0${seed}`) % CAST_POOL.length];
-}
 
 const STOP = new Set(['a', 'an', 'the', 'and', 'with', 'in', 'of', 'her', 'his', 'their', 'who']);
 const words = (look: string) =>
@@ -99,11 +51,14 @@ export type CastRole = (typeof CAST_ROLES)[number];
 export interface CastPersona {
   /** Short stable id the script records in `personas`. */
   id: string;
-  role: CastRole;
+  /** A party role (CAST_ROLES), or any role word for a diverse archetype (a captain, a pilot). */
+  role: CastRole | (string & {});
   /** The persona in a few words. */
   name: string;
   /** Quirk, look and the kind of joke they carry. */
   details: string;
+  /** A diverse archetype the host requires in this comic (diverseHint). */
+  required?: true;
 }
 
 export interface CastOffer {
@@ -126,12 +81,16 @@ const slug = (s: string) =>
     .slice(0, 5)
     .join('-');
 
-/** Parses a roster entry, `role: name — details`; undefined when malformed. */
-export function parseCastEntry(entry: string): CastPersona | undefined {
+/**
+ * Parses a roster entry, `role: name — details`; undefined when malformed.
+ * A cast roster's roles are the party roles; `anyRole` accepts any lowercase
+ * word (a diverse archetype for a genre without a party, such as a captain).
+ */
+export function parseCastEntry(entry: string, opts: { anyRole?: boolean } = {}): CastPersona | undefined {
   const m = /^\s*([a-z]+)\s*:\s*(.+?)\s+[—–-]{1,2}\s+(.+?)\s*$/.exec(entry);
   if (!m) return undefined;
   const role = m[1] as CastRole;
-  if (!CAST_ROLES.includes(role)) return undefined;
+  if (!opts.anyRole && !CAST_ROLES.includes(role)) return undefined;
   const name = m[2]!.trim();
   return { id: slug(name.replace(/^(an?|the)\s+/i, '')), role, name, details: m[3]!.trim() };
 }
@@ -162,4 +121,24 @@ export function castOffer(cast: readonly CastPersona[] | undefined, seed: string
     for (const p of shuffled(cast, seed, 'fill')) if (picks.length < OFFER_SIZE && !picks.includes(p)) picks.push(p);
   }
   return { kind: sideOnly ? 'side-only' : 'party', personas: picks.slice(0, OFFER_SIZE) };
+}
+
+/**
+ * The diverse archetype this comic must cast, or undefined (most comics).
+ * Stable for a seed; every archetype in the genre's list is equally likely.
+ */
+export function diverseHint(list: readonly CastPersona[] | undefined, seed: string, rate = DIVERSE_RATE): CastPersona | undefined {
+  if (!list?.length || hash(`diverse\0${seed}`) / 0x1_0000_0000 >= rate) return undefined;
+  return { ...list[hash(`diverse-pick\0${seed}`) % list.length]!, required: true };
+}
+
+/**
+ * Puts a required archetype into a cast offer: it takes the place of the
+ * offered persona with its role, else the side character, else the last one.
+ */
+export function withRequired(offer: CastOffer, persona: CastPersona): CastOffer {
+  const personas = [...offer.personas];
+  const at = [personas.findIndex((p) => p.role === persona.role), personas.findIndex((p) => p.role === 'side'), personas.length - 1].find((i) => i >= 0)!;
+  personas[at] = persona;
+  return { ...offer, personas };
 }

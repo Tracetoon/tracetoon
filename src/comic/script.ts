@@ -281,7 +281,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
     if (lookAlike)
       warn(
         'leadLook',
-        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast someone who looks different in age, build, hair or clothes`,
+        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast a different kind of character (age, build, role or costume) in the genre's own look`,
       );
     const reused = (current.castNames ?? []).filter((n) =>
       recent.some((r) => r.castNames?.includes(n)),
@@ -502,25 +502,37 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
 export function personaProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
   const out: ScriptProblem[] = [];
   if (typeof s.genre !== 'string') return out;
-  const offer = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!))?.castOffer;
-  if (!offer) return out;
-  const offered = new Map(offer.personas.map((p) => [p.id, p]));
-  const list = offer.personas.map((p) => `${p.id} (${p.role})`).join(', ');
-  if (!Array.isArray(s.personas) || !s.personas.length) {
-    out.push({ where: 'personas', problem: `is required for this genre: list the ids of the offered personas you cast, from ${list}` });
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  const offer = option?.castOffer;
+  const required = option?.requiredCast ?? offer?.personas.find((p) => p.required);
+  if (!offer && !required) return out;
+  const allowed = [...(offer?.personas ?? []), ...(option?.requiredCast ? [option.requiredCast] : [])];
+  const offered = new Map(allowed.map((p) => [p.id, p]));
+  const list = allowed.map((p) => `${p.id} (${p.role})`).join(', ');
+  const personas = Array.isArray(s.personas) ? s.personas : [];
+  if (!personas.length) {
+    out.push({
+      where: 'personas',
+      problem: required
+        ? `is required: this comic must cast "${required.name}" (${required.id}); list the ids of the personas you cast`
+        : `is required for this genre: list the ids of the offered personas you cast, from ${list}`,
+    });
     return out;
   }
-  for (const [i, id] of s.personas.entries()) {
-    if (typeof id !== 'string' || !offered.has(id))
-      out.push({
-        where: `personas[${i}]`,
-        problem:
-          offer.kind === 'side-only'
-            ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
-            : `"${String(id)}" wasn't offered; cast from ${list}`,
-      });
-  }
-  if (s.personas.length < 2)
+  if (offer)
+    for (const [i, id] of personas.entries()) {
+      if (typeof id !== 'string' || !offered.has(id))
+        out.push({
+          where: `personas[${i}]`,
+          problem:
+            offer.kind === 'side-only'
+              ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
+              : `"${String(id)}" wasn't offered; cast from ${list}`,
+        });
+    }
+  if (required && !personas.includes(required.id))
+    out.push({ where: 'personas', problem: `this comic must cast "${required.name}" (${required.id}): ${required.details}` });
+  if (offer && personas.length < 2)
     out.push({ where: 'personas', problem: 'cast at least two of the offered personas', severity: 'warning' });
   return out;
 }

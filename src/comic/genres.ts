@@ -6,7 +6,9 @@
  * are offered first, so a repo's comics don't all land in the same office.
  */
 import { createHash } from 'node:crypto';
-import { castOffer, parseCastEntry, type CastOffer, type CastPersona } from './casting.ts';
+import { castOffer, diverseHint, parseCastEntry, withRequired, type CastOffer, type CastPersona } from './casting.ts';
+import animeFantasyCast from './cast/anime-fantasy.json' with { type: 'json' };
+import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
 import { BUILT_IN_MEMES, memeOffer, stylePick, type Meme } from './memes.ts';
 
 export interface Genre {
@@ -29,6 +31,11 @@ export interface Genre {
    * whole: each comic is offered five personas picked by seed.
    */
   cast?: CastPersona[];
+  /**
+   * Diverse archetypes from the genre's own source works. About one comic in
+   * five must cast one (casting.ts diverseHint).
+   */
+  diverseCast?: CastPersona[];
   /** Famous scenes, lines and tropes of the genre; each comic is offered three (memes.ts). */
   memes?: Meme[];
   /** Style weights; when present the host assigns each comic's style from them. */
@@ -67,7 +74,7 @@ const BUILT_IN_GENRES: Genre[] = [
     ],
     styles: ['space-opera', 'superhero', 'ligne-claire'],
     notes:
-      'Comic combat is welcome and nobody gets hurt: blaster bolts that miss, glowing-sword duels, fighter dogfights, a whole fleet in formation.',
+      'Comic combat is welcome and nobody gets hurt: blaster bolts that miss, glowing-sword duels, fighter dogfights, a whole fleet in formation. Style people as the genre’s source works do: uniforms, flight suits and spacer gear, with crews as varied as the great space sagas.',
   },
   {
     id: 'anime-fantasy',
@@ -114,7 +121,7 @@ const BUILT_IN_GENRES: Genre[] = [
       'Draw it as full-colour fantasy anime by default: clean cel shading, painted skies, glowing spells, sweat drops, sparkle eyes and comic reaction faces. Now and then a black-and-white manga page with screentone suits a tense or battle beat.',
       'The party is the heart of it, and its members are often funnier than the hero: let one of them carry the joke while the hero plays it straight. Cast from the personas offered for this comic; ones whose quirks clash make the best pairs.',
       'Places to choose from, and vary: a guild counter with a queue of adventurers, a rowdy tavern at night, a campfire on the road under the stars, a torchlit dungeon or a glowing gate, a witch\'s atelier full of ink and glass, a magic-academy exam hall, a market-town square, a frontier farming village, a hot-spring inn, a floating library, a flower field, a snowbound mountain pass, the demon lord\'s throne room, an inn room after the quest.',
-      'Battles are comic and bloodless: fireballs that fizzle, a giant spell that flattens a hill, a whole party against one slime. A time loop is a reset to the save point, never a death. Outfits stay practical, with no fan service. Beastfolk are party members, never servants or captives, and fantasy races are never stand-ins for real-world peoples. The summoned hero comes from our world, so anyone can fill that role.',
+      'Battles are comic and bloodless: fireballs that fizzle, a giant spell that flattens a hill, a whole party against one slime. A time loop is a reset to the save point, never a death. Outfits stay practical, with no fan service. Beastfolk are party members, never servants or captives, and fantasy races are never stand-ins for real-world peoples. The summoned hero comes from our world, so anyone can fill that role. Style people as the genre’s source works do: elves, dark elves, dwarves, beastfolk and humans of every complexion, in the genre’s own costumes.',
     ].join('\n\n'),
     // The author never sees this whole roster: each comic is offered five (casting.ts castOffer).
     cast: castRoster([
@@ -315,6 +322,18 @@ const BUILT_IN_GENRES: Genre[] = [
 ];
 
 /** Anime fantasy is mostly full-color anime, with a manga page about one comic in six. */
+/** Built-in diverse archetypes: `{ role, name, details }` from the genre's source works. */
+const diverseRoster = (raw: { role: string; name: string; details: string }[]): CastPersona[] =>
+  raw.map((r) => {
+    const p = parseCastEntry(`${r.role}: ${r.name} — ${r.details}`, { anyRole: true });
+    if (!p) throw new Error(`bad diverse archetype: ${r.name}`);
+    return p;
+  });
+const DIVERSE_CASTS: Record<string, CastPersona[]> = {
+  'anime-fantasy': diverseRoster(animeFantasyCast),
+  'space-opera': diverseRoster(spaceOperaCast),
+};
+
 const STYLE_MIXES: Record<string, Record<string, number>> = {
   'anime-fantasy': { 'anime-fantasy': 7, 'chibi-anime': 2, webtoon: 1, 'shonen-action': 2 },
 };
@@ -323,6 +342,7 @@ export const GENRES: Genre[] = BUILT_IN_GENRES.map((g) => ({
   ...g,
   ...(BUILT_IN_MEMES[g.id]?.length ? { memes: BUILT_IN_MEMES[g.id] } : {}),
   ...(STYLE_MIXES[g.id] ? { styleMix: STYLE_MIXES[g.id] } : {}),
+  ...(DIVERSE_CASTS[g.id]?.length ? { diverseCast: DIVERSE_CASTS[g.id] } : {}),
 }));
 
 export const MAX_GENRE_CHARS = 40;
@@ -371,14 +391,18 @@ export interface GenreOption {
   memeOffer?: Meme[];
   /** The style the host assigned this comic, when the genre has a style mix. */
   assignedStyle?: string;
+  /** A diverse archetype this comic must cast, for a genre without a cast offer. */
+  requiredCast?: CastPersona;
 }
 
 const option = (
-  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix }: Genre,
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast }: Genre,
   seed = '',
   recentMemes: string[] = [],
 ): GenreOption => {
-  const offer = castOffer(cast, `${seed}\0${id}`);
+  const hint = diverseHint(diverseCast, `${seed}\0${id}`);
+  const plain = castOffer(cast, `${seed}\0${id}`);
+  const offer = plain && hint ? withRequired(plain, hint) : plain;
   const memePicks = memeOffer(memes, `${seed}\0${id}`, {
     recent: recentMemes,
     ...(offer ? { roles: [...new Set(offer.personas.map((p) => p.role))] } : {}),
@@ -396,6 +420,7 @@ const option = (
     ...(offer ? { castOffer: offer } : {}),
     ...(memePicks ? { memeOffer: memePicks } : {}),
     ...(style ? { assignedStyle: style } : {}),
+    ...(hint && !offer ? { requiredCast: hint } : {}),
   };
 };
 

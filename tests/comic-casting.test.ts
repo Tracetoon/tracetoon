@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CAST_POOL, castHint, lookSimilarity, SAME_LOOK } from '../src/comic/casting.ts';
+import { DIVERSE_RATE, diverseHint, lookSimilarity, SAME_LOOK, withRequired, type CastPersona } from '../src/comic/casting.ts';
 import { comicSummary } from '../src/comic/composition.ts';
 import { genreById } from '../src/comic/genres.ts';
 import { comicPacketFiles } from '../src/comic/packet.ts';
@@ -8,32 +8,32 @@ import type { ComicScript } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
 
 describe('casting by rotation', () => {
-  test('about one comic in five gets a hint, stable for its seed', () => {
-    const seeds = Array.from({ length: 3000 }, (_, i) => `repo branch run-${i}`);
-    const hints = seeds.map((s) => castHint(s));
+  const list: CastPersona[] = Array.from({ length: 12 }, (_, i) => ({ id: `p${i}`, role: i % 2 ? 'captain' : 'warrior', name: `persona ${i}`, details: 'd' }) as CastPersona);
+
+  test('about one comic in five must cast a genre archetype, stable for its seed, spread evenly', () => {
+    expect(DIVERSE_RATE).toBe(1 / 5);
+    const seeds = Array.from({ length: 6000 }, (_, i) => `repo branch run-${i}`);
+    const hints = seeds.map((s) => diverseHint(list, s));
     const share = hints.filter(Boolean).length / seeds.length;
     expect(share).toBeGreaterThan(0.15);
     expect(share).toBeLessThan(0.25);
-    expect(castHint('repo branch run-7')).toBe(hints[7]);
-  });
-
-  test('hints spread across the whole pool, none dominating', () => {
+    expect(diverseHint(list, 'repo branch run-7')).toEqual(hints[7]);
+    expect(hints.every((h) => !h || h.required)).toBe(true);
     const counts = new Map<string, number>();
-    for (let i = 0; i < 9000; i++) {
-      const h = castHint(`seed-${i}`);
-      if (h) counts.set(h, (counts.get(h) ?? 0) + 1);
-    }
-    expect(counts.size).toBe(CAST_POOL.length);
+    for (const h of hints) if (h) counts.set(h.id, (counts.get(h.id) ?? 0) + 1);
+    expect(counts.size).toBe(list.length);
     const total = [...counts.values()].reduce((s, n) => s + n, 0);
-    expect(Math.max(...counts.values()) / total).toBeLessThan(0.06);
+    expect(Math.max(...counts.values()) / total).toBeLessThan(2 / list.length);
+    expect(diverseHint(undefined, 'x')).toBeUndefined();
+    expect(diverseHint([], 'x')).toBeUndefined();
   });
 
-  test('the pool is people, not roles, and mixes LGBTQ+ people with others', () => {
-    expect(CAST_POOL.length).toBeGreaterThanOrEqual(30);
-    const lgbtq = CAST_POOL.filter((p) => /husband|wife|married to each other|boyfriend|lesbian|trans|nonbinary|bisexual/.test(p));
-    expect(lgbtq.length).toBeGreaterThan(5);
-    expect(lgbtq.length).toBeLessThan(CAST_POOL.length / 2);
-    expect(new Set(CAST_POOL).size).toBe(CAST_POOL.length);
+  test('a required archetype takes the place of the offered persona with its role', () => {
+    const offer = { kind: 'party' as const, personas: ['hero', 'mage', 'warrior', 'nemesis', 'side'].map((role) => ({ id: role, role, name: role, details: '' }) as CastPersona) };
+    const req = { id: 'dark-elf-knight', role: 'warrior', name: 'a dark-skinned elf knight', details: 'd', required: true } as CastPersona;
+    expect(withRequired(offer, req).personas.map((p) => p.id)).toEqual(['hero', 'mage', 'dark-elf-knight', 'nemesis', 'side']);
+    const captain = { ...req, id: 'captain', role: 'captain' } as CastPersona;
+    expect(withRequired(offer, captain).personas.map((p) => p.id)).toEqual(['hero', 'mage', 'warrior', 'nemesis', 'captain']);
   });
 
   test('look similarity catches the same design in other words', () => {
@@ -50,21 +50,18 @@ describe('casting by rotation', () => {
     expect(errors(checkScript({ ...s, leadLook: 'x'.repeat(90) } as ComicScript)).map((p) => p.where)).toContain('leadLook');
   });
 
-  test('the packet passes a hint only when there is one', () => {
-    const base = {
+  test('the packet never carries a generic cast hint', () => {
+    const files = comicPacketFiles({
       brief: 'b',
       description: 'd',
       genres: [],
       skillFiles: ['SKILL.md'],
       out: { comic: 'comic.json', design: 'comic-design.json' },
       checkCommand: 'tracetoon comic check',
-    };
-    const withHint = comicPacketFiles({ ...base, castHint: 'a trans man' });
-    expect(JSON.parse(withHint['context.json']!).castHint).toBe('a trans man');
-    expect(withHint['instructions.md']).toContain('never the topic or');
-    const without = comicPacketFiles(base);
-    expect(JSON.parse(without['context.json']!).castHint).toBeUndefined();
-    expect(without['instructions.md']).not.toContain('castHint');
+    });
+    expect(JSON.parse(files['context.json']!).castHint).toBeUndefined();
+    expect(files['instructions.md']).not.toContain('castHint');
+    expect(files['instructions.md']).not.toContain('required');
   });
 });
 

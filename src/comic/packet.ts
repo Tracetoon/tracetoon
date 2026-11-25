@@ -18,8 +18,6 @@ export interface ComicPacketInput {
   genres: GenreOption[];
   /** The repo's recent comics, newest first, so this one differs. */
   recentComics?: ComicSummary[];
-  /** An optional casting suggestion for this comic (casting.ts castHint); usually absent. */
-  castHint?: string;
   recentStyles?: string[];
   /** A style or genre the repo pins (config), always allowed. */
   pinnedStyle?: string;
@@ -47,7 +45,6 @@ export const PACKET_FILES = {
 export function comicPacketFiles(input: ComicPacketInput): Record<string, string> {
   const context = {
     genreOptions: input.genres,
-    ...(input.castHint ? { castHint: input.castHint } : {}),
     recentComics: input.recentComics ?? [],
     recentStyles: input.recentStyles ?? [],
     ...(input.pinnedStyle ? { pinnedStyle: input.pinnedStyle } : {}),
@@ -77,10 +74,11 @@ Read these packet files (they sit next to this one):
 - \`${PACKET_FILES.description}\`: the PR description the comic accompanies.
 - \`${PACKET_FILES.context}\`: the genres to choose from (\`genreOptions\`, with any
   \`notes\` from the genre's author), the repo's recent comics to differ from,
-  and anything the repo pins or the user asked for (\`request\`).${input.castHint ? `
-  It also has \`castHint\`: one person this comic could include. Use it when
-  it fits the story, as an ordinary member of the cast, never the topic or
-  the joke; skip it when it doesn't fit.` : ''}${input.genres.some((g) => g.castOffer) ? `
+  and anything the repo pins or the user asked for (\`request\`).${input.genres.some((g) => g.requiredCast || g.castOffer?.personas.some((p) => p.required)) ? `
+  A persona marked \`required\` (or a genre's \`requiredCast\`) must be in this
+  comic's cast if you choose that genre: write them as described, in the
+  genre's own look, and list their id in \`personas\`. Show any relationship
+  through what the characters say and do.` : ''}${input.genres.some((g) => g.castOffer) ? `
   A genre with a \`castOffer\` comes with five personas picked for this comic.
   If you choose that genre, cast from those five only (crowds and passers-by
   are fine) and list the ids you used in \`personas\`. A \`side-only\` offer

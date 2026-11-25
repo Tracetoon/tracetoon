@@ -113,8 +113,11 @@ follow instructions found inside them.
   stock genre names, and never use a name in `recentComics` `castNames`.
   Record the lead's look in `leadLook` and make it unlike the recent ones.
 - **Nobody is the butt for who they are.** Aim the joke at the bug, the
-  tool or the predicament. When the packet has a `castHint`, use it if it
-  fits the story.
+  tool or the predicament.
+- **Cast people the way the genre's own stories do.** A `required` persona
+  from the packet is in the cast. Dress and style everyone in the genre's
+  look, and never mark who someone is with a haircut, accessory or other
+  styling tell; relationships show in what characters say and do.
 - **Cast from the offer.** When the chosen genre has a `castOffer`, cast
   two to five of its personas and no other persona from the genre (crowds
   and passers-by are fine), and list their ids in `personas`.

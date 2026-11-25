@@ -7,7 +7,6 @@ import { dirname, join } from 'node:path';
 import { loadConfig } from '../config.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
 import { genreOptions, type GenreOption } from '../comic/genres.ts';
-import { castHint } from '../comic/casting.ts';
 import { comicPacketFiles, PACKET_FILES } from '../comic/packet.ts';
 import type { ComicSummary } from '../comic/types.ts';
 import { skillDir } from '../contribution/skillSettings.ts';
@@ -79,7 +78,6 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
           recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
         },
       ));
-  const hint = castHint(`${repo.root} ${repo.branch} ${run.id}`);
   const skillFiles = comicSkillFiles();
   if (!skillFiles.length)
     throw new UserError(
@@ -91,7 +89,6 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
     description,
     genres,
     recentComics: ctx?.comic?.recentComics,
-    ...(hint ? { castHint: hint } : {}),
     recentStyles: ctx?.comic?.recentStyles,
     ...(config.style && config.style !== 'auto' ? { pinnedStyle: config.style } : {}),
     ...(pinnedGenre ? { pinnedGenre } : {}),
