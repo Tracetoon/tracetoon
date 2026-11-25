@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.47",
-  "buildId": "44557cdaee4331c9a6f63dae1d1e4bee7e140676a7e9b50ac55d97abf3e64ba0",
+  "version": "1.0.0-rc.48",
+  "buildId": "ff25bfd3f492e681b2b698134feb186128e291f903cf5bfba7bf87dd35db22e6",
   "artifact": {
-    "runId": 45369724191,
-    "id": 14907724961,
-    "name": "tracetoon-candidate-26a726bdbd85741d0f701e69df524c7ca86e11a7-attempt-1",
-    "digest": "sha256:017470682998495df9d52a12551e5e9ce5fc74f00a3124f89b6d87f6c7910795"
+    "runId": 45518092349,
+    "id": 14979850433,
+    "name": "tracetoon-candidate-cdab1eb82f021cc9dbbd354a453b43c7775b5cd4-attempt-1",
+    "digest": "sha256:56c4f1c351b27254c8fd5198856c9e7c64e49682aeb31ad0f19a53778933ebab"
   },
   "expected": {
-    "manifestSha256": "dd0606da62bd05c1520c15d54d596ac6a5fe5cc3b9033af09c71b3ba6c3e83d6",
-    "checksumsSha256": "8b6f1a9e2e8f75c91fc5793e136ea1d673c7a1ee39123931cceea5f2c6e81553",
-    "windowsSha256": "8e545518b014dfca2b578c4faf63f4e830ce08d843b05f4037bc5e2887f1c61a",
-    "bundleSha256": "519fd657f2cfcb680876dd236fa81a7fdbf3d433a18ef068ef7f69f31cc63293"
+    "manifestSha256": "6af3526b150b709442dd0f170176c436323d59a1cac21d1e85555ace10448322",
+    "checksumsSha256": "b88d8204188c27a59ba2582c00a7bab0230589ea56ffb99f9222fb38b37fab96",
+    "windowsSha256": "d9119e86e622dc0e6b4954878359a031b3e0afe60409a17f2b028b32a6910ff0",
+    "bundleSha256": "844b8960e734d1311d603ab4af122f153720d44a91a61e7ca183809fb15db73d"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-24T10:07:31.000Z",
-    "reason": "The user asked for a release once the delegated-drafter work worked in a live test, so the packages ship the delegated drafter with the review and comic runners (#208) and the Windows-safe claude -p arguments, the review binding that survives the comic and the cross-platform run lock (#209). The live test (#209 and #210, each written by Tracetoon with a comic) passed. The flagship prbench comparison for this design ran as a separate benchmark and is not the calibration/admission/confirmation round this contract records, so the CI-tested candidate is released without one. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-25T00:39:51.000Z",
+    "reason": "The user asked for a release once the Showtail redaction fix (Tingsters/Showtail#61, fixing #39) merged, so the packages ship it through #212: paths with word+number segments are no longer withheld from digests and evidence briefs, and setup recognizes Tracetoon hooks installed from any checkout path. The CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {

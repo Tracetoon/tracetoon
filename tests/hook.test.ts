@@ -1121,3 +1121,17 @@ printf '%s' '${answer}'
     expect(answer.errorMessage).toBe(DENY_REASON);
   });
 });
+
+describe('isOurs', () => {
+  test('recognizes Tracetoon hooks whatever the checkout path is called', async () => {
+    const { isOurs } = await import('../src/hook/config.ts');
+    for (const cmd of [
+      '/home/u/.local/share/tracetoon/bin/tracetoon hook pre-pr --agent claude',
+      '/usr/bin/bun /work/wt-fix/src/cli.ts hook pre-pr --agent claude',
+      '/usr/bin/bun /work/wt-fix/src/cli.ts hook lifecycle --agent codex --event PostToolUse',
+    ])
+      expect(isOurs(cmd)).toBe(true);
+    for (const cmd of ['my-linter hook pre-commit', 'echo hook lifecycle', 'bash ./scripts/check.sh'])
+      expect(isOurs(cmd)).toBe(false);
+  });
+});
