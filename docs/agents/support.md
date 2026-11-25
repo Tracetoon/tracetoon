@@ -20,11 +20,11 @@ release shows as pending, failed or blocked until it passes.
 
 | Agent       | Covers                                | Support                 | PR hook                                   | Last verified                                                                                                    | Newest release |
 | ----------- | ------------------------------------- | ----------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------- |
-| Claude Code | CLI, IDE extensions and desktop app   | ✅ supported             | `~/.claude/settings.json`                 | 2.1.325 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051))   | ✅ passed       |
-| Codex       | CLI, app and IDE extensions           | ✅ supported             | `~/.codex/hooks.json`                     | 0.169.0 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051))   | ✅ passed       |
-| Copilot     | CLI, VS Code agent mode and JetBrains | ✅ supported             | `~/.copilot/hooks/tracetoon.json`         | 1.0.112 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051))   | ✅ passed       |
-| Cursor      | IDE and CLI                           | ✅ supported (see notes) | `~/.cursor/hooks.json`                    | 2026.11.13-eacade1 on Linux, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43934482912)) | ✅ passed       |
-| OpenCode    | CLI                                   | ✅ supported             | `~/.config/opencode/plugins/tracetoon.js` | 1.19.5 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051))    | ✅ passed       |
+| Claude Code | CLI, IDE extensions and desktop app   | ✅ supported             | `~/.claude/settings.json`                 | 2.1.331 on Linux, Windows, 2026-11-24 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/45293799501))   | ✅ passed       |
+| Codex       | CLI, app and IDE extensions           | ✅ supported             | `~/.codex/hooks.json`                     | 0.172.0 on Linux, Windows, 2026-11-24 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/45371211105))   | ✅ passed       |
+| Copilot     | CLI, VS Code agent mode and JetBrains | ✅ supported             | `~/.copilot/hooks/tracetoon.json`         | 1.0.115 on Linux, Windows, 2026-11-24 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/45502354363))   | ✅ passed       |
+| Cursor      | IDE and CLI                           | ✅ supported (see notes) | `~/.cursor/hooks.json`                    | 2026.11.22-e9042b2 on Linux, 2026-11-22 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/44996527877)) | ✅ passed       |
+| OpenCode    | CLI                                   | ✅ supported             | `~/.config/opencode/plugins/tracetoon.js` | 1.19.6 on Linux, Windows, 2026-11-17 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/44043863236))    | ✅ passed       |
 
 Skill folders: Claude Code `~/.claude/skills/tracetoon`, Codex `~/.agents/skills/tracetoon`, Copilot `~/.agents/skills/tracetoon`, Cursor `~/.agents/skills/tracetoon`, OpenCode `~/.agents/skills/tracetoon`.
 
@@ -39,8 +39,8 @@ Supported. A workflow says "verified" only after its own test has passed.
 | VS Code + Claude Code | the Claude Code extension's bundled CLI (route not built yet)         | not yet verified                                                                                               | candidate |
 | VS Code + Codex       | the Codex extension's bundled CLI (route not built yet)               | not yet verified                                                                                               | candidate |
 | VS Code + Copilot     | Copilot agent mode (runs in the editor window; no headless route yet) | not yet verified                                                                                               | candidate |
-| Zed + Claude Code     | Zed's external-agent (ACP) path to Claude Code                        | 0.107.0 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051)) | ✅ passed  |
-| Zed + Codex           | Zed's external-agent (ACP) path to Codex                              | 2.6.0 on Linux, Windows, 2026-11-16 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/43826275051))   | ✅ passed  |
+| Zed + Claude Code     | Zed's external-agent (ACP) path to Claude Code                        | 0.112.0 on Linux, Windows, 2026-11-24 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/45502354363)) | ✅ passed  |
+| Zed + Codex           | Zed's external-agent (ACP) path to Codex                              | 2.12.0 on Linux, Windows, 2026-11-24 ([run](https://github.com/Tracetoon/tracetoon/actions/runs/45502354363))  | ✅ passed  |
 
 ## Community Supported integrations
 

@@ -6,7 +6,7 @@
       "type": "archive",
       "description": "\"Create GitHub pull requests with a description and comic written from agent session logs. Load this whenever you are about to open, create or submit a pull request: when the user asks for one, when you decide to submit, push or ship code changes for review, or when the repository's workflow requires changes to land through a PR, whether or not anyone mentions Tracetoon. Also use when a hook redirects PR creation here, or when the user asks Tracetoon to describe or update an existing PR. Not for coding, planning or questions that don't end in a PR.\"",
       "url": "/.well-known/agent-skills/tracetoon.zip",
-      "digest": "sha256:4bc97e3e24aeb8f38a4fddba89e0254cfa62c95a07a8f1340c343796e79cbf28"
+      "digest": "sha256:1aac4ebc7cebc7e7c3232fb1f4da82c1885fc222315e86bb899f6e5bce47d631"
     }
   ]
 }
