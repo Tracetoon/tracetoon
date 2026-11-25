@@ -6,7 +6,9 @@
  * are offered first, so a repo's comics don't all land in the same office.
  */
 import { createHash } from 'node:crypto';
-import { castOffer, diverseHint, parseCastEntry, withRequired, type CastOffer, type CastPersona } from './casting.ts';
+import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
+import animeFantasyLeads from './cast/anime-fantasy-leads.json' with { type: 'json' };
+import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
 import animeFantasyCast from './cast/anime-fantasy.json' with { type: 'json' };
 import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
 import { BUILT_IN_MEMES, memeOffer, stylePick, type Meme } from './memes.ts';
@@ -36,6 +38,12 @@ export interface Genre {
    * five must cast one (casting.ts diverseHint).
    */
   diverseCast?: CastPersona[];
+  /**
+   * Main characters, each modelled on a real series' protagonist; the role is
+   * its diversity axis (stereotype, gender, orientation or race). Every comic
+   * gets one (casting.ts leadPick).
+   */
+  leads?: CastPersona[];
   /** Famous scenes, lines and tropes of the genre; each comic is offered three (memes.ts). */
   memes?: Meme[];
   /** Style weights; when present the host assigns each comic's style from them. */
@@ -334,6 +342,15 @@ const DIVERSE_CASTS: Record<string, CastPersona[]> = {
   'space-opera': diverseRoster(spaceOperaCast),
 };
 
+/** Built-in leads: `{ axis, name, details }`, the axis kept as the role. */
+const leadRoster = (raw: { axis: string; name: string; details: string }[]): CastPersona[] =>
+  diverseRoster(raw.map((r) => ({ role: r.axis, name: r.name, details: r.details })));
+const LEADS: Record<string, CastPersona[]> = {
+  'anime-fantasy': leadRoster(animeFantasyLeads),
+  'space-opera': leadRoster(spaceOperaLeads),
+};
+
+
 const STYLE_MIXES: Record<string, Record<string, number>> = {
   'anime-fantasy': { 'anime-fantasy': 7, 'chibi-anime': 2, webtoon: 1, 'shonen-action': 2 },
 };
@@ -343,6 +360,7 @@ export const GENRES: Genre[] = BUILT_IN_GENRES.map((g) => ({
   ...(BUILT_IN_MEMES[g.id]?.length ? { memes: BUILT_IN_MEMES[g.id] } : {}),
   ...(STYLE_MIXES[g.id] ? { styleMix: STYLE_MIXES[g.id] } : {}),
   ...(DIVERSE_CASTS[g.id]?.length ? { diverseCast: DIVERSE_CASTS[g.id] } : {}),
+  ...(LEADS[g.id]?.length ? { leads: LEADS[g.id] } : {}),
 }));
 
 export const MAX_GENRE_CHARS = 40;
@@ -393,16 +411,23 @@ export interface GenreOption {
   assignedStyle?: string;
   /** A diverse archetype this comic must cast, for a genre without a cast offer. */
   requiredCast?: CastPersona;
+  /** This comic's main character, for a genre without a cast offer (with one, it is in the offer). */
+  lead?: CastPersona;
 }
 
 const option = (
-  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast }: Genre,
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads }: Genre,
   seed = '',
   recentMemes: string[] = [],
+  recentLeads: string[] = [],
 ): GenreOption => {
-  const hint = diverseHint(diverseCast, `${seed}\0${id}`);
   const plain = castOffer(cast, `${seed}\0${id}`);
-  const offer = plain && hint ? withRequired(plain, hint) : plain;
+  // A side-only comic's required archetype is a side character or a nemesis.
+  const pool = plain?.kind === 'side-only' ? diverseCast?.filter((p) => p.role === 'side' || p.role === 'nemesis') : diverseCast;
+  const hint = diverseHint(pool, `${seed}\0${id}`);
+  const lead = leadPick(leads, `${seed}\0${id}`, recentLeads);
+  const withHint = plain && hint ? withRequired(plain, hint) : plain;
+  const offer = withHint && lead ? withLead(withHint, lead) : withHint;
   const memePicks = memeOffer(memes, `${seed}\0${id}`, {
     recent: recentMemes,
     ...(offer ? { roles: [...new Set(offer.personas.map((p) => p.role))] } : {}),
@@ -421,6 +446,7 @@ const option = (
     ...(memePicks ? { memeOffer: memePicks } : {}),
     ...(style ? { assignedStyle: style } : {}),
     ...(hint && !offer ? { requiredCast: hint } : {}),
+    ...(lead && !offer ? { lead } : {}),
   };
 };
 
@@ -439,15 +465,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes)
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads)
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads));
 }

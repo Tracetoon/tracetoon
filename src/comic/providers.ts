@@ -90,7 +90,7 @@ export type Readiness = 'ready' | 'not ready' | 'unknown';
 
 /** Things image models must avoid, on every comic. */
 export const NEGATIVE =
-  'fictional characters only (human characters are welcome); genre parody of familiar tropes and settings is welcome (a cantina of odd aliens, an away team on a strange planet, a masked dark lord, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
+  'fictional characters only (human characters are welcome); genre parody of familiar tropes and settings is welcome (a cantina of odd aliens, an away team on a strange planet, a masked dark lord, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures; no shapes, props, machine parts, shadows or gestures that could read as sexual, genital or obscene, no rude gestures, no hate symbols; controls are wheels, flat switches, buttons or wide T-handles, never a knobbed rod or stick at or near anyone\'s lap or groin; swords and tools hang at the side, not between the legs; characters point or wave with an open hand, never one raised finger';
 /** With an explicit user request, their characters are allowed; the rest still holds. */
 export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
@@ -100,7 +100,9 @@ export const COMIC_MEDIUM =
 
 /** The avoid-list for this script. */
 export function negativeFor(script: ComicScript): string {
-  return script.request?.trim() ? NEGATIVE_WITH_REQUEST : NEGATIVE;
+  const base = script.request?.trim() ? NEGATIVE_WITH_REQUEST : NEGATIVE;
+  const avoid = (script.avoid ?? []).filter((a) => typeof a === 'string' && a.trim());
+  return avoid.length ? `${base}; avoid: ${avoid.join('; ')}` : base;
 }
 
 function requestLine(script: ComicScript): string {
@@ -243,7 +245,10 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
   const format = formatById(script.format);
   const aspect = pageAspect(script);
   const headline = visibleHeadline(script);
-  const cast = (script.characters ?? []).map((c) => `${c.name}: ${c.description}`);
+  const leadName = script.lead?.name;
+  const cast = [...(script.characters ?? [])]
+    .sort((a, b) => Number(b.name === leadName) - Number(a.name === leadName))
+    .map((c) => `${c.name}${c.name === leadName ? ' (main character, in most panels)' : ''}: ${c.description}`);
   const panels = script.panels.map((p, i) => {
     const people = p.characters.map(
       (pc) =>

@@ -129,6 +129,8 @@ export interface ComicSummary {
   leadLook?: string;
   /** The genre meme used, so later comics are offered others. */
   meme?: string;
+  /** The lead persona used, so later comics get another main character. */
+  lead?: string;
 }
 
 /** A character's place in one panel. */
@@ -264,6 +266,10 @@ export interface ComicScript {
   personas?: string[];
   /** The id of the offered genre meme this comic uses (context genreOptions memeOffer), if any. */
   meme?: string;
+  /** The main character: the lead persona's id and the name of its character in `characters`. */
+  lead?: { persona: string; name: string };
+  /** Things the image must not show, added after a misread review (misread.ts); go to the negative prompt. */
+  avoid?: string[];
   /**
    * The lead character's look in a few plain words (age, build, hair,
    * clothes), as drawn. Recorded so later comics don't cast the same design.

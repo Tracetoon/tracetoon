@@ -55,9 +55,11 @@ describe('genre-true diverse archetypes', () => {
     expect(errors(checkScript(base, opts)).map((p) => p.where)).toContain('personas');
     expect(errors(checkScript({ ...base, personas: ['someone-else'] }, opts)).find((p) => p.where === 'personas')?.problem).toContain(required.name);
     expect(errors(checkScript({ ...base, personas: [required.id] }, opts)).filter((p) => p.where.startsWith('personas'))).toHaveLength(0);
-    // A comic without a required archetype has no persona requirement.
+    // A comic without a required archetype still has its lead, and nothing else to cast.
     const free = Array.from({ length: 200 }, (_, i) => `f${i}`).map((s) => genreOptions([], { pinned: 'space-opera', seed: s })[0]!).find((o) => !o.requiredCast)!;
-    expect(checkScript(base, { genreOptions: [free] }).some((p) => p.where.startsWith('personas'))).toBe(false);
+    const freeLead = free.lead!;
+    const leadOnly = { ...base, personas: [freeLead.id], lead: { persona: freeLead.id, name: 'Ace' }, characters: [{ name: 'Ace', description: 'd' }] } as ComicScript;
+    expect(errors(checkScript(leadOnly, { genreOptions: [free] })).filter((p) => p.where.startsWith('personas') || p.where === 'lead')).toHaveLength(0);
     const files = comicPacketFiles({
       brief: 'b', description: 'd', genres: [option], skillFiles: ['SKILL.md'],
       out: { comic: 'comic.json', design: 'comic-design.json' }, checkCommand: 'tracetoon comic check',
@@ -90,5 +92,51 @@ diverseCast:
     const r = parseGenreFile(text);
     expect(r.problems.filter((p) => p.severity !== 'warning')).toEqual([]);
     expect(r.genre?.diverseCast?.map((p) => p.role)).toEqual(['captain', 'engineer']);
+  });
+});
+
+describe('a main character in every comic', () => {
+  test('every comic of a genre with leads gets one; diverse leads take about 60%; recent leads are skipped', () => {
+    const anime = genreById('anime-fantasy')!.leads!;
+    expect(anime.length).toBeGreaterThanOrEqual(50);
+    expect(genreById('space-opera')!.leads!.length).toBeGreaterThanOrEqual(50);
+    const counts = { stereotype: 0, diverse: 0 };
+    for (let i = 0; i < 3000; i++) {
+      const o = genreOptions([], { pinned: 'anime-fantasy', seed: `lead-${i}` })[0]!;
+      const leads = o.castOffer!.personas.filter((p) => p.lead);
+      expect(leads).toHaveLength(1);
+      counts[leads[0]!.role === 'stereotype' ? 'stereotype' : 'diverse']++;
+    }
+    const share = counts.diverse / 3000;
+    expect(share).toBeGreaterThan(0.55);
+    expect(share).toBeLessThan(0.65);
+    const first = genreOptions([], { pinned: 'space-opera', seed: 'x' })[0]!.lead!;
+    for (let i = 0; i < 200; i++) expect(genreOptions([], { pinned: 'space-opera', seed: `y${i}`, recentLeads: [first.id] })[0]!.lead!.id).not.toBe(first.id);
+    for (const l of anime) expect(FRANCHISE_NAMES.test(`${l.name} ${l.details}`)).toBe(false);
+  });
+
+  test('the lead never replaces a required archetype, and a side-only comic gets a side or nemesis archetype', () => {
+    for (let i = 0; i < 1500; i++) {
+      const o = genreOptions([], { pinned: 'anime-fantasy', seed: `p${i}` })[0]!;
+      const ps = o.castOffer!.personas;
+      expect(ps.filter((p) => p.required && p.lead)).toHaveLength(0);
+      const req = ps.find((p) => p.required);
+      if (o.castOffer!.kind === 'side-only' && req) expect(['side', 'nemesis']).toContain(req.role);
+    }
+  });
+
+  test('the check requires the lead as a named character and warns when they are in few panels', () => {
+    const option = genreOptions([], { pinned: 'space-opera', seed: 'lead-check' })[0]!;
+    const lead = option.lead!;
+    const required = option.requiredCast;
+    const opts = { genreOptions: [option] };
+    const base = { ...pageScript(), genre: 'space-opera', personas: [lead.id, ...(required ? [required.id] : [])] } as ComicScript;
+    expect(errors(checkScript(base, opts)).map((p) => p.where)).toContain('lead');
+    const name = base.characters[0]!.name;
+    const ok = { ...base, lead: { persona: lead.id, name } } as ComicScript;
+    expect(errors(checkScript(ok, opts)).filter((p) => p.where === 'lead')).toHaveLength(0);
+    expect(errors(checkScript({ ...ok, lead: { persona: lead.id, name: 'Nobody' } }, opts)).map((p) => p.where)).toContain('lead');
+    const few = { ...ok, panels: ok.panels.map((p, i) => (i === 0 ? p : { ...p, characters: (p.characters ?? []).filter((c) => c.name !== name) })) } as ComicScript;
+    if (few.panels.length >= 3) expect(checkScript(few, opts).some((p) => p.where === 'lead' && p.severity === 'warning')).toBe(true);
   });
 });

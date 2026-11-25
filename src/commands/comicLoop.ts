@@ -36,6 +36,7 @@ import {
   type LoopState,
   type Next,
 } from '../comic/judging.ts';
+import { isMisreadReview, MISREAD_PROMPT, MISREAD_SCHEMA } from '../comic/misread.ts';
 import { writeRenditions } from '../comic/renditions.ts';
 import { checkScript, pageText } from '../comic/script.ts';
 import type { ComicScript } from '../comic/types.ts';
@@ -163,6 +164,15 @@ ${JSON.stringify(schema)}
 }
 
 async function packetFor(run: Run, s: State, n: Next) {
+  if (n.action === 'misread') {
+    const task = `misread:${n.candidate}`;
+    const dir = packetDir(run, task);
+    // A fresh reviewer that sees only the finished image.
+    copyFileSync(imageOf(run, n.candidate), join(dir, 'A.png'));
+    const result = join(dir, 'result.json');
+    writeFileSync(join(dir, 'instructions.md'), instructions(MISREAD_PROMPT, MISREAD_SCHEMA, result, [join(dir, 'A.png')]));
+    return { task, packet: join(dir, 'instructions.md'), result, blind: true };
+  }
   if (n.action === 'observe') {
     const task = `observe:${n.candidate}`;
     const dir = packetDir(run, task);
@@ -325,7 +335,11 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
     throw new UserError(`${file} is not valid JSON.`);
   }
   const problems =
-    stage === 'observe'
+    stage === 'misread'
+      ? isMisreadReview(v)
+        ? []
+        : ['expected {"state": "clear" | "concern", "items": [{panel, what, couldReadAs, fix}]}']
+      : stage === 'observe'
       ? observationProblems(v)
       : stage === 'check'
         ? checkProblems(v)
@@ -339,10 +353,11 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
       `The judge answer needs fixing:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
     );
   }
-  if (stage === 'observe' || stage === 'check') {
+  if (stage === 'observe' || stage === 'check' || stage === 'misread') {
     const c = s.candidates.find((x) => x.id === a);
     if (!c) throw new UserError(`Unknown candidate ${a}.`);
     if (stage === 'observe') c.observation = v;
+    else if (stage === 'misread') c.misread = v;
     else c.check = v;
   } else if (stage === 'compare') {
     let cmp = s.comparisons.find((x) => x.a === a && x.b === b);

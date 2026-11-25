@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { userConfigPath } from '../config.ts';
 import { GENRES, MAX_GENRE_CHARS, type Genre } from './genres.ts';
-import { CAST_ROLES, MAX_CAST_ENTRY, parseCastEntry, type CastPersona } from './casting.ts';
+import { CAST_ROLES, LEAD_AXES, MAX_CAST_ENTRY, parseCastEntry, type CastPersona } from './casting.ts';
 import { MAX_MEME_ENTRY, parseMemeEntry, parseStyleMixEntry, withIds } from './memes.ts';
 import { FRANCHISE_NAMES } from './script.ts';
 import { styleById } from './styles.ts';
@@ -40,6 +40,7 @@ const LISTS = {
   styles: { min: 0, max: 6 },
   cast: { min: 0, max: 48 },
   diverseCast: { min: 0, max: 120 },
+  leads: { min: 0, max: 80 },
   memes: { min: 0, max: 400 },
   styleMix: { min: 0, max: 6 },
 } as const;
@@ -158,7 +159,7 @@ export function parseGenreFile(
     const items = v.map((s) => s.trim()).filter(Boolean);
     if (items.length < LISTS[key].min || items.length > LISTS[key].max)
       bad(key, `needs ${LISTS[key].min}–${LISTS[key].max} items (has ${items.length})`);
-    const limit = key === 'cast' || key === 'diverseCast' ? MAX_CAST_ENTRY : key === 'memes' ? MAX_MEME_ENTRY : LIMITS.item;
+    const limit = key === 'cast' || key === 'diverseCast' || key === 'leads' ? MAX_CAST_ENTRY : key === 'memes' ? MAX_MEME_ENTRY : LIMITS.item;
     items.forEach((s, i) => {
       if (s.length > limit) bad(`${key}[${i}]`, `keep it under ${limit} characters`);
     });
@@ -185,6 +186,15 @@ export function parseGenreFile(
     if (!persona) bad(`diverseCast[${i}]`, 'write it as "role: name — details"');
     else if (diverseCast.some((c) => c.id === persona.id) || cast.some((c) => c.id === persona.id)) bad(`diverseCast[${i}]`, `"${persona.name}" repeats another persona's name`);
     else diverseCast.push(persona);
+  });
+  // Leads: `axis: name — details`, axis one of stereotype, gender, orientation, race.
+  const leadEntries = list('leads');
+  const leads: CastPersona[] = [];
+  leadEntries.forEach((e, i) => {
+    const persona = parseCastEntry(e, { anyRole: true });
+    if (!persona || !(LEAD_AXES as readonly string[]).includes(persona.role)) bad(`leads[${i}]`, `write it as "axis: name — details", axis one of ${LEAD_AXES.join(', ')}`);
+    else if (leads.some((c) => c.id === persona.id)) bad(`leads[${i}]`, `"${persona.name}" repeats another lead's name`);
+    else leads.push(persona);
   });
   // Genre memes: `tier roles: meme — use`. Each comic is offered three.
   const memeEntries = list('memes');
@@ -215,6 +225,7 @@ export function parseGenreFile(
     ...castEntries.map((s, i): [string, string] => [`cast[${i}]`, s]),
     ...memeEntries.map((s, i): [string, string] => [`memes[${i}]`, s]),
     ...diverseEntries.map((s, i): [string, string] => [`diverseCast[${i}]`, s]),
+    ...leadEntries.map((s, i): [string, string] => [`leads[${i}]`, s]),
     ['body', body],
   ];
   for (const [where, s] of texts) {
@@ -240,6 +251,7 @@ export function parseGenreFile(
       ...(body ? { notes: body } : {}),
       ...(cast.length ? { cast } : {}),
       ...(diverseCast.length ? { diverseCast } : {}),
+      ...(leads.length ? { leads } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),

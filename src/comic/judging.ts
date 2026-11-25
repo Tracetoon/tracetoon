@@ -7,6 +7,7 @@
  * Design: tracetoon-comic-evaluation-kit v2 (autonomous). No step asks a
  * person to rate or break a tie: uncertainty keeps the incumbent or stops.
  */
+import { avoidFrom, hasConcern, MISREAD_REDRAWS, type MisreadReview } from './misread.ts';
 import rubricJson from './rubric.json';
 import type { ComicScript } from './types.ts';
 
@@ -279,6 +280,8 @@ export interface Candidate {
   contractOk: boolean;
   /** For a concrete repair: what it changed that it must not (frozenProblems). */
   frozen?: string[];
+  /** The misread review of this image (misread.ts): a concern makes it unusable. */
+  misread?: MisreadReview;
 }
 export interface Comparison {
   a: string;
@@ -305,7 +308,7 @@ export interface LoopState {
 }
 
 export type Next =
-  | { action: 'observe' | 'check'; candidate: string }
+  | { action: 'observe' | 'check' | 'misread'; candidate: string }
   | { action: 'compare'; a: string; b: string; order: 1 | 2 }
   | {
       action: 'revise';
@@ -346,7 +349,8 @@ export function usable(c: Candidate): boolean {
   return (
     eligible(c.check) &&
     c.contractOk &&
-    !c.frozen?.length
+    !c.frozen?.length &&
+    !(c.misread && hasConcern(c.misread))
   );
 }
 const amusement = (c: Candidate) =>
@@ -370,6 +374,21 @@ export function nextStep(s: LoopState): Next {
   const callsLeft = () => s.budget.judgeCalls - s.used.judgeCalls;
 
   if (!s.decided.includes(latest.id)) {
+    // Every new image is first reviewed for anything an audience could misread.
+    if (!latest.misread) return { action: 'misread', candidate: latest.id };
+    if (hasConcern(latest.misread)) {
+      const concerns = s.candidates.filter((c) => c.misread && hasConcern(c.misread)).length;
+      reject(s, latest, `misread concern: ${latest.misread.items.filter((i) => i.likelihood !== 'possible').map((i) => `${i.what} could read as ${i.couldReadAs}`).join('; ')}`);
+      if (concerns > MISREAD_REDRAWS) return stop(s, `the image still raised a misread concern after ${MISREAD_REDRAWS} redraws`);
+      const avoid = avoidFrom(latest.misread);
+      return {
+        action: 'revise',
+        target: 'art',
+        instruction: `Redraw so nothing can be misread: ${latest.misread.items.filter((i) => i.likelihood !== 'possible').map((i) => i.fix).join('; ')}. Add these to comic.json "avoid" first: ${JSON.stringify(avoid)}`,
+        preserve: ['every word, character and the joke'],
+        reason: 'misread review concern',
+      };
+    }
     // A repair that changed the joke is rejected before any judge call is spent.
     if (!latest.frozen?.length)
       for (const stage of ['observation', 'check'] as const)

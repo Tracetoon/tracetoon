@@ -59,6 +59,8 @@ export interface CastPersona {
   details: string;
   /** A diverse archetype the host requires in this comic (diverseHint). */
   required?: true;
+  /** The comic's main character (leadPick); its role is its diversity axis. */
+  lead?: true;
 }
 
 export interface CastOffer {
@@ -140,5 +142,44 @@ export function withRequired(offer: CastOffer, persona: CastPersona): CastOffer 
   const personas = [...offer.personas];
   const at = [personas.findIndex((p) => p.role === persona.role), personas.findIndex((p) => p.role === 'side'), personas.length - 1].find((i) => i >= 0)!;
   personas[at] = persona;
+  return { ...offer, personas };
+}
+
+/** A lead's diversity axis: none (the genre's own stereotype lead) or exactly one. */
+export const LEAD_AXES = ['stereotype', 'gender', 'orientation', 'race'] as const;
+/** Diverse leads (gender, orientation, race) get this share of picks; stereotype leads the rest. */
+export const LEAD_DIVERSE_SHARE = 0.6;
+
+/**
+ * Every comic of a genre with leads gets one main character, stable for a
+ * seed. Diverse leads together get LEAD_DIVERSE_SHARE of picks, uniform within
+ * each group; a lead a recent comic used is skipped while others remain.
+ */
+export function leadPick(leads: readonly CastPersona[] | undefined, seed: string, recent: string[] = []): CastPersona | undefined {
+  if (!leads?.length) return undefined;
+  const fresh = leads.filter((l) => !recent.includes(l.id));
+  const pool = fresh.length ? fresh : [...leads];
+  const diverse = pool.filter((l) => l.role !== 'stereotype');
+  const stereotype = pool.filter((l) => l.role === 'stereotype');
+  const wantDiverse = hash(`lead-axis\0${seed}`) / 0x1_0000_0000 < LEAD_DIVERSE_SHARE;
+  const group = (wantDiverse ? diverse : stereotype).length ? (wantDiverse ? diverse : stereotype) : pool;
+  return { ...group[hash(`lead\0${seed}`) % group.length]!, lead: true };
+}
+
+/**
+ * Puts the lead into a cast offer: in place of the offered hero, else the
+ * first main-cast persona, else (a side-only offer) the last side character.
+ * A required supporting archetype is never replaced.
+ */
+export function withLead(offer: CastOffer, lead: CastPersona): CastOffer {
+  const personas = [...offer.personas];
+  const open = (i: number) => i >= 0 && !personas[i]!.required;
+  const at = [
+    personas.findIndex((p) => p.role === 'hero' && !p.required),
+    personas.findIndex((p) => (MAIN_ROLES as readonly string[]).includes(p.role) && !p.required),
+    personas.map((p) => p.role === 'side' && !p.required).lastIndexOf(true),
+    personas.map((p) => !p.required).lastIndexOf(true),
+  ].find(open)!;
+  personas[at] = lead;
   return { ...offer, personas };
 }

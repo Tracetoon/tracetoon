@@ -344,6 +344,7 @@ export function contextCmd(
     pinned: pinnedGenre,
     catalog: genreCatalog(truth.toplevel),
     recentMemes: recent.flatMap((c) => (c.meme ? [c.meme] : [])),
+    recentLeads: recent.flatMap((c) => (c.lead ? [c.lead] : [])),
   });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,

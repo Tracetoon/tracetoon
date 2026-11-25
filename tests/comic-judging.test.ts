@@ -63,6 +63,8 @@ const cand = (id: string, extra: Partial<Candidate>): Candidate => ({
   imageSha256: id.padEnd(64, '0'),
   required: ['Better?'],
   contractOk: true,
+  // Reviewed for misreadable shapes and clear, unless a test says otherwise.
+  misread: { state: 'clear', items: [] },
   ...extra,
 });
 

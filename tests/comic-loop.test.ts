@@ -40,6 +40,13 @@ async function runDir(color = '#f00') {
 }
 const quiet = { json: true } as const;
 
+/** The misread review comes first: answer it clear so the cold read follows. */
+async function clearMisread(run: Awaited<ReturnType<typeof runDir>>, id = 'c1') {
+  await comicLoopCmd(run, quiet);
+  writeFileSync(join(run.dir, 'judge', `misread-${id}`, 'result.json'), JSON.stringify({ state: 'clear', items: [] }));
+  comicLoopImportCmd(run, { task: `misread:${id}`, agentId: `m-${id}`, ...quiet });
+}
+
 describe('comic loop', () => {
   test('archives each distinct render once, before it can be replaced', async () => {
     const run = await runDir();
@@ -60,6 +67,7 @@ describe('comic loop', () => {
   test('the cold-read packet holds only the image, never the script or PR', async () => {
     const run = await runDir();
     archiveCandidate(run, script, true);
+    await clearMisread(run);
     await comicLoopCmd(run, quiet);
     const dir = join(run.dir, 'judge', 'observe-c1');
     const text = readFileSync(join(dir, 'instructions.md'), 'utf8');
@@ -73,6 +81,7 @@ describe('comic loop', () => {
   test('imports answers, counts every judge call and needs a real agent id', async () => {
     const run = await runDir();
     archiveCandidate(run, script, true);
+    await clearMisread(run);
     await comicLoopCmd(run, quiet);
     const result = join(run.dir, 'judge', 'observe-c1', 'result.json');
     writeFileSync(result, JSON.stringify({ panels: [] }));
@@ -82,7 +91,7 @@ describe('comic loop', () => {
     expect(() =>
       comicLoopImportCmd(run, { task: 'observe:c1', agentId: 'a1', ...quiet }),
     ).toThrow(/needs fixing/);
-    expect(loadLoop(run)!.used.judgeCalls).toBe(1);
+    expect(loadLoop(run)!.used.judgeCalls).toBe(2);
     writeFileSync(
       result,
       JSON.stringify({
@@ -122,7 +131,7 @@ describe('comic loop', () => {
     await comicLoopCmd(run, quiet);
     const s = loadLoop(run)!;
     expect(s.incumbent).toBe('c1');
-    expect(s.used.judgeCalls).toBe(3);
+    expect(s.used.judgeCalls).toBe(4);
   });
 
   test('render counting starts the budget', async () => {

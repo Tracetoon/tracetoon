@@ -123,6 +123,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
+  if (s.avoid !== undefined && (!Array.isArray(s.avoid) || s.avoid.length > 8 || s.avoid.some((a) => typeof a !== 'string' || a.length > 240)))
+    bad('avoid', 'must be a list of at most 8 short strings (things the image must not show)');
   if (s.leadLook !== undefined && (typeof s.leadLook !== 'string' || s.leadLook.length > MAX_LEAD_LOOK))
     bad('leadLook', `must be a few words, at most ${MAX_LEAD_LOOK} characters`);
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
@@ -505,35 +507,49 @@ export function personaProblems(s: ComicScript, opts: CheckOpts = {}): ScriptPro
   const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
   const offer = option?.castOffer;
   const required = option?.requiredCast ?? offer?.personas.find((p) => p.required);
-  if (!offer && !required) return out;
-  const allowed = [...(offer?.personas ?? []), ...(option?.requiredCast ? [option.requiredCast] : [])];
+  const lead = option?.lead ?? offer?.personas.find((p) => p.lead);
+  if (!offer && !required && !lead) return out;
+  const allowed = [...(offer?.personas ?? []), ...(option?.requiredCast ? [option.requiredCast] : []), ...(option?.lead ? [option.lead] : [])];
   const offered = new Map(allowed.map((p) => [p.id, p]));
   const list = allowed.map((p) => `${p.id} (${p.role})`).join(', ');
   const personas = Array.isArray(s.personas) ? s.personas : [];
   if (!personas.length) {
     out.push({
       where: 'personas',
-      problem: required
-        ? `is required: this comic must cast "${required.name}" (${required.id}); list the ids of the personas you cast`
-        : `is required for this genre: list the ids of the offered personas you cast, from ${list}`,
+      problem: `is required: list the ids of the personas you cast${lead ? `, including the lead "${lead.name}" (${lead.id})` : ''}${required ? ` and "${required.name}" (${required.id})` : ''}${offer ? `, from ${list}` : ''}`,
     });
-    return out;
+  } else {
+    if (offer)
+      for (const [i, id] of personas.entries()) {
+        if (typeof id !== 'string' || !offered.has(id))
+          out.push({
+            where: `personas[${i}]`,
+            problem:
+              offer.kind === 'side-only'
+                ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
+                : `"${String(id)}" wasn't offered; cast from ${list}`,
+          });
+      }
+    if (required && !personas.includes(required.id))
+      out.push({ where: 'personas', problem: `this comic must cast "${required.name}" (${required.id}): ${required.details}` });
+    if (offer && personas.length < 2)
+      out.push({ where: 'personas', problem: 'cast at least two of the offered personas', severity: 'warning' });
   }
-  if (offer)
-    for (const [i, id] of personas.entries()) {
-      if (typeof id !== 'string' || !offered.has(id))
-        out.push({
-          where: `personas[${i}]`,
-          problem:
-            offer.kind === 'side-only'
-              ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
-              : `"${String(id)}" wasn't offered; cast from ${list}`,
-        });
+  if (lead) {
+    const names = (s.characters ?? []).map((c) => c.name);
+    if (!s.lead || typeof s.lead !== 'object' || s.lead.persona !== lead.id || typeof s.lead.name !== 'string')
+      out.push({ where: 'lead', problem: `is required: {"persona": "${lead.id}", "name": "<their name in characters>"}; the main character is "${lead.name}": ${lead.details}` });
+    else if (!names.includes(s.lead.name))
+      out.push({ where: 'lead', problem: `"${s.lead.name}" isn't one of the characters (${names.join(', ')})` });
+    else if (personas.length && !personas.includes(lead.id))
+      out.push({ where: 'personas', problem: `list the lead persona "${lead.id}" too` });
+    else {
+      const panels = Array.isArray(s.panels) ? s.panels : [];
+      const shown = panels.filter((p) => (p.characters ?? []).some((c) => c.name === s.lead!.name)).length;
+      if (panels.length && shown * 2 < panels.length)
+        out.push({ where: 'lead', problem: `the main character "${s.lead.name}" is in ${shown} of ${panels.length} panels; give them most of the page`, severity: 'warning' });
     }
-  if (required && !personas.includes(required.id))
-    out.push({ where: 'personas', problem: `this comic must cast "${required.name}" (${required.id}): ${required.details}` });
-  if (offer && personas.length < 2)
-    out.push({ where: 'personas', problem: 'cast at least two of the offered personas', severity: 'warning' });
+  }
   return out;
 }
 

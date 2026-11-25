@@ -82,7 +82,11 @@ Read these packet files (they sit next to this one):
   A genre with a \`castOffer\` comes with five personas picked for this comic.
   If you choose that genre, cast from those five only (crowds and passers-by
   are fine) and list the ids you used in \`personas\`. A \`side-only\` offer
-  means this comic has no party members at all.` : ''}${input.genres.some((g) => g.memeOffer?.length) ? `
+  means this comic has no party members at all.` : ''}${input.genres.some((g) => g.lead || g.castOffer?.personas.some((p) => p.lead)) ? `
+  The persona marked \`lead\` (or a genre's \`lead\`) is this comic's main
+  character if you choose that genre: they drive the episode and appear in
+  most panels. Set \`lead\` to {"persona": its id, "name": their name in
+  \`characters\`}.` : ''}${input.genres.some((g) => g.memeOffer?.length) ? `
   A genre's \`memeOffer\` suggests three memes its veteran fans know. Use one
   when it fits the joke, as an allusion (never name the work), and set
   \`meme\` to its id; leave \`meme\` out when none fits.` : ''}${input.genres.some((g) => g.assignedStyle) ? `
