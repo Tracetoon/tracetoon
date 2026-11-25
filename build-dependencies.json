@@ -2,8 +2,8 @@
   "schema": "tracetoon.build-dependencies/v1",
   "showtail": {
     "repository": "https://github.com/Tingsters/Showtail.git",
-    "revision": "dd0b6f40a09e206c1571a0440f2bdc2b78222c18",
-    "packageTree": "6eb00aad7a5c9aa7d54b6dbe3bdb1cd4cb17957e"
+    "revision": "3b9f393bcd9bdbc8500b63b628ccfe2a15f235dd",
+    "packageTree": "38c5587d919aba8e1effe2fe328a80b24a64ac86"
   },
   "relate": {
     "repository": "https://github.com/relatedb/relate.git",
