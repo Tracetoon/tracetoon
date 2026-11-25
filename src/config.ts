@@ -132,6 +132,11 @@ export function loadConfig(root?: string): Config {
     ...user,
     ...repo,
     comic: userComic === 'allowed' ? comicMode(repo.comic ?? 'allowed') : userComic,
+    // Either the user or the repo can turn the comic credit off; hand-written
+    // config files may say "false" as a string.
+    comicCredit: ![user.comicCredit, repo.comicCredit].some(
+      (v) => (v as unknown) === false || (v as unknown) === 'false',
+    ),
     imageConsent: user.imageConsent ?? DEFAULTS.imageConsent,
     autoUpdate: oneOf(AUTO_UPDATES, user.autoUpdate, DEFAULTS.autoUpdate),
     updateChannel: oneOf(UPDATE_CHANNELS, user.updateChannel, DEFAULTS.updateChannel),
