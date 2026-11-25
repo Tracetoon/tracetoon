@@ -188,7 +188,7 @@
 
   /* hero */
   .hero { padding:2rem 0 2.5rem; }
-  .hero .wrap { display:grid; grid-template-columns:1fr 1.1fr; gap:clamp(2rem,4vw,4rem); align-items:start; }
+  .hero .wrap { display:grid; grid-template-columns:1fr 1.1fr; gap:clamp(2rem,4vw,4rem); align-items:center; }
   .hero-side { display:grid; gap:1.1rem; }
   .tagline { font-size:clamp(2.6rem,6vw,4.4rem); line-height:.98; margin:0 0 .8rem; }
   .tagline em { font-style:normal; background:var(--pow); color:var(--pow-fg); padding:0 .18em; border:3px solid var(--ink); box-shadow:var(--shadow); display:inline-block; transform:rotate(-2deg); }
@@ -328,8 +328,7 @@
       <a href="#install">Install</a>
       <a href="#why" class="opt">Why</a>
       <a href="#talk" class="opt">Talk</a>
-      <a href="prbench.html" class="opt">Benchmark</a>
-      <a href="results.html">Results</a>
+      <a href="prbench.html">Benchmark</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -375,14 +374,14 @@
           <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
           <div><b><span class="nw">−28%</span> · <span class="nw">−73%</span></b><span>cost per PR in a long session (Opus · Sol)</span></div>
         </div>
-        <p class="proof-links"><a class="more" href="results.html">All results →</a> <a class="more" href="prbench.html">How we test: prbench →</a></p>
+        <p class="proof-links"><a class="more" href="prbench.html#results">All results →</a> <a class="more" href="prbench.html">How we test: prbench →</a></p>
       </div>
       <div class="hero-side">
         <figure class="hero-art">
           <img src="img/hero.webp" width="1400" height="838" fetchpriority="high"
                alt="Comic titled NO MORE PR SLOP. Before: a developer recoils from a pull request reading 'Improves robustness and code quality. All tests pass (probably)'. After: the same developer grins and points at a pull request reading 'What you asked. What ran. What changed.' with a comic pinned to it.">
         </figure>
-        <a class="teaser" href="results.html">
+        <a class="teaser" href="prbench.html#results">
           <img src="img/comic-vs-native.webp" width="1400" height="934" loading="lazy" alt="">
           <div><b>Three reports, one verdict</b><span>Tracetoon vs your agent alone, the evidence graph on 61 real PRs, and where it started. See all results →</span></div>
         </a>
@@ -639,7 +638,7 @@
           <li>Not perfect yet: on Claude Code, graph drafts respect fewer of the open questions in the evidence, convey slightly fewer key facts, and take about 1.6× as long to write.</li>
           <li>On Codex the graph made more confirmed factual errors (0.33 vs 0.16 per PR), so it fails our own strict error margin there. About a third come from two known bugs in the generated Validation section, which are being fixed. The full write-up lists every criterion.</li>
         </ul>
-        <p><a href="results.html">All results, with a summary of each report →</a> <a href="vs-native.html">Tracetoon vs your agent alone: the full results →</a> <a href="evidence-graph-61.html">The evidence-graph write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
+        <p><a href="prbench.html#results">All results, with a summary of each report →</a> <a href="vs-native.html">Tracetoon vs your agent alone: the full results →</a> <a href="evidence-graph-61.html">The evidence-graph write-up, with every chart, a worked example and the run details →</a> The earlier 5-PR report is <a href="evidence-graph.html">still available</a>.</p>
       </details>
     </div>
   </section>
@@ -676,7 +675,7 @@
   <div class="wrap">
     <span>Tracetoon is open source under the Apache-2.0 license.</span>
     <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
-    <a href="results.html">All results</a>
+    <a href="prbench.html#results">All results</a>
     <a href="vs-native.html">Tracetoon vs your agent alone</a>
     <a href="evidence-graph-61.html">Evidence graph results</a>
     <a href="prbench.html">prbench benchmark</a>

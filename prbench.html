@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>prbench: the PR benchmark that reads the receipts</title>
+<title>Tracetoon benchmark: prbench and every result</title>
 <meta name="description" content="prbench replays real pull requests from the coding agent's own session logs, runs a PR tool in a sandbox, and has blind paired judges check every claim against an expert fact sheet. Download the cases and run it yourself.">
-<meta property="og:title" content="prbench: the PR benchmark that reads the receipts">
+<meta property="og:title" content="The Tracetoon benchmark: prbench and every result">
 <meta property="og:description" content="Real PRs replayed from the agent's actual session logs. Blind paired judges, expert-checked errors, measured cost. Run it yourself.">
-<meta property="og:image" content="https://tracetoon.ai/img/og-image.png">
+<meta property="og:image" content="https://tracetoon.ai/img/og-results.jpg">
 <meta property="og:url" content="https://tracetoon.ai/prbench.html">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://tracetoon.ai/img/og-image.png">
+<meta name="twitter:image" content="https://tracetoon.ai/img/og-results.jpg">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -19,7 +19,7 @@
 <meta name="theme-color" content="#14130f" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#fffdf6; --fg:#1b1913; --muted:#5a5548; --line:#e4dccb; --card:#ffffff;
@@ -172,7 +172,7 @@
   /* results */
   .tiles { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.7rem; margin:1.4rem 0 1.6rem; }
   .tiles div { border-left:4px solid var(--accent); padding:.1rem 0 .1rem .6rem; }
-  .tiles b { display:block; font-family:Bangers,system-ui,sans-serif; font-weight:400; font-size:2rem; line-height:1; letter-spacing:.03em; }
+  .tiles b { display:block; font-family:var(--num); font-weight:400; font-size:1.9rem; line-height:1.05; letter-spacing:.01em; }
   .tiles span { font-size:.8rem; color:var(--muted); line-height:1.3; display:block; }
   @media (max-width:880px) { .tiles { grid-template-columns:repeat(3,minmax(0,1fr)); } }
   @media (max-width:520px) { .tiles { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -236,6 +236,36 @@
   footer .wrap { display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; }
   :focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .btn:hover, .links a:hover { transform:none; } }
+  /* Figures use Lilita One: Bangers draws 1 as a bare stroke, easy to misread next to 7. */
+  :root { --num:"Lilita One","Comic Neue",system-ui,sans-serif; }
+  /* results: intro beside the comic, then one card per report (was results.html) */
+  .res-head { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:clamp(1.5rem,3vw,3rem); align-items:center; }
+  @media (max-width:900px) { .res-head { grid-template-columns:1fr; } }
+  .reports { margin:.5rem 0 1.5rem; }
+  details.runs { margin-top:1rem; border:2px solid var(--ink); border-radius:8px; background:var(--card); padding:.8rem 1rem; box-shadow:3px 3px 0 var(--ink); }
+  details.runs > summary { cursor:pointer; font-weight:700; }
+  details.runs[open] > summary { margin-bottom:.8rem; }
+  .comic-img { border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink); border-radius:6px; background:#fff; }
+  .nw { white-space:nowrap; }
+  .report { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:clamp(1.5rem,3vw,3rem); align-items:center; padding:1.8rem 0; }
+  .report + .report { border-top:2px solid var(--line); }
+  .report:nth-of-type(even) .art { order:2; }
+  .report .art a { display:block; transform:rotate(-.6deg); transition:transform .15s; }
+  .report:nth-of-type(even) .art a { transform:rotate(.6deg); }
+  .report .art a:hover { transform:rotate(0) scale(1.01); }
+  .tag { display:inline-flex; gap:.5rem; flex-wrap:wrap; align-items:center; font-size:.82rem; font-weight:600; color:var(--muted); margin:0 0 .4rem; }
+  .tag .new { background:var(--accent); color:var(--accent-fg); border:2px solid var(--ink); border-radius:4px; padding:0 .4rem; font-family:Bangers,system-ui,sans-serif; letter-spacing:.06em; font-weight:400; font-size:.95rem; }
+  .report h3 { font-family:Bangers,"Comic Neue",system-ui,sans-serif; font-weight:400; letter-spacing:.03em; font-size:clamp(1.7rem,3vw,2.3rem); line-height:1.05; margin:0 0 .6rem; }
+  .report h3 a { color:inherit; text-decoration:none; }
+  .report h3 a:hover { color:var(--accent); }
+  .report p { margin:0 0 .8rem; max-width:68ch; }
+  .figs { list-style:none; padding:0; margin:.4rem 0 1rem; display:flex; flex-wrap:wrap; gap:.6rem; }
+  .figs li { border-left:4px solid var(--accent); padding:.05rem .7rem .05rem .6rem; font-size:.84rem; color:var(--muted); line-height:1.3; max-width:15rem; }
+  .figs b { display:block; font-family:var(--num); font-weight:400; font-size:1.55rem; color:var(--fg); line-height:1.1; letter-spacing:.01em; }
+  .caveat { font-size:.88rem; color:var(--muted); background:var(--card); border:1.5px dashed var(--line); border-radius:6px; padding:.5rem .75rem; max-width:68ch; }
+  .go { display:inline-block; font-weight:700; text-decoration:none; background:var(--pow); color:var(--pow-fg); border:2px solid var(--ink); border-radius:6px; padding:.35rem .9rem; box-shadow:3px 3px 0 var(--ink); }
+  .go:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+  @media (max-width:880px) { .report { grid-template-columns:1fr; } .report:nth-of-type(even) .art { order:0; } }
 </style>
 </head>
 <body>
@@ -250,8 +280,7 @@
       <a href="./#install">Install</a>
       <a href="./#why" class="opt">Why</a>
       <a href="./#talk" class="opt">Talk</a>
-      <a href="prbench.html" class="opt" aria-current="page">Benchmark</a>
-      <a href="results.html">Results</a>
+      <a href="prbench.html" aria-current="page">Benchmark</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
@@ -266,7 +295,7 @@
       <p class="lede">prbench replays real pull requests <strong>from the coding agent's own session logs</strong>: what the user asked for, what the agent tried, what actually ran. A PR tool writes the description in a sealed sandbox, exactly as it would on your machine. Blind judges then check every claim against an expert-reviewed fact sheet. It's open source, the cases are downloadable, and <strong>you can run it yourself</strong>.</p>
       <div class="btns">
         <a class="btn primary" href="#run">Run it yourself →</a>
-        <a class="btn" href="#results">See the golden run</a>
+        <a class="btn" href="#results">See the results</a>
         <a class="btn" href="https://github.com/Tracetoon/prbench">prbench on GitHub</a>
       </div>
 
@@ -364,6 +393,120 @@
     </div>
   </section>
 
+  <!-- ============ RESULTS ============ -->
+  <section class="band" id="results">
+    <div class="wrap">
+      <div class="res-head">
+      <div class="intro">
+        <span class="kicker">The results</span>
+        <h2 class="big display">Three runs. All published.</h2>
+        <p>prbench is behind every result Tracetoon publishes. The flagship run puts Tracetoon against the same agent writing the PR on its own. The golden run puts Tracetoon's evidence-graph brief against its original multi-agent workflow. The first evidence-graph study ran the same comparison on 5 PRs before it was repeated at scale. Each provider runs separately, with its own writer and its own two judges.</p>
+      </div>
+        <figure style="margin:0"><img class="comic-img" src="img/comic-results.webp" width="1400" height="934" loading="lazy"
+           alt="Two-panel comic. Trust me, it's great: on a dark blue stage the developer stands proudly holding up a blank pull request while three grey robot judges in the front row fold their arms, one squinting through a magnifying glass. Show the receipts: on a bright yellow stage he unrolls a long receipt that spills over the stage edge while the cheering judges hold up score cards reading 72-9, 111-19 and 79-38, next to a gold trophy."></figure>
+      </div>
+      <div class="tiles">
+        <div><b>61</b><span>real PRs from 12 repositories</span></div>
+        <div><b>33 · 28</b><span>Claude Code · Codex sessions</span></div>
+        <div><b>732</b><span>drafts per 61-PR run, 3 per PR per system</span></div>
+        <div><b>1,464</b><span>judge readings per 61-PR run, both orders</span></div>
+        <div><b>3</b><span>published runs, each with its data</span></div>
+      </div>
+      <div class="reports">
+      <article class="report">
+        <div class="art"><a href="vs-native.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-vs-native.webp" width="1400" height="934" loading="lazy" alt=""></a></div>
+        <div>
+          <p class="tag"><span class="new">Newest</span> November 23, 2026 · 61 real PRs · Opus 5.5 · Sol 6.1</p>
+          <h3><a href="vs-native.html">Tracetoon vs your agent alone</a></h3>
+          <p>Most people ask the agent they're already coding with to open the PR. So we compared exactly that: Claude Code on Opus 5.5 and Codex on Sol 6.1 writing the PR on their own, against the same agent in the same session using Tracetoon. Each PR was written 3 times by each system and judged blind.</p>
+          <ul class="figs">
+            <li><b><span class="nw">72–9</span> · <span class="nw">111–19</span></b>judges' picks, Opus · Sol</li>
+            <li><b>52.8 → 68.3</b>quality score on Opus (Sol: 64.1 → 78.1)</li>
+            <li><b><span class="nw">$1.29</span> · <span class="nw">$3.50</span> → <span class="nw">$0.93</span></b>cost per PR in a long session</li>
+          </ul>
+          <a class="go" href="vs-native.html">Read the full report →</a>
+        </div>
+      </article>
+
+      <article class="report">
+        <div class="art"><a href="evidence-graph-61.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-graph-61.webp" width="1400" height="934" loading="lazy" alt=""></a></div>
+        <div>
+          <p class="tag">November 16, 2026 · 61 real PRs · Codex · Claude Code</p>
+          <h3><a href="evidence-graph-61.html">The evidence graph on 61 real PRs</a></h3>
+          <p>Tracetoon against its own earlier self: the evidence graph and a single writer, against the original multi-agent workflow that re-read the logs at every step. Run on 61 real PRs from 12 repositories, with fact sheets reviewed by experts.</p>
+          <ul class="figs">
+            <li><b><span class="nw">79–38</span> · <span class="nw">60–21</span></b>picks for the graph, Codex · Claude Code</li>
+            <li><b><span class="nw">−70%</span> · <span class="nw">−43%</span></b>cost per PR</li>
+            <li><b>82% vs 72%</b>key facts conveyed on Codex</li>
+          </ul>
+          <p class="caveat">Not perfect yet: on Codex the graph drafts carried more confirmed factual errors (0.33 vs 0.16 per PR), and on Claude Code they conveyed slightly fewer key facts (73% vs 77%). The report lists every criterion.</p>
+          <a class="go" href="evidence-graph-61.html">Read the full report →</a>
+        </div>
+      </article>
+
+      <article class="report">
+        <div class="art"><a href="evidence-graph.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-cost.webp" width="1400" height="837" loading="lazy" alt=""></a></div>
+        <div>
+          <p class="tag">November 12, 2026 · 5 real PRs × 5 runs · Claude · Codex</p>
+          <h3><a href="evidence-graph.html">Where it started: the first evidence graph</a></h3>
+          <p>The first test of the idea. We put a deterministic evidence graph, built in the embedded Relate database, between the session logs and one mid-size writing model, and judged it against Tracetoon's full multi-agent workflow. It was a small test; the 61-PR report above repeats the comparison at scale.</p>
+          <ul class="figs">
+            <li><b><span class="nw">18–1</span> · <span class="nw">12–1</span></b>picks for the graph, Claude · Codex</li>
+            <li><b><span class="nw">59%</span> · <span class="nw">65%</span></b>of the workflow's token cost</li>
+          </ul>
+          <a class="go" href="evidence-graph.html">Read the full report →</a>
+        </div>
+      </article>
+      </div>
+      <details class="runs">
+        <summary>All three runs side by side, with every caveat</summary>
+          <div class="scorecard">
+            <table>
+              <caption class="site-sr">Flagship run: Tracetoon versus the same agent writing alone</caption>
+              <thead><tr><th scope="col">Tracetoon vs agent alone</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Session model · judges</th><td>Sol 6.1<span class="sub">Sol + Terra</span></td><td>Opus 5.5<span class="sub">Opus + Sonnet</span></td></tr>
+                <tr><th scope="row">Picked by both judges</th><td class="win">111–19<span class="sub">45 without consensus</span></td><td class="win">72–9<span class="sub">79 without consensus</span></td></tr>
+                <tr><th scope="row">Score (0–100)</th><td class="win">+14.0<span class="sub">78.1 vs 64.1 · ±1.2</span></td><td class="win">+15.5<span class="sub">68.3 vs 52.8 · ±2.0</span></td></tr>
+                <tr><th scope="row">Cost per PR, 500k-token session</th><td class="win">−73%<span class="sub">$0.93 vs $3.50</span></td><td class="win">−28%<span class="sub">$0.93 vs $1.29</span></td></tr>
+                <tr><th scope="row">Judge-flagged errors per PR</th><td class="win">0.15 vs 0.18</td><td class="win">0.16 vs 0.32</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="honest"><b>Against your agent alone.</b> The same 61 PRs, each written 3 times by Claude Code on Opus 5.5 and Codex on Sol 6.1 with and without Tracetoon in the same session. Cost assumes a session carrying 500k tokens; with a short session the saving shrinks. <a href="vs-native.html">Full results →</a> · <a href="https://github.com/Tracetoon/prbench/tree/main/golden/v4-flagship-c70b">data</a></p>
+          <div class="scorecard">
+            <table>
+              <caption class="site-sr">Golden run: evidence-graph brief versus the original workflow</caption>
+              <thead><tr><th scope="col">Graph vs original</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Writer · judges</th><td>Terra 6.1<span class="sub">Sol + Terra</span></td><td>Sonnet 5.5<span class="sub">Opus + Sonnet</span></td></tr>
+                <tr><th scope="row">Picked by both judges</th><td class="win">79–38<span class="sub">68% · 95% CI 56–79%</span></td><td class="win">60–21<span class="sub">74% · 95% CI 62–85%</span></td></tr>
+                <tr><th scope="row">Score (0–100)</th><td class="win">+3.3<span class="sub">75.3 vs 72.0 · CI +1.0 to +5.5</span></td><td class="win">+3.5<span class="sub">63.2 vs 59.8 · CI +0.8 to +6.1</span></td></tr>
+                <tr><th scope="row">Cost per draft</th><td class="win">−70%<span class="sub">$0.128 vs $0.447</span></td><td class="win">−43%<span class="sub">$0.344 vs $0.654</span></td></tr>
+                <tr><th scope="row">Confirmed errors per draft</th><td class="lose">0.33 vs 0.16<span class="sub">more errors: fails the accuracy gate</span></td><td class="win">0.47 vs 0.84<span class="sub">fewer errors</span></td></tr>
+                <tr><th scope="row">Key facts conveyed</th><td class="win">82% vs 72%</td><td class="lose">73% vs 77%<span class="sub">slightly fewer, within the 5-point margin</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="scorecard">
+            <table>
+              <caption class="site-sr">First evidence-graph study: graph versus the original workflow on 5 PRs</caption>
+              <thead><tr><th scope="col">First study, 5 PRs × 5</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Writer · judges</th><td>Terra 6.1<span class="sub">Sol + Terra</span></td><td>Sonnet 5.5<span class="sub">Opus + Sonnet</span></td></tr>
+                <tr><th scope="row">Picked by both judges</th><td class="win">12–1<span class="sub">12 ties</span></td><td class="win">18–1<span class="sub">6 ties</span></td></tr>
+                <tr><th scope="row">Score (0–100)</th><td class="win">+3.5<span class="sub">86.6 vs 83.2 · CI +1.8 to +5.1</span></td><td class="win">+5.2<span class="sub">78.9 vs 73.7 · CI +2.5 to +8.0</span></td></tr>
+                <tr><th scope="row">Cost per draft</th><td class="win">−35%<span class="sub">$0.207 vs $0.320</span></td><td class="win">−41%<span class="sub">$0.407 vs $0.690</span></td></tr>
+                <tr><th scope="row">Judge-flagged errors per judgment</th><td class="win">0.00 vs 0.07</td><td>0.08 vs 0.09<span class="sub">level</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="honest"><b>Small and early.</b> Five PRs from Tracetoon's own repository (real-cases 1.0.0), 5 drafts per PR per side, the build that shipped at the time. A same-build Codex rerun gave +5.2 (13–2), so expect about ±3 points between runs. <a href="evidence-graph.html">The first study →</a> · <a href="https://github.com/Tracetoon/prbench/blob/main/docs/reproduce-graph-vs-base.md">method and rerun</a></p>
+          <p class="honest"><b>The benchmark doesn't play favorites.</b> prbench is built by the Tracetoon team, and it still failed our own Codex candidate on accuracy. The same 61 PRs were also used to tune the brief; there is no separate held-out set. <a href="evidence-graph-61.html#caveats">Every caveat, chart and per-case result →</a></p>
+      </details>
+    </div>
+  </section>
+
   <!-- ============ WHY SESSIONS ============ -->
   <section class="band" id="receipts">
     <div class="wrap">
@@ -421,77 +564,7 @@
     </div>
   </section>
 
-  <!-- ============ RESULTS ============ -->
-  <section class="band" id="results">
-    <div class="wrap">
-      <div class="intro">
-        <span class="kicker">The results</span>
-        <h2 class="big display">Three runs. All published.</h2>
-        <p>prbench is behind every result Tracetoon publishes. The flagship run puts Tracetoon against the same agent writing the PR on its own. The golden run puts Tracetoon's evidence-graph brief against its original multi-agent workflow. The first evidence-graph study ran the same comparison on 5 PRs before it was repeated at scale. Each provider runs separately, with its own writer and its own two judges. <a href="results.html">All three reports →</a></p>
-      </div>
-      <div class="tiles">
-        <div><b>61</b><span>real PRs from 12 repositories</span></div>
-        <div><b>33 · 28</b><span>Claude Code · Codex sessions</span></div>
-        <div><b>732</b><span>drafts per 61-PR run, 3 per PR per system</span></div>
-        <div><b>1,464</b><span>judge readings per 61-PR run, both orders</span></div>
-        <div><b>3</b><span>published runs, each with its data</span></div>
-      </div>
-      <div class="res">
-        <div>
-          <div class="scorecard">
-            <table>
-              <caption class="site-sr">Flagship run: Tracetoon versus the same agent writing alone</caption>
-              <thead><tr><th scope="col">Tracetoon vs agent alone</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
-              <tbody>
-                <tr><th scope="row">Session model · judges</th><td>Sol 6.1<span class="sub">Sol + Terra</span></td><td>Opus 5.5<span class="sub">Opus + Sonnet</span></td></tr>
-                <tr><th scope="row">Picked by both judges</th><td class="win">111–19<span class="sub">45 without consensus</span></td><td class="win">72–9<span class="sub">79 without consensus</span></td></tr>
-                <tr><th scope="row">Score (0–100)</th><td class="win">+14.0<span class="sub">78.1 vs 64.1 · ±1.2</span></td><td class="win">+15.5<span class="sub">68.3 vs 52.8 · ±2.0</span></td></tr>
-                <tr><th scope="row">Cost per PR, 500k-token session</th><td class="win">−73%<span class="sub">$0.93 vs $3.50</span></td><td class="win">−28%<span class="sub">$0.93 vs $1.29</span></td></tr>
-                <tr><th scope="row">Judge-flagged errors per PR</th><td class="win">0.15 vs 0.18</td><td class="win">0.16 vs 0.32</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="honest"><b>Against your agent alone.</b> The same 61 PRs, each written 3 times by Claude Code on Opus 5.5 and Codex on Sol 6.1 with and without Tracetoon in the same session. Cost assumes a session carrying 500k tokens; with a short session the saving shrinks. <a href="vs-native.html">Full results →</a> · <a href="https://github.com/Tracetoon/prbench/tree/main/golden/v4-flagship-c70b">data</a></p>
-          <div class="scorecard">
-            <table>
-              <caption class="site-sr">Golden run: evidence-graph brief versus the original workflow</caption>
-              <thead><tr><th scope="col">Graph vs original</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
-              <tbody>
-                <tr><th scope="row">Writer · judges</th><td>Terra 6.1<span class="sub">Sol + Terra</span></td><td>Sonnet 5.5<span class="sub">Opus + Sonnet</span></td></tr>
-                <tr><th scope="row">Picked by both judges</th><td class="win">79–38<span class="sub">68% · 95% CI 56–79%</span></td><td class="win">60–21<span class="sub">74% · 95% CI 62–85%</span></td></tr>
-                <tr><th scope="row">Score (0–100)</th><td class="win">+3.3<span class="sub">75.3 vs 72.0 · CI +1.0 to +5.5</span></td><td class="win">+3.5<span class="sub">63.2 vs 59.8 · CI +0.8 to +6.1</span></td></tr>
-                <tr><th scope="row">Cost per draft</th><td class="win">−70%<span class="sub">$0.128 vs $0.447</span></td><td class="win">−43%<span class="sub">$0.344 vs $0.654</span></td></tr>
-                <tr><th scope="row">Confirmed errors per draft</th><td class="lose">0.33 vs 0.16<span class="sub">more errors: fails the accuracy gate</span></td><td class="win">0.47 vs 0.84<span class="sub">fewer errors</span></td></tr>
-                <tr><th scope="row">Key facts conveyed</th><td class="win">82% vs 72%</td><td class="lose">73% vs 77%<span class="sub">slightly fewer, within the 5-point margin</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="scorecard">
-            <table>
-              <caption class="site-sr">First evidence-graph study: graph versus the original workflow on 5 PRs</caption>
-              <thead><tr><th scope="col">First study, 5 PRs × 5</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
-              <tbody>
-                <tr><th scope="row">Writer · judges</th><td>Terra 6.1<span class="sub">Sol + Terra</span></td><td>Sonnet 5.5<span class="sub">Opus + Sonnet</span></td></tr>
-                <tr><th scope="row">Picked by both judges</th><td class="win">12–1<span class="sub">12 ties</span></td><td class="win">18–1<span class="sub">6 ties</span></td></tr>
-                <tr><th scope="row">Score (0–100)</th><td class="win">+3.5<span class="sub">86.6 vs 83.2 · CI +1.8 to +5.1</span></td><td class="win">+5.2<span class="sub">78.9 vs 73.7 · CI +2.5 to +8.0</span></td></tr>
-                <tr><th scope="row">Cost per draft</th><td class="win">−35%<span class="sub">$0.207 vs $0.320</span></td><td class="win">−41%<span class="sub">$0.407 vs $0.690</span></td></tr>
-                <tr><th scope="row">Judge-flagged errors per judgment</th><td class="win">0.00 vs 0.07</td><td>0.08 vs 0.09<span class="sub">level</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="honest"><b>Small and early.</b> Five PRs from Tracetoon's own repository (real-cases 1.0.0), 5 drafts per PR per side, the build that shipped at the time. A same-build Codex rerun gave +5.2 (13–2), so expect about ±3 points between runs. <a href="evidence-graph.html">The first study →</a> · <a href="https://github.com/Tracetoon/prbench/blob/main/docs/reproduce-graph-vs-base.md">method and rerun</a></p>
-          <p class="honest"><b>The benchmark doesn't play favorites.</b> prbench is built by the Tracetoon team, and it still failed our own Codex candidate on accuracy. The same 61 PRs were also used to tune the brief; there is no separate held-out set. <a href="evidence-graph-61.html#caveats">Every caveat, chart and per-case result →</a></p>
-        </div>
-        <div class="res-art">
-          <figure>
-            <img src="img/comic-quality.webp" width="1400" height="934" loading="lazy"
-                 alt="Two-panel comic. The old way: three bored robot judges hold up question-mark scorecards at a sad pull request that says 'Improves stuff.' With Tracetoon: the judges leap up holding scores of 10, 10 and 10 while a confident pull request with a comic pinned to it takes a bow and the developer cheers.">
-            <figcaption>Comic drawn by Tracetoon. The real judges are less excitable: two per provider, each reading every pair twice, with the drafts swapped.</figcaption>
-          </figure>
-        </div>
-      </div>
-    </div>
-  </section>
+
 
   <!-- ============ RUN IT ============ -->
   <section class="band" id="run">
@@ -579,8 +652,6 @@ prbench score results/my-run --dataset real-cases@4.0.0</code></pre><button clas
         <a href="https://github.com/Tracetoon/prbench"><b>prbench on GitHub</b><span>Source, issues and releases. Apache-2.0.</span></a>
         <a href="https://github.com/Tracetoon/prbench/blob/main/datasets/DATASET_CARD.md"><b>Dataset card</b><span>What's in the cases, consent, redaction, license and limits.</span></a>
         <a href="https://github.com/Tracetoon/prbench/blob/main/docs/methodology.md"><b>Methodology</b><span>Sandbox, session slices, judging and statistics in detail.</span></a>
-        <a href="vs-native.html"><b>Tracetoon vs your agent alone</b><span>The flagship benchmark on Opus 5.5 and Sol 6.1: quality, errors and cost in a long session.</span></a>
-        <a href="evidence-graph-61.html"><b>Evidence graph results</b><span>The full golden-run write-up: charts, a worked example, every caveat.</span></a>
       </div>
     </div>
   </section>
