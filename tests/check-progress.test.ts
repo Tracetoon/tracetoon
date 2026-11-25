@@ -193,7 +193,7 @@ test("prepare's next step carries the drafting rules and the foreground-check ru
   expect(next).toContain('in the FOREGROUND');
   expect(next).toContain('Never start it in the background, poll it');
   expect(next).toContain(
-    'Always render, review and publish before ending the turn and before any optional waiting',
+    'Always render and review before ending the turn and before any optional waiting',
   );
   expect(next).not.toContain('a later request in the session asked');
 });

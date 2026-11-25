@@ -5,11 +5,11 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.49`: the skill's commands run that exact
+- Only `npx -y tracetoon@1.0.0-rc.50`: the skill's commands run that exact
   npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
-  provenance tying each file to the tagged source (`v1.0.0-rc.49`). It has
+  provenance tying each file to the tagged source (`v1.0.0-rc.50`). It has
   no install scripts and no dependencies.
 - Nothing in the plugin folder executes; it is Markdown, JSON and one PNG.
 
@@ -76,7 +76,7 @@ There are no affiliate or tracking links, and nothing else is added.
    `tracetoon prepare`, drafts and checks the description, and publishes the PR.
 2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`
    stops with an error naming the fix, and nothing is sent.
-3. `npx -y tracetoon@1.0.0-rc.49 doctor --json` lists every check and its fix.
+3. `npx -y tracetoon@1.0.0-rc.50 doctor --json` lists every check and its fix.
 
 ## Licenses
 
