@@ -366,14 +366,16 @@ describe('drafting guidance', () => {
     join(import.meta.dir, '../plugin/skills/tracetoon/references/drafting.md'),
     'utf8',
   );
-  test('checks run in the foreground and the turn ends only after publishing', () => {
+  test('checks run in the foreground; review before the turn ends; publish takes the host approval', () => {
     expect(skill).toContain('`timeout: 600000`');
     expect(skill).toMatch(/never end your turn while one\s+runs/);
-    expect(skill).toMatch(/Render, review and publish before ending the turn/);
+    expect(skill).toMatch(/Render and review before ending the turn/);
+    expect(skill).toContain('Publishing takes the same approval as opening the PR the normal way');
     const next = graphNext('R1');
     expect(next).toContain('FOREGROUND');
     expect(next).toContain('timed out (incomplete)');
-    expect(next).toContain('render, review and publish before ending the turn');
+    expect(next).toContain('render and review before ending the turn');
+    expect(next).toContain('with the same approval as opening the PR the normal way');
     expect(next).not.toContain('10 min');
   });
   test('session-history caveats, environment-only failures and economy', () => {

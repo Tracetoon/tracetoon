@@ -175,6 +175,24 @@ describe('every package', () => {
     }
   });
 
+  test('publishing follows the host\'s PR approval; no standing text says to publish without asking', () => {
+    const banned = [
+      /publish before ending the turn/i,
+      /never leave the PR unpublished/i,
+      /creates or updates the PR immediately/i,
+      /never ask before/i,
+      /don'?t ask the user/i,
+      /don'?t wait for, or ask/i,
+      /draft straight away/i,
+    ];
+    for (const d of ['claude', 'claude-directory', 'cursor', 'codex', 'codex-directory', 'agent']) {
+      const skill = text(`${OUT}/${d}/skills/tracetoon/SKILL.md`);
+      expect(skill).toContain('Publishing takes the same approval as opening the PR the normal way');
+      for (const path of pkgFiles(d).filter((p) => p.endsWith('.md')))
+        for (const re of banned) expect({ path, hit: re.test(text(path)) }).toEqual({ path, hit: false });
+    }
+  });
+
   test('every README and REVIEW says what Tracetoon adds to a PR, and how to turn it off', () => {
     for (const d of [
       'claude',

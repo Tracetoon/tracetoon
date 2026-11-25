@@ -32,12 +32,12 @@ image service) apply throughout.
     them, `tracetoon config set comic off`. If they say no to setup, run
     `tracetoon images --dismiss` so they aren't asked again on this machine.
     With no route the PR is published without a comic and says so once.
-  - Never leave the PR unpublished just to wait for this answer. If you
-    can't get the answer before publishing (an unattended or
-    non-interactive session, or your question tool is unavailable), run
-    `tracetoon comic skip --run <id> --reason "image setup awaits the
-    user's answer"`, publish, and put the question in your final message,
-    offering to add the comic to the PR once they approve.
+  - The comic question doesn't hold up the PR. If you can't get the answer
+    before the PR is ready (an unattended or non-interactive session, or
+    your question tool is unavailable), run `tracetoon comic skip --run <id>
+    --reason "image setup awaits the user's answer"`, carry on to step 7
+    (which keeps its own approval rule), and put the question in your final
+    message, offering to add the comic to the PR once they approve.
 - When you suggest a command for the user to run themselves, use
   `command.run` from `tracetoon status --json` (the launcher's full path if
   `tracetoon` isn't on their PATH).
@@ -115,9 +115,9 @@ image service) apply throughout.
    scope changed.
    Pass the following writing rules to the drafter; the coordinator does not
    author the title or description when delegation is available.
-   - Draft it straight away from what's available; don't ask the user questions
-     first. Only ask when the draft can't be written without an answer (for
-     example, it's unclear which change the PR is meant to describe).
+   - Write the draft from what's available. Questions for the user are for
+     when the draft can't be written without an answer (for example, it's
+     unclear which change the PR is meant to describe).
    - If the user already wrote a description (an existing PR body,
      `existingPr.editedText` when they edited Tracetoon's section on GitHub, or a
      `body.md` they wrote or edited), start from their text and keep it. Fix only
@@ -256,12 +256,15 @@ image service) apply throughout.
    - The claim check marks sentences that are contradicted or not established
      by the evidence. Fix contradicted ones; reword not-established ones.
    - Render prints **optional notes**: facts a reviewer may want that weren't
-     captured. You may mention them briefly after publishing; never ask before.
+     captured. Mention them briefly in your final message; they don't hold up
+     the draft.
    - If the user supplies context (a manual check, the reason for a choice), add
      it to `author.md` in their words, return it to the drafter, then render and
      review again. The claim check treats it as author-reported.
 7. **Publish.** `tracetoon publish --run <id>` pushes the branch, uploads the
-   comic and creates or updates the PR immediately.
+   comic and creates or updates the PR. It takes the same approval as opening
+   the PR the normal way: where you would ask the user before `gh pr create`,
+   ask before publishing and publish only after they agree.
    - Add `--draft` when the original request or intercepted command specifies a draft PR;
      `--no-push` if the branch is already pushed (the remote must match the rendered commit);
      `--hosting auto|branch|attach` to choose where the comic goes (by default

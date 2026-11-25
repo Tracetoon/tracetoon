@@ -71,6 +71,11 @@ unless the user explicitly asks Tracetoon to update or describe the PR.
 Tracetoon doesn't decide whether to create a PR or change the user's
 authorization; coding, tests, pushes, CI and merges follow the user's request
 and host rules. Questions and mentions are not publication requests.
+**Publishing takes the same approval as opening the PR the normal way.** Where
+your host, its permission rules or the user would let you run `gh pr create`
+without a prompt, `tracetoon publish` needs none either; where you would ask
+the user first, ask the same way before `tracetoon publish` (it pushes the
+branch and opens or updates the PR) and publish only after they agree.
 
 `tracetoon status` says whether Tracetoon is on here and why. If off, tell the
 user why and open the PR the normal way. Only if the user explicitly asks for a
@@ -108,9 +113,9 @@ not switch to another run.
    prepare's `next` makes you the coordinator: start ONE fresh drafter with
    `drafter-packet.md` (it holds steps 1–9, the brief, the reviews and the
    comic, which Tracetoon runs in parallel), wait for its single reply
-   `READY TO PUBLISH`, then run `tracetoon publish --run <id>` yourself (the
-   drafter never publishes: your session may push and open the PR, a
-   subagent's may not) and relay the URL, plus the drafter's `COMIC SETUP:`
+   `READY TO PUBLISH`, then publish yourself (step 7, with the approval above;
+   the drafter never publishes, because the decision is your session's, not a
+   subagent's) and relay the URL, plus the drafter's `COMIC SETUP:`
    line if it has one. Follow that `next` exactly; do no comic work yourself. Don't read the brief, body or packets, and don't
    check the PR afterwards: every call you make re-reads the whole session, the
    drafter's don't. The steps below are for the drafter, or for you when
@@ -136,14 +141,15 @@ not switch to another run.
       and a "Feedback wanted" line (one concrete question for reviewers). Start
       from an existing description and keep it; edit `body.md` in place on
       requests.
-      Draft straight away; ask only when it can't be written without an answer.
+      Write the draft from what's available; questions for the user are for
+      when the draft can't be written without an answer.
    3. Run each required check without a current receipt once: `tracetoon check
       --run <id> --name <check> -- <command>`, one per check (never chained in
       `bash -c '… && …'`), as one blocking call; never end your turn while one
       runs. After 15 minutes it stops as "timed out (incomplete)", never
       failed: don't rerun it. A check that can't run here gets `--skip
-      "<reason>"`. Render, review and publish before ending the turn and
-      before any optional waiting (CI, a slow rerun).
+      "<reason>"`. Render and review before ending the turn or any optional
+      waiting (CI, a slow rerun), so the PR is ready for step 7.
    4. `tracetoon finish --run <id>`: renders, runs the brief check (fix what it
       lists, then finish again; up to three rounds) and writes the review
       packets. Follow its `Next:` and run finish after each step until it
@@ -192,7 +198,9 @@ not switch to another run.
    [references/full-path.md](references/full-path.md).
 7. **Publish.** `tracetoon publish --run <id>` pushes, uploads any comic and
    creates or updates the PR (`--draft` if requested; `--no-push` if already
-   pushed). If the leak scan trips again after a rewrite, stop and **start your
+   pushed). It needs the same approval as opening the PR the normal way (see
+   "When this skill is used"): ask first wherever you would ask before
+   `gh pr create`. If the leak scan trips again after a rewrite, stop and **start your
    response** with the `PR NOT CREATED: …` it prints (never the value);
    `render --allow-findings` only if the user says it's fine. Code changed:
    commit, `digest --run <id>`, update and review again. Don't rerun tests or
