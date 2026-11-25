@@ -489,8 +489,11 @@ flowchart LR
 ```
 
 Your agent drives these steps from the skill; you normally never type them. Each
-run lives in `.git/tracetoon/runs/<id>/`, which git never tracks. The newest 20
-scratch runs are kept. Every command takes `--json`.
+run lives in `.git/tracetoon/runs/<id>/`, which git never tracks. In a linked
+worktree or a submodule, whose git dir lies outside the checkout, runs live in
+`.tracetoon/runs/<id>/` at the checkout's root instead, so an agent sandboxed to
+that checkout can still write its drafts; the folder ignores itself. The newest
+20 scratch runs are kept. Every command takes `--json`.
 
 <details>
 <summary><b>1. <code>tracetoon doctor</code>: can this machine make a PR?</b></summary>

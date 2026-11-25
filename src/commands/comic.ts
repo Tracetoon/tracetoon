@@ -125,7 +125,7 @@ function describe(problems: ScriptProblem[]): string {
 
 function load(cwd: string, runId?: string): Loaded {
   let truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, runId);
+  const run = findRun(truth.stateDir, runId);
   const context = readJson<{
     base?: string;
     aiPolicy?: AiPolicy;
@@ -177,7 +177,7 @@ export function comicSkipCmd(
       fix: 'tracetoon comic skip --reason "<why>" --by user|agent',
     });
   const truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, opts.run);
+  const run = findRun(truth.stateDir, opts.run);
   writeComicStatus(run, {
     state: 'skipped',
     // Only a skip the user asked for is the user's; otherwise it was the agent's call.
@@ -193,7 +193,7 @@ export function comicSkipCmd(
 
 export function comicCheckCmd(cwd: string, opts: OutOpts & { run?: string }): void {
   const truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, opts.run);
+  const run = findRun(truth.stateDir, opts.run);
   const script = readJson<unknown>(run, 'comic.json');
   if (script === undefined)
     throw new UserError(

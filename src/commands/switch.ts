@@ -9,6 +9,7 @@ import {
   type HookChange,
 } from '../hook/install.ts';
 import { repoRoot, switchState } from '../hook/switches.ts';
+import { stateDir } from '../util/stateDir.ts';
 import { unfixSh } from '../hook/windowsSh.ts';
 import { INTEGRATIONS } from '../integrations/registry.ts';
 import { git } from '../util/exec.ts';
@@ -78,7 +79,7 @@ export function statusCmd(cwd: string, opts: OutOpts): void {
   const gitDir = root
     ? git(root, ['rev-parse', '--absolute-git-dir']).stdout.trim()
     : undefined;
-  const workflowTasks = gitDir ? taskSummary(gitDir) : [];
+  const workflowTasks = root && gitDir ? taskSummary(stateDir(root, gitDir)) : [];
   emit(
     opts,
     {

@@ -1,7 +1,7 @@
 /**
- * A run's scratch folder: `<git dir>/tracetoon/runs/<id>/`. Git never tracks it and
- * each run is self-contained. Runs with unfinished tasks are kept until
- * publication; other runs are disposable scratch.
+ * A run's scratch folder: `<state dir>/runs/<id>/` (see `stateDir`). Git never
+ * tracks it and each run is self-contained. Runs with unfinished tasks are kept
+ * until publication; other runs are disposable scratch.
  */
 import {
   existsSync,
@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { ensureStateDir } from './util/stateDir.ts';
 import { count } from './util/profile.ts';
 import { codedError } from './commands/output.ts';
 
@@ -34,23 +35,26 @@ export function assertRunOwner(run: Run, root: string, branch: string): void {
     );
 }
 
-function runsDir(gitDir: string): string {
-  return join(gitDir, 'tracetoon', 'runs');
+export { ensureStateDir, stateDir, STATE_FOLDER } from './util/stateDir.ts';
+
+function runsDir(state: string): string {
+  return join(state, 'runs');
 }
 
-export function newRun(gitDir: string): Run {
+export function newRun(state: string): Run {
   const id = new Date()
     .toISOString()
     .replace(/[-:]/g, '')
     .replace(/\..*/, '')
     .replace('T', '-');
-  let dir = join(runsDir(gitDir), id);
+  ensureStateDir(state);
+  let dir = join(runsDir(state), id);
   let n = 1;
-  while (existsSync(dir)) dir = join(runsDir(gitDir), `${id}-${n++}`);
+  while (existsSync(dir)) dir = join(runsDir(state), `${id}-${n++}`);
   mkdirSync(dir, { recursive: true });
   const name = dir.split(/[\\/]/).pop()!;
-  writeFileSync(join(runsDir(gitDir), 'latest'), name, 'utf8');
-  pruneRuns(gitDir, name);
+  writeFileSync(join(runsDir(state), 'latest'), name, 'utf8');
+  pruneRuns(state, name);
   return { id: name, dir };
 }
 
@@ -58,8 +62,8 @@ export function newRun(gitDir: string): Run {
 export const KEEP_RUNS = 20;
 
 /** Delete all but the newest run folders (never `keep`). */
-export function pruneRuns(gitDir: string, keep?: string): void {
-  const base = runsDir(gitDir);
+export function pruneRuns(state: string, keep?: string): void {
+  const base = runsDir(state);
   const runs = readdirSync(base, { withFileTypes: true })
     .filter((d) => d.isDirectory() && /^\d{8}-\d{6}(-\d+)?$/.test(d.name))
     .map((d) => d.name)
@@ -68,7 +72,7 @@ export function pruneRuns(gitDir: string, keep?: string): void {
   // A paired evaluation is durable evidence, not disposable task scratch.
   try {
     const evaluation = JSON.parse(
-      readFileSync(join(gitDir, 'tracetoon', 'comic-gallery', 'manifest.json'), 'utf8'),
+      readFileSync(join(state, 'comic-gallery', 'manifest.json'), 'utf8'),
     );
     if (evaluation.v === 1 && Array.isArray(evaluation.cases))
       for (const item of evaluation.cases)
@@ -91,8 +95,8 @@ export function pruneRuns(gitDir: string, keep?: string): void {
 }
 
 /** The named run, or the latest one. */
-export function findRun(gitDir: string, id?: string): Run {
-  const base = runsDir(gitDir);
+export function findRun(state: string, id?: string): Run {
+  const base = runsDir(state);
   let name = id;
   if (!name) {
     const latest = join(base, 'latest');

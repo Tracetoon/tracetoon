@@ -1,12 +1,13 @@
 /** Read repository data without following directory links into another project. */
 import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { STATE_FOLDER } from './stateDir.ts';
 
 export function privateRepoPath(path: string): boolean {
   return path
     .replace(/\\/g, '/')
     .split('/')
-    .some((p) => ['.git', '.showtail'].includes(p.toLowerCase()));
+    .some((p) => ['.git', '.showtail', STATE_FOLDER].includes(p.toLowerCase()));
 }
 
 export function repoPath(path: string): boolean {

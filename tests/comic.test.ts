@@ -64,14 +64,14 @@ describe('comic pieces', () => {
   });
 
   test(`run folders are pruned to the newest ${KEEP_RUNS}`, () => {
-    const gitDir = tempDir('tracetoon-gitdir-');
-    const runs = join(gitDir, 'tracetoon', 'runs');
+    const state = join(tempDir('tracetoon-gitdir-'), 'tracetoon');
+    const runs = join(state, 'runs');
     for (let i = 0; i < 25; i++)
       mkdirSync(join(runs, `20250101-0000${String(i).padStart(2, '0')}`), {
         recursive: true,
       });
     mkdirSync(join(runs, 'showcase-1'), { recursive: true });
-    const run = newRun(gitDir);
+    const run = newRun(state);
     const left = readdirSync(runs).filter((f) => /^\d{8}-\d{6}/.test(f));
     expect(left).toHaveLength(KEEP_RUNS);
     expect(left).toContain(run.id);

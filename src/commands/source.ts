@@ -28,7 +28,7 @@ export function sourceCmd(
   opts: OutOpts & { run?: string; revision?: string },
 ) {
   const repo = repository(cwd),
-    run = findRun(repo.gitDir, opts.run);
+    run = findRun(repo.stateDir, opts.run);
   assertRunOwner(run, repo.root, repo.branch);
   if (!paths.length || paths.some((path) => !repoPath(path)))
     throw new UserError('Source paths must be public repository-relative paths.');
