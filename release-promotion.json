@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
   "version": "1.0.0-rc.49",
-  "buildId": "a5d306098ad48bb186fd9b49948238d0f6a4478592b61ef2e8f188d221e453e9",
+  "buildId": "c82d468acedd2ee0904e9c697cfa86b7621d9519acf6749abf3b0a9ce830699d",
   "artifact": {
-    "runId": 45534431495,
-    "id": 14986787275,
-    "name": "tracetoon-candidate-26fc1132c89f8f8583bde8699d59d5750bfc1528-attempt-1",
-    "digest": "sha256:e4dd3ead555247a51785da4df80e80259e34d5d3b99ae45eafee37be1d8b8318"
+    "runId": 45543459299,
+    "id": 14990292873,
+    "name": "tracetoon-candidate-bee2de4cadd89da227150a1168ea774ae82de7b2-attempt-1",
+    "digest": "sha256:171465759d1b7caed14218fad7572f6e6daefed7127678a0cabb71986757d305"
   },
   "expected": {
-    "manifestSha256": "b78e45de132b987568b22930e4edb0b6695164062debad081669e8be9a00d857",
-    "checksumsSha256": "7e5e78b5e15ba1ee2fbaf10798f621c3a5d3c8a294d11bf520d82a6a3ea6fd13",
-    "windowsSha256": "95d6f647f6c11598581ccdcade9fe4b5654a039fb707571e25b08b6bcf517be7",
-    "bundleSha256": "dc1c939de88fe00691c6fd779bb5ca4eae0557ca98ecf0f295ea9bc31cbd3542"
+    "manifestSha256": "f5788023c75999d28d5ab3d9860add43b3b44d664f428ae64b80520bd4697b18",
+    "checksumsSha256": "b53c9ce6729213dbe7e08a8155970d9f2a4ca1bc94a050b4b7407c60ed6491a4",
+    "windowsSha256": "f0e246b5a8acffaec73ea991eca4a0a9ff054b77bd6c66bc693ccc3398423e76",
+    "bundleSha256": "2ff8680264bcd6ad4d0c4ca329bf00b39e2565337a8afe0b3cccbc383ea29923"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-25T02:52:04.000Z",
-    "reason": "The user asked for a release once Showtail's second scanner fix (Tingsters/Showtail#62) merged, so the packages ship it through #222: Tracetoon's leak scan no longer reports word-only repository paths as opaque tokens. The release also carries #216, #218, #220, #221 and #137, merged since rc.48. The CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-25T04:10:05.000Z",
+    "reason": "The user asked to cut a release once the open PRs merged: the comicCredit setting and the 'What it adds to your PR' notice the Anthropic directory asked for (#218), fresh review passes superseding earlier ones (#220), linked-worktree run folders (#217), dependencies:prepare fixes (#221), the Showtail leak-scan pin (#222), README updates (#216, #224) and the compatibility results (#137). The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
