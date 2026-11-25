@@ -6,11 +6,11 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadConfig } from '../config.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
-import { genreOptions, type GenreOption } from '../comic/genres.ts';
+import { genreOptions, withSceneOffers, type GenreOption } from '../comic/genres.ts';
 import { comicPacketFiles, PACKET_FILES } from '../comic/packet.ts';
 import type { ComicSummary } from '../comic/types.ts';
 import { skillDir } from '../contribution/skillSettings.ts';
-import { assertRunOwner, findRun, readJson, readText, type Run } from '../run.ts';
+import { assertRunOwner, findRun, readJson, readText, writeJson, type Run } from '../run.ts';
 import { DRAW_CARTOON_REFERENCES, DRAW_CARTOON_SKILL } from '../skills.ts';
 import { repository } from '../workflow/state.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
@@ -61,7 +61,8 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
   const pinnedGenre = config.genre && config.genre !== 'auto' ? config.genre.trim() : undefined;
   const catalog = genreCatalog(repo.root);
   const asked = opts.genre?.trim();
-  const genres = asked
+  const recentMemes = (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : []));
+  const offered = asked
     ? genreOptions([], {
         pinned: asked,
         catalog,
@@ -82,6 +83,13 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
         recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
         },
       ));
+  // An isekai cast's scenes are matched to the PR, so they're picked here, where
+  // the title and description exist, and saved for `comic check`.
+  const genres = withSceneOffers(offered, { title: readText(run, 'title.txt')?.trim(), description }, recentMemes);
+  if (genres.some((g) => g.sceneOffer)) {
+    const full = readJson<Record<string, unknown> & RunContext>(run, 'context.json') ?? {};
+    writeJson(run, 'context.json', { ...full, comic: { ...(full.comic ?? {}), genreOptions: genres } });
+  }
   const skillFiles = comicSkillFiles();
   if (!skillFiles.length)
     throw new UserError(

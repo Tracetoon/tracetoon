@@ -316,9 +316,9 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
     requestLine(script),
     wantsNonComicMedium(script.style, script.request) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'
-      ? `Format: ${format.name}. ${formatLayout(format, script)}.`
+      ? `Format: ${format.name}. ${sentence(formatLayout(format, script))}`
       : '',
-    script.layout ? `Layout: ${script.layout}.` : '',
+    script.layout ? `Layout: ${sentence(script.layout)}` : '',
     compositionPrompt(script),
     cast.length
       ? `Characters (draw each one the same way in every panel): ${cast.join('; ')}.`

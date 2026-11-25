@@ -96,7 +96,20 @@ Read these packet files (they sit next to this one):
   - Set \`castPreset\` to the cast's preset id, \`lead\` to
     {"persona": the lead's archetype id, "name": their name}, \`place\` to the
     one place the whole comic happens, and every panel's \`background\` to
-    detailed, soft or speed-lines.` : ''}${input.genres.some((g) => g.lead || g.castOffer?.personas.some((p) => p.lead)) ? `
+    detailed, soft or speed-lines.` : ''}${input.genres.some((g) => g.sceneOffer?.length) ? `
+  A genre's \`sceneOffer\` is three anime gag scenes this cast can perform,
+  matched to this PR. If you choose that genre, the comic is built on exactly
+  one of them:
+  - Read the PR for its actual mechanism (overkill, hidden dependence,
+    resource exhaustion, a misunderstanding, delayed consequences…) and pick
+    the scene whose cause and payoff fit it best. The order is a retrieval aid,
+    not the answer.
+  - Keep the cast: each non-optional slot is played by the cast member the
+    offer names, and they appear on the page. Add no new ability, species,
+    relationship or world rule to make a scene fit.
+  - Adapt it as an original scene with your characters' own names, readable
+    without lore; never a named character from any series.
+  - Set \`meme\` to its id.` : ''}${input.genres.some((g) => g.lead || g.castOffer?.personas.some((p) => p.lead)) ? `
   The persona marked \`lead\` (or a genre's \`lead\`) is this comic's main
   character if you choose that genre: they drive the episode and appear in
   most panels. Set \`lead\` to {"persona": its id, "name": their name in

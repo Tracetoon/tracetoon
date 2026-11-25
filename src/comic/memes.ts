@@ -9,7 +9,6 @@
  * assigns each comic's style by seed instead of leaving it to the author.
  */
 import { createHash } from 'node:crypto';
-import animeFantasy from './memes/anime-fantasy.json' with { type: 'json' };
 import spaceOpera from './memes/space-opera.json' with { type: 'json' };
 
 export interface Meme {
@@ -60,7 +59,6 @@ export function withIds(raw: readonly RawMeme[]): Meme[] {
 
 /** Built-in pools by genre id. */
 export const BUILT_IN_MEMES: Record<string, Meme[]> = {
-  'anime-fantasy': withIds(animeFantasy as RawMeme[]),
   'space-opera': withIds(spaceOpera as RawMeme[]),
 };
 

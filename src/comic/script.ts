@@ -542,7 +542,25 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   if (typeof s.genre !== 'string') return out;
   const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
   if (!option) return out;
-  if (s.meme !== undefined && s.meme !== '') {
+  if (option.sceneOffer?.length) {
+    // An isekai cast's comic is built on one of its offered scenes, played by the cast the offer names.
+    const ids = option.sceneOffer.map((m) => m.id);
+    const scene = option.sceneOffer.find((m) => m.id === s.meme);
+    if (!scene)
+      out.push({
+        where: 'meme',
+        problem:
+          s.meme === undefined || s.meme === ''
+            ? `is required: build the comic on one of the offered scenes (${ids.join(', ')}) and set meme to its id`
+            : `"${String(s.meme)}" wasn't offered; use one of ${ids.join(', ')}`,
+      });
+    else {
+      const onPage = new Set((Array.isArray(s.characters) ? s.characters : []).map((c) => c.archetype));
+      for (const slot of scene.cast)
+        if (!slot.optional && !onPage.has(slot.archetype))
+          out.push({ where: 'characters', problem: `scene ${scene.id} needs its ${slot.slot}, "${slot.title}" (${slot.archetype}), on the page` });
+    }
+  } else if (s.meme !== undefined && s.meme !== '') {
     const ids = (option.memeOffer ?? []).map((m) => m.id);
     if (typeof s.meme !== 'string' || !ids.includes(s.meme))
       out.push({

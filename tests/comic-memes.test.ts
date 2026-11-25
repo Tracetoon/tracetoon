@@ -16,7 +16,7 @@ const catalog = [genre];
 const seeds = Array.from({ length: 2000 }, (_, i) => `repo head run-${i}`);
 
 describe('genre meme pools', () => {
-  test('anime-fantasy: casts from the isekai guide, with no memes or style mix', () => {
+  test('anime-fantasy: casts from the isekai guide; its scenes come at the packet step, not a generic meme pool', () => {
     const anime = genreById('anime-fantasy')!;
     expect(anime.isekai).toBe(true);
     for (const key of ['cast', 'diverseCast', 'leads', 'memes', 'styleMix'] as const) expect(anime[key]).toBeUndefined();
@@ -45,7 +45,7 @@ describe('genre meme pools', () => {
 });
 
 describe('meme offers', () => {
-  const pool = BUILT_IN_MEMES['anime-fantasy']!;
+  const pool = BUILT_IN_MEMES['space-opera']!;
 
   test('three distinct memes, stable for a seed, covering the pool, tier 1 favoured', () => {
     const offers = seeds.map((s) => memeOffer(pool, s)!);
@@ -69,7 +69,7 @@ describe('meme offers', () => {
     const next = memeOffer(pool, 'seed-a', { recent: first.map((m) => m.id) })!;
     expect(next.some((m) => first.some((f) => f.id === m.id))).toBe(false);
     for (const s of seeds.slice(0, 200))
-      for (const m of memeOffer(pool, s, { roles: ['nemesis'] })!) expect(m.roles.includes('any') || m.roles.includes('nemesis')).toBe(true);
+      for (const m of memeOffer(pool, s, { roles: ['villain'] })!) expect(m.roles.includes('any') || m.roles.includes('villain')).toBe(true);
     expect(memeOffer(undefined, 'x')).toBeUndefined();
   });
 

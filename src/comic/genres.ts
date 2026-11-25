@@ -7,6 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
+import { isekaiMemeOffer, offerJoke, type IsekaiSceneOffer } from './isekai/memeMatch.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
 import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
@@ -281,7 +282,7 @@ const STYLE_MIXES: Record<string, Record<string, number>> = {};
 
 export const GENRES: Genre[] = BUILT_IN_GENRES.map((g) => ({
   ...g,
-  ...(BUILT_IN_MEMES[g.id]?.length && !g.isekai ? { memes: BUILT_IN_MEMES[g.id] } : {}),
+  ...(BUILT_IN_MEMES[g.id]?.length ? { memes: BUILT_IN_MEMES[g.id] } : {}),
   ...(STYLE_MIXES[g.id] ? { styleMix: STYLE_MIXES[g.id] } : {}),
   ...(DIVERSE_CASTS[g.id]?.length ? { diverseCast: DIVERSE_CASTS[g.id] } : {}),
   ...(LEADS[g.id]?.length ? { leads: LEADS[g.id] } : {}),
@@ -339,6 +340,21 @@ export interface GenreOption {
   lead?: CastPersona;
   /** The cast generated from the isekai archetype guide for this comic. */
   isekaiCast?: IsekaiPacketCast;
+  /** Three anime gag scenes this isekai cast can perform, matched to the PR; the comic uses one. */
+  sceneOffer?: IsekaiSceneOffer[];
+}
+
+/**
+ * Adds the scene offer to each isekai genre option, once the PR's title and
+ * description exist (the packet step): the matcher needs the PR text.
+ */
+export function withSceneOffers(
+  options: GenreOption[],
+  pr: { title?: string; description?: string },
+  recentMemes: string[] = [],
+): GenreOption[] {
+  const joke = offerJoke(pr.title, pr.description);
+  return options.map((g) => (g.isekaiCast ? { ...g, sceneOffer: isekaiMemeOffer(g.isekaiCast, joke, recentMemes) } : g));
 }
 
 const option = (
