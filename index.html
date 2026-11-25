@@ -184,7 +184,7 @@
   @media (min-width:2200px) { html { font-size:18px; } body, .site-top { font-size:19px; } .wrap, .site-top .site-wrap { max-width:1840px; } }
   @media (min-width:3000px) { html { font-size:24px; } body, .site-top { font-size:25px; } .wrap, .site-top .site-wrap { max-width:2500px; } .site-top .site-wrap { height:76px; } .site-brand img { width:46px; height:46px; } .site-brand .site-wordmark { height:38px; } }
   .site-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  @media (max-width:600px) { .site-top nav a.opt { display:none; } .site-top nav { gap:.85rem; } .site-brand .site-wordmark { height:26px; } }
+  @media (max-width:720px) { .site-top nav a.opt { display:none; } .site-top nav { gap:.85rem; } .site-brand .site-wordmark { height:26px; } }
 
   /* hero */
   .hero { padding:2rem 0 2.5rem; }
@@ -225,13 +225,13 @@
   .chips-also li { color:var(--fg); }
 
   /* proof strip */
-  .proof { display:grid; grid-template-columns:1.6fr 1fr 1.4fr; gap:.8rem; margin:0; }
+  .proof { display:grid; grid-template-columns:1.6fr 1fr 1.4fr; gap:.8rem; margin:1.2rem 0 .5rem; }
   .proof div { border-left:4px solid var(--accent); padding:.1rem 0 .1rem .6rem; }
   .proof b { display:block; font-family:var(--num); font-weight:400; font-size:clamp(1.45rem,1.9vw,1.85rem); line-height:1.1; letter-spacing:.01em; margin-bottom:.15rem; }
   .nw { white-space:nowrap; }
   .proof div > span { font-size:.8rem; color:var(--muted); line-height:1.3; display:block; }
   .more { font-size:.88rem; font-weight:600; }
-  .proof-links { display:flex; flex-wrap:wrap; gap:.3rem 1.2rem; margin:-.3rem 0 0; }
+  .proof-links { display:flex; flex-wrap:wrap; gap:.3rem 1.2rem; margin:0; }
   @media (max-width:520px) { .proof { grid-template-columns:1fr; } .proof b { font-size:1.9rem; } }
 
   /* results teaser under the hero comic */
@@ -328,6 +328,7 @@
       <a href="#install">Install</a>
       <a href="#why" class="opt">Why</a>
       <a href="#talk" class="opt">Talk</a>
+      <a href="prbench.html" class="opt">Benchmark</a>
       <a href="results.html">Results</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
@@ -369,16 +370,16 @@
           <p class="chips-more">Plus Claude Code and Codex inside Zed. <a href="https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/support.md">Verification results →</a></p>
         </div>
 
-      </div>
-      <div class="hero-side">
         <div class="proof">
           <div><b><span class="nw">72–9</span> · <span class="nw">111–19</span></b><span>judges' picks for the Tracetoon PR over the same agent writing alone (Opus 5.5 · Sol 6.1, 61 real PRs)</span></div>
           <div><b>−50%</b><span>factual errors per PR on Opus 5.5: 0.16 vs 0.32</span></div>
           <div><b><span class="nw">−28%</span> · <span class="nw">−73%</span></b><span>cost per PR in a long session (Opus · Sol)</span></div>
         </div>
         <p class="proof-links"><a class="more" href="results.html">All results →</a> <a class="more" href="prbench.html">How we test: prbench →</a></p>
+      </div>
+      <div class="hero-side">
         <figure class="hero-art">
-          <img src="img/hero.webp" width="1400" height="837" fetchpriority="high"
+          <img src="img/hero.webp" width="1400" height="838" fetchpriority="high"
                alt="Comic titled NO MORE PR SLOP. Before: a developer recoils from a pull request reading 'Improves robustness and code quality. All tests pass (probably)'. After: the same developer grins and points at a pull request reading 'What you asked. What ran. What changed.' with a comic pinned to it.">
         </figure>
         <a class="teaser" href="results.html">
