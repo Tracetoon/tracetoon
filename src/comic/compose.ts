@@ -271,12 +271,22 @@ function lookOf(script: ComicScript): { caption: string; sfx: string; paper: str
   return { caption: '#FFF3B0', sfx: accent, paper: '#FFFDF7' };
 }
 
-/** The footer bar: "made with Tracetoon", drawn by Tracetoon, never by the model. */
+/**
+ * The footer bar: "made with Tracetoon", drawn by Tracetoon, never by the model.
+ * The `comicCredit` setting (`tracetoon config set comicCredit false`) leaves it off.
+ */
 /** The Tracetoon icon for the dark footer bar, with ids that can't clash with the page's. */
 const FOOTER_ICON = prefixIds(iconSvg('dark'), 'tt-footer-');
 const FOOTER_ICON_SIZE = 38;
 
-function footerBar(y: number, width: number): string {
+/** Options for a composed page: `credit: false` leaves off the footer bar. */
+export interface PageOptions {
+  credit?: boolean;
+}
+const footerHeight = (o: PageOptions) => (o.credit === false ? 0 : FOOTER_BAR);
+
+function footerBar(y: number, width: number, o: PageOptions = {}): string {
+  if (o.credit === false) return '';
   const ty = y + FOOTER_BAR / 2 + 9;
   const ix = width - 22 - FOOTER_ICON_SIZE;
   return `<rect x="0" y="${y}" width="${width}" height="${FOOTER_BAR}" fill="#111114"/>
@@ -307,15 +317,19 @@ export function imageSize(data: Uint8Array): { w: number; h: number } | undefine
  * A page the image model drew whole (lettering included), with Tracetoon's
  * footer bar added underneath.
  */
-export function pageWithFooter(img: PanelImage, aspect = 4 / 3): string {
+export function pageWithFooter(
+  img: PanelImage,
+  aspect = 4 / 3,
+  opts: PageOptions = {},
+): string {
   const size = imageSize(img.data);
   const ratio = size ? size.w / size.h : aspect;
   const h = Math.round(PAGE_W / ratio);
-  const total = h + FOOTER_BAR;
+  const total = h + footerHeight(opts);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${total}" viewBox="0 0 ${PAGE_W} ${total}">
 <rect width="${PAGE_W}" height="${total}" fill="#111114"/>
 <image href="${dataUri(img)}" width="${PAGE_W}" height="${h}" preserveAspectRatio="xMidYMid slice"/>
-${footerBar(h, PAGE_W)}
+${footerBar(h, PAGE_W, opts)}
 </svg>`;
 }
 
@@ -337,8 +351,9 @@ export function composePage(
   script: ComicScript,
   images: PanelImage[],
   layout?: Layout,
+  opts: PageOptions = {},
 ): string {
-  if (script.composition) return composeDesignedPage(script, images, layout);
+  if (script.composition) return composeDesignedPage(script, images, layout, opts);
   const n = script.panels.length;
   const cols = columns(n);
   const rows = Math.ceil(n / cols);
@@ -346,7 +361,7 @@ export function composePage(
   const k = cell / SRC;
   const look = lookOf(script);
   const bodyH = TITLE_H + MARGIN + rows * cell + (rows - 1) * GUTTER + MARGIN;
-  const height = bodyH + FOOTER_BAR;
+  const height = bodyH + footerHeight(opts);
   const cells = script.panels
     .map((panel, i) => {
       const row = Math.floor(i / cols);
@@ -364,7 +379,7 @@ ${n > 1 ? `<circle cx="30" cy="${cell - 30}" r="18" fill="${INK}"/><text x="30" 
 </g>`;
     })
     .join('\n');
-  const footer = footerBar(bodyH, PAGE_W);
+  const footer = footerBar(bodyH, PAGE_W, opts);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${height}" viewBox="0 0 ${PAGE_W} ${height}">
 <rect width="${PAGE_W}" height="${height}" fill="${look.paper}"/>
 <text x="${PAGE_W / 2}" y="72" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="52" fill="${INK}">${esc(script.headline || script.title)}</text>
@@ -378,8 +393,10 @@ function composeDesignedPage(
   script: ComicScript,
   images: PanelImage[],
   layout?: Layout,
+  opts: PageOptions = {},
 ): string {
   const composition = resolveComposition(script)!;
+  const fb = footerHeight(opts);
   const h = Math.round(PAGE_W / aspectRatio(pageAspect(script)));
   const look = lookOf(script);
   const cells = composition.frames
@@ -446,7 +463,7 @@ ${frame.border === 'none' ? '' : `${shape} fill="none" stroke="${INK}" stroke-wi
       )
       .join('');
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${h + FOOTER_BAR}" viewBox="0 0 ${PAGE_W} ${h + FOOTER_BAR}">
-<rect width="${PAGE_W}" height="${h + FOOTER_BAR}" fill="${look.paper}"/>
-${cells}${heading}${footerBar(h, PAGE_W)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${h + fb}" viewBox="0 0 ${PAGE_W} ${h + fb}">
+<rect width="${PAGE_W}" height="${h + fb}" fill="${look.paper}"/>
+${cells}${heading}${footerBar(h, PAGE_W, opts)}</svg>`;
 }

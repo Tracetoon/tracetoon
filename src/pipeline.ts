@@ -10,6 +10,7 @@ import { ADAPTERS } from './integrations/registry.ts';
 import type { TraceSession } from './trace/types.ts';
 import { join } from 'node:path';
 import { tasks } from './workflow/state.ts';
+import { ensureStateDir } from './util/stateDir.ts';
 
 export interface ScanResult {
   truth: PrTruth;
@@ -46,7 +47,7 @@ export function scan(cwd: string, opts: TruthOptions = {}): ScanResult {
   const warnings: string[] = [];
   const needles = truth.commits.map((c) => c.sha.slice(0, 7));
   const sessions: TraceSession[] = [];
-  const activeTranscript = tasks(truth.gitDir).find(
+  const activeTranscript = tasks(truth.stateDir).find(
     (t) =>
       t.task.branch === truth.head && t.task.state !== 'published' && t.task.transcript,
   )?.task.transcript;
@@ -56,7 +57,7 @@ export function scan(cwd: string, opts: TruthOptions = {}): ScanResult {
       roots: truth.roots,
       sinceMs: window.startMs,
       needles,
-      cacheDir: join(truth.gitDir, 'tracetoon', 'discovery'),
+      cacheDir: join(ensureStateDir(truth.stateDir), 'discovery'),
       currentSessionPath: activeTranscript,
     })) {
       const session = adapter.read(ref);

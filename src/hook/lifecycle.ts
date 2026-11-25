@@ -170,12 +170,12 @@ function observe(
     );
   for (const root of targets.roots.filter((r) => switchState(r, env).enabled)) {
     const repo = repository(root);
-    let active = tasks(repo.gitDir).find(
+    let active = tasks(repo.stateDir).find(
       (t) => t.task.branch === repo.branch && t.task.state !== 'published',
     );
     if (!active) {
       const fingerprint = workFingerprint(root);
-      const published = tasks(repo.gitDir).find(
+      const published = tasks(repo.stateDir).find(
         (t) =>
           t.task.branch === repo.branch &&
           t.task.state === 'published' &&

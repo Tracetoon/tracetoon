@@ -114,7 +114,7 @@ test('review v2 verifies exact clauses and accounts for every behavior checkpoin
 });
 test('equivalent check aliases reuse execution and locked dependency edits invalidate receipts', () => {
   const repo = makeRepo(),
-    run = newRun(repository(repo.root).gitDir);
+    run = newRun(repository(repo.root).stateDir);
   writeFileSync(join(repo.root, '.gitignore'), '.tracetoon-deps/\n');
   writeFileSync(
     join(repo.root, 'build-dependencies.json'),
@@ -137,7 +137,7 @@ test('equivalent check aliases reuse execution and locked dependency edits inval
 }, 30000);
 test('locked dependencies shared from another worktree through a link validate', () => {
   const repo = makeRepo(),
-    run = newRun(repository(repo.root).gitDir),
+    run = newRun(repository(repo.root).stateDir),
     lock = JSON.stringify({
       schema: 'tracetoon.build-dependencies/v1',
       showtail: { revision: 'a'.repeat(40) },

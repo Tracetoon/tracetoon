@@ -13,6 +13,7 @@ import {
   type Target,
 } from '../github/target.ts';
 import { privateRepoPath, readSubmittedFile, repoPath } from '../util/repoFiles.ts';
+import { stateDir } from '../util/stateDir.ts';
 
 export interface Commit {
   sha: string;
@@ -48,6 +49,8 @@ export interface PrTruth {
   headSha?: string;
   toplevel: string;
   gitDir: string;
+  /** Where runs and caches live (see `stateDir` in run.ts). */
+  stateDir: string;
   /** The checkout plus every worktree of the same repo. */
   roots: string[];
   head: string;
@@ -420,6 +423,7 @@ export function prTruth(cwd: string, opts: TruthOptions = {}): PrTruth {
   return {
     toplevel,
     gitDir,
+    stateDir: stateDir(toplevel, gitDir),
     roots,
     head,
     headSha: headRef,

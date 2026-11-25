@@ -1,14 +1,14 @@
 {
-  "version": "1.0.0-rc.48",
-  "buildId": "ff25bfd3f492e681b2b698134feb186128e291f903cf5bfba7bf87dd35db22e6",
-  "revision": "cdab1eb82f021cc9dbbd354a453b43c7775b5cd4",
+  "version": "1.0.0-rc.49",
+  "buildId": "c82d468acedd2ee0904e9c697cfa86b7621d9519acf6749abf3b0a9ce830699d",
+  "revision": "bee2de4cadd89da227150a1168ea774ae82de7b2",
   "protocol": 2,
   "dependencies": [
     {
       "name": "@showtail/agent-traces",
-      "revision": "3b9f393bcd9bdbc8500b63b628ccfe2a15f235dd",
-      "packageTree": "38c5587d919aba8e1effe2fe328a80b24a64ac86",
-      "sha256": "0efbe3e8ab9ce194982688df537d2764c4a424a8a27d9bddfc18baf797297a3f"
+      "revision": "449835ba9d46a46c83f1c5bdec634fc5e70a56f7",
+      "packageTree": "2f08730804558f22d34670a5bd0d6d168661b414",
+      "sha256": "7fd2126cf7022022f9821b027a1b914d9c61c9f5f86ac09ce7e702bc7c6644a2"
     }
   ],
   "compiler": {

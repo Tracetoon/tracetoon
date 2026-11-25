@@ -18,7 +18,7 @@ Install Tracetoon from the Cursor Marketplace.
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.48`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.49`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,8 @@ Install Tracetoon from the Cursor Marketplace.
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** Before a shell command that could create a PR it asks the runtime whether to route it through the skill; at session start it records the session.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.48, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.48, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.49, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.49, published from GitHub Actions with npm provenance.
 
 ## What it reads
 
@@ -37,7 +37,8 @@ On your machine: your agents' session logs, which hold whatever you typed,
 and the repository's git history, including names and email addresses in
 commit trailers such as `Co-Authored-By`. It also reads your GitHub login
 through `gh`. Each PR's redacted digest, evidence brief and draft stay in
-`.git/tracetoon/runs/` until you delete them.
+`.git/tracetoon/runs/` (`.tracetoon/runs/` in a linked worktree) until you
+delete them.
 
 ## What it sends
 
@@ -56,13 +57,27 @@ Session logs are read and processed on your machine. Data leaves it only for:
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
 
+## What it adds to your PR
+
+Tracetoon credits itself in what it publishes, in two places, and both can be
+turned off:
+
+- **The PR description** ends with a one-line note that it was drafted from the
+  session logs with Tracetoon, linking to https://github.com/Tracetoon/tracetoon.
+  To leave it off: `tracetoon config set disclosure none` (a repository whose
+  AI policy requires a disclosure still gets one).
+- **Each comic** has a "made with Tracetoon" footer bar with the Tracetoon icon.
+  To leave it off: `tracetoon config set comicCredit false`.
+
+There are no affiliate or tracking links, and nothing else is added.
+
 ## Privacy
 
 Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
 
 ## Results
 
-On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
+On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred Tracetoon's PR descriptions to the same agent writing the PR alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), with half the factual errors on Opus, at 28% and 73% lower cost per PR in a long session. (https://tracetoon.ai/vs-native.html)
 
 ## Support
 

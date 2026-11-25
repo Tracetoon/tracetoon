@@ -121,7 +121,7 @@ try {
     ].includes(timed.name)
   ) {
     try {
-      const run = findRun(repository(cwd).gitDir, timed.run);
+      const run = findRun(repository(cwd).stateDir, timed.run);
       recordTiming(run, timed.name, performance.now() - timed.started);
       saveProfile(run, timed.name);
     } catch {

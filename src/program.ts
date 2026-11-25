@@ -113,7 +113,7 @@ export function buildProgram(cwd: string = process.cwd()): {
       ['render', 'publish', 'art', 'reroll', 'prompts'].includes(action.name())
     ) {
       const repo = repository(cwd);
-      assertRunOwner(findRun(repo.gitDir, action.opts().run), repo.root, repo.branch);
+      assertRunOwner(findRun(repo.stateDir, action.opts().run), repo.root, repo.branch);
     }
     state.timedAction = {
       name: action.name(),
@@ -582,7 +582,10 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--model <name>',
       "the author's and judges' model (default: the host's default model, as the subagent flow's 'same model class')",
     )
-    .option('--creative', 'experimental: the loop may also rewrite a flat joke or weak script')
+    .option(
+      '--creative',
+      'experimental: the loop may also rewrite a flat joke or weak script',
+    )
     .action(async (o) => comicRunCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
@@ -755,6 +758,8 @@ export function buildProgram(cwd: string = process.cwd()): {
       !(UPDATE_CHANNELS as readonly string[]).includes(value)
     )
       throw new UserError(`updateChannel is ${UPDATE_CHANNELS.join(' or ')}.`);
+    if (key === 'comicCredit' && !['true', 'false'].includes(value))
+      throw new UserError('comicCredit is true or false.');
     const c = setUserConfig(
       key as keyof Config,
       key === 'comic'
