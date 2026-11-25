@@ -425,16 +425,16 @@
   <section class="band" id="results">
     <div class="wrap">
       <div class="intro">
-        <span class="kicker">The golden run</span>
-        <h2 class="big display">61 real PRs. 1,464 blind judge readings.</h2>
-        <p>prbench's biggest run so far pits Tracetoon's evidence-graph brief (candidate62) against Tracetoon's original multi-agent workflow. Both providers ran it separately, each with its own writer and its own two judges.</p>
+        <span class="kicker">The results</span>
+        <h2 class="big display">Three runs. All published.</h2>
+        <p>prbench is behind every result Tracetoon publishes. The flagship run puts Tracetoon against the same agent writing the PR on its own. The golden run puts Tracetoon's evidence-graph brief against its original multi-agent workflow. The first evidence-graph study ran the same comparison on 5 PRs before it was repeated at scale. Each provider runs separately, with its own writer and its own two judges. <a href="results.html">All three reports →</a></p>
       </div>
       <div class="tiles">
         <div><b>61</b><span>real PRs from 12 repositories</span></div>
         <div><b>33 · 28</b><span>Claude Code · Codex sessions</span></div>
-        <div><b>732</b><span>drafts, 3 per PR per workflow</span></div>
-        <div><b>1,464</b><span>judge readings, both orders</span></div>
-        <div><b>434</b><span>flagged errors re-checked by experts</span></div>
+        <div><b>732</b><span>drafts per 61-PR run, 3 per PR per system</span></div>
+        <div><b>1,464</b><span>judge readings per 61-PR run, both orders</span></div>
+        <div><b>3</b><span>published runs, each with its data</span></div>
       </div>
       <div class="res">
         <div>
@@ -462,9 +462,24 @@
                 <tr><th scope="row">Score (0–100)</th><td class="win">+3.3<span class="sub">75.3 vs 72.0 · CI +1.0 to +5.5</span></td><td class="win">+3.5<span class="sub">63.2 vs 59.8 · CI +0.8 to +6.1</span></td></tr>
                 <tr><th scope="row">Cost per draft</th><td class="win">−70%<span class="sub">$0.128 vs $0.447</span></td><td class="win">−43%<span class="sub">$0.344 vs $0.654</span></td></tr>
                 <tr><th scope="row">Confirmed errors per draft</th><td class="lose">0.33 vs 0.16<span class="sub">more errors: fails the accuracy gate</span></td><td class="win">0.47 vs 0.84<span class="sub">fewer errors</span></td></tr>
+                <tr><th scope="row">Key facts conveyed</th><td class="win">82% vs 72%</td><td class="lose">73% vs 77%<span class="sub">slightly fewer, within the 5-point margin</span></td></tr>
               </tbody>
             </table>
           </div>
+          <div class="scorecard">
+            <table>
+              <caption class="site-sr">First evidence-graph study: graph versus the original workflow on 5 PRs</caption>
+              <thead><tr><th scope="col">First study, 5 PRs × 5</th><th scope="col">Codex</th><th scope="col">Claude Code</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Writer · judges</th><td>Terra 6.1<span class="sub">Sol + Terra</span></td><td>Sonnet 5.5<span class="sub">Opus + Sonnet</span></td></tr>
+                <tr><th scope="row">Picked by both judges</th><td class="win">12–1<span class="sub">12 ties</span></td><td class="win">18–1<span class="sub">6 ties</span></td></tr>
+                <tr><th scope="row">Score (0–100)</th><td class="win">+3.5<span class="sub">86.6 vs 83.2 · CI +1.8 to +5.1</span></td><td class="win">+5.2<span class="sub">78.9 vs 73.7 · CI +2.5 to +8.0</span></td></tr>
+                <tr><th scope="row">Cost per draft</th><td class="win">−35%<span class="sub">$0.207 vs $0.320</span></td><td class="win">−41%<span class="sub">$0.407 vs $0.690</span></td></tr>
+                <tr><th scope="row">Judge-flagged errors per judgment</th><td class="win">0.00 vs 0.07</td><td>0.08 vs 0.09<span class="sub">level</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="honest"><b>Small and early.</b> Five PRs from Tracetoon's own repository (real-cases 1.0.0), 5 drafts per PR per side, the build that shipped at the time. A same-build Codex rerun gave +5.2 (13–2), so expect about ±3 points between runs. <a href="evidence-graph.html">The first study →</a> · <a href="https://github.com/Tracetoon/prbench/blob/main/docs/reproduce-graph-vs-base.md">method and rerun</a></p>
           <p class="honest"><b>The benchmark doesn't play favorites.</b> prbench is built by the Tracetoon team, and it still failed our own Codex candidate on accuracy. The same 61 PRs were also used to tune the brief; there is no separate held-out set. <a href="evidence-graph-61.html#caveats">Every caveat, chart and per-case result →</a></p>
         </div>
         <div class="res-art">
@@ -551,7 +566,7 @@ prbench score results/my-run --dataset real-cases@4.0.0</code></pre><button clas
           </tbody>
         </table>
       </div>
-      <p class="fine">Rough sizes: the full library at 3 replicates is 183 pairs per provider (366 drafts, 732 judge readings). On Claude Code that is roughly $290 of judging plus writer costs; with <code>--replicates 1</code> it is a third of that. The golden run took about 3½–4 hours per provider, with the original-workflow drafts reused from cache. Judges are stochastic, so a rerun won't match our numbers exactly; expect the same direction with intervals of similar width.</p>
+      <p class="fine">Rough sizes: the full library at 3 replicates is 183 pairs per provider (366 drafts, 732 judge readings). On Claude Code that is roughly $290 of judging plus writer costs; with <code>--replicates 1</code> it is a third of that. The golden run took about 3½–4 hours per provider, with the original-workflow drafts reused from cache. To rerun the flagship benchmark exactly, follow its <a href="https://github.com/Tracetoon/prbench/blob/main/golden/v4-flagship-c70b/README.md#rerunning">step-by-step guide</a>. Judges are stochastic, so a rerun won't match our numbers exactly; expect the same direction with intervals of similar width.</p>
     </div>
   </section>
 
