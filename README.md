@@ -25,11 +25,11 @@ write, and there's a comic on top.
 <!-- results:start -->
 <div align="center">
 
-| **79–38** | **60–21** | **−70% / −43%** |
-| :---: | :---: | :---: |
-| both judges preferred the evidence-graph PR on Codex | both judges preferred it on Claude Code | cost per PR on Codex / Claude Code |
+| **72–9** | **111–19** | **−50%** | **−28% / −73%** |
+| :---: | :---: | :---: | :---: |
+| both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing alone | the same on Codex (Sol 6.1) | factual errors per PR on Opus 5.5 (0.16 vs 0.32) | cost per PR on Claude Code / Codex in a 500k-token session |
 
-<sub>prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. See the <a href="https://tracetoon.ai/evidence-graph-61.html">full results</a>, methods and caveats.</sub>
+<sub>prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching. See the <a href="https://tracetoon.ai/vs-native.html">full results</a>, methods and caveats, or <a href="https://tracetoon.ai/results.html">every report</a>.</sub>
 
 </div>
 <!-- results:end -->
@@ -173,6 +173,15 @@ them into a redacted evidence brief your agent writes from.
 - **Your words stay yours.** Text you write in the PR, or edit on GitHub later,
   is kept on the next update. Tracetoon only owns a marked region of the body.
 
+Against the same agent writing the PR on its own, in the same session, judges
+picked the Tracetoon PR **72–9** on Claude Code (Opus 5.5) and **111–19** on
+Codex (Sol 6.1), across 61 real PRs from 12 repositories. A pick only counts
+when two judges each read both orders and agree. Quality scores rose from 52.8
+to 68.3 on Opus and from 64.1 to 78.1 on Sol, and judge-flagged factual errors
+per PR halved on Opus (0.32 to 0.16; 0.18 to 0.15 on Sol). See the
+[full report](https://tracetoon.ai/vs-native.html), or
+[every report](https://tracetoon.ai/results.html) with a summary of each.
+
 Here is one real PR from the earlier 5-PR study, written three ways and scored
 0–100 by the same judges:
 
@@ -182,10 +191,10 @@ Here is one real PR from the earlier 5-PR study, written three ways and scored
 | Tracetoon, old workflow        |   65   |
 | **Tracetoon + evidence graph** | **80** |
 
-Across 61 real PRs from 12 repositories, judges preferred Tracetoon with the
-graph over its own no-graph workflow **79–38** on Codex and **60–21** on Claude
-Code. A pick only counts when two judges each read both orders and agree. On
-the 36 PRs the brief was never tuned on, the picks were 51–21 and 42–11.
+On the same 61 PRs, judges preferred Tracetoon with the graph over its own
+earlier no-graph workflow **79–38** on Codex and **60–21** on Claude Code. On
+the 36 PRs the brief was never tuned on, the picks were 51–21 and 42–11
+([evidence graph results](https://tracetoon.ai/evidence-graph-61.html)).
 
 ---
 
@@ -214,7 +223,7 @@ flowchart LR
 - **The why, not just the what.** Plans, decisions and the original request
   come along with the code. On 61 real PRs, Codex drafts with the graph conveyed
   82% of the expert fact sheet's claims, against 72% without it (on Claude Code
-  it was about even: 75% and 76%).
+  slightly fewer: 73% against 77%).
 - **Relevance, not recency.** The graph decides what the digest keeps when it
   has to trim, and names the files a cited test run didn't see.
 
@@ -291,6 +300,22 @@ model runs. Then:
 
 Averages per PR; the typical paired saving is 43% on Claude Code and 70% on
 Codex ([how cost is measured](https://tracetoon.ai/evidence-graph-61.html)).
+
+Against your agent writing the PR alone, the saving comes from the session it
+runs in. An agent that has been coding for a while re-reads its whole context
+on every request, and Tracetoon makes far fewer of those requests. In a session
+carrying 500k tokens, with subscription caching:
+
+| Setup (61 real PRs)           | Cost per PR |
+| ----------------------------- | ----------: |
+| Claude Code (Opus 5.5) alone  |       $1.29 |
+| **Claude Code + Tracetoon**   |   **$0.93** |
+| Codex (Sol 6.1) alone         |       $3.50 |
+| **Codex + Tracetoon**         |   **$0.93** |
+
+That is 28% less on Claude Code and 73% less on Codex. In a short session the
+saving shrinks, and with no prior context Tracetoon costs more
+([cost details](https://tracetoon.ai/vs-native.html#cost)).
 
 <details>
 <summary><b>Tuning the review plan</b></summary>

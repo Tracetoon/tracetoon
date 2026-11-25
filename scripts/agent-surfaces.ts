@@ -52,21 +52,24 @@ export function pitch(): string {
  * The latest published benchmark, quoted by every public listing (npm, plugin
  * catalogs, the agent finder). Update it with the evidence page whenever a new
  * run is published; tests/agent-surface.test.ts checks every listing quotes it.
- * The comparison is with Tracetoon's own earlier multi-agent workflow; say so.
+ * The comparison is with the same agent writing the PR alone; say so.
  */
 export const RESULTS = {
-  url: 'https://tracetoon.ai/evidence-graph-61.html',
+  url: 'https://tracetoon.ai/vs-native.html',
+  /** Every published report, newest first. */
+  all: 'https://tracetoon.ai/results.html',
   /** One sentence for long descriptions. */
   sentence:
-    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR.",
+    "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred Tracetoon's PR descriptions to the same agent writing the PR alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), with half the factual errors on Opus, at 28% and 73% lower cost per PR in a long session.",
   /** Headline figures for the npm README table. */
   table: [
-    ['79–38', 'both judges preferred the evidence-graph PR on Codex'],
-    ['60–21', 'both judges preferred it on Claude Code'],
-    ['−70% / −43%', 'cost per PR on Codex / Claude Code'],
+    ['72–9', 'both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing alone'],
+    ['111–19', 'the same on Codex (Sol 6.1)'],
+    ['−50%', 'factual errors per PR on Opus 5.5 (0.16 vs 0.32)'],
+    ['−28% / −73%', 'cost per PR on Claude Code / Codex in a 500k-token session'],
   ],
   method:
-    "prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow.",
+    'prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching.',
 } as const;
 
 /** Why to use Tracetoon, in the README's terms. Each item: a short lead and one sentence. */
@@ -543,7 +546,7 @@ ${cells(([n]) => `**${n}**`)}
 | ${RESULTS.table.map(() => ':---:').join(' | ')} |
 ${cells(([, what]) => what)}
 
-<sub>${RESULTS.method} See the <a href="${RESULTS.url}">full results</a>, methods and caveats.</sub>
+<sub>${RESULTS.method} See the <a href="${RESULTS.url}">full results</a>, methods and caveats, or <a href="${RESULTS.all}">every report</a>.</sub>
 
 </div>`;
 }

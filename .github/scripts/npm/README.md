@@ -30,11 +30,12 @@ agent afterwards.
 
 | | |
 | --- | --- |
-| **79–38** | both judges preferred the evidence-graph PR on Codex |
-| **60–21** | both judges preferred it on Claude Code |
-| **−70% / −43%** | cost per PR on Codex / Claude Code |
+| **72–9** | both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing alone |
+| **111–19** | the same on Codex (Sol 6.1) |
+| **−50%** | factual errors per PR on Opus 5.5 (0.16 vs 0.32) |
+| **−28% / −73%** | cost per PR on Claude Code / Codex in a 500k-token session |
 
-prbench: 61 real PRs from 12 repositories, each written 3 times by each workflow, 2 AI judges per provider in both orders (732 judgments per provider), factual errors checked by two expert models. Compared with Tracetoon's earlier multi-agent workflow. Full results, methods and caveats: https://tracetoon.ai/evidence-graph-61.html
+prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching. Full results, methods and caveats: https://tracetoon.ai/vs-native.html
 
 ## Install for good
 
