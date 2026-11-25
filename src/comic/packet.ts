@@ -118,7 +118,9 @@ Read these packet files (they sit next to this one):
      relationship or world rule.
   2. Only then read the genre's \`memeList\`. Where a meme genuinely fits a
      gag, attach it (\`meme\`, and \`memeUse\`: how it shows on the page).
-     Most gags carry none; never bend a gag to fit a meme.
+     Draw its \`cues\` so readers recognise it, and skip a meme whose
+     \`requires\` names a world rule this comic doesn't have. Most gags carry
+     none; never bend a gag to fit a meme.
   3. Write them to ${input.out.gags ?? 'comic-gags.json'} as
      {"gags": [{"id": "g1", "pitch": "<pitch id>", "gag": "what happens, ending on the payoff", "prLink": "what in the PR it is about", "meme": "<optional id>", "memeUse": "<with meme>"}]}
      and run \`${input.gagsCheckCommand ?? 'tracetoon comic gags'}\` until it reports no problems.

@@ -49,8 +49,14 @@ export interface AnimeMeme {
   /** The work it comes from: for judges and write-ups, never the page. */
   series: string;
   evidence: { tier: string; url: string };
+  /** What a reader needs to see to recognise it. */
+  cues?: string[];
   /** Archetypes the research tied to it. */
   suits: string[];
+  /** World rules the comic must already have for it to work (status windows, contracts…). */
+  requires?: string[];
+  /** The research's evidence priority. */
+  priority?: number;
 }
 
 export const ANIME_MEMES = memeList as AnimeMeme[];
