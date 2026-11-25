@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.48",
-  "buildId": "ff25bfd3f492e681b2b698134feb186128e291f903cf5bfba7bf87dd35db22e6",
+  "version": "1.0.0-rc.49",
+  "buildId": "a5d306098ad48bb186fd9b49948238d0f6a4478592b61ef2e8f188d221e453e9",
   "artifact": {
-    "runId": 45518092349,
-    "id": 14979850433,
-    "name": "tracetoon-candidate-cdab1eb82f021cc9dbbd354a453b43c7775b5cd4-attempt-1",
-    "digest": "sha256:56c4f1c351b27254c8fd5198856c9e7c64e49682aeb31ad0f19a53778933ebab"
+    "runId": 45534431495,
+    "id": 14986787275,
+    "name": "tracetoon-candidate-26fc1132c89f8f8583bde8699d59d5750bfc1528-attempt-1",
+    "digest": "sha256:e4dd3ead555247a51785da4df80e80259e34d5d3b99ae45eafee37be1d8b8318"
   },
   "expected": {
-    "manifestSha256": "6af3526b150b709442dd0f170176c436323d59a1cac21d1e85555ace10448322",
-    "checksumsSha256": "b88d8204188c27a59ba2582c00a7bab0230589ea56ffb99f9222fb38b37fab96",
-    "windowsSha256": "d9119e86e622dc0e6b4954878359a031b3e0afe60409a17f2b028b32a6910ff0",
-    "bundleSha256": "844b8960e734d1311d603ab4af122f153720d44a91a61e7ca183809fb15db73d"
+    "manifestSha256": "b78e45de132b987568b22930e4edb0b6695164062debad081669e8be9a00d857",
+    "checksumsSha256": "7e5e78b5e15ba1ee2fbaf10798f621c3a5d3c8a294d11bf520d82a6a3ea6fd13",
+    "windowsSha256": "95d6f647f6c11598581ccdcade9fe4b5654a039fb707571e25b08b6bcf517be7",
+    "bundleSha256": "dc1c939de88fe00691c6fd779bb5ca4eae0557ca98ecf0f295ea9bc31cbd3542"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-25T00:39:51.000Z",
-    "reason": "The user asked for a release once the Showtail redaction fix (Tingsters/Showtail#61, fixing #39) merged, so the packages ship it through #212: paths with word+number segments are no longer withheld from digests and evidence briefs, and setup recognizes Tracetoon hooks installed from any checkout path. The CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-25T02:52:04.000Z",
+    "reason": "The user asked for a release once Showtail's second scanner fix (Tingsters/Showtail#62) merged, so the packages ship it through #222: Tracetoon's leak scan no longer reports word-only repository paths as opaque tokens. The release also carries #216, #218, #220, #221 and #137, merged since rc.48. The CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
