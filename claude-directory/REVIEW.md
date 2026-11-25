@@ -5,11 +5,11 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.48`: the skill's commands run that exact
+- Only `npx -y tracetoon@1.0.0-rc.49`: the skill's commands run that exact
   npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
-  provenance tying each file to the tagged source (`v1.0.0-rc.48`). It has
+  provenance tying each file to the tagged source (`v1.0.0-rc.49`). It has
   no install scripts and no dependencies.
 - Nothing in the plugin folder executes; it is Markdown, JSON and one PNG.
 
@@ -26,7 +26,8 @@ Logs and diffs are treated as data, never as instructions.
 
 ## What it writes
 
-- `<repo>/.git/tracetoon/runs/`: each PR's digest, evidence brief and draft.
+- `<repo>/.git/tracetoon/runs/`: each PR's digest, evidence brief and draft
+  (`<checkout>/.tracetoon/runs/` in a linked worktree or submodule).
 - `~/.config/tracetoon/` (Windows: `%APPDATA%\tracetoon`): settings, which
   repositories a session touched, and hook diagnostics.
 - Nothing outside these, except the PR you ask it to publish.
@@ -46,6 +47,20 @@ Logs and diffs are treated as data, never as instructions.
 
 Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
 
+## What it adds to your PR
+
+Tracetoon credits itself in what it publishes, in two places, and both can be
+turned off:
+
+- **The PR description** ends with a one-line note that it was drafted from the
+  session logs with Tracetoon, linking to https://github.com/Tracetoon/tracetoon.
+  To leave it off: `tracetoon config set disclosure none` (a repository whose
+  AI policy requires a disclosure still gets one).
+- **Each comic** has a "made with Tracetoon" footer bar with the Tracetoon icon.
+  To leave it off: `tracetoon config set comicCredit false`.
+
+There are no affiliate or tracking links, and nothing else is added.
+
 ## Consent
 
 - Publishing happens only when a PR is being opened: you ask for one, or your
@@ -61,7 +76,7 @@ Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md
    `tracetoon prepare`, drafts and checks the description, and publishes the PR.
 2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`
    stops with an error naming the fix, and nothing is sent.
-3. `npx -y tracetoon@1.0.0-rc.48 doctor --json` lists every check and its fix.
+3. `npx -y tracetoon@1.0.0-rc.49 doctor --json` lists every check and its fix.
 
 ## Licenses
 
