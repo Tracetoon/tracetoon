@@ -351,6 +351,17 @@ write the comic author's packet (brief, description, genres) and say how to hand
 | `--run <id>` | run id (default: latest) |
 | `--genre <id>` | offer only this genre (an id or a short phrase) |
 
+## `tracetoon comic gags`
+
+an isekai comic's select step: check the brainstormed gags, write a fresh judge's packet, then pick the best gag
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--check` | only check comic-gags.json |
+| `--file <path>` | with --check: a gags file outside any run |
+| `--context <path>` | with --file: the packet's context.json |
+
 ## `tracetoon comic check`
 
 check comic.json before any art is made

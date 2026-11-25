@@ -6,11 +6,12 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadConfig } from '../config.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
-import { genreOptions, withSceneOffers, type GenreOption } from '../comic/genres.ts';
+import { genreOptions, type GenreOption } from '../comic/genres.ts';
+import type { Cooldown } from '../comic/isekai/pitches.ts';
 import { comicPacketFiles, PACKET_FILES } from '../comic/packet.ts';
 import type { ComicSummary } from '../comic/types.ts';
 import { skillDir } from '../contribution/skillSettings.ts';
-import { assertRunOwner, findRun, readJson, readText, writeJson, type Run } from '../run.ts';
+import { assertRunOwner, findRun, readJson, readText, type Run } from '../run.ts';
 import { DRAW_CARTOON_REFERENCES, DRAW_CARTOON_SKILL } from '../skills.ts';
 import { repository } from '../workflow/state.ts';
 import { emit, UserError, type OutOpts } from './output.ts';
@@ -34,6 +35,7 @@ interface RunContext {
     genreOptions?: GenreOption[];
     recentComics?: ComicSummary[];
     recentStyles?: string[];
+    cooldown?: Cooldown;
   };
 }
 
@@ -61,7 +63,6 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
   const pinnedGenre = config.genre && config.genre !== 'auto' ? config.genre.trim() : undefined;
   const catalog = genreCatalog(repo.root);
   const asked = opts.genre?.trim();
-  const recentMemes = (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : []));
   const offered = asked
     ? genreOptions([], {
         pinned: asked,
@@ -70,6 +71,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
         recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
         recentLeads: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.lead ? [c.lead] : [])),
         recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
+        ...(ctx?.comic?.cooldown ? { cooldown: ctx.comic.cooldown } : {}),
       })
     : (ctx?.comic?.genreOptions ??
       genreOptions(
@@ -81,15 +83,13 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
           recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
         recentLeads: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.lead ? [c.lead] : [])),
         recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
+        ...(ctx?.comic?.cooldown ? { cooldown: ctx.comic.cooldown } : {}),
         },
       ));
-  // An isekai cast's scenes are matched to the PR, so they're picked here, where
-  // the title and description exist, and saved for `comic check`.
-  const genres = withSceneOffers(offered, { title: readText(run, 'title.txt')?.trim(), description }, recentMemes);
-  if (genres.some((g) => g.sceneOffer)) {
-    const full = readJson<Record<string, unknown> & RunContext>(run, 'context.json') ?? {};
-    writeJson(run, 'context.json', { ...full, comic: { ...(full.comic ?? {}), genreOptions: genres } });
-  }
+  // Once `tracetoon comic gags` picked a gag, the comic is written from it, in its genre only.
+  const picked = offered.find((g) => g.pick);
+  const genres = picked ? [picked] : offered;
+  const brainstorm = !picked && genres.some((g) => g.pitches?.length);
   const skillFiles = comicSkillFiles();
   if (!skillFiles.length)
     throw new UserError(
@@ -106,14 +106,16 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
     ...(pinnedGenre ? { pinnedGenre } : {}),
     skillFiles,
     ...(existsSync(patch) ? { patchPath: patch } : {}),
-    out: { comic: join(run.dir, 'comic.json'), design: join(run.dir, 'comic-design.json') },
+    out: { comic: join(run.dir, 'comic.json'), design: join(run.dir, 'comic-design.json'), gags: join(run.dir, 'comic-gags.json') },
     checkCommand: `tracetoon comic check --run ${run.id}`,
+    gagsCheckCommand: `tracetoon comic gags --run ${run.id} --check`,
+    ...(picked ? { pinnedGenre: picked.id } : {}),
   });
   const dir = join(run.dir, 'comic-packet');
   mkdirSync(dir, { recursive: true });
   for (const [name, text] of Object.entries(files)) writeFileSync(join(dir, name), text);
   const packet = join(dir, PACKET_FILES.instructions);
-  const spawn = `Start ONE fresh subagent (not a fork; no PR or drafting context) whose whole instruction is ${packet}. When it reports that comic.json passes the check, run: tracetoon comic art --run ${run.id}`;
+  const spawn = `Start ONE fresh subagent (not a fork; no PR or drafting context) whose whole instruction is ${packet}. When it reports that comic.json passes the check, run: tracetoon comic art --run ${run.id}${brainstorm ? `. If it reports a gags file instead, run: tracetoon comic gags --run ${run.id}` : ''}`;
   emit(
     opts,
     {

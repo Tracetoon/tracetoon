@@ -250,7 +250,7 @@ describe('comic end to end', () => {
     const list = ghCalls().find(
       (c) => c.args[0] === 'pr' && c.args[1] === 'list' && c.args.includes('--search'),
     )!;
-    expect(list.args[list.args.indexOf('--limit') + 1]).toBe('20');
+    expect(list.args[list.args.indexOf('--limit') + 1]).toBe('100');
 
     writeFileSync(env.TRACETOON_CONFIG!, JSON.stringify({ comic: false, theme: 'pets' }));
     writeFileSync(ghLog, '');

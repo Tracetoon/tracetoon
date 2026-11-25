@@ -135,6 +135,10 @@ export interface ComicSummary {
   lead?: string;
   /** The isekai cast preset used, so the next comics get others. */
   castPreset?: string;
+  /** The isekai scenario (pitch) the comic was built on: out of rotation for the next 10 comics. */
+  pitch?: string;
+  /** The isekai archetype ids on the page: out of rotation for the next 3 comics. */
+  archetypes?: string[];
 }
 
 /** A character's place in one panel. */
@@ -279,6 +283,10 @@ export interface ComicScript {
   place?: string;
   /** The isekai cast preset this comic was cast from (context genreOptions isekaiCast). */
   castPreset?: string;
+  /** The picked pitch's scenario id (context genreOptions pick), for an isekai comic. */
+  pitch?: string;
+  /** The picked gag's id (context genreOptions pick), for an isekai comic. */
+  gag?: string;
   /** The main character: the lead persona's id and the name of its character in `characters`. */
   lead?: { persona: string; name: string };
   /** Things the image must not show, added after a misread review (misread.ts); go to the negative prompt. */

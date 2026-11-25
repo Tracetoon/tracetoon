@@ -7,7 +7,8 @@
  */
 import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
-import { isekaiMemeOffer, offerJoke, type IsekaiSceneOffer } from './isekai/memeMatch.ts';
+import type { ComicSummary } from './types.ts';
+import { cooldownFrom, drawPitches, memeChoices, type AnimeMeme, type Cooldown, type GagPick, type Pitch } from './isekai/pitches.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
 import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
@@ -340,21 +341,23 @@ export interface GenreOption {
   lead?: CastPersona;
   /** The cast generated from the isekai archetype guide for this comic. */
   isekaiCast?: IsekaiPacketCast;
-  /** Three anime gag scenes this isekai cast can perform, matched to the PR; the comic uses one. */
-  sceneOffer?: IsekaiSceneOffer[];
+  /** Three pitches drawn at random for this isekai cast: a scenario without its punchline, and who plays it. */
+  pitches?: Pitch[];
+  /** The memes this isekai comic may attach to a gag where one fits (not used in the last 100 comics). */
+  memeList?: AnimeMeme[];
+  /** The gag the judge scored best, once picked (`tracetoon comic gags`). */
+  pick?: GagPick;
 }
 
-/**
- * Adds the scene offer to each isekai genre option, once the PR's title and
- * description exist (the packet step): the matcher needs the PR text.
- */
-export function withSceneOffers(
-  options: GenreOption[],
-  pr: { title?: string; description?: string },
-  recentMemes: string[] = [],
-): GenreOption[] {
-  const joke = offerJoke(pr.title, pr.description);
-  return options.map((g) => (g.isekaiCast ? { ...g, sceneOffer: isekaiMemeOffer(g.isekaiCast, joke, recentMemes) } : g));
+/** How many casts to try before giving up on a lead who isn't on cooldown. */
+const LEAD_TRIES = 20;
+
+/** An isekai cast whose lead wasn't on the page in the last few comics, when one can be found. */
+function restedCast(seed: string, recentPresets: string[], resting: string[]): IsekaiPacketCast {
+  const rest = new Set(resting);
+  let cast = isekaiCast(seed, recentPresets);
+  for (let k = 1; k < LEAD_TRIES && rest.has(cast.lead.archetype); k++) cast = isekaiCast(`${seed}\0lead ${k}`, recentPresets);
+  return cast;
 }
 
 const option = (
@@ -363,9 +366,19 @@ const option = (
   recentMemes: string[] = [],
   recentLeads: string[] = [],
   recentPresets: string[] = [],
+  cooldown?: Cooldown,
 ): GenreOption => {
   if (isekai) {
-    return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: isekaiCast(`${seed}\0${id}`, recentPresets) };
+    const s = `${seed}\0${id}`;
+    const crew = restedCast(s, recentPresets, cooldown?.characters ?? []);
+    const pitches = drawPitches(crew, s, cooldown);
+    return {
+      id, name, setting, archetypes, props, jokeHooks,
+      ...(notes ? { notes } : {}),
+      isekaiCast: crew,
+      pitches,
+      memeList: memeChoices(pitches, s, cooldown),
+    };
   }
   const plain = castOffer(cast, `${seed}\0${id}`);
   // A side-only comic's required archetype is a side character or a nemesis.
@@ -411,15 +424,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets)
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined))
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined)));
 }

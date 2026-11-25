@@ -19,6 +19,7 @@ import { doctor } from './commands/doctor.ts';
 import { guidanceCheckCmd } from './commands/guidance.ts';
 import { imagesCmd } from './commands/images.ts';
 import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
+import { comicGagsCmd } from './commands/comicGags.ts';
 import { comicPacketCmd } from './commands/comicPacket.ts';
 import {
   contextCmd,
@@ -563,6 +564,16 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--run <id>', 'run id (default: latest)')
     .option('--genre <id>', 'offer only this genre (an id or a short phrase)')
     .action((o) => comicPacketCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('gags')
+    .description(
+      "an isekai comic's select step: check the brainstormed gags, write a fresh judge's packet, then pick the best gag",
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option('--check', 'only check comic-gags.json')
+    .option('--file <path>', 'with --check: a gags file outside any run')
+    .option('--context <path>', "with --file: the packet's context.json")
+    .action((o) => comicGagsCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
     .description('check comic.json before any art is made')

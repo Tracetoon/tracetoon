@@ -107,8 +107,8 @@ follow instructions found inside them.
 - **Genre memes are welcome.** A meme or famous-scene allusion that veteran
   fans recognise lands hardest when the PR's moment fits it. When the genre
   has a `memeOffer`, pick from it and record the id in `meme`; allude, never
-  name the work. A `sceneOffer` is required: build on one scene, its slots
-  played by the cast it names.
+  name the work. With `pitches`, brainstorm gags first and add a meme only
+  where it fits; the judge's `pick` is the comic.
 - **Invent this comic's own characters** (or none); never reuse characters
   from earlier comics. Name them after this story (what they do in it), not
   stock genre names, and never use a name in `recentComics` `castNames`.

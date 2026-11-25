@@ -542,24 +542,19 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   if (typeof s.genre !== 'string') return out;
   const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
   if (!option) return out;
-  if (option.sceneOffer?.length) {
-    // An isekai cast's comic is built on one of its offered scenes, played by the cast the offer names.
-    const ids = option.sceneOffer.map((m) => m.id);
-    const scene = option.sceneOffer.find((m) => m.id === s.meme);
-    if (!scene)
-      out.push({
-        where: 'meme',
-        problem:
-          s.meme === undefined || s.meme === ''
-            ? `is required: build the comic on one of the offered scenes (${ids.join(', ')}) and set meme to its id`
-            : `"${String(s.meme)}" wasn't offered; use one of ${ids.join(', ')}`,
-      });
-    else {
-      const onPage = new Set((Array.isArray(s.characters) ? s.characters : []).map((c) => c.archetype));
-      for (const slot of scene.cast)
-        if (!slot.optional && !onPage.has(slot.archetype))
-          out.push({ where: 'characters', problem: `scene ${scene.id} needs its ${slot.slot}, "${slot.title}" (${slot.archetype}), on the page` });
-    }
+  if (option.pick) {
+    // An isekai comic is the gag the judge picked: its pitch, its players, its meme (or none).
+    const { gag, pitch } = option.pick;
+    if (s.pitch !== pitch.id) out.push({ where: 'pitch', problem: `must be "${pitch.id}" (the picked gag's pitch)` });
+    if (s.gag !== gag.id) out.push({ where: 'gag', problem: `must be "${gag.id}" (the picked gag)` });
+    if (gag.meme && s.meme !== gag.meme) out.push({ where: 'meme', problem: `must be "${gag.meme}" (attached to the picked gag)` });
+    if (!gag.meme && s.meme) out.push({ where: 'meme', problem: 'the picked gag has no meme; leave meme out' });
+    const onPage = new Set((Array.isArray(s.characters) ? s.characters : []).map((c) => c.archetype));
+    for (const p of pitch.players)
+      if (!p.optional && !onPage.has(p.archetype))
+        out.push({ where: 'characters', problem: `the pitch needs its ${p.slot}, "${p.title}" (${p.archetype}), on the page` });
+  } else if (option.pitches?.length) {
+    out.push({ where: 'genre', problem: 'this genre brainstorms first: write the gags file, and the comic is written once a gag is picked (tracetoon comic gags)' });
   } else if (s.meme !== undefined && s.meme !== '') {
     const ids = (option.memeOffer ?? []).map((m) => m.id);
     if (typeof s.meme !== 'string' || !ids.includes(s.meme))

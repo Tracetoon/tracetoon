@@ -1,0 +1,295 @@
+[
+ {
+  "id": "whispered-ultimate-attack",
+  "name": "I Am Atomic",
+  "allusion": "a cloaked figure dims the lights and whispers a grand ultimate-attack name at something trivial",
+  "series": "The Eminence in Shadow",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/i-am-atomic"
+  },
+  "suits": [
+   "M08"
+  ]
+ },
+ {
+  "id": "sasuga-master-plan",
+  "name": "Sasuga Ainz-sama",
+  "allusion": "loyal followers praise an accident or improvisation as the master's flawless secret plan",
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/overlord"
+  },
+  "suits": [
+   "M11",
+   "N13",
+   "N24",
+   "P28"
+  ]
+ },
+ {
+  "id": "applaud-supreme-power",
+  "name": "Applaud my supreme power",
+  "allusion": "an overlord demands applause for a display of power that was barely anything",
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/applaud-my-supreme-power"
+  },
+  "suits": [
+   "M11"
+  ]
+ },
+ {
+  "id": "useless-goddess",
+  "name": "Aqua is useless",
+  "allusion": "the party's self-proclaimed goddess is loudly, tearfully useless at the one job she boasted about",
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/aqua-is-useless"
+  },
+  "suits": [
+   "P15"
+  ]
+ },
+ {
+  "id": "one-big-explosion",
+  "name": "Megumin's Explosion",
+  "allusion": "a mage who only knows one enormous explosion spell casts it at a tiny problem, then collapses face-down and has to be carried",
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/megumin"
+  },
+  "suits": [
+   "P17"
+  ]
+ },
+ {
+  "id": "mimic-chest",
+  "name": "Frieren stuck in a mimic chest",
+  "allusion": "a mage is stuck head-first in a treasure-chest mimic, legs kicking, after insisting on opening it",
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/frieren-stuck-in-mimic-chest"
+  },
+  "suits": [
+   "P03"
+  ]
+ },
+ {
+  "id": "truck-kun",
+  "name": "Truck-kun",
+  "allusion": "a looming truck is the portal that sends people to another world",
+  "series": "isekai genre (fandom nickname)",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/sensitive/memes/truck-kun"
+  },
+  "suits": [
+   "N27"
+  ]
+ },
+ {
+  "id": "glasses-glint",
+  "name": "Anime glasses",
+  "allusion": "a schemer pushes up their glasses and both lenses flash opaque white",
+  "series": "anime trope",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/anime-glasses"
+  },
+  "suits": [
+   "M07"
+  ]
+ },
+ {
+  "id": "tsundere-denial",
+  "name": "Tsundere",
+  "allusion": "\"It's not like I did it for you!\" while blushingly doing exactly that",
+  "series": "anime trope",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/tsundere"
+  },
+  "suits": [
+   "P18",
+   "P22"
+  ]
+ },
+ {
+  "id": "hero-squares-up",
+  "name": "Kazuma's square up",
+  "allusion": "the hero squares up in a fighting stance facing his own troublesome party members",
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/kazumas-square-tf-up-thots"
+  },
+  "suits": [
+   "M02"
+  ]
+ },
+ {
+  "id": "cooking-head-bob",
+  "name": "How it feels to cook a yummy meal",
+  "allusion": "a character smiles and head-bobs blissfully through a sparkling cooking montage",
+  "series": "anime redraw format (2026)",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/how-it-feels-to-cook-a-yummy-meal-as-a-boy"
+  },
+  "suits": [
+   "M15"
+  ]
+ },
+ {
+  "id": "return-by-death",
+  "name": "Return by Death",
+  "allusion": "a hero dies in a silly way and wakes back at the same checkpoint, already exhausted by the loop",
+  "series": "Re:Zero",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/subcultures/rezero-starting-life-in-another-world"
+  },
+  "suits": [
+   "M03"
+  ]
+ },
+ {
+  "id": "oblivious-doom-flags",
+  "name": "Bakarina",
+  "allusion": "a cheerful heroine dodges every doom flag while everyone around her falls for her, and she notices none of it",
+  "series": "My Next Life as a Villainess",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/subcultures/my-next-life-as-a-villainess-all-routes-lead-to-doom-bakarina"
+  },
+  "suits": [
+   "M19",
+   "P44"
+  ]
+ },
+ {
+  "id": "lethal-cooking",
+  "name": "Shion's cooking",
+  "allusion": "a proud cook serves a dish that is visibly a hazard, purple smoke and all",
+  "series": "That Time I Got Reincarnated as a Slime",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/TenseiSlime/comments/pd2ads/"
+  },
+  "suits": [
+   "P11"
+  ]
+ },
+ {
+  "id": "tiny-hidden-boss",
+  "name": "The small monster is the boss",
+  "allusion": "a tiny, cute monster turns out to be the most dangerous thing in the dungeon",
+  "series": "So I'm a Spider, So What?",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/photos/1473975-so-im-a-spider-so-what"
+  },
+  "suits": [
+   "M12"
+  ]
+ },
+ {
+  "id": "my-meat",
+  "name": "Fel: my meat",
+  "allusion": "a legendary wolf guards its meat portion with total, dignified possessiveness",
+  "series": "Campfire Cooking in Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://tenor.com/view/campfire-cooking-from-another-world-with-my-absurd-skill-fel-campfire-cooking-my-meat-gif-1845923155482719766"
+  },
+  "suits": [
+   "P37"
+  ]
+ },
+ {
+  "id": "appraisal-crystal-breaks",
+  "name": "The appraisal crystal breaks",
+  "allusion": "an \"F-rank\" newcomer touches the guild's appraisal crystal and it cracks while the receptionist freezes",
+  "series": "isekai genre (guild stories)",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/anime_irl/comments/1xnd83l/removed/"
+  },
+  "suits": [
+   "N01",
+   "N03"
+  ]
+ },
+ {
+  "id": "anxious-emperor",
+  "name": "Best frend",
+  "allusion": "an anxious ruler misreads a polite overpowered visitor's every word as a threat",
+  "series": "Overlord",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/overlord/comments/1xem9f1/best_frend/"
+  },
+  "suits": [
+   "N12",
+   "N24"
+  ]
+ },
+ {
+  "id": "crumbs-goddess",
+  "name": "The goddess with crumbs",
+  "allusion": "a supposedly dignified goddess delivers a solemn speech with food crumbs on her face",
+  "series": "Tondemo Skill de Isekai Hourou Meshi",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://times.abema.tv/en/articles/-/10206972"
+  },
+  "suits": [
+   "N28"
+  ]
+ },
+ {
+  "id": "i-suppose-pout",
+  "name": "Grumpy Beatrice, I suppose",
+  "allusion": "a tiny library spirit pouts with crossed arms and ends every sentence with \"I suppose\"",
+  "series": "Re:Zero",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://imgflip.com/memetemplate/312624273/Grumpy-Beatrice"
+  },
+  "suits": [
+   "P18"
+  ]
+ },
+ {
+  "id": "retro-console-uncle",
+  "name": "Uncle and the SEGA Saturn",
+  "allusion": "a returned hero explains everything through his love of a long-dead game console",
+  "series": "Uncle from Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/IsekaiOjisan/comments/1wdoymo/uncle_truly_became_a_family_guy/"
+  },
+  "suits": [
+   "M28"
+  ]
+ },
+ {
+  "id": "strength-solves-it",
+  "name": "Delta solves it with strength",
+  "allusion": "a beast-girl fighter answers every complicated plan with \"just hit it harder\"",
+  "series": "The Eminence in Shadow",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://forums.somethingawful.com/showthread.php?threadid=4043454&userid=120817"
+  },
+  "suits": [
+   "P06"
+  ]
+ }
+]

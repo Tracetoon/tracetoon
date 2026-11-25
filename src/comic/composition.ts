@@ -303,6 +303,10 @@ export function castNames(names: unknown[]): string[] {
 /** Characters in a lead look: a few words, not a description. */
 export const MAX_LEAD_LOOK = 80;
 
+/** An isekai scenario id ("AF-M08-01") and an archetype id ("M08"), as recorded in summaries. */
+export const PITCH_ID = /^AF-[A-Z][0-9]{2}-[0-9]{2}$/;
+export const ARCHETYPE_ID = /^[A-Z][0-9]{2}$/;
+
 export function comicSummary(script: ComicScript): ComicSummary {
   const knownCast =
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
@@ -333,6 +337,11 @@ export function comicSummary(script: ComicScript): ComicSummary {
     ...(typeof script.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(script.meme) ? { meme: script.meme } : {}),
     ...(typeof script.lead?.persona === 'string' && /^[a-z0-9-]{1,80}$/i.test(script.lead.persona) ? { lead: script.lead.persona } : {}),
     ...(typeof script.castPreset === 'string' && /^[a-z_]{1,40}$/.test(script.castPreset) ? { castPreset: script.castPreset } : {}),
+    ...(typeof script.pitch === 'string' && PITCH_ID.test(script.pitch) ? { pitch: script.pitch } : {}),
+    ...(() => {
+      const ids = (Array.isArray(script.characters) ? script.characters : []).flatMap((c) => (typeof c.archetype === 'string' && ARCHETYPE_ID.test(c.archetype) ? [c.archetype] : []));
+      return ids.length ? { archetypes: [...new Set(ids)] } : {};
+    })(),
   };
 }
 

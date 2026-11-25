@@ -7,7 +7,7 @@ import { gh } from '../util/exec.ts';
 import { repoArgs } from './target.ts';
 import { decodeMeta } from './body.ts';
 import { genreKey, MAX_GENRE_CHARS } from '../comic/genres.ts';
-import { castNames } from '../comic/composition.ts';
+import { ARCHETYPE_ID, castNames, PITCH_ID } from '../comic/composition.ts';
 import {
   CAST_KINDS,
   LAYOUT_FAMILIES,
@@ -15,8 +15,10 @@ import {
   type ComicSummary,
 } from '../comic/types.ts';
 
-/** How many recent PRs to look at. */
-const LOOK_BACK = 20;
+/** How many recent PRs to look at: enough for the 100-comic meme cooldown (isekai/pitches.ts). */
+const LOOK_BACK = 100;
+/** How many recent comics are passed forward as creative context. */
+const RECENT = 5;
 
 export function repoWeb(truth: PrTruth): string | undefined {
   if (process.env.TRACETOON_REPO_WEB) return process.env.TRACETOON_REPO_WEB;
@@ -30,7 +32,16 @@ export function recentStyles(truth: PrTruth, opts: { offline?: boolean } = {}): 
   return recentComics(truth, opts).flatMap((c) => (c.style ? [c.style] : []));
 }
 
+/** This repo's latest comics, newest first: the creative context (empty offline or without gh). */
 export function recentComics(
+  truth: PrTruth,
+  opts: { offline?: boolean } = {},
+): ComicSummary[] {
+  return comicHistory(truth, opts).slice(0, RECENT);
+}
+
+/** Every comic in this repo's last LOOK_BACK PRs, newest first: the per-repo cooldowns. */
+export function comicHistory(
   truth: PrTruth,
   opts: { offline?: boolean } = {},
 ): ComicSummary[] {
@@ -97,10 +108,12 @@ export function recentComics(
           if (typeof raw.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(raw.meme)) summary.meme = raw.meme;
           if (typeof raw.lead === 'string' && /^[a-z0-9-]{1,80}$/i.test(raw.lead)) summary.lead = raw.lead;
           if (typeof raw.castPreset === 'string' && /^[a-z_]{1,40}$/.test(raw.castPreset)) summary.castPreset = raw.castPreset;
+          if (typeof raw.pitch === 'string' && PITCH_ID.test(raw.pitch)) summary.pitch = raw.pitch;
+          if (Array.isArray(raw.archetypes) && raw.archetypes.length <= 12 && raw.archetypes.every((a: unknown) => typeof a === 'string' && ARCHETYPE_ID.test(a)))
+            summary.archetypes = [...new Set(raw.archetypes as string[])];
         }
         return Object.keys(summary).length ? [summary] : [];
-      })
-      .slice(0, 5);
+      });
   } catch {
     return [];
   }
