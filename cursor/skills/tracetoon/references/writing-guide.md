@@ -9,8 +9,8 @@ The trace gives you what a diff can't: what the user asked for, what they
 decided, what was tried, and what actually ran. Use it to explain the *why* and
 the *evidence*. The diff already shows the *what*.
 
-Write a complete, useful draft from what's available. Don't wait for, or ask
-for, more input. (`render` prints optional notes about missing
+Write a complete, useful draft from what's available; more input from the
+user isn't needed to start. (`render` prints optional notes about missing
 facts; see "Missing facts" below.)
 
 ## The title
