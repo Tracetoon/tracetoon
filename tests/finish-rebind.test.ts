@@ -204,6 +204,67 @@ describe('finish and publish rebind', () => {
     );
   });
 
+  test('a fix committed after a review: fresh passes on the new code supersede the old ones (#219)', () => {
+    const { repo, run } = preparedRun('none');
+    ok(repo.root, 'finish', '--run', run.id);
+    const importPass = (agent: string) =>
+      ok(
+        repo.root,
+        'review',
+        'import',
+        '--run',
+        run.id,
+        '--agent-id',
+        agent,
+        '--reviewer-model',
+        'sonnet',
+      );
+    importPass('a7c3e19f2b');
+    // A code fix after the review, then a fresh digest and render.
+    repo.commit(
+      'src/greet.ts',
+      "export function greet(name?: string) {\n  if (!name?.trim()) return 'hello';\n  return `hello ${name}`;\n}\n",
+      'Treat a blank name as no name',
+    );
+    ok(repo.root, 'digest', '--run', run.id, '--offline');
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'The greeting uses the given name, or says hello when it is missing or blank.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    // Only the old pass: publish still refuses, naming it.
+    const before = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(before.stdout + before.stderr).toContain(
+      'reviewer pass 1 reviewed different code',
+    );
+    // A fresh pass on the new code meets the plan on its own: the old one is superseded.
+    writeLocal(join(run.dir, 'review-findings.json'), {
+      v: 1,
+      reviewer: { agentId: null },
+      findings: [],
+    });
+    importPass('b8d4f20a3c');
+    // The correction round after the fresh review: finish binds the review itself.
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'The greeting uses the given name, or says hello when the name is missing or blank.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    const text = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(text.stdout + text.stderr).not.toContain('reviewed different code');
+    expect(text.stdout).toContain(`Next: tracetoon publish --run ${run.id}`);
+    const passes = readLocal<any>(join(run.dir, 'review-passes.json'))!.passes;
+    expect(passes.map((p: any) => p.agentId)).toEqual(['b8d4f20a3c']);
+    const superseded = readLocal<any>(
+      join(run.dir, 'review-passes-superseded.json'),
+    )!.passes;
+    expect(superseded.map((p: any) => p.agentId)).toEqual(['a7c3e19f2b']);
+    const published = cli(repo.root, ['publish', '--run', run.id], false);
+    expect(published.code).toBe(0);
+    expect(published.stdout).toContain('pull/7');
+  });
+
   test('a comic added after the review never invalidates the review of the prose', () => {
     const { repo, run } = preparedRun('none');
     ok(repo.root, 'finish', '--run', run.id);
