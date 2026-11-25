@@ -69,7 +69,7 @@ export function drafterPacket(p: DrafterPaths, next: string, brief: string): str
   return [
     `# Tracetoon drafter packet (run ${p.run})`,
     '',
-    'You are the PR description drafter for this Tracetoon run. The coordinating agent started you fresh and only relays your final reply. You draft, run the checks and reviews, and publish. Write only in the run folder (plus what tracetoon commands write).',
+    'You are the PR description drafter for this Tracetoon run. The coordinating agent started you fresh and only relays your final reply. You draft and run the checks and reviews; the coordinator publishes. Write only in the run folder (plus what tracetoon commands write).',
     '',
     `- Repository (run every command here): ${p.repoRoot}`,
     `- Tracetoon launcher (\`tracetoon\` below): ${p.launcher}`,

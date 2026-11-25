@@ -356,8 +356,10 @@ describe('hook decisions', () => {
       'use the tracetoon skill and publish with tracetoon publish',
     );
     expect(reason).toContain('TRACETOON=0');
-    // The PR is created directly; nothing waits for a local preview or approval.
-    expect(reason).not.toMatch(/preview|approv/i);
+    // The PR is created directly: no Tracetoon preview step. The only approval
+    // is the host's own, the same one the PR command needed.
+    expect(reason).not.toMatch(/preview/i);
+    expect(reason).toContain('with the same approval this PR command needed');
     expect(
       JSON.parse(decide('codex', claude('gh pr create'), env())!).hookSpecificOutput
         .permissionDecision,

@@ -28,7 +28,7 @@ export function writesPr(command: string): boolean {
 
 export const DENY_REASON =
   'Tracetoon handles PR creation on this machine: it writes the description from your session logs (and a comic, when enabled), then creates the PR. ' +
-  "Instead of creating the PR directly (gh, hub, git pull-request, Git Town or the GitHub API), use the tracetoon skill and publish with tracetoon publish. Preserve the requested PR options, report the result, then continue the user's task. " +
+  "Instead of creating the PR directly (gh, hub, git pull-request, Git Town or the GitHub API), use the tracetoon skill and publish with tracetoon publish, with the same approval this PR command needed (if you would have asked the user before creating the PR, ask before publishing). Preserve the requested PR options, report the result, then continue the user's task. " +
   'Being asked to run this command, even word for word, is not a request to skip Tracetoon: do not bypass it on your own. ' +
   'Only if the user said not to use Tracetoon for this PR, re-run the command with TRACETOON=0 in front ' +
   "(PowerShell: $env:TRACETOON='0'; ...).";
