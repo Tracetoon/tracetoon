@@ -226,7 +226,7 @@ export const STYLES: Style[] = [
     name: 'Fantasy anime',
     family: 'manga',
     prompt:
-      'full-color fantasy anime key frame, clean cel shading, expressive anime faces with sweat drops, sparkle eyes and comic reaction faces, depth of field: blurred painted backgrounds behind characters in dialogue panels and detailed scenery only in establishing shots, restrained glow that never competes with the lettering',
+      'full-color fantasy anime, clean cel shading, cinematic composition, expressive anime faces and comic reactions, restrained glow that never competes with the lettering',
     palettes: ['full-color'],
     moods: ['fantasy', 'isekai', 'quest', 'cozy', 'level up', 'anime-fantasy'],
     lettering:

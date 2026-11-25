@@ -8,11 +8,22 @@ import { comicPacketFiles } from '../src/comic/packet.ts';
 import { checkScript, errors, FRANCHISE_NAMES } from '../src/comic/script.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
+import { ROSTER_GENRE_ID, rosterGenre } from './rosterGenre.ts';
+
+const genre = rosterGenre();
+const catalog = [genre];
 
 const seeds = Array.from({ length: 2000 }, (_, i) => `repo head run-${i}`);
 
 describe('genre meme pools', () => {
-  for (const id of ['anime-fantasy', 'space-opera']) {
+  test('anime-fantasy: casts from the isekai guide, with no memes or style mix', () => {
+    const anime = genreById('anime-fantasy')!;
+    expect(anime.isekai).toBe(true);
+    for (const key of ['cast', 'diverseCast', 'leads', 'memes', 'styleMix'] as const) expect(anime[key]).toBeUndefined();
+    expect(genreOptions([], { pinned: 'anime-fantasy', seed: 's' })[0]!.memeOffer).toBeUndefined();
+  });
+
+  for (const id of ['space-opera']) {
     test(`${id}: hundreds of memes, no names, no near-duplicates, tiers spread`, () => {
       const pool = BUILT_IN_MEMES[id]!;
       expect(genreById(id)!.memes).toBe(pool);
@@ -62,8 +73,8 @@ describe('meme offers', () => {
     expect(memeOffer(undefined, 'x')).toBeUndefined();
   });
 
-  test('the anime style mix assigns manga to about one comic in six', () => {
-    const mix = genreById('anime-fantasy')!.styleMix!;
+  test('an anime style mix assigns manga to about one comic in six', () => {
+    const mix = genre.styleMix!;
     const picks = seeds.map((s) => stylePick(mix, s));
     const manga = picks.filter((p) => p === 'shonen-action').length / picks.length;
     expect(manga).toBeGreaterThan(0.12);
@@ -99,7 +110,7 @@ memes:
   });
 
   test('the packet offers the memes and style; the check holds the script to them; the summary remembers the meme', () => {
-    const option = genreOptions([], { pinned: 'anime-fantasy', seed: 'seed-9' })[0]!;
+    const option = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: 'seed-9' })[0]!;
     const files = comicPacketFiles({
       brief: 'b',
       description: 'd',
@@ -115,7 +126,7 @@ memes:
     const opts = { genreOptions: [option] };
     const base = {
       ...pageScript(),
-      genre: 'anime-fantasy',
+      genre: ROSTER_GENRE_ID,
       style: option.assignedStyle!,
       personas: option.castOffer!.personas.slice(0, 2).map((p) => p.id),
     } as ComicScript;

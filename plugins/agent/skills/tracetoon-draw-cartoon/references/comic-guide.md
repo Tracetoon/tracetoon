@@ -339,6 +339,15 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   `low-angle`, `high-angle`, `overhead`, `dutch`, `over-shoulder` or
   `silhouette`. **`effects`** (per panel): any of `speed-lines`,
   `impact-burst`, `focus-lines`, `motion-blur`, `emanata`, `shake`.
+- **`place`**: the one place the whole comic happens, a short decided phrase
+  ("the guild hall's quest counter"). It replaces the genre's list of
+  settings in the image prompt.
+- **`panels[].background`**: `detailed`, `soft` or `speed-lines`, decided per
+  panel.
+- **`characters[].archetype`** and **`castPreset`**: for a genre with an
+  `isekaiCast`, the archetype id each character was cast from and the cast's
+  preset id. `comic check` holds the page to the lead plus at most two
+  companions and one contact, and rejects a design that still lists options.
 - **`personas`**: when the chosen genre came with a `castOffer`, the ids
   of the offered personas the comic casts. `comic check` rejects an id that
   wasn't offered.

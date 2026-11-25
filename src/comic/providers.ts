@@ -90,13 +90,13 @@ export type Readiness = 'ready' | 'not ready' | 'unknown';
 
 /** Things image models must avoid, on every comic. */
 export const NEGATIVE =
-  'fictional characters only (human characters are welcome); genre parody of familiar tropes and settings is welcome (a cantina of odd aliens, an away team on a strange planet, a masked dark lord, a wizard, a detective, a giant monster), but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures; no shapes, props, machine parts, shadows or gestures that could read as sexual, genital or obscene, no rude gestures, no hate symbols; controls are wheels, flat switches, buttons or wide T-handles, never a knobbed rod or stick at or near anyone\'s lap or groin; swords and tools hang at the side, not between the legs; characters point or wave with an open hand, never one raised finger';
+  'original fictional characters only; genre parody of familiar character types and settings is welcome, but never reproduce a specific existing film, TV, cartoon or game character, their likeness, signature costume, insignia, ship design or name; no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures; no shapes, props, machine parts, shadows or gestures that could read as sexual, genital or obscene, no rude gestures, no hate symbols; controls are wheels, flat switches, buttons or wide T-handles, never a knobbed rod or stick at or near anyone\'s lap or groin; swords and tools hang at the side, not between the legs; characters point or wave with an open hand, never one raised finger';
 /** With an explicit user request, their characters are allowed; the rest still holds. */
 export const NEGATIVE_WITH_REQUEST =
   'no identifiable real-person or celebrity likenesses, no logos or brand marks, no watermarks, no signatures';
 /** Keeps the page a drawn comic rather than an illustration or render. */
 export const COMIC_MEDIUM =
-  "It must look like a drawn comic: inked line art with cel or painted coloring, dynamic staging and acting, real panel borders and gutters, lettering in balloons and caption boxes, and comic effects such as speed lines, impact bursts and sound effects where the scene calls for them. Backgrounds follow each panel's focus: soft, out-of-focus or speed-line backgrounds behind dialogue and reaction panels so faces and lettering read cleanly; full detail for establishing shots and complex scenes. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
+  "It must look like a drawn comic: inked line art with clean coloring, dynamic staging and acting, real panel borders and gutters, and lettering in balloons and caption boxes; each panel's background and drawn effects are the ones named for it. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
 
 /** The avoid-list for this script. */
 export function negativeFor(script: ComicScript): string {
@@ -120,7 +120,7 @@ function who(panel: Panel, script: ComicScript): string {
   return panel.characters
     .map(
       (pc) =>
-        `${characterLine(script, pc.name)}, on the ${pc.position}${pc.expression ? `, looking ${pc.expression}` : ''}${pc.pose ? `, ${pc.pose}` : ''}`,
+        `${characterLine(script, pc.name)} (${placement(pc)})`,
     )
     .join('; ');
 }
@@ -132,6 +132,47 @@ export function scriptStyle(script: ComicScript): string {
 }
 
 /** The world the comic is set in, for the prompt: a catalog genre's setting, or the phrase. */
+/** A format's layout for this script: what the page has, decided from the panels, never an option. */
+function formatLayout(format: { id: string; layout: string }, script: ComicScript): string {
+  const panels = script.panels?.length ?? 0;
+  if (format.id === 'before-after' && panels === 3) return `${format.layout}, with a narrow FIX panel between them`;
+  return format.layout;
+}
+
+/** A panel's background as decided by the author. */
+const BACKGROUND_LOOK: Record<string, string> = {
+  detailed: 'Detailed background',
+  soft: 'Soft, out-of-focus background behind the characters',
+  'speed-lines': 'Speed-line background behind the characters',
+};
+
+/** Where a character stands and how they look, in plain words: "left, determined". */
+function placement(pc: { position: string; expression?: string; pose?: string }): string {
+  return [pc.position === 'center' ? 'center' : pc.position, pc.expression, pc.pose].filter(Boolean).join(', ');
+}
+
+/** One sentence with exactly one closing period. */
+function sentence(text: string): string {
+  const t = text.trim().replace(/\.+$/, '');
+  return `${t}.`;
+}
+
+/**
+ * Lines of an image prompt that still hand the image model a choice: an
+ * option list in the style, genre, setting or character designs ("or", "such
+ * as"). Quoted lettering is ignored. Recorded with the prompt; the target is none.
+ */
+export function promptLint(prompt: string): string[] {
+  const hits: string[] = [];
+  for (const line of prompt.split('\n')) {
+    if (!/^(Art style|Genre|Setting|Characters|Format|Layout)/.test(line)) continue;
+    const bare = line.replace(/"[^"]*"/g, '""');
+    const m = /\b(or|such as|for example|e\.g\.|either|optionally)\b/i.exec(bare);
+    if (m) hits.push(`${line.split(':')[0]}: "${bare.slice(Math.max(0, m.index - 40), m.index + 40)}"`);
+  }
+  return hits;
+}
+
 export function genreLine(script: ComicScript, catalog: Genre[] = GENRES): string {
   if (typeof script.genre !== 'string' || !script.genre.trim()) return '';
   const g = genreById(script.genre, catalog);
@@ -139,9 +180,10 @@ export function genreLine(script: ComicScript, catalog: Genre[] = GENRES): strin
   const cast = script.request?.trim()
     ? ''
     : "; parody the genre's familiar character types, never any specific work's characters";
-  return g
-    ? `Genre: ${g.name}, set in ${g.setting}${cast}.`
-    : `Genre: ${script.genre.trim()}${cast}.`;
+  // Only decisions reach the image model: the one place, never the genre's list of places.
+  const name = g ? g.name : script.genre.trim();
+  const place = typeof script.place === 'string' && script.place.trim() ? ` Setting: ${script.place.trim().replace(/\.+$/, '')}.` : '';
+  return `Genre: ${name}${cast}.${place}`;
 }
 
 /** One text-free panel; Tracetoon adds the bubbles (overlay lettering). */
@@ -248,15 +290,16 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
   const leadName = script.lead?.name;
   const cast = [...(script.characters ?? [])]
     .sort((a, b) => Number(b.name === leadName) - Number(a.name === leadName))
-    .map((c) => `${c.name}${c.name === leadName ? ' (main character, in most panels)' : ''}: ${c.description}`);
+    .map((c) => `${c.name}${c.name === leadName ? ' (main character, in most panels)' : ''}: ${c.description.trim().replace(/\.+$/, '')}`);
   const panels = script.panels.map((p, i) => {
     const people = p.characters.map(
       (pc) =>
-        `${pc.name} on the ${pc.position}${pc.expression ? `, looking ${pc.expression}` : ''}${pc.pose ? `, ${pc.pose}` : ''}`,
+        `${pc.name} (${placement(pc)})`,
     );
     const text = (p.dialogue ?? []).map(textLine);
     return [
-      `Panel ${i + 1}: ${p.scene}.`,
+      `Panel ${i + 1}: ${sentence(p.scene)}`,
+      p.background ? `${BACKGROUND_LOOK[p.background]}.` : '',
       people.length ? `Characters: ${people.join('; ')}.` : '',
       p.camera ? `${CAMERA_LOOK[p.camera] ?? `${p.camera} shot`}.` : '',
       p.effects?.length ? `Draw: ${p.effects.map((e) => EFFECT_LOOK[e]).join('; ')}.` : '',
@@ -273,7 +316,7 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
     requestLine(script),
     wantsNonComicMedium(script.style, script.request) ? '' : COMIC_MEDIUM,
     !script.composition && format && format.id !== 'custom'
-      ? `Format: ${format.name}. ${format.layout}.`
+      ? `Format: ${format.name}. ${formatLayout(format, script)}.`
       : '',
     script.layout ? `Layout: ${script.layout}.` : '',
     compositionPrompt(script),

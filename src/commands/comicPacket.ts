@@ -68,6 +68,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
         seed: `${repo.root} ${repo.branch} ${run.id}`,
         recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
         recentLeads: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.lead ? [c.lead] : [])),
+        recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
       })
     : (ctx?.comic?.genreOptions ??
       genreOptions(
@@ -78,6 +79,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
           catalog,
           recentMemes: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.meme ? [c.meme] : [])),
         recentLeads: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.lead ? [c.lead] : [])),
+        recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
         },
       ));
   const skillFiles = comicSkillFiles();

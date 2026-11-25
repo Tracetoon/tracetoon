@@ -43,6 +43,8 @@ export interface Character {
   description: string;
   /** Creative category, not an identity inferred from the description. */
   kind?: CastKind;
+  /** The isekai archetype id this character was cast from (genre with an isekaiCast). */
+  archetype?: string;
 }
 
 export type CastKind = 'human' | 'creature' | 'object';
@@ -131,6 +133,8 @@ export interface ComicSummary {
   meme?: string;
   /** The lead persona used, so later comics get another main character. */
   lead?: string;
+  /** The isekai cast preset used, so the next comics get others. */
+  castPreset?: string;
 }
 
 /** A character's place in one panel. */
@@ -226,12 +230,17 @@ export interface ComicAnchor {
   mapping: AnchorMapping[];
 }
 
+export const PANEL_BACKGROUNDS = ['detailed', 'soft', 'speed-lines'] as const;
+export type PanelBackground = (typeof PANEL_BACKGROUNDS)[number];
+
 export interface Panel {
   /** Optional story beat. */
   beat?: Beat;
   /** What the panel shows, in a sentence. */
   scene: string;
   camera?: Camera;
+  /** The background treatment, decided per panel: full detail, soft and out of focus, or speed lines. */
+  background?: PanelBackground;
   /** Drawn effects: speed lines, an impact burst, sweat drops, a shaking frame. */
   effects?: PanelEffect[];
   characters: PanelCharacter[];
@@ -266,6 +275,10 @@ export interface ComicScript {
   personas?: string[];
   /** The id of the offered genre meme this comic uses (context genreOptions memeOffer), if any. */
   meme?: string;
+  /** The one place the whole comic happens, decided by the author ("the guild hall's quest counter"). */
+  place?: string;
+  /** The isekai cast preset this comic was cast from (context genreOptions isekaiCast). */
+  castPreset?: string;
   /** The main character: the lead persona's id and the name of its character in `characters`. */
   lead?: { persona: string; name: string };
   /** Things the image must not show, added after a misread review (misread.ts); go to the negative prompt. */

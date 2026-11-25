@@ -95,7 +95,8 @@ export function recentComics(
           if (typeof raw.leadLook === 'string' && raw.leadLook.trim() && raw.leadLook.length <= 80)
             summary.leadLook = raw.leadLook.trim().toLowerCase();
           if (typeof raw.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(raw.meme)) summary.meme = raw.meme;
-          if (typeof raw.lead === 'string' && /^[a-z0-9-]{1,80}$/.test(raw.lead)) summary.lead = raw.lead;
+          if (typeof raw.lead === 'string' && /^[a-z0-9-]{1,80}$/i.test(raw.lead)) summary.lead = raw.lead;
+          if (typeof raw.castPreset === 'string' && /^[a-z_]{1,40}$/.test(raw.castPreset)) summary.castPreset = raw.castPreset;
         }
         return Object.keys(summary).length ? [summary] : [];
       })

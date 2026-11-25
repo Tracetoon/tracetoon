@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import animeRaw from '../src/comic/cast/anime-fantasy.json' with { type: 'json' };
+import animeLeadsRaw from '../src/comic/cast/anime-fantasy-leads.json' with { type: 'json' };
 import spaceRaw from '../src/comic/cast/space-opera.json' with { type: 'json' };
 import { lookSimilarity } from '../src/comic/casting.ts';
 import { parseGenreFile } from '../src/comic/genreFile.ts';
@@ -8,6 +9,9 @@ import { comicPacketFiles } from '../src/comic/packet.ts';
 import { checkScript, errors, FRANCHISE_NAMES } from '../src/comic/script.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
+import { ROSTER_GENRE_ID, rosterGenre } from './rosterGenre.ts';
+
+const catalog = [rosterGenre()];
 
 /** Present-day nationalities and ethnic labels: out of place inside a fantasy world. */
 const REAL_WORLD = /\b(african|asian|european|latin[oa]|latinx|arab|indian|japanese|chinese|korean|american|jamaican|irish|scottish|nigerian|mexican|brazilian|samoan|hawaiian|polish|lebanese|filipin[oa]|vietnamese|ethiopian|ghanaian|peruvian|navajo|m[aā]ori)\b/i;
@@ -15,7 +19,20 @@ const REAL_WORLD = /\b(african|asian|european|latin[oa]|latinx|arab|indian|japan
 const STYLING_TELL = /\b(undercut|shaved sides|side-shaved|pride (pin|flag|badge)|rainbow (pin|flag|badge))\b/i;
 
 describe('genre-true diverse archetypes', () => {
-  for (const [id, raw] of [['anime-fantasy', animeRaw], ['space-opera', spaceRaw]] as const) {
+  test('anime-fantasy: casts from the isekai guide, with no diverse list, leads, roster, memes or style mix', () => {
+    const anime = genreById('anime-fantasy')!;
+    expect(anime.isekai).toBe(true);
+    for (const key of ['cast', 'diverseCast', 'leads', 'memes', 'styleMix'] as const) expect(anime[key]).toBeUndefined();
+    // The shelved lists still on disk keep to the same rules.
+    for (const r of animeRaw as { name: string; details: string }[]) {
+      const text = `${r.name} ${r.details}`;
+      expect(FRANCHISE_NAMES.test(text)).toBe(false);
+      expect(REAL_WORLD.test(text)).toBe(false);
+    }
+    for (const r of animeLeadsRaw as { name: string; details: string }[]) expect(FRANCHISE_NAMES.test(`${r.name} ${r.details}`)).toBe(false);
+  });
+
+  for (const [id, raw] of [['space-opera', spaceRaw]] as const) {
     test(`${id}: a large list from the genre, no names, no real-world labels or styling tells, about a quarter LGBTQ+`, () => {
       const list = genreById(id)!.diverseCast!;
       expect(list.length).toBeGreaterThanOrEqual(100);
@@ -24,7 +41,6 @@ describe('genre-true diverse archetypes', () => {
         const text = `${p.name} ${p.details}`;
         expect(FRANCHISE_NAMES.test(text)).toBe(false);
         expect(STYLING_TELL.test(text)).toBe(false);
-        if (id === 'anime-fantasy') expect(REAL_WORLD.test(text)).toBe(false);
       }
       for (let i = 0; i < list.length; i++)
         for (let j = i + 1; j < list.length; j++) expect(lookSimilarity(list[i]!.name, list[j]!.name)).toBeLessThan(0.6);
@@ -34,9 +50,9 @@ describe('genre-true diverse archetypes', () => {
     });
   }
 
-  test('anime fantasy: a required archetype joins the cast offer in place of its role', () => {
+  test('a genre with a roster: a required archetype joins the cast offer in place of its role', () => {
     const seeds = Array.from({ length: 600 }, (_, i) => `repo head ${i}`);
-    const options = seeds.map((s) => genreOptions([], { pinned: 'anime-fantasy', seed: s })[0]!);
+    const options = seeds.map((s) => genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: s })[0]!);
     const withRequired = options.filter((o) => o.castOffer!.personas.some((p) => p.required));
     expect(withRequired.length / options.length).toBeGreaterThan(0.15);
     expect(withRequired.length / options.length).toBeLessThan(0.25);
@@ -97,12 +113,13 @@ diverseCast:
 
 describe('a main character in every comic', () => {
   test('every comic of a genre with leads gets one; diverse leads take about 60%; recent leads are skipped', () => {
-    const anime = genreById('anime-fantasy')!.leads!;
-    expect(anime.length).toBeGreaterThanOrEqual(50);
+    const roster = catalog[0]!.leads!;
+    expect(roster.length).toBeGreaterThanOrEqual(20);
+    expect(genreById('anime-fantasy')!.leads).toBeUndefined();
     expect(genreById('space-opera')!.leads!.length).toBeGreaterThanOrEqual(50);
     const counts = { stereotype: 0, diverse: 0 };
     for (let i = 0; i < 3000; i++) {
-      const o = genreOptions([], { pinned: 'anime-fantasy', seed: `lead-${i}` })[0]!;
+      const o = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: `lead-${i}` })[0]!;
       const leads = o.castOffer!.personas.filter((p) => p.lead);
       expect(leads).toHaveLength(1);
       counts[leads[0]!.role === 'stereotype' ? 'stereotype' : 'diverse']++;
@@ -112,12 +129,12 @@ describe('a main character in every comic', () => {
     expect(share).toBeLessThan(0.65);
     const first = genreOptions([], { pinned: 'space-opera', seed: 'x' })[0]!.lead!;
     for (let i = 0; i < 200; i++) expect(genreOptions([], { pinned: 'space-opera', seed: `y${i}`, recentLeads: [first.id] })[0]!.lead!.id).not.toBe(first.id);
-    for (const l of anime) expect(FRANCHISE_NAMES.test(`${l.name} ${l.details}`)).toBe(false);
+    for (const l of genreById('space-opera')!.leads!) expect(FRANCHISE_NAMES.test(`${l.name} ${l.details}`)).toBe(false);
   });
 
   test('the lead never replaces a required archetype, and a side-only comic gets a side or nemesis archetype', () => {
     for (let i = 0; i < 1500; i++) {
-      const o = genreOptions([], { pinned: 'anime-fantasy', seed: `p${i}` })[0]!;
+      const o = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: `p${i}` })[0]!;
       const ps = o.castOffer!.personas;
       expect(ps.filter((p) => p.required && p.lead)).toHaveLength(0);
       const req = ps.find((p) => p.required);

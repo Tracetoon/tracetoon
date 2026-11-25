@@ -72,14 +72,11 @@ host then assigns each comic's style (`assignedStyle`) from those weights, and
 
 ## `anime-fantasy`: Anime fantasy
 
-- **Setting:** a sword-and-sorcery world as fantasy anime draws it: guild halls, taverns, roadside campfires, dungeons and glowing gates, witch ateliers, magic academies, market towns, frontier villages and a demon lord's castle
-- **Archetypes:** ageless elf mage; chuunibyou mage with one huge spell; gruff dwarf warrior; beast-eared scout; self-important goddess; summoned hero with one cheat skill; guild receptionist; demon lord buried in paperwork
-- **Props that carry the PR's words:** floating blue status window; guild quest board; adventurer rank card; appraisal crystal; spell glyph drawn in ink; glowing magic circle; tavern menu board; grimoire page; dungeon gate warning sign; campfire stew pot
-- **Joke hooks:** a status window announces a level up for something tiny; a time loop sends the hero back to the last save point; the mage casts one enormous spell a day, then collapses; one stray stroke in a drawn glyph turns the spell into something else; the elf calls a ten-year-old bug recent; the guild clerk rejects the quest form over one missing field
-- **Styles that suit it:** `anime-fantasy`, `chibi-anime`, `webtoon`, `shonen-action`
-- **Cast:** a roster of 39 personas; each comic is offered five in `castOffer`. Cast from those.
-- **Memes:** 256 famous scenes and lines; each comic is offered three in `memeOffer`.
-- **Style mix:** `anime-fantasy` 7, `chibi-anime` 2, `webtoon` 1, `shonen-action` 2; each comic's style is assigned in `assignedStyle`.
+- **Setting:** an original sword-and-sorcery other world, drawn as fantasy and isekai anime
+- **Archetypes:** isekai protagonists, companions and world characters from the archetype guide
+- **Props that carry the PR's words:** floating status window; guild quest board; adventurer rank card; spell circle; tavern menu board
+- **Joke hooks:** 
+- **Styles that suit it:** `anime-fantasy`
 
 ## `cyberpunk`: Cyberpunk
 

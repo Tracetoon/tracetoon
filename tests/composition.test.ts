@@ -52,7 +52,7 @@ describe('story-led compositions', () => {
     expect(prompt).toContain('Composition: vertical');
     expect(prompt).not.toContain('horizontal row');
     expect(prompt).not.toMatch(/bold brush-script headline|Headline, lettered/);
-    expect(prompt).toContain('human characters are welcome');
+    expect(prompt).toContain('original fictional characters only');
     expect(artPrompt(s.panels[0]!, 0, s)).not.toContain('Square image');
     expect(frameAspect(s, 0)).toBe('16:9');
   });
@@ -364,7 +364,7 @@ describe('genre first, rotated', () => {
     expect(comicSummary(s).genre).toBe('kaiju');
     expect(pagePrompt(s)).toContain('Genre: Kaiju attack');
     expect(artPrompt(s.panels[0]!, 0, s)).toContain('Genre: Kaiju attack');
-    expect(pagePrompt(s)).toContain('genre parody of familiar tropes and settings is welcome');
+    expect(pagePrompt(s)).toContain('genre parody of familiar character types and settings is welcome');
     expect(pagePrompt(withGenre())).not.toContain('Genre:');
     // A user request decides the cast: the genre line no longer forbids named characters.
     const asked = { ...s, request: 'the crew of a famous starship' };

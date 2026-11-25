@@ -6,10 +6,9 @@
  * are offered first, so a repo's comics don't all land in the same office.
  */
 import { createHash } from 'node:crypto';
+import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
-import animeFantasyLeads from './cast/anime-fantasy-leads.json' with { type: 'json' };
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
-import animeFantasyCast from './cast/anime-fantasy.json' with { type: 'json' };
 import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
 import { BUILT_IN_MEMES, memeOffer, stylePick, type Meme } from './memes.ts';
 
@@ -48,6 +47,8 @@ export interface Genre {
   memes?: Meme[];
   /** Style weights; when present the host assigns each comic's style from them. */
   styleMix?: Record<string, number>;
+  /** Cast each comic from the isekai archetype guide (isekai/casting.ts). */
+  isekai?: boolean;
   /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
   source?: 'built-in' | 'user' | 'repo';
   /** The genre file it was read from (user and repo genres). */
@@ -87,92 +88,18 @@ const BUILT_IN_GENRES: Genre[] = [
   {
     id: 'anime-fantasy',
     name: 'Anime fantasy',
-    setting:
-      'a sword-and-sorcery world as fantasy anime draws it: guild halls, taverns, roadside campfires, dungeons and glowing gates, witch ateliers, magic academies, market towns, frontier villages and a demon lord\'s castle',
-    archetypes: [
-      'ageless elf mage',
-      'chuunibyou mage with one huge spell',
-      'gruff dwarf warrior',
-      'beast-eared scout',
-      'self-important goddess',
-      'summoned hero with one cheat skill',
-      'guild receptionist',
-      'demon lord buried in paperwork',
-    ],
-    props: [
-      'floating blue status window',
-      'guild quest board',
-      'adventurer rank card',
-      'appraisal crystal',
-      'spell glyph drawn in ink',
-      'glowing magic circle',
-      'tavern menu board',
-      'grimoire page',
-      'dungeon gate warning sign',
-      'campfire stew pot',
-    ],
-    jokeHooks: [
-      'a status window announces a level up for something tiny',
-      'a time loop sends the hero back to the last save point',
-      'the mage casts one enormous spell a day, then collapses',
-      'one stray stroke in a drawn glyph turns the spell into something else',
-      'the elf calls a ten-year-old bug recent',
-      'the guild clerk rejects the quest form over one missing field',
-    ],
-    styles: [
-      'anime-fantasy',
-      'chibi-anime',
-      'webtoon',
-      'shonen-action',
-    ],
+    setting: 'an original sword-and-sorcery other world, drawn as fantasy and isekai anime',
+    // The cast comes from the isekai archetype guide (isekai/casting.ts), one generated cast per comic.
+    archetypes: ['isekai protagonists, companions and world characters from the archetype guide'],
+    props: ['floating status window', 'guild quest board', 'adventurer rank card', 'spell circle', 'tavern menu board'],
+    jokeHooks: [],
+    styles: ['anime-fantasy'],
+    isekai: true,
     notes: [
-      'Draw it as full-colour fantasy anime by default: clean cel shading, painted skies, glowing spells, sweat drops, sparkle eyes and comic reaction faces. Now and then a black-and-white manga page with screentone suits a tense or battle beat.',
-      'The party is the heart of it, and its members are often funnier than the hero: let one of them carry the joke while the hero plays it straight. Cast from the personas offered for this comic; ones whose quirks clash make the best pairs.',
-      'Places to choose from, and vary: a guild counter with a queue of adventurers, a rowdy tavern at night, a campfire on the road under the stars, a torchlit dungeon or a glowing gate, a witch\'s atelier full of ink and glass, a magic-academy exam hall, a market-town square, a frontier farming village, a hot-spring inn, a floating library, a flower field, a snowbound mountain pass, the demon lord\'s throne room, an inn room after the quest.',
-      'Battles are comic and bloodless: fireballs that fizzle, a giant spell that flattens a hill, a whole party against one slime. A time loop is a reset to the save point, never a death. Outfits stay practical, with no fan service. Beastfolk are party members, never servants or captives, and fantasy races are never stand-ins for real-world peoples. The summoned hero comes from our world, so anyone can fill that role. Style people as the genre’s source works do: elves, dark elves, dwarves, beastfolk and humans of every complexion, in the genre’s own costumes.',
-    ].join('\n\n'),
-    // The author never sees this whole roster: each comic is offered five (casting.ts castOffer).
-    cast: castRoster([
-      'hero: a summoned hero with one odd cheat skill — arrived from our world with one strange power (perfect turnip appraisal, talking to doors) that is useless until exactly the right moment',
-      'hero: an overpowered newcomer — flattens the boss by accident, then asks "did I overdo it?" while the guild staff stare',
-      'hero: a vain hero — poses for a statue in every town and gives speeches mid-battle, but is secretly kind',
-      'hero: a time-loop hero — wakes at the last save point after every failure, remembers each attempt and is very tired of this one',
-      'mage: an ageless elf mage — calm and sleepy, collects useless spells (one polishes buckles), calls ten years ago "recently" and always opens the mimic chest',
-      'mage: a chuunibyou mage — eyepatch, cape and a long dramatic incantation for one enormous spell a day, then face-plants out of mana',
-      'mage: a deadpan apprentice mage — flat stare, flawless technique, quietly scolds their own master and keeps the party\'s budget',
-      'mage: a fussy scholar mage — book-smart, horrified by monster food, explains the theory while the spell fizzles',
-      'mage: an apprentice witch who draws spells — inks magic glyphs with a pen; one stray stroke turns the spell into something else',
-      'warrior: a knight who leaps into every hit — gleeful tank in heavy plate who begs to be the target and never lands a swing',
-      'warrior: a huge cowardly warrior — towering and scarred, terrified of everything right up until it counts',
-      'warrior: a silent armoured veteran — never takes the helmet off, answers in one word, knows exactly one monster\'s weak spot',
-      'warrior: a gruff dwarf warrior — beard, axe and ale; bickers with any elf in reach and rates every wall by its stonework',
-      'warrior: a dwarf who cooks monsters — practical and unbothered, turns every defeated monster into a balanced meal in a portable pot',
-      'healer: a self-important goddess — glowing robes, demands worship, wails when a plan fails, heals best when nobody is watching',
-      'healer: a drunk priest — a flask in one hand and a holy book in the other, wiser than they look, right advice at the wrong time',
-      'healer: the only sane healer — staff and kind eyes, permanently exasperated, the one who reads the quest\'s fine print',
-      'scout: a beast-eared scout — cat, wolf or rabbit ears and a tail that give away every feeling; a sharp nose and always hungry',
-      'scout: a grumpy halfling lockpicker — the oldest pro in the room, picks any lock and complains about everyone\'s footwork',
-      'scout: a fox-spirit trickster — several tails and illusion tricks, answers questions with riddles, steals the last dumpling',
-      'nemesis: a demon lord buried in paperwork — horns, cape and a throne piled with forms; would surrender if it meant less admin',
-      'nemesis: a hoarding dragon — counts every coin twice and is furious over a single rounding error',
-      'nemesis: a mimic chest — has fooled this party before and is smug about it',
-      'nemesis: a lich who keeps backups — a skeletal sorcerer with spare souls hidden everywhere, very calm about being destroyed',
-      'nemesis: a rival party — shinier armour, always arrives first and posts every clear on the guild board',
-      'nemesis: a slime horde — dozens of wobbling slimes; each is harmless, together they flood the dungeon',
-      'nemesis: a dark-knight general — imposing armour and a grand monologue, keeps losing to the weakest party member',
-      'nemesis: a giant beast at the gate — sleeps across the dungeon entrance and nobody wants to be the one to wake it',
-      'side: a guild receptionist — a cheerful smile, a stamp and a stack of forms; rejects quests over one missing field',
-      'side: an innkeeper — has seen every party fail, keeps a tab and knows every rumour',
-      'side: a blacksmith — judges your sword at a glance, fixes it with one tap and a long lecture',
-      'side: a travelling merchant — a cart of suspicious bargains; every deal has a catch in the small print',
-      'side: a strict witch teacher — tall pointed hat and long robe, spots a mistake in a glyph from across the room',
-      'side: a tavern bard — lute and flourishes, rewrites the party\'s defeats as glorious victories',
-      'side: a village elder — delivers a vague prophecy and quietly revises it afterwards',
-      'side: a talking sword — sarcastic and opinionated, but can\'t swing itself',
-      'side: a friendly slime — round and bouncy, absorbs anything, including the evidence',
-      'side: a dragon in human form — horns, a tail and an endless appetite; eats the whole tavern menu',
-      'side: a polite skeleton lord — a courteous undead noble whose over-devoted servants misread every order',
-    ]),
+      'Each character is a story role plus a visible silhouette plus a capability plus a behavioral contradiction; the joke is the contradiction inside genuine competence.',
+      'Species is shared visual vocabulary, never a personality; nobody is only an admirer of the hero; romance stays off.',
+      'Beastfolk and other peoples are companions, never servants or captives. Outfits stay practical, with no fan service. A time loop is a reset, never a death.',
+    ].join(' '),
   },
   {
     id: 'cyberpunk',
@@ -338,7 +265,6 @@ const diverseRoster = (raw: { role: string; name: string; details: string }[]): 
     return p;
   });
 const DIVERSE_CASTS: Record<string, CastPersona[]> = {
-  'anime-fantasy': diverseRoster(animeFantasyCast),
   'space-opera': diverseRoster(spaceOperaCast),
 };
 
@@ -346,18 +272,16 @@ const DIVERSE_CASTS: Record<string, CastPersona[]> = {
 const leadRoster = (raw: { axis: string; name: string; details: string }[]): CastPersona[] =>
   diverseRoster(raw.map((r) => ({ role: r.axis, name: r.name, details: r.details })));
 const LEADS: Record<string, CastPersona[]> = {
-  'anime-fantasy': leadRoster(animeFantasyLeads),
   'space-opera': leadRoster(spaceOperaLeads),
 };
 
 
-const STYLE_MIXES: Record<string, Record<string, number>> = {
-  'anime-fantasy': { 'anime-fantasy': 7, 'chibi-anime': 2, webtoon: 1, 'shonen-action': 2 },
-};
+/** Style mixes by genre (anime fantasy's was shelved in round 12). */
+const STYLE_MIXES: Record<string, Record<string, number>> = {};
 
 export const GENRES: Genre[] = BUILT_IN_GENRES.map((g) => ({
   ...g,
-  ...(BUILT_IN_MEMES[g.id]?.length ? { memes: BUILT_IN_MEMES[g.id] } : {}),
+  ...(BUILT_IN_MEMES[g.id]?.length && !g.isekai ? { memes: BUILT_IN_MEMES[g.id] } : {}),
   ...(STYLE_MIXES[g.id] ? { styleMix: STYLE_MIXES[g.id] } : {}),
   ...(DIVERSE_CASTS[g.id]?.length ? { diverseCast: DIVERSE_CASTS[g.id] } : {}),
   ...(LEADS[g.id]?.length ? { leads: LEADS[g.id] } : {}),
@@ -413,14 +337,20 @@ export interface GenreOption {
   requiredCast?: CastPersona;
   /** This comic's main character, for a genre without a cast offer (with one, it is in the offer). */
   lead?: CastPersona;
+  /** The cast generated from the isekai archetype guide for this comic. */
+  isekaiCast?: IsekaiPacketCast;
 }
 
 const option = (
-  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads }: Genre,
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads, isekai }: Genre,
   seed = '',
   recentMemes: string[] = [],
   recentLeads: string[] = [],
+  recentPresets: string[] = [],
 ): GenreOption => {
+  if (isekai) {
+    return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: isekaiCast(`${seed}\0${id}`, recentPresets) };
+  }
   const plain = castOffer(cast, `${seed}\0${id}`);
   // A side-only comic's required archetype is a side character or a nemesis.
   const pool = plain?.kind === 'side-only' ? diverseCast?.filter((p) => p.role === 'side' || p.role === 'nemesis') : diverseCast;
@@ -465,15 +395,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads)
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets)
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets));
 }

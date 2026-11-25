@@ -2,6 +2,7 @@
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
 import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
+import { PANEL_BACKGROUNDS } from './types.ts';
 import {
   ASPECTS,
   BEATS,
@@ -146,6 +147,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   out.push(...genreProblems(s as ComicScript, opts));
   out.push(...personaProblems(s as ComicScript, opts));
   out.push(...offerProblems(s as ComicScript, opts));
+  out.push(...isekaiProblems(s as ComicScript, opts));
+  out.push(...decisionProblems(s as ComicScript));
   out.push(...franchiseProblems(s as ComicScript));
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
@@ -469,6 +472,64 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
     warn(
       'Recent comics were already set in everyday life. A genre world (space opera, fantasy quest, heist, ...) usually lands harder; keep everyday only if nothing else fits.',
     );
+  return out;
+}
+
+/** Words that leave a choice open: a design or place must be decided, not a menu. */
+export const OPEN_CHOICE = /\b(or|either|choose|such as|e\.g\.|for example|optionally|alternatively)\b/i;
+
+/**
+ * Decisions the image model must receive already made: one place, and a
+ * background for every panel when the script uses them.
+ */
+export function decisionProblems(s: ComicScript): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (s.place !== undefined) {
+    if (typeof s.place !== 'string' || !s.place.trim() || s.place.length > 140) out.push({ where: 'place', problem: 'must be one concrete place in a short phrase' });
+    else if (OPEN_CHOICE.test(s.place) || /[;/]|,.*,/.test(s.place)) out.push({ where: 'place', problem: `"${s.place}" lists options; decide the one place the comic happens` });
+  }
+  for (const [i, p] of (Array.isArray(s.panels) ? s.panels : []).entries())
+    if (p.background !== undefined && !(PANEL_BACKGROUNDS as readonly string[]).includes(p.background))
+      out.push({ where: `panels[${i}].background`, problem: `must be one of ${PANEL_BACKGROUNDS.join(', ')}` });
+  return out;
+}
+
+/**
+ * The isekai cast (archetype guide): the page shows the generated lead plus at
+ * most two companions and one contact, each with one final design, in one place.
+ */
+export function isekaiProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  const cast = option?.isekaiCast;
+  if (!cast) return out;
+  const bad = (where: string, problem: string) => out.push({ where, problem });
+  const roleOf = new Map<string, 'lead' | 'companion' | 'contact'>([
+    [cast.lead.archetype, 'lead'],
+    ...cast.companions.map((m) => [m.archetype, 'companion'] as [string, 'companion']),
+    ...cast.contacts.map((m) => [m.archetype, 'contact'] as [string, 'contact']),
+  ]);
+  const ids = [...roleOf.keys()].join(', ');
+  if (s.castPreset !== cast.preset.id) bad('castPreset', `must be "${cast.preset.id}" (this comic's cast preset)`);
+  const chars = Array.isArray(s.characters) ? s.characters : [];
+  const roles = { lead: 0, companion: 0, contact: 0 };
+  for (const [i, c] of chars.entries()) {
+    const role = c.archetype ? roleOf.get(c.archetype) : undefined;
+    if (!role) bad(`characters[${i}].archetype`, `must be one of this comic's cast: ${ids}`);
+    else roles[role]++;
+    if (typeof c.description === 'string' && OPEN_CHOICE.test(c.description))
+      bad(`characters[${i}].description`, 'still leaves a choice open ("or", "such as", "choose"…); decide one final design');
+  }
+  if (!roles.lead) bad('characters', `must include the lead, "${cast.lead.title}" (${cast.lead.archetype})`);
+  if (roles.companion > cast.onPage.companions) bad('characters', `at most ${cast.onPage.companions} companions on the page (has ${roles.companion})`);
+  if (roles.contact > cast.onPage.contacts) bad('characters', `at most ${cast.onPage.contacts} local contact on the page (has ${roles.contact})`);
+  const leadChar = chars.find((c) => c.archetype === cast.lead.archetype);
+  if (leadChar && (s.lead?.name !== leadChar.name || s.lead?.persona !== cast.lead.archetype))
+    bad('lead', `must be {"persona": "${cast.lead.archetype}", "name": "${leadChar.name}"}`);
+  if (typeof s.place !== 'string' || !s.place.trim()) bad('place', 'is required: the one place the whole comic happens');
+  for (const [i, p] of (Array.isArray(s.panels) ? s.panels : []).entries())
+    if (!p.background) bad(`panels[${i}].background`, `is required: decide ${PANEL_BACKGROUNDS.join(', ')}`);
   return out;
 }
 

@@ -7,21 +7,26 @@ import { checkScript, errors, FRANCHISE_NAMES } from '../src/comic/script.ts';
 import { styleById } from '../src/comic/styles.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
+import { ROSTER_GENRE_ID, rosterGenre } from './rosterGenre.ts';
 
 const anime = genreById('anime-fantasy')!;
-const roster = anime.cast!;
+const genre = rosterGenre();
+const catalog = [genre];
+const roster = genre.cast!;
 const offers = Array.from({ length: 2000 }, (_, i) => castOffer(roster, `repo head run-${i}`)!);
 
 describe('anime fantasy genre', () => {
-  test('has a full roster, a colour anime style, and names no source series', () => {
+  test('casts from the isekai guide (no roster), a colour anime style, and names no source series', () => {
+    expect(anime.isekai).toBe(true);
+    for (const key of ['cast', 'diverseCast', 'leads', 'memes', 'styleMix'] as const) expect(anime[key]).toBeUndefined();
+    // The synthetic roster the offer tests below use covers every role.
     expect(roster.length).toBeGreaterThanOrEqual(36);
     for (const role of [...MAIN_ROLES, 'nemesis', 'side'] as const)
       expect(roster.filter((p) => p.role === role).length).toBeGreaterThanOrEqual(3);
-    expect(roster.filter((p) => p.role === 'mage').length).toBeGreaterThanOrEqual(4);
     expect(new Set(roster.map((p) => p.id)).size).toBe(roster.length);
     expect(anime.styles[0]).toBe('anime-fantasy');
     expect(styleById('anime-fantasy')?.palettes).toEqual(['full-color']);
-    const text = [anime.setting, ...anime.archetypes, ...anime.jokeHooks, anime.notes, ...roster.map((p) => `${p.name} ${p.details}`)].join(' | ');
+    const text = [anime.setting, ...anime.archetypes, ...anime.jokeHooks, anime.notes].join(' | ');
     expect(FRANCHISE_NAMES.exec(text)).toBeNull();
     for (const name of ['Frieren', 'Megumin', 'Kazuma', 'Re:Zero', 'Solo Leveling', 'Konosuba', 'Witch Hat Atelier'])
       expect(FRANCHISE_NAMES.test(name)).toBe(true);
@@ -95,13 +100,13 @@ describe('cast offers', () => {
   test('a genre without a roster has no offer, and options show only the offered personas', () => {
     expect(castOffer(undefined, 'x')).toBeUndefined();
     expect(genreOptions([], { pinned: 'space-opera', seed: 's' })[0]!.castOffer).toBeUndefined();
-    const option = genreOptions([], { pinned: 'anime-fantasy', seed: 's' })[0]!;
+    const option = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: 's' })[0]!;
     expect(option.archetypes).toEqual(option.castOffer!.personas.map((p) => p.name));
     expect(option.archetypes).toHaveLength(5);
   });
 
   test('the packet passes the five and explains the offer; the check enforces it', () => {
-    const option = genreOptions([], { pinned: 'anime-fantasy', seed: 'seed-1' })[0]!;
+    const option = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: 'seed-1' })[0]!;
     const files = comicPacketFiles({
       brief: 'b',
       description: 'd',
@@ -116,7 +121,7 @@ describe('cast offers', () => {
     expect(files['instructions.md']).toContain('cast from those five only');
 
     const offered = option.castOffer!.personas.map((p) => p.id);
-    const base = { ...pageScript(), genre: 'anime-fantasy' } as ComicScript;
+    const base = { ...pageScript(), genre: ROSTER_GENRE_ID } as ComicScript;
     const opts = { genreOptions: [option] };
     expect(errors(checkScript(base, opts)).map((p) => p.where)).toContain('personas');
     // A required archetype in the offer (about one comic in five) must be among them.
@@ -131,10 +136,10 @@ describe('cast offers', () => {
   });
 
   test('a side-only offer refuses the main cast', () => {
-    const seed = Array.from({ length: 200 }, (_, i) => `side-${i}`).find((s) => genreOptions([], { pinned: 'anime-fantasy', seed: s })[0]!.castOffer!.kind === 'side-only')!;
-    const option = genreOptions([], { pinned: 'anime-fantasy', seed })[0]!;
+    const seed = Array.from({ length: 200 }, (_, i) => `side-${i}`).find((s) => genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed: s })[0]!.castOffer!.kind === 'side-only')!;
+    const option = genreOptions([], { pinned: ROSTER_GENRE_ID, catalog, seed })[0]!;
     const hero = roster.find((p) => p.role === 'hero')!.id;
-    const found = errors(checkScript({ ...pageScript(), genre: 'anime-fantasy', personas: [option.castOffer!.personas[0]!.id, hero] } as ComicScript, { genreOptions: [option] }));
+    const found = errors(checkScript({ ...pageScript(), genre: ROSTER_GENRE_ID, personas: [option.castOffer!.personas[0]!.id, hero] } as ComicScript, { genreOptions: [option] }));
     expect(found.find((p) => p.where === 'personas[1]')?.problem).toContain('side characters only');
   });
 });

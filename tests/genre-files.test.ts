@@ -116,7 +116,9 @@ describe('genre files', () => {
 
     const s = anchoredStory('vertical');
     s.genre = 'build-pirates';
-    expect(pagePrompt(s, catalog)).toContain('Genre: Build pirates, set in a leaky galleon');
+    // Only decisions reach the image model: the genre's name, never its list of places.
+    expect(pagePrompt(s, catalog)).toContain('Genre: Build pirates;');
+    expect(pagePrompt(s, catalog)).not.toContain('leaky galleon');
     expect(artPrompt(s.panels[0]!, 0, s, catalog)).toContain('Genre: Build pirates');
     // Without the catalog the id is only a phrase.
     expect(pagePrompt(s)).toContain('Genre: build-pirates;');

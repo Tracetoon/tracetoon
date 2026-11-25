@@ -46,7 +46,9 @@ const LISTS = {
 } as const;
 type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
-const KNOWN = new Set<string>([...SCALARS, ...Object.keys(LISTS)]);
+/** Optional scalars: `casting: isekai` casts each comic from the isekai archetype guide. */
+const OPTIONAL_SCALARS = ['casting'] as const;
+const KNOWN = new Set<string>([...SCALARS, ...OPTIONAL_SCALARS, ...Object.keys(LISTS)]);
 
 /** `user`: `<config dir>/genres`, beside the user's config.json. */
 export function userGenresDir(): string {
@@ -165,6 +167,8 @@ export function parseGenreFile(
     });
     return items;
   };
+  const casting = fields.get('casting');
+  if (casting !== undefined && casting !== 'isekai') bad('casting', 'the only casting is "isekai" (the isekai archetype guide)');
   const archetypes = list('archetypes');
   const props = list('props');
   const jokeHooks = list('jokeHooks');
@@ -252,6 +256,7 @@ export function parseGenreFile(
       ...(cast.length ? { cast } : {}),
       ...(diverseCast.length ? { diverseCast } : {}),
       ...(leads.length ? { leads } : {}),
+      ...(casting === 'isekai' ? { isekai: true } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),

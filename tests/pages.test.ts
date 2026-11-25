@@ -93,7 +93,7 @@ describe('page scripts', () => {
     expect(prompt).toContain('Dev: a tired developer in a hoodie, round glasses');
     expect(prompt).not.toMatch(/\bKit\b|fox|character reference/);
     expect(artPrompt(s.panels[1]!, 1, s)).toContain(
-      'Link: a cheerful glowing blue hyperlink with tiny arms, on the right',
+      'Link: a cheerful glowing blue hyperlink with tiny arms (right',
     );
     expect(transcript(s)).toContain('**Dev:** Where is this file?');
   });
@@ -142,7 +142,7 @@ describe('comic look and user requests', () => {
 
   test('an explicit user request is sent and lifts the archetypes-only rule', () => {
     const plain = pagePrompt(pageScript());
-    expect(plain).toContain('genre parody of familiar tropes and settings is welcome');
+    expect(plain).toContain('genre parody of familiar character types and settings is welcome');
     expect(plain).toContain('never reproduce a specific existing film, TV, cartoon or game character');
     const asked = pageScript({ request: 'stormtroopers arguing about tabs' });
     expect(errors(checkScript(asked))).toEqual([]);

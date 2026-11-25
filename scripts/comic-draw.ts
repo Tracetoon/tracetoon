@@ -19,6 +19,7 @@ import {
   imageMime,
   negativeFor,
   pagePrompt,
+  promptLint,
   scriptStyle,
   type ProviderId,
 } from '../src/comic/providers.ts';
@@ -85,6 +86,7 @@ export async function draw(
   }
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'prompt.txt'), prompt);
+  writeFileSync(join(outDir, 'prompt-lint.json'), JSON.stringify(promptLint(prompt), null, 2) + '\n');
   writeFileSync(join(outDir, 'comic.json'), JSON.stringify(script, null, 2) + '\n');
   const [img] = await generateImages(opts.provider ?? 'codex', [
     { prompt, refs, aspect: pageAspect(script) },

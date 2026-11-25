@@ -82,7 +82,21 @@ Read these packet files (they sit next to this one):
   A genre with a \`castOffer\` comes with five personas picked for this comic.
   If you choose that genre, cast from those five only (crowds and passers-by
   are fine) and list the ids you used in \`personas\`. A \`side-only\` offer
-  means this comic has no party members at all.` : ''}${input.genres.some((g) => g.lead || g.castOffer?.personas.some((p) => p.lead)) ? `
+  means this comic has no party members at all.` : ''}${input.genres.some((g) => g.isekaiCast) ? `
+  A genre's \`isekaiCast\` is this comic's cast, generated from the isekai
+  archetype guide: a lead, companions and local contacts, each with the
+  guide's full recipe (core, look, engine, kit, variants). If you choose that
+  genre, you make every decision; the image model gets only the results:
+  - Put the lead on the page, plus at most two companions and at most one
+    contact, picked for this PR's story. The lead drives it.
+  - Give each one an original name and ONE final design: pick among the
+    recipe's options and variants, then write the silhouette, hair, outfit,
+    role prop and behavioral contradiction as plain decided facts (no "or",
+    no "such as", no menus). Set each character's \`archetype\` to its id.
+  - Set \`castPreset\` to the cast's preset id, \`lead\` to
+    {"persona": the lead's archetype id, "name": their name}, \`place\` to the
+    one place the whole comic happens, and every panel's \`background\` to
+    detailed, soft or speed-lines.` : ''}${input.genres.some((g) => g.lead || g.castOffer?.personas.some((p) => p.lead)) ? `
   The persona marked \`lead\` (or a genre's \`lead\`) is this comic's main
   character if you choose that genre: they drive the episode and appear in
   most panels. Set \`lead\` to {"persona": its id, "name": their name in

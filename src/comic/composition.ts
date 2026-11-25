@@ -331,7 +331,8 @@ export function comicSummary(script: ComicScript): ComicSummary {
       ? { leadLook: script.leadLook.trim().toLowerCase().slice(0, MAX_LEAD_LOOK) }
       : {}),
     ...(typeof script.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(script.meme) ? { meme: script.meme } : {}),
-    ...(typeof script.lead?.persona === 'string' && /^[a-z0-9-]{1,80}$/.test(script.lead.persona) ? { lead: script.lead.persona } : {}),
+    ...(typeof script.lead?.persona === 'string' && /^[a-z0-9-]{1,80}$/i.test(script.lead.persona) ? { lead: script.lead.persona } : {}),
+    ...(typeof script.castPreset === 'string' && /^[a-z_]{1,40}$/.test(script.castPreset) ? { castPreset: script.castPreset } : {}),
   };
 }
 
