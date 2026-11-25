@@ -175,6 +175,24 @@ describe('every package', () => {
     }
   });
 
+  test('every README and REVIEW says what Tracetoon adds to a PR, and how to turn it off', () => {
+    for (const d of [
+      'claude',
+      'claude-directory',
+      'cursor',
+      'codex',
+      'codex-directory',
+      'agent',
+    ])
+      for (const f of ['README.md', 'REVIEW.md']) {
+        const t = text(`${OUT}/${d}/${f}`);
+        expect(t).toContain('## What it adds to your PR');
+        expect(t).toContain('made with Tracetoon');
+        expect(t).toContain('tracetoon config set disclosure none');
+        expect(t).toContain('tracetoon config set comicCredit false');
+      }
+  });
+
   test('every README links the install guide the packaged skill points at', () => {
     for (const d of [
       'claude',
@@ -412,10 +430,12 @@ describe('Agent Plugins 1.0.0 conformance', () => {
     const skills = pkgFiles(dir)
       .filter((p) => p.endsWith('/SKILL.md'))
       .sort();
-    expect(skills).toEqual([
-      `${OUT}/${dir}/skills/tracetoon-draw-cartoon/SKILL.md`,
-      `${OUT}/${dir}/skills/tracetoon/SKILL.md`,
-    ].sort());
+    expect(skills).toEqual(
+      [
+        `${OUT}/${dir}/skills/tracetoon-draw-cartoon/SKILL.md`,
+        `${OUT}/${dir}/skills/tracetoon/SKILL.md`,
+      ].sort(),
+    );
     const mcpPath = `${OUT}/${dir}/mcp.json`;
     if (!files.has(mcpPath)) return;
     const mcp = parse(mcpPath);

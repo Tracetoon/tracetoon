@@ -55,6 +55,20 @@ Session logs are read and processed on your machine. Data leaves it only for:
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
 
+## What it adds to your PR
+
+Tracetoon credits itself in what it publishes, in two places, and both can be
+turned off:
+
+- **The PR description** ends with a one-line note that it was drafted from the
+  session logs with Tracetoon, linking to https://github.com/Tracetoon/tracetoon.
+  To leave it off: `tracetoon config set disclosure none` (a repository whose
+  AI policy requires a disclosure still gets one).
+- **Each comic** has a "made with Tracetoon" footer bar with the Tracetoon icon.
+  To leave it off: `tracetoon config set comicCredit false`.
+
+There are no affiliate or tracking links, and nothing else is added.
+
 ## Privacy
 
 Privacy policy: https://github.com/Tracetoon/tracetoon/blob/main/PRIVACY.md

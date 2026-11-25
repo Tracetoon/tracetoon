@@ -56,7 +56,10 @@ export function siblingSkills(): Map<string, string> {
         const path = rel ? `${rel}/${e.name}` : e.name;
         if (e.isDirectory()) walk(path);
         else if (e.name.endsWith('.md'))
-          out.set(`${name}/${path}`, readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'));
+          out.set(
+            `${name}/${path}`,
+            readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'),
+          );
       }
     };
     walk('');
@@ -424,6 +427,25 @@ function codexReviews(h: Host): string {
     : "- **The Codex CLI**, only if you switch Tracetoon's reviewers to it\n  (\`tracetoon review run\`; your agent uses its own reviewer agents by default):\n  the review packet (draft description, evidence brief and selected diff).";
 }
 
+/**
+ * What Tracetoon adds to the content it publishes, stated in every package's
+ * README and REVIEW.md: catalogs (the Anthropic directory among them) require a
+ * listing to say when a product puts its own credit or links into what users publish.
+ */
+export const CREDIT_SECTION = `## What it adds to your PR
+
+Tracetoon credits itself in what it publishes, in two places, and both can be
+turned off:
+
+- **The PR description** ends with a one-line note that it was drafted from the
+  session logs with Tracetoon, linking to ${REPO_URL}.
+  To leave it off: \`tracetoon config set disclosure none\` (a repository whose
+  AI policy requires a disclosure still gets one).
+- **Each comic** has a "made with Tracetoon" footer bar with the Tracetoon icon.
+  To leave it off: \`tracetoon config set comicCredit false\`.
+
+There are no affiliate or tracking links, and nothing else is added.`;
+
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
@@ -474,6 +496,8 @@ ${codexReviews(h)}
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
+
+${CREDIT_SECTION}
 
 ## Privacy
 
@@ -538,6 +562,8 @@ ${codexReviews(h)}
 - No telemetry, and no Tracetoon server.
 
 Privacy policy: ${PRIVACY_URL}
+
+${CREDIT_SECTION}
 
 ## Consent
 

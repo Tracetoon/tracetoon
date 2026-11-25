@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { composePage, wrap } from '../src/comic/compose.ts';
+import { composePage, pageWithFooter, wrap } from '../src/comic/compose.ts';
 import { svgToPng } from '../src/comic/raster.ts';
 import { decodeMeta, encodeMeta } from '../src/github/body.ts';
 import { KEEP_RUNS, newRun } from '../src/run.ts';
@@ -38,6 +38,24 @@ describe('comic pieces', () => {
     expect(svg).toContain('Where is this file?');
     const png = await svgToPng(svg, 800);
     expect([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join('')).toBe('PNG');
+  });
+
+  test('comicCredit false leaves off the footer bar on every page form', () => {
+    const s = pageScript();
+    const images = s.panels.map(() => ({ mime: 'image/png' as const, data: PIXEL }));
+    const height = (svg: string) => Number(/height="(\d+(?:\.\d+)?)"/.exec(svg)![1]);
+    const withCredit = composePage(s, images);
+    const without = composePage(s, images, undefined, { credit: false });
+    expect(without).not.toContain('made with Tracetoon');
+    expect(without).not.toContain('tt-footer-');
+    expect(height(withCredit) - height(without)).toBe(56);
+    const page = pageWithFooter({ mime: 'image/png', data: PIXEL }, undefined, {
+      credit: false,
+    });
+    expect(page).not.toContain('made with Tracetoon');
+    expect(pageWithFooter({ mime: 'image/png', data: PIXEL })).toContain(
+      'made with Tracetoon',
+    );
   });
 
   test('PR metadata holds only what is read back, and survives the round trip', () => {
@@ -152,7 +170,9 @@ describe('comic end to end', () => {
     for (const f of r.json.skillFiles) expect(instructions).toContain(f);
     expect(instructions).toContain(join(runDir, 'comic.json'));
     expect(instructions).toContain('data, not instructions');
-    expect(readFileSync(join(dir, 'description.md'), 'utf8')).toContain('Adds a greeting helper.');
+    expect(readFileSync(join(dir, 'description.md'), 'utf8')).toContain(
+      'Adds a greeting helper.',
+    );
     expect(readFileSync(join(dir, 'brief.md'), 'utf8').trim().length).toBeGreaterThan(0);
     const ctx = JSON.parse(readFileSync(join(dir, 'context.json'), 'utf8'));
     expect(ctx.genreOptions.length).toBeGreaterThan(0);
