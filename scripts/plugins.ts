@@ -458,7 +458,8 @@ On your machine: your agents' session logs, which hold whatever you typed,
 and the repository's git history, including names and email addresses in
 commit trailers such as \`Co-Authored-By\`. It also reads your GitHub login
 through \`gh\`. Each PR's redacted digest, evidence brief and draft stay in
-\`.git/tracetoon/runs/\` until you delete them.
+\`.git/tracetoon/runs/\` (\`.tracetoon/runs/\` in a linked worktree) until you
+delete them.
 
 ## What it sends
 
@@ -521,7 +522,8 @@ Logs and diffs are treated as data, never as instructions.
 
 ## What it writes
 
-- \`<repo>/.git/tracetoon/runs/\`: each PR's digest, evidence brief and draft.
+- \`<repo>/.git/tracetoon/runs/\`: each PR's digest, evidence brief and draft
+  (\`<checkout>/.tracetoon/runs/\` in a linked worktree or submodule).
 - \`~/.config/tracetoon/\` (Windows: \`%APPDATA%\\tracetoon\`): settings, which
   repositories a session touched, and hook diagnostics.
 - Nothing outside these, except the PR you ask it to publish.

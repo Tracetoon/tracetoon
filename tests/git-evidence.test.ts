@@ -29,6 +29,7 @@ const command = (
 const truth: PrTruth = {
   toplevel: root,
   gitDir: join(root, '.git'),
+  stateDir: join(root, '.git', 'tracetoon'),
   roots: [root],
   head: 'feature',
   base: 'main',

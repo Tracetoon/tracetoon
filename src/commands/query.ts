@@ -80,7 +80,7 @@ export function queryCmd(cwd: string, words: string[], opts: QueryOpts): void {
   if (asked && named?.name !== 'brief')
     throw new UserError('--layout applies only to `tracetoon query brief`.');
   const repo = repository(cwd);
-  const run = findRun(repo.gitDir, opts.run);
+  const run = findRun(repo.stateDir, opts.run);
   assertRunOwner(run, repo.root, repo.branch);
   const graph = loadGraph(run);
   if (!graph)

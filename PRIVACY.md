@@ -30,8 +30,10 @@ and personal data are redacted, and home paths and your username are scrubbed.
 Everything stays on your machine, in two places:
 
 - `<repo>/.git/tracetoon/runs/`: each PR's redacted digest, evidence brief,
-  draft and review files. They stay until you delete them
-  (`rm -rf .git/tracetoon`); deleting the repository removes them too.
+  draft and review files. In a linked git worktree or a submodule they are in
+  `<checkout>/.tracetoon/runs/` instead (a folder git ignores). They stay until
+  you delete them (`rm -rf .git/tracetoon`, or `.tracetoon` in that checkout);
+  deleting the repository removes them too.
 - `~/.config/tracetoon/` (Windows: `%APPDATA%\tracetoon`): settings, which
   repositories a session touched, hook diagnostics and update state. Delete the
   folder to remove it.

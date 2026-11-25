@@ -10,7 +10,7 @@ import { emit, UserError, type OutOpts } from './output.ts';
 
 export function guidanceCheckCmd(cwd: string, opts: OutOpts & { run?: string }): void {
   const initial = prTruth(cwd, { noGh: true });
-  const run = findRun(initial.gitDir, opts.run);
+  const run = findRun(initial.stateDir, opts.run);
   const context = readJson<{ base?: string; contribution?: { offline: boolean } }>(
     run,
     'context.json',

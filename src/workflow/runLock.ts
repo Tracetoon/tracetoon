@@ -83,7 +83,7 @@ export function lockTarget(
   if (args.includes('--help') || args.includes('-h')) return undefined;
   let run: Run;
   try {
-    run = findRun(repository(cwd).gitDir, id);
+    run = findRun(repository(cwd).stateDir, id);
   } catch {
     return undefined;
   }

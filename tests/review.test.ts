@@ -187,8 +187,8 @@ describe('publication freshness', () => {
 describe('run pruning', () => {
   test('keeps unfinished tasks beyond the scratch limit, then allows cleanup after publication', () => {
     const repo = makeRepo();
-    const { gitDir } = prTruth(repo.root, { noGh: true });
-    const base = join(gitDir, 'tracetoon', 'runs');
+    const { stateDir } = prTruth(repo.root, { noGh: true });
+    const base = join(stateDir, 'runs');
     const unfinished = join(base, '20250101-000000');
     mkdirSync(unfinished, { recursive: true });
     const task = { v: 1, run: '20250101-000000', state: 'preparing' };
@@ -197,14 +197,14 @@ describe('run pruning', () => {
     mkdirSync(scratch);
     for (let n = 1; n <= KEEP_RUNS + 5; n++)
       mkdirSync(join(base, `20250102-0000${String(n).padStart(2, '0')}`));
-    newRun(gitDir);
+    newRun(stateDir);
     expect(existsSync(unfinished)).toBe(true);
     expect(existsSync(scratch)).toBe(false);
     writeFileSync(
       join(unfinished, 'task.json'),
       JSON.stringify({ ...task, state: 'published' }),
     );
-    pruneRuns(gitDir);
+    pruneRuns(stateDir);
     expect(existsSync(unfinished)).toBe(false);
   });
 });

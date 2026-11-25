@@ -118,7 +118,7 @@ describe('finished task completion contract', () => {
       expect(lifecycle(agent, 'Stop', p, env())).toBeUndefined();
       expect(lifecycle(agent, 'Stop', p, env())).toBeUndefined();
       expect(
-        tasks(repository(repo.root).gitDir).map((t) => [t.run.id, t.task.state]),
+        tasks(repository(repo.root).stateDir).map((t) => [t.run.id, t.task.state]),
       ).toEqual([[run.id, 'published']]);
       expect(git(repo.root, ['status', '--porcelain']).stdout).toBe('');
     });
@@ -146,7 +146,7 @@ describe('finished task completion contract', () => {
             lifecycle(agent, event, { ...p, tool_input: { command } }, env()),
           ).toBeUndefined();
       }
-      expect(tasks(repository(repo.root).gitDir)).toHaveLength(0);
+      expect(tasks(repository(repo.root).stateDir)).toHaveLength(0);
       expect(
         readLocal<any>(
           join(
@@ -167,7 +167,7 @@ describe('finished task completion contract', () => {
         { ...p, tool_input: { command: 'gh pr create' } },
         env(),
       );
-      const active = tasks(repository(repo.root).gitDir)[0]!;
+      const active = tasks(repository(repo.root).stateDir)[0]!;
       writeLocal(join(active.run.dir, 'approval.json'), {
         findings: [{ kind: 'secret', count: 1 }],
         allowFindings: false,
@@ -236,7 +236,7 @@ describe('finished task completion contract', () => {
         if (creates) expect(result).toContain('deny');
         else expect(result).toBeUndefined();
       }
-      expect(tasks(repository(repo.root).gitDir)).toHaveLength(1);
+      expect(tasks(repository(repo.root).stateDir)).toHaveLength(1);
     });
   }
 
@@ -246,17 +246,17 @@ describe('finished task completion contract', () => {
     writeFileSync(transcript, '');
     const p = { cwd: repo.root, session_id: 'pr-requested', transcript_path: transcript };
     expect(lifecycle('codex', 'SessionStart', p, env())).toBeUndefined();
-    expect(tasks(repository(repo.root).gitDir)).toHaveLength(0);
+    expect(tasks(repository(repo.root).stateDir)).toHaveLength(0);
     const request = { ...p, tool_input: { command: 'gh pr create --draft --base main' } };
     expect(lifecycle('codex', 'PreToolUse', request, env())).toContain(
       'make this PR with the tracetoon skill',
     );
-    const [active] = tasks(repository(repo.root).gitDir);
+    const [active] = tasks(repository(repo.root).stateDir);
     expect(active!.task.transcript).toBe(transcript);
     expect(active!.task.prRequestedBy).toBe(p.session_id);
     const requestedAt = active!.task.prRequestedAt;
     lifecycle('codex', 'PreToolUse', request, env());
-    expect(tasks(repository(repo.root).gitDir)).toHaveLength(1);
+    expect(tasks(repository(repo.root).stateDir)).toHaveLength(1);
     expect(readTask(active!.run)?.prRequestedAt).toBe(requestedAt);
     expect(lifecycle('codex', 'Stop', p, env())).toBeUndefined();
     const updated = readTask(active!.run)!;
@@ -282,7 +282,7 @@ describe('finished task completion contract', () => {
       CLAUDE_CODE_SESSION_ID: 'observed',
     });
     expect(begun.code).toBe(0);
-    const task = tasks(repository(repo.root).gitDir)[0]!.task;
+    const task = tasks(repository(repo.root).stateDir)[0]!.task;
     expect(task.transcript).toBe(transcript);
     expect(task.session).toBe('observed');
   });
@@ -306,9 +306,9 @@ describe('finished task completion contract', () => {
       ),
     ).toContain('deny');
     expect(lifecycle('claude', 'Stop', { ...p, tool_input: {} }, env())).toBeUndefined();
-    const { gitDir } = repository(repo.root);
-    const active = tasks(gitDir)[0]!;
-    pruneRuns(gitDir);
+    const { stateDir } = repository(repo.root);
+    const active = tasks(stateDir)[0]!;
+    pruneRuns(stateDir);
     expect(existsSync(join(active.run.dir, 'task.json'))).toBe(true);
     expect(
       lifecycle('codex', 'Stop', { ...p, permission_mode: 'plan' }, env()),
@@ -378,7 +378,7 @@ describe('finished task completion contract', () => {
         lifecycle('codex', 'PreToolUse', { ...p, tool_input: { command } }, env()),
       ).toBeUndefined();
     // A push never creates a task, and finished pushed work ends normally.
-    expect(tasks(repository(repo.root).gitDir)).toHaveLength(0);
+    expect(tasks(repository(repo.root).stateDir)).toHaveLength(0);
     expect(lifecycle('codex', 'Stop', p, env())).toBeUndefined();
     // Writing the PR outside Tracetoon is redirected and starts the task.
     expect(
@@ -389,7 +389,7 @@ describe('finished task completion contract', () => {
         env(),
       ),
     ).toContain('make this PR with the tracetoon skill');
-    const started = tasks(repository(repo.root).gitDir);
+    const started = tasks(repository(repo.root).stateDir);
     expect(started).toHaveLength(1);
     expect(started[0]!.task.prRequestedAt).toBeTruthy();
     expect(started[0]!.task.session).toBe('missed-registration');
@@ -474,14 +474,14 @@ describe('finished task completion contract', () => {
     git(repo.root, ['checkout', '-qb', 'other']);
     const second = beginTask(repo.root, { session: 'separate' });
     expect(first.run.id).not.toBe(second.run.id);
-    expect(tasks(first.gitDir)).toHaveLength(2);
+    expect(tasks(first.stateDir)).toHaveLength(2);
     const otherWorktree = join(tempDir('tracetoon-worktree-'), 'checkout');
     expect(git(repo.root, ['worktree', 'add', '-qb', 'third', otherWorktree]).ok).toBe(
       true,
     );
     const third = beginTask(otherWorktree, { session: 'separate' });
     expect(third.gitDir).not.toBe(first.gitDir);
-    expect(tasks(third.gitDir)).toHaveLength(1);
+    expect(tasks(third.stateDir)).toHaveLength(1);
     const input = {
       cwd: dirname(repo.root),
       session_id: 'new-folder',
@@ -678,7 +678,7 @@ describe('requested PR to publication rehearsal', () => {
     git(repo.root, ['remote', 'add', 'origin', remote]);
     git(repo.root, ['push', '-q', 'origin', 'main']);
     const begun = ok(repo.root, 'task', 'begin', '--session', 'rehearsal');
-    const run = findRun(repository(repo.root).gitDir, begun.run);
+    const run = findRun(repository(repo.root).stateDir, begun.run);
     repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
     const checked = ok(
       repo.root,
@@ -752,7 +752,7 @@ describe('requested PR to publication rehearsal', () => {
     const repo = makeRepo();
     repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
     const digested = ok(repo.root, 'digest', '--offline');
-    const run = findRun(repository(repo.root).gitDir, digested.run);
+    const run = findRun(repository(repo.root).stateDir, digested.run);
     expect(readTask(run)).toBeUndefined();
     ok(repo.root, 'context', '--run', run.id, '--offline');
     writeFileSync(join(run.dir, 'body.md'), 'Adds a greeting.\n');
@@ -785,7 +785,7 @@ describe('requested PR to publication rehearsal', () => {
     git(repo.root, ['remote', 'add', 'origin', remote]);
     git(repo.root, ['push', '-q', 'origin', 'main']);
     const begun = ok(repo.root, 'task', 'begin', '--session', 'rehearsal');
-    const run = findRun(repository(repo.root).gitDir, begun.run);
+    const run = findRun(repository(repo.root).stateDir, begun.run);
     repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
     const checked = ok(
       repo.root,
@@ -965,7 +965,7 @@ describe('ordinary git and task identity', () => {
     runId: string,
     recordChecks = true,
   ) {
-    const run = findRun(repository(repo.root).gitDir, runId);
+    const run = findRun(repository(repo.root).stateDir, runId);
     if (recordChecks)
       ok(repo.root, 'task', 'complete', '--run', run.id, '--checks', 'tests');
     ok(repo.root, 'digest', '--run', run.id, '--offline');
@@ -1009,7 +1009,7 @@ describe('ordinary git and task identity', () => {
     const p = { cwd: repo.root, session_id: 'passive-publication' };
     expect(lifecycle('codex', 'SessionStart', p, env())).toBeUndefined();
     repo.commit('greet.ts', 'export const greet = () => "hello";\n', 'Add greeting');
-    expect(tasks(repository(repo.root).gitDir)).toHaveLength(0);
+    expect(tasks(repository(repo.root).stateDir)).toHaveLength(0);
     expect(
       lifecycle(
         'codex',
@@ -1018,7 +1018,7 @@ describe('ordinary git and task identity', () => {
         env(),
       ),
     ).toContain('deny');
-    const active = tasks(repository(repo.root).gitDir)[0]!;
+    const active = tasks(repository(repo.root).stateDir)[0]!;
     const run = prepared(repo, active.run.id, false);
     const log = join(dirname(config), 'passive-gh.log');
     const result = cli(repo.root, ['publish', '--run', run.id, '--draft'], {
@@ -1112,7 +1112,7 @@ describe('ordinary git and task identity', () => {
     expect(reason).toMatch(/tracetoon publish --run \S+;/);
     expect(reason).not.toMatch(/\bask\b.*approv|\bwait\b.*approv|preview/i);
     // Every intercepted write lands on one task, now marked as requested.
-    const all = tasks(repository(repo.root).gitDir);
+    const all = tasks(repository(repo.root).stateDir);
     expect(all).toHaveLength(1);
     expect(all[0]!.task.prRequestedAt).toBeTruthy();
   });

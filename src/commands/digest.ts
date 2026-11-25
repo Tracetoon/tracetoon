@@ -140,7 +140,7 @@ export function digestHash(d: TraceDigest): string {
  */
 export function storedBase(cwd: string, runId: string): string | undefined {
   try {
-    const run = findRun(repository(cwd).gitDir, runId);
+    const run = findRun(repository(cwd).stateDir, runId);
     return (
       readJson<TraceDigest>(run, 'digest.json')?.pr?.base ??
       readJson<{ base?: string }>(run, 'context.json')?.base ??
@@ -169,7 +169,7 @@ export function digestCmd(
   } catch (e) {
     throw new UserError((e as Error).message);
   }
-  const run = opts.run ? findRun(truth.gitDir, opts.run) : newRun(truth.gitDir);
+  const run = opts.run ? findRun(truth.stateDir, opts.run) : newRun(truth.stateDir);
   assertRunOwner(run, truth.toplevel, truth.head);
   if (layout) saveRunLayout(run, layout);
   if (search) saveRunGraphSearch(run, search);
@@ -324,7 +324,7 @@ export function expandCmd(
   opts: OutOpts & { run?: string },
 ): void {
   const repo = repository(cwd);
-  const run = findRun(repo.gitDir, opts.run);
+  const run = findRun(repo.stateDir, opts.run);
   assertRunOwner(run, repo.root, repo.branch);
   const full = readJson<TraceDigest>(run, 'digest-full.json');
   const refs = typeof ref === 'string' ? [ref] : ref;
@@ -348,12 +348,12 @@ export function contextCmd(
   let truth = prepared?.truth ?? prTruth(cwd, { noGh: opts.offline });
   let run;
   if (prepared) run = prepared.run;
-  else if (opts.run) run = findRun(truth.gitDir, opts.run);
+  else if (opts.run) run = findRun(truth.stateDir, opts.run);
   else {
     try {
-      run = findRun(truth.gitDir);
+      run = findRun(truth.stateDir);
     } catch {
-      run = newRun(truth.gitDir);
+      run = newRun(truth.stateDir);
     }
   }
   assertRunOwner(run, truth.toplevel, truth.head);
@@ -574,7 +574,7 @@ export function prepareCmd(cwd: string, given: DigestOpts & PlanOptions) {
   const existing = (() => {
     if (!given.run) return undefined;
     try {
-      return findRun(shared.truth.gitDir, given.run);
+      return findRun(shared.truth.stateDir, given.run);
     } catch {
       return undefined;
     }

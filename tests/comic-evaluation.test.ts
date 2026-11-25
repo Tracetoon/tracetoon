@@ -13,9 +13,9 @@ describe('local comic content evaluation', () => {
     const manifest = JSON.parse(readFileSync(file, 'utf8'));
     const pair = manifest.cases[0];
     expect(pair.baseline).not.toBe(pair.candidate);
-    const gitDir = join(repo.root, '.git');
-    const candidate = findRun(gitDir, pair.candidate);
-    expect(existsSync(join(gitDir, 'tracetoon', 'runs', 'latest'))).toBe(false);
+    const state = join(repo.root, '.git', 'tracetoon');
+    const candidate = findRun(state, pair.candidate);
+    expect(existsSync(join(state, 'runs', 'latest'))).toBe(false);
     writeFileSync(join(candidate.dir, 'comic.json'), '{"author":"keep this"}');
     await evaluateComics(repo.root, 'prepare', ['documentation-only']);
     expect(readFileSync(join(candidate.dir, 'comic.json'), 'utf8')).toContain(
@@ -33,10 +33,10 @@ describe('local comic content evaluation', () => {
     expect(html).not.toContain('production outcome');
     expect(html).not.toContain('candidate');
     for (let i = 0; i <= KEEP_RUNS; i++)
-      mkdirSync(join(gitDir, 'tracetoon', 'runs', `20990101-000000-${i}`));
-    pruneRuns(gitDir);
+      mkdirSync(join(state, 'runs', `20990101-000000-${i}`));
+    pruneRuns(state);
     expect(existsSync(candidate.dir)).toBe(true);
-    expect(existsSync(findRun(gitDir, pair.baseline).dir)).toBe(true);
+    expect(existsSync(findRun(state, pair.baseline).dir)).toBe(true);
   });
   test('retains flawed originals, static controls and distinct held-out facts', () => {
     expect(COMIC_CONTENT_CASES).toHaveLength(8);

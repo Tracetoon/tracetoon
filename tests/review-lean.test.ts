@@ -365,8 +365,8 @@ describe('lean review import', () => {
       env(),
     );
     const run = findRun(
-      repository(repo.root).gitDir,
-      tasks(repository(repo.root).gitDir)[0]!.run.id,
+      repository(repo.root).stateDir,
+      tasks(repository(repo.root).stateDir)[0]!.run.id,
     );
     ok(repo.root, 'digest', '--run', run.id, '--offline');
     ok(repo.root, 'context', '--run', run.id, '--offline');
@@ -593,8 +593,8 @@ function renderedRun() {
     env(),
   );
   const run = findRun(
-    repository(repo.root).gitDir,
-    tasks(repository(repo.root).gitDir)[0]!.run.id,
+    repository(repo.root).stateDir,
+    tasks(repository(repo.root).stateDir)[0]!.run.id,
   );
   ok(repo.root, 'digest', '--run', run.id, '--offline');
   ok(repo.root, 'context', '--run', run.id, '--offline');

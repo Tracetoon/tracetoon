@@ -31,6 +31,7 @@ describe('repository identity in one git call', () => {
     expect(repository(join(repo.root, 'deep'))).toEqual({
       root: resolve(repo.root),
       gitDir: resolve(repo.root, '.git'),
+      stateDir: resolve(repo.root, '.git', 'tracetoon'),
       branch: 'feature',
     });
   });

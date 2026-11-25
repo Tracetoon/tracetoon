@@ -17,6 +17,7 @@ import { git } from '../util/exec.ts';
 import { readSubmittedFile, repoPath } from '../util/repoFiles.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
 import { findRun, newRun, type Run } from '../run.ts';
+import { ensureStateDir, stateDir } from '../util/stateDir.ts';
 import { defaultBase, gitIdentity } from '../git/pr.ts';
 import { codedError } from '../commands/output.ts';
 
@@ -49,12 +50,19 @@ export interface Task {
 export function repository(cwd: string): {
   root: string;
   gitDir: string;
+  /** Where runs, the task lock and caches live (see `stateDir`). */
+  stateDir: string;
   branch: string;
 } {
   // One process; an unborn branch still reports "HEAD" as before.
   const id = gitIdentity(cwd);
   if (!id) throw codedError('NOT_A_GIT_REPO', 'Not inside a git repository.');
-  return { root: id.toplevel, gitDir: id.gitDir, branch: id.branch };
+  return {
+    root: id.toplevel,
+    gitDir: id.gitDir,
+    stateDir: stateDir(id.toplevel, id.gitDir),
+    branch: id.branch,
+  };
 }
 
 /** Includes committed progress and all public working changes, but no private trails. */
@@ -134,8 +142,8 @@ export function saveTask(run: Run, task: Task): Task {
   return task;
 }
 
-export function tasks(gitDir: string): { run: Run; task: Task }[] {
-  const dir = join(gitDir, 'tracetoon', 'runs');
+export function tasks(state: string): { run: Run; task: Task }[] {
+  const dir = join(state, 'runs');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter(
@@ -164,10 +172,9 @@ const TARGET_BOUND = ['approval.json', 'submission.json', 'final-body.md'];
  * older than 30 s is from a process that died and is taken over; after 5 s of
  * waiting the action runs anyway rather than holding up the agent.
  */
-function withTaskLock<T>(gitDir: string, action: () => T): T {
-  const dir = join(gitDir, 'tracetoon');
+function withTaskLock<T>(state: string, action: () => T): T {
+  const dir = ensureStateDir(state);
   const path = join(dir, 'task.lock');
-  mkdirSync(dir, { recursive: true });
   const pause = new Int32Array(new SharedArrayBuffer(4));
   const deadline = Date.now() + 5_000;
   // The lock names its holder, so a holder that outlived a takeover never
@@ -206,7 +213,7 @@ export function beginTask(
   cwd: string,
   options: Parameters<typeof beginTaskLocked>[1] = {},
 ) {
-  return withTaskLock(repository(cwd).gitDir, () => beginTaskLocked(cwd, options));
+  return withTaskLock(repository(cwd).stateDir, () => beginTaskLocked(cwd, options));
 }
 
 function beginTaskLocked(
@@ -223,10 +230,10 @@ function beginTaskLocked(
   const repo = repository(cwd);
   const existing = options.run
     ? {
-        run: findRun(repo.gitDir, options.run),
-        task: readTask(findRun(repo.gitDir, options.run)),
+        run: findRun(repo.stateDir, options.run),
+        task: readTask(findRun(repo.stateDir, options.run)),
       }
-    : tasks(repo.gitDir).find(
+    : tasks(repo.stateDir).find(
         (t) => t.task.branch === repo.branch && t.task.state !== 'published',
       );
   if (existing?.task) {
@@ -253,7 +260,7 @@ function beginTaskLocked(
     saveTask(existing.run, existing.task);
     return { ...repo, run: existing.run, task: existing.task };
   }
-  const run = existing?.run ?? newRun(repo.gitDir);
+  const run = existing?.run ?? newRun(repo.stateDir);
   const task: Task = {
     v: 1,
     run: run.id,
@@ -271,8 +278,8 @@ function beginTaskLocked(
   return { ...repo, run, task };
 }
 
-export function taskSummary(gitDir: string) {
-  return tasks(gitDir).map(({ run, task }) => ({
+export function taskSummary(state: string) {
+  return tasks(state).map(({ run, task }) => ({
     run: run.id,
     state: task.state,
     branch: task.branch,
