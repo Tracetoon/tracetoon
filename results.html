@@ -3,22 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tracetoon Results</title>
-<meta name="description" content="Every Tracetoon benchmark in one place: Tracetoon against your agent writing the PR alone (72–9 and 111–19 on 61 real PRs, 28–73% lower cost), the evidence graph against Tracetoon's original workflow, and the first 5-PR study.">
-<meta property="og:title" content="Tracetoon results: receipts for the receipts">
-<meta property="og:description" content="Three blind-judged benchmarks on real pull requests. Judges picked the Tracetoon PR over the same agent writing alone 72–9 and 111–19, at 28–73% lower cost.">
-<meta property="og:image" content="https://tracetoon.ai/img/og-results.jpg">
-<meta property="og:url" content="https://tracetoon.ai/results.html">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://tracetoon.ai/img/og-results.jpg">
+<title>Tracetoon benchmark results</title>
+<meta http-equiv="refresh" content="0; url=prbench.html#results">
+<link rel="canonical" href="https://tracetoon.ai/prbench.html#results">
+<meta name="robots" content="noindex">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
-<meta name="theme-color" content="#fffdf6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14130f" media="(prefers-color-scheme: dark)">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -123,9 +113,9 @@
   footer { padding:1.5rem 0 2.5rem; color:var(--muted); font-size:.88rem; }
   footer .wrap { display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; }
 </style>
+<script>location.replace('prbench.html#results');</script>
 </head>
 <body>
-
 <header class="site-top">
   <div class="site-wrap">
     <a class="site-brand" href="./" aria-label="Tracetoon home">
@@ -136,121 +126,13 @@
       <a href="./#install">Install</a>
       <a href="./#why" class="opt">Why</a>
       <a href="./#talk" class="opt">Talk</a>
-      <a href="prbench.html" class="opt">Benchmark</a>
-      <a href="results.html" aria-current="page">Results</a>
+      <a href="prbench.html">Benchmark</a>
       <a href="https://github.com/Tracetoon/tracetoon" class="ext">GitHub<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg><span class="site-sr"> (leaves this site)</span></a>
     </nav>
   </div>
 </header>
-
-<main>
-  <section class="hero">
-    <div class="wrap">
-      <div>
-        <span class="kicker">The results</span>
-        <h1 class="display">Receipts for <em>our receipts.</em></h1>
-        <p class="lede">Tracetoon says its pull requests are better and cheaper, so we checked. <strong>Three blind-judged benchmarks on real PRs</strong>, each one published with its method, its data and what isn't perfect yet. Newest first.</p>
-        <p class="lede" style="font-size:1rem">Every run uses <a href="prbench.html">prbench</a>: real pull requests with their original agent session logs, expert-reviewed fact sheets, and two judges per provider who read every pair in both orders.</p>
-      </div>
-      <img class="comic-img" src="img/comic-results.webp" width="1400" height="934" fetchpriority="high"
-           alt="Two-panel comic. Trust me, it's great: a developer proudly holds up a blank pull request while three grey robot judges fold their arms and squint, one through a magnifying glass. Show the receipts: the developer unrolls a long receipt that spills across the stage while the cheering judges hold up score cards reading 72-9, 111-19 and 79-38, next to a gold trophy.">
-    </div>
-  </section>
-
-  <section class="highlights" aria-labelledby="hl-title">
-    <div class="wrap">
-      <h2 class="display" id="hl-title">The highlights</h2>
-      <ul class="hl">
-        <li><b><span class="nw">72–9</span> · <span class="nw">111–19</span></b><span>Judges' picks for the Tracetoon PR over the same agent writing it alone (Opus 5.5 · Sol 6.1)</span><small>61 real PRs · <a href="vs-native.html">Tracetoon vs your agent alone</a></small></li>
-        <li><b>−50%</b><span>Judge-flagged factual errors per PR on Opus 5.5: 0.16 with Tracetoon vs 0.32 alone</span><small><a href="vs-native.html#quality">Tracetoon vs your agent alone</a></small></li>
-        <li><b><span class="nw">−28%</span> · <span class="nw">−73%</span></b><span>Cost per PR in a session carrying 500k tokens (Opus 5.5 · Sol 6.1): $0.93 with Tracetoon</span><small><a href="vs-native.html#cost">Tracetoon vs your agent alone</a></small></li>
-        <li><b><span class="nw">79–38</span> · <span class="nw">60–21</span></b><span>Picks for the evidence graph over Tracetoon's original multi-agent workflow (Codex · Claude Code)</span><small>61 real PRs · <a href="evidence-graph-61.html">Evidence graph results</a></small></li>
-        <li><b>82% <small style="font-size:.6em;color:inherit">vs</small> 72%</b><span>Key facts from the expert fact sheet conveyed on Codex, with and without the graph</span><small><a href="evidence-graph-61.html">Evidence graph results</a></small></li>
-        <li><b><span class="nw">18–1</span> · <span class="nw">12–1</span></b><span>Where it started: the first evidence graph beat the full workflow on Claude and Codex</span><small>5 PRs × 5 · <a href="evidence-graph.html">The first study</a></small></li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="reports" aria-labelledby="rep-title">
-    <div class="wrap">
-      <h2 class="display" id="rep-title">The full reports</h2>
-      <p>Each report has every chart, the method, the caveats and the raw numbers. The first one answers the question most people ask: is it better than just asking my agent?</p>
-
-      <article class="report">
-        <div class="art"><a href="vs-native.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-vs-native.webp" width="1400" height="934" loading="lazy" alt=""></a></div>
-        <div>
-          <p class="tag"><span class="new">Newest</span> November 23, 2026 · 61 real PRs · Opus 5.5 · Sol 6.1</p>
-          <h3><a href="vs-native.html">Tracetoon vs your agent alone</a></h3>
-          <p>Most people ask the agent they're already coding with to open the PR. So we compared exactly that: Claude Code on Opus 5.5 and Codex on Sol 6.1 writing the PR on their own, against the same agent in the same session using Tracetoon. Each PR was written 3 times by each system and judged blind.</p>
-          <ul class="figs">
-            <li><b><span class="nw">72–9</span> · <span class="nw">111–19</span></b>judges' picks, Opus · Sol</li>
-            <li><b>52.8 → 68.3</b>quality score on Opus (Sol: 64.1 → 78.1)</li>
-            <li><b><span class="nw">$1.29</span> · <span class="nw">$3.50</span> → <span class="nw">$0.93</span></b>cost per PR in a long session</li>
-          </ul>
-          <a class="go" href="vs-native.html">Read the full report →</a>
-        </div>
-      </article>
-
-      <article class="report">
-        <div class="art"><a href="evidence-graph-61.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-graph-61.webp" width="1400" height="934" loading="lazy" alt=""></a></div>
-        <div>
-          <p class="tag">November 16, 2026 · 61 real PRs · Codex · Claude Code</p>
-          <h3><a href="evidence-graph-61.html">The evidence graph on 61 real PRs</a></h3>
-          <p>Tracetoon against its own earlier self: the evidence graph and a single writer, against the original multi-agent workflow that re-read the logs at every step. Run on 61 real PRs from 12 repositories, with fact sheets reviewed by experts.</p>
-          <ul class="figs">
-            <li><b><span class="nw">79–38</span> · <span class="nw">60–21</span></b>picks for the graph, Codex · Claude Code</li>
-            <li><b><span class="nw">−70%</span> · <span class="nw">−43%</span></b>cost per PR</li>
-            <li><b>82% vs 72%</b>key facts conveyed on Codex</li>
-          </ul>
-          <p class="caveat">Not perfect yet: on Codex the graph drafts carried more confirmed factual errors (0.33 vs 0.16 per PR), and on Claude Code they conveyed slightly fewer key facts (73% vs 77%). The report lists every criterion.</p>
-          <a class="go" href="evidence-graph-61.html">Read the full report →</a>
-        </div>
-      </article>
-
-      <article class="report">
-        <div class="art"><a href="evidence-graph.html" tabindex="-1" aria-hidden="true"><img class="comic-img" src="img/comic-cost.webp" width="1400" height="837" loading="lazy" alt=""></a></div>
-        <div>
-          <p class="tag">November 12, 2026 · 5 real PRs × 5 runs · Claude · Codex</p>
-          <h3><a href="evidence-graph.html">Where it started: the first evidence graph</a></h3>
-          <p>The first test of the idea. We put a deterministic evidence graph, built in the embedded Relate database, between the session logs and one mid-size writing model, and judged it against Tracetoon's full multi-agent workflow. It was a small test; the 61-PR report above repeats the comparison at scale.</p>
-          <ul class="figs">
-            <li><b><span class="nw">18–1</span> · <span class="nw">12–1</span></b>picks for the graph, Claude · Codex</li>
-            <li><b><span class="nw">59%</span> · <span class="nw">65%</span></b>of the workflow's token cost</li>
-          </ul>
-          <a class="go" href="evidence-graph.html">Read the full report →</a>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section class="bench">
-    <div class="wrap">
-      <div>
-        <h2 class="display">How we test</h2>
-        <p>prbench replays real pull requests from their recorded agent sessions, has each system write the description several times, and asks judges from two providers to compare them blind, in both orders. A pick only counts when both judges agree.</p>
-        <p><a href="prbench.html">What prbench measures, and how to run it yourself →</a></p>
-      </div>
-      <ul>
-        <li>61 real PRs from 12 repositories, each with its original session logs</li>
-        <li>Fact sheets checked by expert reviewers, so "key facts conveyed" means something</li>
-        <li>Costs priced from the model requests in the recorded runs</li>
-        <li>Every report says what isn't perfect yet</li>
-      </ul>
-    </div>
-  </section>
+<main class="wrap" style="padding-top:2rem;padding-bottom:3rem">
+  <p>The results now live on the benchmark page: <a href="prbench.html#results">Tracetoon benchmark results →</a></p>
 </main>
-
-<footer>
-  <div class="wrap">
-    <span>Tracetoon is open source under the Apache-2.0 license.</span>
-    <a href="https://github.com/Tracetoon/tracetoon">github.com/Tracetoon/tracetoon</a>
-    <a href="./">Home</a>
-    <a href="vs-native.html">Tracetoon vs your agent alone</a>
-    <a href="evidence-graph-61.html">Evidence graph results</a>
-    <a href="evidence-graph.html">The first evidence graph study</a>
-    <a href="prbench.html">prbench benchmark</a>
-    <a href="llms.txt">llms.txt (for agents)</a>
-  </div>
-</footer>
 </body>
 </html>

@@ -10,11 +10,11 @@ This branch is the website at https://tracetoon.ai. The code and docs live on `m
 ## Pages
 
 - `index.html`: the landing page. Plain HTML with inline CSS and one small inline script for the install tabs and copy buttons. The page still works with JavaScript off. No build step. Its headline figures come from `vs-native.html`, and its graph figures (82% vs 72%, the method tables) from `evidence-graph-61.html`.
-- `results.html`: the results hub, linked as "Results" from every page's top bar. It lists every report newest first, with a comic, a short summary and the headline figures of each. When you publish a new report, add a card at the top and move the "Newest" tag.
+- `results.html`: a redirect to `prbench.html#results`, kept so older links (the README on `main`, the site kit's `index.md`) still land on the results.
 - `vs-native.html`: Tracetoon vs your agent alone (61 real PRs, Opus 5.5 and Sol 6.1), the flagship report.
 - `evidence-graph-61.html`: the evidence graph vs Tracetoon's original workflow on 61 real PRs.
 - `evidence-graph.html`: the first, 5-PR evidence graph study, kept as an archive. Mermaid loads from jsDelivr.
-- `prbench.html`: what prbench (the benchmark behind the results) does, the golden-run table and how to run it. Plain HTML with inline CSS and SVG, one small script for the copy buttons. Its numbers come from `evidence-graph-61.html`; change both together.
+- `prbench.html`: the Benchmark page, linked as "Benchmark" from every page's top bar. It explains prbench, then `#results` lists every report newest first (a comic, a short summary and the headline figures of each, with all three runs' tables in a "side by side" panel), then how to run it and what it costs. When you publish a new report, add a card at the top of `#results` and move the "Newest" tag.
 
 The three report pages are exports of the articles with the site top bar and an "All results" link added. Every page shares the same top bar CSS: content grows to 1600px (1840px and 2500px with larger type on very wide screens) and running text stays near 70 characters a line.
 
@@ -37,14 +37,14 @@ GitHub Pages can't answer `Accept: text/markdown`, so agents find the markdown t
 2. Change the text or HTML.
 3. Commit directly to `gh-pages`. GitHub rebuilds the site in about a minute; check Actions > "pages build and deployment".
 
-A figure on the landing page or `results.html` must match the report it comes from. If you change one, change all of them: `index.html`, `results.html`, the report page, and the README on `main` (its headline block is generated from `RESULTS` in `scripts/agent-surfaces.ts`).
+A figure on the landing page or `prbench.html` must match the report it comes from. If you change one, change all of them: `index.html`, `prbench.html`, the report page, and the README on `main` (its headline block is generated from `RESULTS` in `scripts/agent-surfaces.ts`).
 
 ## Images
 
 - `img/hero.webp`: the "No more PR slop" top image (from `docs/tracetoon-hero.png` on `main`).
-- `img/comic-*.webp`: one comic per landing section (quality, graph, embedded, cost, workflow, pr17), plus one per results page: `comic-results` (the hub), `comic-vs-native`, `comic-graph-61`, and `comic-cost` (also the 5-PR report). To swap one, keep the file name, or update the `src`, `width`, `height` and `alt` in `index.html`. Use WebP at about 1400 px wide and under 250 KB: `cwebp -q 80 -resize 1400 0 in.png -o img/comic-x.webp`.
+- `img/comic-*.webp`: one comic per landing section (quality, graph, embedded, cost, workflow, pr17), plus one per results page: `comic-results` (the Benchmark page's results), `comic-vs-native`, `comic-graph-61`, and `comic-cost` (also the 5-PR report). To swap one, keep the file name, or update the `src`, `width`, `height` and `alt` in `index.html`. Use WebP at about 1400 px wide and under 250 KB: `cwebp -q 80 -resize 1400 0 in.png -o img/comic-x.webp`.
 - `img/og-image.png`: the 1200×630 card shown when the landing page is shared, with the Tracetoon logo on a comic panel.
-- `img/og-*.jpg`: the share cards for `results.html` and each report (JPEG, because some link previews don't read WebP).
+- `img/og-*.jpg`: the share cards for `prbench.html` (`og-results.jpg`) and each report (JPEG, because some link previews don't read WebP).
 - `img/tracetoon-wordmark.svg`: the "Tracetoon" wordmark in the top bar.
 - `favicon.svg`: the logo icon (a POW burst with a checkmark), also used in the top bar. Its impact lines turn cream in dark mode.
 - `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `site.webmanifest`: the browser tab, iOS home screen and app install icons.
