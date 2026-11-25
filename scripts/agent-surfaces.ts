@@ -57,7 +57,7 @@ export function pitch(): string {
 export const RESULTS = {
   url: 'https://tracetoon.ai/vs-native.html',
   /** Every published report, newest first. */
-  all: 'https://tracetoon.ai/results.html',
+  all: 'https://tracetoon.ai/prbench.html#results',
   /** One sentence for long descriptions. */
   sentence:
     "On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred Tracetoon's PR descriptions to the same agent writing the PR alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), with half the factual errors on Opus, at 28% and 73% lower cost per PR in a long session.",
