@@ -439,6 +439,9 @@ describe('evidence graph', () => {
         // (claude -p on Claude Code, codex exec on Codex); no handback.
         expect(packet).toContain(`tracetoon review run --all --run ${run}`);
         expect(packet).not.toContain('PACKETS READY');
+        // The review is explained where the drafter reads it, and a denial stops with a signal.
+        expect(packet).toContain('whose only input is the review packet');
+        expect(packet).toContain('REVIEW BLOCKED: <the denied command>');
         if (host === 'codex') expect(prepared.json.next).toContain('wait_agent ONCE');
         else expect(prepared.json.next).not.toContain('SendMessage');
       } finally {
@@ -536,6 +539,8 @@ describe('evidence graph', () => {
         const coordinator = coordinatorNext(paths, host, 'inherit', undefined, true, 'low', true);
         expect(coordinator).toContain('If its reply has a `COMIC SETUP:` line, tell the user');
         expect(coordinator).toContain('tracetoon config set comic off');
+        expect(coordinator).toContain('REVIEW BLOCKED: <command>');
+        expect(coordinator).toContain('only on their yes run it yourself');
         expect(coordinator).not.toContain('tracetoon comic packet');
       });
       test(`${host}: no comic expected: no comic text`, () => {

@@ -92,9 +92,15 @@ plus a `tracetoon` CLI.
 | `tracetoon publish`                         | Pushes the branch and creates or updates the PR                                    |
 | `tracetoon comic art`                       | Sends the comic prompt to an image service; needs the user's consent (`--consent`) |
 | `tracetoon images --approve <route> --test` | Approves an image route and makes one test image (may cost money)                  |
-| `tracetoon review run`                      | Runs a reviewer through the Codex CLI (sends the review packet; may cost money)    |
 | `tracetoon update`                          | Downloads and installs a release; only when the user asks                          |
 | `tracetoon setup`, `tracetoon hook install` | Write the skill and hooks into the agents' own folders                             |
+
+`tracetoon review run` starts fresh reviewers on the agent you already use: a
+toolless `claude -p` on Claude Code, `codex exec` on Codex. The redacted review
+packet (draft description, evidence brief, selected diff) is its only input,
+and it may use tokens on your plan. It is part of opening a PR with Tracetoon;
+if your host's permission system denies it, stop and ask the user instead of
+retrying.
 
 Everything else reads local logs and writes into the run folder.
 
