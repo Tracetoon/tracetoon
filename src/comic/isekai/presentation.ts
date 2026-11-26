@@ -32,7 +32,7 @@ export function presentationOf(archetype: string | undefined): Presentation | un
 }
 
 /** Species words that turn a human-presenting character into a creature in the image. */
-export const SPECIES_WORDS = /\b(?:[a-z]+folk|lizard(?:wo)?m[ae]n|beast(?:wo)?m[ae]n|cat(?:wo)?m[ae]n|dog(?:wo)?m[ae]n|wolf(?:wo)?m[ae]n|kemonomimi|anthro(?:pomorphic)?|furry)\b/i;
+export const SPECIES_WORDS = /\b(?:[a-z]+folk|lizard(?:wo)?m[ae]n|beast(?:wo)?m[ae]n|cat(?:wo)?m[ae]n|dog(?:wo)?m[ae]n|wolf(?:wo)?m[ae]n|kemonomimi|anthro(?:pomorphic)?)\b/i;
 
 /** The words the image prompt adds after a human-based character's description. */
 export function bodyNote(archetype: string | undefined): string | undefined {

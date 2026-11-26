@@ -96,7 +96,8 @@
    "https://myanimelist.net/character/193229",
    "https://myanimelist.net/character/193229/Cayna/pics",
    "https://cdn.myanimelist.net/images/characters/7/433941.jpg",
-   "https://cdn.myanimelist.net/images/characters/10/450594.jpg"
+   "https://cdn.myanimelist.net/images/characters/10/450594.jpg",
+   "owner research 2026-11-26: official character page (leadale.net): one family member is a dwarf; children need not share the parent's body"
   ]
  },
  "N07": {
@@ -267,7 +268,7 @@
  },
  "P05": {
   "base": "human",
-  "presentation": "Human face and body; cat ears on top of the head and a slender tail.",
+  "presentation": "Human face and body; two upright triangular cat ears on the crown and one long, thin, tapering cat tail behind the hips.",
   "notOnPage": [
    "cat face, muzzle or whiskers",
    "fur on the body",
@@ -275,8 +276,8 @@
    "extra human ears at the sides",
    "panther or tiger head"
   ],
-  "look": "Design recipe: a lean, compact build with dark hair, short or long; triangular cat ears on top of the head and a thin, expressive tail. Light leather or a tunic, and boots. Optional: daggers or a sword, rather than claws.",
-  "confidence": "medium",
+  "look": "Design recipe: a lean, compact build; two upright triangular cat ears on the crown and one long, thin, expressive tail. Light leather or a tunic, and boots. Optional: daggers or a sword, rather than claws.",
+  "confidence": "high",
   "sources": [
    "https://en.wikipedia.org/wiki/How_Not_to_Summon_a_Demon_Lord",
    "https://myanimelist.net/character/140148/Rem_Galleu/pics",
@@ -285,20 +286,21 @@
    "https://myanimelist.net/character/156422/Fran",
    "https://myanimelist.net/character/156422/Fran/pics",
    "https://cdn.myanimelist.net/images/characters/15/343670.jpg",
-   "https://cdn.myanimelist.net/images/characters/10/490135.jpg"
+   "https://cdn.myanimelist.net/images/characters/10/490135.jpg",
+   "owner research 2026-11-26: official anime character art (tenken-anime.com): tail curves down beside the leg"
   ]
  },
  "P06": {
   "base": "human",
-  "presentation": "Human face and body; dog or wolf ears on top of the head, either large and upright or soft and floppy, and usually a tail.",
+  "presentation": "Human face and body; canine ears, either large upright pointed ears on the crown or soft floppy ears at the upper sides of the head, and one furry tail behind the hips.",
   "notOnPage": [
    "dog or wolf muzzle",
    "fur covering the body",
    "paw hands",
    "extra human ears at the sides of the head"
   ],
-  "look": "Design recipe: dog or wolf ears on top of the head, upright or soft and floppy, and a tail; posture and motion carry the recognition. Build, hair and gear are the author's choice.",
-  "confidence": "medium",
+  "look": "Design recipe: canine ears, large and upright on the crown or soft and floppy at the upper sides of the head, and one furry tail; posture and motion carry the recognition. Build, hair and gear are the author's choice.",
+  "confidence": "high",
   "sources": [
    "https://myanimelist.net/character/194185/Delta",
    "https://myanimelist.net/character/194185/Delta/pics",
@@ -306,43 +308,48 @@
    "https://cdn.myanimelist.net/images/characters/15/563724.jpg",
    "https://myanimelist.net/character/146626/Pochi/pics",
    "https://cdn.myanimelist.net/images/characters/4/343189.jpg",
-   "https://cdn.myanimelist.net/images/characters/13/383415.jpg"
+   "https://cdn.myanimelist.net/images/characters/13/383415.jpg",
+   "owner research 2026-11-26: official anime character art (shadow-garden.jp, deathma-anime.com): a furry tail in both the upright-eared and floppy-eared variations"
   ]
  },
  "P07": {
   "base": "dual",
-  "presentation": "Usually shown in human form: human face and body with large furry wolf ears on top of the head. The other form is a large pale wolf.",
+  "presentation": "Usually shown in human form: human face and body with large upright furry wolf ears on the crown, small pointed ears at the sides of the head, and small fang tips when the mouth opens. The other form is a large wolf with a full wolf head.",
   "notOnPage": [
    "wolf muzzle on the human form",
    "fur on the human body",
    "grey or brown wolf",
-   "werewolf hybrid form"
+   "werewolf hybrid form",
+   "a tail on the human form as a required trait"
   ],
-  "look": "Design recipe: confident, with long pale hair and large furry wolf ears in human form, and a large pale wolf in the other form. Keep one recognisable accessory in both forms.",
-  "confidence": "medium",
+  "look": "Design recipe: confident, with large upright furry wolf ears on the crown plus small pointed ears at the sides of the head in human form; small fang tips show in a grin. The other form is a large pale wolf. Keep one recognisable accessory in both forms.",
+  "confidence": "high",
   "sources": [
    "https://myanimelist.net/character/199586/Fenrys",
    "https://myanimelist.net/character/199586/Fenrys/pics",
    "https://cdn.myanimelist.net/images/characters/5/449147.jpg",
-   "https://cdn.myanimelist.net/images/characters/5/535545.jpg"
+   "https://cdn.myanimelist.net/images/characters/5/535545.jpg",
+   "owner research 2026-11-26: official character page with human and wolf anime stills: human form is the default; both ear pairs; no clear tail in human form"
   ]
  },
  "P08": {
   "base": "human",
-  "presentation": "Human face and body; long upright rabbit ears on top of the head.",
+  "presentation": "Human face and body; two very long rabbit ears on the crown that stand, bend or droop with mood, and a small round fluffy tail at the lower back.",
   "notOnPage": [
    "rabbit face or buck teeth",
    "fur on the body",
    "rabbit feet",
    "extra human ears at the sides",
-   "gauntlets as the main weapon"
+   "gauntlets as the main weapon",
+   "long cat or dog tail"
   ],
   "look": "Design recipe: long upright rabbit ears, a springy posture and a giant hammer that visibly outweighs expectations. Clothing is the author's choice.",
   "confidence": "high",
   "sources": [
    "https://arifureta.com/character",
    "https://arifureta.com/wp3/wp-content/themes/arifure3/img/character/mc03.png",
-   "https://en.wikipedia.org/wiki/Arifureta:_From_Commonplace_to_World%27s_Strongest"
+   "https://en.wikipedia.org/wiki/Arifureta:_From_Commonplace_to_World%27s_Strongest",
+   "owner research 2026-11-26: anime rear-view screenshot (fan-hosted): a compact round tail, hidden in front views"
   ]
  },
  "P09": {
@@ -384,7 +391,7 @@
  },
  "P11": {
   "base": "human",
-  "presentation": "Human face and body with a horn rising from the centre of the forehead.",
+  "presentation": "Human face and body with ordinary human-tone skin and a single dark, tapered horn rising from the centre of the forehead.",
   "notOnPage": [
    "monstrous ogre face",
    "tusks",
@@ -392,29 +399,34 @@
    "hulking giant body"
   ],
   "look": "Design recipe: a horn at the centre of the forehead and long hair, often in a high ponytail. A business suit or fitted uniform over a strong, curvy frame creates the secretary-and-enforcer contradiction.",
-  "confidence": "medium",
+  "confidence": "high",
   "sources": [
    "https://mywaifulist.moe/waifu/shion-that-time-i-got-reincarnated-as-a-slime",
-   "https://myanimelist.net/character/131937"
+   "https://myanimelist.net/character/131937",
+   "owner research 2026-11-26: official character profile and art (ten-sura.com): human-tone skin in the usual form"
   ]
  },
  "P12": {
   "base": "dual",
-  "presentation": "Usually shown in human form: human face and body, often with two horns sweeping back from the sides of the head and sometimes a reptilian tail. The other form is a huge scaled dragon.",
+  "presentation": "Usually shown in human form: human face and body with smooth human skin, short pointed ears at the sides of the head and elongated pupils; no horns, scales or tail in human form. The other form is a huge scaled dragon.",
   "notOnPage": [
    "dragon head or snout on the human form",
    "scales covering the face or body in human form",
    "wings on the human form",
-   "reptile skin"
+   "reptile skin",
+   "horns on the human form",
+   "a tail on the human form",
+   "long elf ears sticking out sideways"
   ],
-  "look": "Design recipe: a human form, sometimes with two horns sweeping backward and a reptilian tail, in a kimono or everyday clothes. The huge dragon form's scale colour repeats the human form's hair colour.",
-  "confidence": "medium",
+  "look": "Design recipe: a human form with short pointed ears and elongated pupils, in a kimono or everyday clothes; no horns, scales or tail until the change into a huge dragon, whose scale colour repeats the human form's hair colour.",
+  "confidence": "high",
   "sources": [
    "https://mywaifulist.moe/waifu/tio-klarus-arifureta-from-commonplace-to-world-s-strongest",
    "https://www.anisearch.com/character/63406,tio-klarus",
    "https://en.wikipedia.org/wiki/List_of_Arifureta_characters",
    "https://mywaifulist.moe/waifu/flatorte-i-ve-been-killing-slimes-for-300-years-and-maxed-out-my-level",
-   "https://mywaifulist.moe/waifu/laika"
+   "https://mywaifulist.moe/waifu/laika",
+   "owner research 2026-11-26: official anime screenshots and art (Arifureta season 3 site): short pointed ears, no horns or scales in human form"
   ]
  },
  "P13": {
@@ -436,19 +448,21 @@
  },
  "P14": {
   "base": "human",
-  "presentation": "Usually fully human, with the demon traits hidden by magic. When revealed: small horns on the head, bat-like wings on the back and a thin tail.",
+  "presentation": "Fully human while a magic hair ornament disguises her: human skin and ordinary rounded ears, with no horns, wings or tail showing. Revealed, she has horns, wings on the back and a tail.",
   "notOnPage": [
    "demon face",
    "red or dark skin",
    "goat legs",
-   "horns or wings while disguised"
+   "horns or wings while disguised",
+   "small or decorative horns, wings or tail while disguised"
   ],
-  "look": "Design recipe: a fully human look in practical travel clothes that keep one expensive royal detail; small horns, bat-like wings and a thin tail appear only when revealed. Give her a fist-fighter stance rather than a staff or a seductive costume.",
-  "confidence": "medium",
+  "look": "Design recipe: a fully human look, kept by a magic hair ornament, in practical travel clothes that keep one expensive royal detail; horns, wings and a tail appear only when the disguise drops. A fist-fighter stance rather than a staff or a seductive costume.",
+  "confidence": "high",
   "sources": [
    "https://mywaifulist.moe/waifu/sera-black-summoner",
    "https://anihk.com/en/character/sera-black-summoner",
-   "https://en.wikipedia.org/wiki/Black_Summoner"
+   "https://en.wikipedia.org/wiki/Black_Summoner",
+   "owner research 2026-11-26: anime character description (Dengeki Online) and author chapter 38: horns, wings and tail concealed by the hair ornament"
   ]
  },
  "P15": {
@@ -553,31 +567,34 @@
  },
  "P31": {
   "base": "human",
-  "presentation": "Human face and body, short and broad, with a beard and ordinary human ears and nose.",
+  "presentation": "Human face and body, short and stocky (head at a tall companion's chest), with a broad torso, short legs, a full beard tapering onto the chest and a thick moustache.",
   "notOnPage": [
    "animal features",
    "giant size",
    "monstrous face"
   ],
-  "look": "Design recipe: short, broad and stout, with a thick beard or cropped hair. A helmet, armor and a shield even though he fights with magic: the warrior gear on a mage is the joke. Gender does not determine whether the character has facial hair.",
-  "confidence": "low",
+  "look": "Design recipe: short and stocky, with a broad torso, short legs and a full beard with a thick moustache that stays visible under a helmet. A helmet, armor and a shield even though he fights with magic: the warrior gear on a mage is the joke.",
+  "confidence": "high",
   "sources": [
-   "https://en.wikipedia.org/wiki/Handyman_Saitou_in_Another_World"
+   "https://en.wikipedia.org/wiki/Handyman_Saitou_in_Another_World",
+   "owner research 2026-11-26: official group screenshot and model sheet (saitou-anime.com)"
   ]
  },
  "P33": {
   "base": "human",
-  "presentation": "Human face and body; the fairy's wings and tiny size are unconfirmed, so add them only as a deliberate choice.",
+  "presentation": "A tiny, doll-sized human-shaped figure, about as long as a hand and forearm, with rounded human ears and four translucent, veined wings on the back: an upper pair angled up and a lower pair angled down.",
   "notOnPage": [
-   "insect or butterfly wings (unless chosen deliberately)",
-   "palm-sized body (unless chosen deliberately)"
+   "pointed elf ears",
+   "butterfly wings",
+   "a child-sized or full-sized body"
   ],
-  "look": "Design recipe: a healer in a cleric's outfit, with practical healing tools. Size, wings and hair are the author's choice.",
-  "confidence": "low",
+  "look": "Design recipe: a doll-sized healer, about hand-to-forearm long, hovering on four translucent veined wings, in a cleric's outfit with practical healing tools. Hair is the author's choice.",
+  "confidence": "high",
   "sources": [
    "https://en.wikipedia.org/wiki/Handyman_Saitou_in_Another_World",
    "https://www.siliconera.com/handyman-saitou-in-another-world-9-focuses-on-lafanpan/",
-   "https://beneaththetangles.com/2023/01/08/first-impression-handyman-saitou-in-another-world/"
+   "https://beneaththetangles.com/2023/01/08/first-impression-handyman-saitou-in-another-world/",
+   "owner research 2026-11-26: official model sheet and shared frame (saitou-anime.com): four wings, rounded ears, doll-sized"
   ]
  },
  "P34": {
@@ -599,21 +616,22 @@
  },
  "P35": {
   "base": "dual",
-  "presentation": "Two forms. Bird form: a huge, round, flightless owl-like bird with soft plumage and a single upright feather on the head. Human form: human face and body with a pair of feathered wings on the back.",
+  "presentation": "Two forms. Bird form: a huge, almost spherical, fluffy bird with a small round head, a short beak, wings at the sides, bird legs, a spray of tail feathers and long thin feather plumes on the crown. Human form: human face and body with feathered wings high on the back.",
   "notOnPage": [
    "bird head or beak on the human form",
    "feathered skin or talons on the human form",
    "flying bird pose for the bird form (it runs, it does not fly)",
-   "sleek raptor or chicken anatomy instead of a round owl-like body"
+   "sleek raptor or chicken anatomy instead of a round fluffy body"
   ],
-  "look": "Design recipe: a huge, round, flightless bird with one upright feather on the head, and a human form with feathered wings on the back and an upright hair tuft or feather clip echoing that feather. Optional: an enormous appetite, or a carriage she pulls in bird form.",
-  "confidence": "medium",
+  "look": "Design recipe: in bird form, a huge round fluffy flightless bird with long thin feather plumes on the crown, used as a mount or pulling a cart; in human form, used in conversation and social scenes, feathered wings high on the back and an upright hair tuft echoing the plumes. Optional: an enormous appetite.",
+  "confidence": "high",
   "sources": [
    "https://en.wikipedia.org/wiki/List_of_The_Rising_of_the_Shield_Hero_characters",
    "https://www.cbr.com/shield-hero-filolial-race-what-to-know/",
    "https://quotetheanime.com/rising-of-the-shield-hero/filo-wiki/",
    "https://www.goodsmile.com/en/product/7055",
-   "https://myanimelist.net/character/112909/Filo"
+   "https://myanimelist.net/character/112909/Filo",
+   "owner research 2026-11-26: official bird-form screenshot and human-form art (shieldhero-anime.jp); form follows the scene"
   ]
  },
  "P36": {
@@ -659,25 +677,27 @@
  },
  "P38": {
   "base": "creature",
-  "presentation": "Either a small upright dragon with a rounded, cat-like face, two short horns, bat wings, small clawed hands and a long tail, or a small fox with large upright ears and one bushy tail.",
+  "presentation": "Either a small dragon about two hands long, with a short snout, small horns on the head, four clawed limbs, membrane wings and a long tapering tail; or a fox familiar, as a small fox or a human form with large upright fox ears on the crown and one big brush tail.",
   "notOnPage": [
-   "large four-legged dragon",
    "serpentine dragon",
-   "multiple tails on the fox"
+   "large dragon",
+   "finger-sized sprite",
+   "more than one tail on the fox"
   ],
-  "look": "Design recipe: a small creature with one bold colour and a memorable tail or ear shape: an upright, round-faced dragon with stubby horns and bat wings, or a fox with large ears and one bushy tail.",
-  "confidence": "medium",
+  "look": "Design recipe: a small creature with one bold colour and a memorable tail or ears: a two-hand-sized dragon with a short snout, small horns, membrane wings and a long tail, carried or riding a shoulder; or a fox with large ears and one big brush tail.",
+  "confidence": "high",
   "sources": [
    "https://tondemoskill-anime.com/character/",
    "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara4_main.png",
    "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
    "https://anihk.com/en/character/yuzuha-the-new-gate",
-   "https://myanimelist.net/character/154965/Yuzuha/pictures"
+   "https://myanimelist.net/character/154965/Yuzuha/pictures",
+   "owner research 2026-11-26: official anime still with hands for scale (tondemoskill-anime.com); official girl-form art (the-new-gate-pr.com): one tail"
   ]
  },
  "P39": {
   "base": "creature",
-  "presentation": "A tiny cat that stands upright on its hind legs, with big round eyes and a long, thin tail.",
+  "presentation": "A tiny furred cat creature, about palm-sized, that stands upright on its hind legs and often hovers beside its partner at head height; triangular ears, big round eyes and a body-length tail.",
   "notOnPage": [
    "glowing wisp or orb form",
    "fairy or robed humanoid",
@@ -685,13 +705,14 @@
    "icy blue or gold colouring",
    "large realistic cat"
   ],
-  "look": "Design recipe: a palm-sized, upright cat with soft light fur, big round eyes and a long thin tail, shown standing. Optional: a small satchel or an ear ornament.",
+  "look": "Design recipe: a palm-sized upright cat with soft light fur, big round eyes and a body-length tail, usually hovering beside its partner at head height, or perched. Optional: a small satchel or an ear ornament.",
   "confidence": "high",
   "sources": [
    "https://re-zero-anime.jp/tv/character/",
    "https://re-zero-anime.jp/tv/assets/character/c/3.png",
    "https://otakumode.com/otapedia/anime/re_zero/rezero_puck",
-   "https://en.wikipedia.org/wiki/List_of_Re:Zero_characters"
+   "https://en.wikipedia.org/wiki/List_of_Re:Zero_characters",
+   "owner research 2026-11-26: official anime screenshot (re-zero-anime.jp): hovers beside its partner"
   ]
  },
  "P45": {
