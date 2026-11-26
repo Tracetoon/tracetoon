@@ -93,5 +93,5 @@ export function drafterComicStep(e: ComicExpectation, run: string): string {
   const asked = e.request
     ? `; this repo asks for one: ${e.request.file}:${e.request.line}`
     : '';
-  return `\`tracetoon comic run --run ${run}\` (the comic${asked}: Tracetoon starts a fresh comic author and fresh judges itself, draws, renders and runs the full quality loop, or records why there is none; it draws from the brief and your draft, so it doesn't wait for the review fixes, and render puts it beside the final body. It asks no one and never holds the PR: when it prints a \`${COMIC_SETUP_LINE} …\` line, add that line to your final reply)`;
+  return `\`tracetoon comic run --run ${run}\` (the comic${asked}: Tracetoon starts a fresh comic author and fresh judges itself, draws, renders and runs the full quality loop, or records why there is none; it draws from the brief and your draft, so it doesn't wait for the review fixes, and render puts it beside the final body. It doesn't pause for the comic's setup answer (publishing keeps its own approval): when it prints a \`${COMIC_SETUP_LINE} …\` line, add that line to your final reply)`;
 }
