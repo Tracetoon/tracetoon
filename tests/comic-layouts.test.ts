@@ -3,7 +3,7 @@ import { compositionPrompt, compositionProblems, resolveComposition } from '../s
 import { genreOptions } from '../src/comic/genres.ts';
 import { gridPanels, panelsIn, parseSignature, SIGNATURES, tilingProblems } from '../src/comic/grid.ts';
 import { ASSIGNED_COUNTS, layoutPick, signaturePick } from '../src/comic/layouts.ts';
-import { pagePrompt } from '../src/comic/providers.ts';
+import { pagePrompt, promptLint } from '../src/comic/providers.ts';
 import { checkScript, errors } from '../src/comic/script.ts';
 import { LAYOUT_FAMILIES, type ComicScript, type PanelMotion } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
@@ -64,7 +64,8 @@ describe('the tiled grid', () => {
     const prompt = compositionPrompt(script);
     expect(prompt).toContain('Row 1 (about');
     expect(prompt).toContain('two panels side by side, with a slanted gutter');
-    expect(prompt).toContain('no empty areas, no overlapping or inset panels');
+    expect(prompt).toContain('no empty areas, no overlapping panels, no inset panels');
+    expect(promptLint(pagePrompt(script))).toEqual([]);
     expect(pagePrompt(script)).toContain("lean all point toward the right");
   });
 });

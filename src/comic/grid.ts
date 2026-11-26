@@ -267,5 +267,5 @@ export function describeSignature(sig: string, panels: GridPanel[]): string {
       ? `Row ${b + 1} (about ${Math.round(ext * 100)}% of the page height): ${word[count]}${slanted ? ', with a slanted gutter' : ''}`
       : `Column ${b + 1} (about ${Math.round(ext * 100)}% of the page width): ${wordCol[count]}${slanted ? ', with a slanted gutter' : ''}`;
   });
-  return `${parts.join('. ')}. The panels fill the page edge to edge with even gutters: no empty areas, no overlapping or inset panels.`;
+  return `${parts.join('. ')}. The panels fill the page edge to edge with even gutters: no empty areas, no overlapping panels, no inset panels.`;
 }
