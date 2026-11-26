@@ -240,6 +240,6 @@ describe('doctor', () => {
       encoding: 'utf8',
     }).stdout;
     expect(text).toContain("octo-tester can't push to acme/demo");
-    expect(text).toContain('next: Approve');
+    expect(text).toContain('next: Ask the user to approve');
   });
 });

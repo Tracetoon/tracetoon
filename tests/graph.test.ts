@@ -537,7 +537,7 @@ describe('evidence graph', () => {
         expect(next).toContain('tracetoon comic run --run r1');
         expect(next).toContain('add that line to your final reply');
         const coordinator = coordinatorNext(paths, host, 'inherit', undefined, true, 'low', true);
-        expect(coordinator).toContain('If its reply has a `COMIC SETUP:` line, tell the user');
+        expect(coordinator).toContain('If its reply has a `COMIC SETUP:` line, put its question to the user');
         expect(coordinator).toContain('tracetoon config set comic off');
         expect(coordinator).toContain('REVIEW BLOCKED: <command>');
         expect(coordinator).toContain('only on their yes run it yourself');
