@@ -6,6 +6,7 @@
  * Only story beats and character descriptions are sent, never code, paths or
  * prompts from the logs, and only after the user agrees once per provider.
  */
+import { bodyNote, presentationOf } from './isekai/presentation.ts';
 import { spawn, spawnSync } from 'node:child_process';
 import {
   existsSync,
@@ -98,10 +99,21 @@ export const NEGATIVE_WITH_REQUEST =
 export const COMIC_MEDIUM =
   "It must look like a drawn comic: inked line art with clean coloring, dynamic staging and acting, real panel borders and gutters, and lettering in balloons and caption boxes; each panel's background and drawn effects are the ones named for it. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
 
+/** A character's description, plus its base body when the archetype is human-presenting (presentation.ts). */
+function describe(c: { description: string; archetype?: string }): string {
+  const d = c.description.trim().replace(/\.+$/, '');
+  const note = bodyNote(c.archetype);
+  return note ? `${d}; ${note}` : d;
+}
+
 /** The avoid-list for this script. */
 export function negativeFor(script: ComicScript): string {
   const base = script.request?.trim() ? NEGATIVE_WITH_REQUEST : NEGATIVE;
-  const avoid = (script.avoid ?? []).filter((a) => typeof a === 'string' && a.trim());
+  const body = (script.characters ?? []).flatMap((c) => {
+    const never = presentationOf(c.archetype)?.notOnPage ?? [];
+    return never.length ? [`${c.name} with ${never.join(', ')}`] : [];
+  });
+  const avoid = [...body, ...(script.avoid ?? []).filter((a) => typeof a === 'string' && a.trim())];
   return avoid.length ? `${base}; avoid: ${avoid.join('; ')}` : base;
 }
 
@@ -113,7 +125,7 @@ function requestLine(script: ComicScript): string {
 
 function characterLine(script: ComicScript, name: string): string {
   const c = script.characters?.find((x) => x.name.toLowerCase() === name.toLowerCase());
-  return c ? `${c.name}: ${c.description}` : name;
+  return c ? `${c.name}: ${describe(c)}` : name;
 }
 
 function who(panel: Panel, script: ComicScript): string {
@@ -290,7 +302,7 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
   const leadName = script.lead?.name;
   const cast = [...(script.characters ?? [])]
     .sort((a, b) => Number(b.name === leadName) - Number(a.name === leadName))
-    .map((c) => `${c.name}${c.name === leadName ? ' (main character, in most panels)' : ''}: ${c.description.trim().replace(/\.+$/, '')}`);
+    .map((c) => `${c.name}${c.name === leadName ? ' (main character, in most panels)' : ''}: ${describe(c)}`);
   const panels = script.panels.map((p, i) => {
     const people = p.characters.map(
       (pc) =>

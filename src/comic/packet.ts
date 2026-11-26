@@ -96,6 +96,10 @@ Read these packet files (they sit next to this one):
     recipe's options and variants, then write the silhouette, hair, outfit,
     role prop and behavioral contradiction as plain decided facts (no "or",
     no "such as", no menus). Set each character's \`archetype\` to its id.
+  - Where a member has a \`presentation\`, draw that body: most of these
+    types are humans with a few traits (ears, a tail, scale patches, horns).
+    Describe the traits; never write the species word ("lizardfolk",
+    "catfolk"), which an image model draws as an animal-headed creature.
   - Set \`castPreset\` to the cast's preset id, \`lead\` to
     {"persona": the lead's archetype id, "name": their name}, \`place\` to the
     one place the whole comic happens, and every panel's \`background\` to

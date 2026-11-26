@@ -1,0 +1,732 @@
+{
+ "M10": {
+  "base": "dual",
+  "presentation": "Two forms. Creature form: a small translucent blue drop- or dome-shaped slime with a simple drawn face and no limbs. Human form: a slender, androgynous human face and body with no non-human traits; the hair shares the slime's colour.",
+  "notOnPage": [
+   "slime with arms, legs or a humanoid torso",
+   "green, purple or opaque slime",
+   "monster features (horns, fangs, claws) on the human form",
+   "pointed elf ears",
+   "muscular human form",
+   "civic badge or sash as a fixed trait"
+  ],
+  "look": "Design recipe: a small translucent blue slime shaped like a drop or dome, with a simple drawn face and no limbs. The human form is slender and androgynous with no monster traits; the slime's blue carries over into the hair. Optional: a long coat or scarf to signal leadership.",
+  "confidence": "high",
+  "sources": [
+   "https://www.ten-sura.com/character/rimuru",
+   "https://www.ten-sura.com/4GfGdAp7/wp-content/themes/tensura_portal/assets/images/character/rimuru/character-image.png?v=6",
+   "https://www.ten-sura.com/4GfGdAp7/wp-content/themes/tensura_portal/assets/images/character/rimuru/character-image_1.png?v=4",
+   "https://en.wikipedia.org/wiki/List_of_That_Time_I_Got_Reincarnated_as_a_Slime_characters",
+   "https://en.wikipedia.org/wiki/That_Time_I_Got_Reincarnated_as_a_Slime"
+  ]
+ },
+ "M11": {
+  "base": "humanoid creature",
+  "presentation": "A tall, bare skeleton with glowing points of light in the eye sockets and long bony fingers, wearing a hooded, floor-length ceremonial robe.",
+  "notOnPage": [
+   "flesh, skin or a human face",
+   "empty dark eye sockets with no glow",
+   "hair or a beard",
+   "crown worn on the skull",
+   "rotting zombie flesh",
+   "plain brown wizard robe"
+  ],
+  "look": "Design recipe: a tall skeletal body with glowing lights in the eye sockets, in broad, hooded ceremonial robes with large shoulder pieces. Dark robes with gold trim and one jewel colour; an ornate staff expresses authority. Optional: a seal or throne, and one mundane office object for comic contrast.",
+  "confidence": "high",
+  "sources": [
+   "https://overlord-anime.com/",
+   "https://overlord-anime.com/assets/character/1c2.webp",
+   "https://en.wikipedia.org/wiki/Overlord_(novel_series)",
+   "https://en.wikipedia.org/wiki/List_of_Overlord_(novel_series)_characters"
+  ]
+ },
+ "M12": {
+  "base": "creature",
+  "presentation": "A spider monster with no human parts: a pale spider body on eight thin legs, several small eyes plus two large, expressive cartoon eyes on the front of the head.",
+  "notOnPage": [
+   "human head or torso on the spider",
+   "realistic hairy tarantula texture",
+   "brown or black spider body",
+   "clothing",
+   "six or ten legs"
+  ],
+  "look": "Design recipe: recognisably arachnid, with eight thin legs, a clear abdomen, several small eyes and two large expressive cartoon eyes, never a human face. A pale body with dark or jewel-coloured markings. Exaggerated posture, thought balloons and web patterns carry personality.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/136893/Kumoko",
+   "https://myanimelist.net/character/136893/Kumoko/pics",
+   "https://cdn.myanimelist.net/images/characters/2/314231.jpg",
+   "https://cdn.myanimelist.net/images/characters/10/423671.jpg",
+   "https://cdn.myanimelist.net/images/characters/16/473875.jpg",
+   "https://cdn.myanimelist.net/images/characters/3/482637.jpg",
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F"
+  ]
+ },
+ "M25": {
+  "base": "humanoid creature",
+  "presentation": "A skeleton in full plate armor: a towering knight whose closed helmet hides a bare skull with dark, empty eye sockets. No bones show while the armor is on.",
+  "notOnPage": [
+   "flesh, hair or a human face under the helmet",
+   "black or rusted armor",
+   "glowing red eyes",
+   "rotting zombie features",
+   "skeleton visible through gaps in the armor while armored"
+  ],
+  "look": "Design recipe: a towering, broad knight in polished pale plate with large rounded pauldrons, a closed helmet, a heavy cape and an oversized sword. With the helmet off, the head is a bare skull with dark, empty sockets. Optional: a picnic bundle, or a small fluffy creature riding on the helmet or shoulder.",
+  "confidence": "high",
+  "sources": [
+   "https://skeleton-knight.com/character/",
+   "https://skeleton-knight.com/character/arc",
+   "https://skeleton-knight.com/character/ponta",
+   "https://skeleton-knight.com/wp/wp-content/themes/skeleton-knight_ver2604/img/c1.png",
+   "https://en.wikipedia.org/wiki/Skeleton_Knight_in_Another_World"
+  ]
+ },
+ "M27": {
+  "base": "human",
+  "presentation": "Human face and body with pointed elf ears.",
+  "notOnPage": [
+   "very long ears sticking straight out sideways",
+   "revealing costume",
+   "animal features"
+  ],
+  "look": "Design recipe: pointed ears and a slender or average build, in practical layered travelling robes with a shawl. Optional: a small interface token or magical notebook recording the names she is expected to remember.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/193229",
+   "https://myanimelist.net/character/193229/Cayna/pics",
+   "https://cdn.myanimelist.net/images/characters/7/433941.jpg",
+   "https://cdn.myanimelist.net/images/characters/10/450594.jpg"
+  ]
+ },
+ "N07": {
+  "base": "human",
+  "presentation": "Human face and body, short and stocky with a barrel chest and thick arms; a full beard, often braided, and an ordinary human nose and ears.",
+  "notOnPage": [
+   "animal or goblin face",
+   "pointed ears",
+   "green or grey skin"
+  ],
+  "look": "Design recipe: a short, broad build with powerful arms and a full beard, sometimes braided. A leather apron, rolled sleeves, soot, heavy boots, a hammer and tongs. Optional: a half-finished weapon on the anvil.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/stacks/41907"
+  ]
+ },
+ "N24": {
+  "base": "human",
+  "presentation": "Human face and body, tall, marked as non-human by horns on the head and pointed ears, sometimes with grey or dark skin. A fully monstrous body is a deliberate exception.",
+  "notOnPage": [
+   "animal head",
+   "bat face or snout (unless a monster form is chosen on purpose)"
+  ],
+  "look": "Design recipe: a towering, armored figure with a human face, horns and pointed ears, and a black or white mane. A cape and an unmistakable emblem. Optional: an elaborate throne, a crown or a clawed gauntlet.",
+  "confidence": "medium",
+  "sources": [
+   "https://otakuusamagazine.com/what-makes-an-anime-demon-lord-so-lovable/"
+  ]
+ },
+ "N25": {
+  "base": "human",
+  "presentation": "Human face and body, marked as demonic by horns and pointed ears, sometimes with unusual skin colour.",
+  "notOnPage": [
+   "animal head",
+   "snout or muzzle"
+  ],
+  "look": "Design recipe: an elegantly narrow or towering figure with a human face, a distinctive horn arrangement and pointed ears, in theatrical styling with a dramatic collar, an asymmetrical cape and a signature weapon. Optional: an elaborate mask, or coordinated subordinate costumes.",
+  "confidence": "medium",
+  "sources": [
+   "https://otakuusamagazine.com/what-makes-an-anime-demon-lord-so-lovable/"
+  ]
+ },
+ "N26": {
+  "base": "human",
+  "presentation": "Human face and body, tall and muscular, sometimes with greyish skin, long pointed ears and two curved horns rising from the top of the head.",
+  "notOnPage": [
+   "tusks",
+   "fur",
+   "scales",
+   "animal or ogre face",
+   "tribal mantle",
+   "staff"
+  ],
+  "look": "Design recipe: a large, broad figure with a human face, two curved horns and long pointed ears, in a regal high-collared cape, spiked shoulder armor and clawed gauntlets. Expressive eyes soften the threatening outline.",
+  "confidence": "high",
+  "sources": [
+   "https://lv2-cheat.com/character/",
+   "https://lv2-cheat.com/wp/wp-content/themes/lv2cheat-v2/img/11.png",
+   "https://lv2-cheat.com/wp/wp-content/themes/lv2cheat-v2/img/PV11-1.jpg",
+   "https://en.wikipedia.org/wiki/Chillin%27_in_Another_World_with_Level_2_Super_Cheat_Powers"
+  ]
+ },
+ "N27": {
+  "base": "human",
+  "presentation": "Fully human face and body, with no halo or glow; feathered wings on the back are an occasional option.",
+  "notOnPage": [
+   "halo",
+   "glowing skin",
+   "animal features"
+  ],
+  "look": "Design recipe: a fully human divine figure in clean white robes, a dress or a tunic, with flowing hair and a circlet or laurel rather than a halo. Optional: white feathered wings.",
+  "confidence": "high",
+  "sources": [
+   "https://en.wikipedia.org/wiki/Black_Summoner",
+   "https://myanimelist.net/character/206239",
+   "https://myanimelist.net/character/206239/Melfina/pictures",
+   "https://www.cbr.com/black-summoner-main-anime-cast/",
+   "https://dengekionline.com/articles/42425/",
+   "https://dengekionline.com/articles/42425/images/5/",
+   "https://dengekionline.com/articles/42425/images/6/",
+   "https://dengekionline.com/articles/42425/images/7/"
+  ]
+ },
+ "N28": {
+  "base": "human",
+  "presentation": "Fully human face and body, with no halo, wings or glow.",
+  "notOnPage": [
+   "halo",
+   "wings",
+   "glowing aura",
+   "animal features"
+  ],
+  "look": "Design recipe: a fully human goddess with very long hair and one bright hair ornament, in either a fitted dress with a capelet or an athletic outfit with a scarf and headwrap, with a remarkably undignified, expectant expression. Optional: an offering tray or empty snack wrappers as gag props.",
+  "confidence": "high",
+  "sources": [
+   "https://tondemoskill-anime.com/character/",
+   "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara5_main.png",
+   "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara6_main.png",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill"
+  ]
+ },
+ "P01": {
+  "base": "human",
+  "presentation": "Human face and body with long pointed elf ears.",
+  "notOnPage": [
+   "green skin",
+   "animal features",
+   "dark skin"
+  ],
+  "look": "Design recipe: slim and long-limbed, with long hair, often braided, and the ear silhouette always visible. Elegant patterned clothes and a narrow sword; she also fights with magic.",
+  "confidence": "high",
+  "sources": [
+   "https://myanimelist.net/character/171563",
+   "https://myanimelist.net/character/171563/Myura/pics",
+   "https://cdn.myanimelist.net/images/characters/12/409371.jpg"
+  ]
+ },
+ "P02": {
+  "base": "human",
+  "presentation": "Human face and body with long pointed elf ears.",
+  "notOnPage": [
+   "green skin",
+   "animal features"
+  ],
+  "look": "Design recipe: long hair, a headband and a soft, curvy build. A forest-green dress with a short cape, adapted for travel, and a conspicuously expensive bow.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/140149/Shera_L_Greenwood/pics",
+   "https://cdn.myanimelist.net/images/characters/3/313377.jpg",
+   "https://cdn.myanimelist.net/images/characters/12/387666.jpg",
+   "https://en.wikipedia.org/wiki/How_Not_to_Summon_a_Demon_Lord"
+  ]
+ },
+ "P03": {
+  "base": "human",
+  "presentation": "Human face and body with long pointed elf ears.",
+  "notOnPage": [
+   "green skin",
+   "animal features",
+   "wrinkled face"
+  ],
+  "look": "Design recipe: poised and physically capable, with long, elaborately styled hair. A high-collared sleeveless top with detached sleeves; whatever equipment she carries has outlasted the town.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/115187/Elinalise_Dragonroad",
+   "https://myanimelist.net/character/115187/Elinalise_Dragonroad/pics",
+   "https://cdn.myanimelist.net/images/characters/3/460705.jpg",
+   "https://cdn.myanimelist.net/images/characters/14/647599.jpg"
+  ]
+ },
+ "P04": {
+  "base": "human",
+  "presentation": "Human face and body with dark brown skin and long pointed elf ears.",
+  "notOnPage": [
+   "grey or blue skin",
+   "red evil eyes",
+   "horns or tattoos",
+   "animal features"
+  ],
+  "look": "Design recipe: tall, athletic and broad-shouldered; dark brown skin, pale hair and long pointed ears. A breastplate over a high-collared top, and a long sword. Dark-elf identity need not imply evil or a revealing costume.",
+  "confidence": "high",
+  "sources": [
+   "https://myanimelist.net/character/164914/Aisha_Udgard",
+   "https://myanimelist.net/character/164914/Aisha_Udgard/pics",
+   "https://cdn.myanimelist.net/images/characters/4/364292.jpg",
+   "https://cdn.myanimelist.net/images/characters/4/433505.jpg"
+  ]
+ },
+ "P05": {
+  "base": "human",
+  "presentation": "Human face and body; cat ears on top of the head and a slender tail.",
+  "notOnPage": [
+   "cat face, muzzle or whiskers",
+   "fur on the body",
+   "paw hands or claws",
+   "extra human ears at the sides",
+   "panther or tiger head"
+  ],
+  "look": "Design recipe: a lean, compact build with dark hair, short or long; triangular cat ears on top of the head and a thin, expressive tail. Light leather or a tunic, and boots. Optional: daggers or a sword, rather than claws.",
+  "confidence": "medium",
+  "sources": [
+   "https://en.wikipedia.org/wiki/How_Not_to_Summon_a_Demon_Lord",
+   "https://myanimelist.net/character/140148/Rem_Galleu/pics",
+   "https://cdn.myanimelist.net/images/characters/6/313378.jpg",
+   "https://cdn.myanimelist.net/images/characters/12/387658.jpg",
+   "https://myanimelist.net/character/156422/Fran",
+   "https://myanimelist.net/character/156422/Fran/pics",
+   "https://cdn.myanimelist.net/images/characters/15/343670.jpg",
+   "https://cdn.myanimelist.net/images/characters/10/490135.jpg"
+  ]
+ },
+ "P06": {
+  "base": "human",
+  "presentation": "Human face and body; dog or wolf ears on top of the head, either large and upright or soft and floppy, and usually a tail.",
+  "notOnPage": [
+   "dog or wolf muzzle",
+   "fur covering the body",
+   "paw hands",
+   "extra human ears at the sides of the head"
+  ],
+  "look": "Design recipe: dog or wolf ears on top of the head, upright or soft and floppy, and a tail; posture and motion carry the recognition. Build, hair and gear are the author's choice.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/194185/Delta",
+   "https://myanimelist.net/character/194185/Delta/pics",
+   "https://cdn.myanimelist.net/images/characters/5/448402.jpg",
+   "https://cdn.myanimelist.net/images/characters/15/563724.jpg",
+   "https://myanimelist.net/character/146626/Pochi/pics",
+   "https://cdn.myanimelist.net/images/characters/4/343189.jpg",
+   "https://cdn.myanimelist.net/images/characters/13/383415.jpg"
+  ]
+ },
+ "P07": {
+  "base": "dual",
+  "presentation": "Usually shown in human form: human face and body with large furry wolf ears on top of the head. The other form is a large pale wolf.",
+  "notOnPage": [
+   "wolf muzzle on the human form",
+   "fur on the human body",
+   "grey or brown wolf",
+   "werewolf hybrid form"
+  ],
+  "look": "Design recipe: confident, with long pale hair and large furry wolf ears in human form, and a large pale wolf in the other form. Keep one recognisable accessory in both forms.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/199586/Fenrys",
+   "https://myanimelist.net/character/199586/Fenrys/pics",
+   "https://cdn.myanimelist.net/images/characters/5/449147.jpg",
+   "https://cdn.myanimelist.net/images/characters/5/535545.jpg"
+  ]
+ },
+ "P08": {
+  "base": "human",
+  "presentation": "Human face and body; long upright rabbit ears on top of the head.",
+  "notOnPage": [
+   "rabbit face or buck teeth",
+   "fur on the body",
+   "rabbit feet",
+   "extra human ears at the sides",
+   "gauntlets as the main weapon"
+  ],
+  "look": "Design recipe: long upright rabbit ears, a springy posture and a giant hammer that visibly outweighs expectations. Clothing is the author's choice.",
+  "confidence": "high",
+  "sources": [
+   "https://arifureta.com/character",
+   "https://arifureta.com/wp3/wp-content/themes/arifure3/img/character/mc03.png",
+   "https://en.wikipedia.org/wiki/Arifureta:_From_Commonplace_to_World%27s_Strongest"
+  ]
+ },
+ "P09": {
+  "base": "human",
+  "presentation": "Human face and body; round raccoon-dog ears on top of the head and a bushy tail.",
+  "notOnPage": [
+   "raccoon face, mask markings or muzzle",
+   "fur on the body",
+   "ringed raccoon tail",
+   "extra human ears at the sides",
+   "slave crest or collar"
+  ],
+  "look": "Design recipe: warm brown hair, round raccoon-dog ears and a bushy tail; a balanced athletic build, a practical sword belt and a light leather breastplate. Avoid relying on a restraint or ownership marker for recognition.",
+  "confidence": "high",
+  "sources": [
+   "https://myanimelist.net/character/112893/Raphtalia",
+   "https://myanimelist.net/character/112893/Raphtalia/pics",
+   "https://cdn.myanimelist.net/images/characters/9/363562.jpg",
+   "https://cdn.myanimelist.net/images/characters/11/455086.jpg",
+   "https://cdn.myanimelist.net/images/characters/9/387886.jpg",
+   "https://en.wikipedia.org/wiki/List_of_The_Rising_of_the_Shield_Hero_characters"
+  ]
+ },
+ "P10": {
+  "base": "human",
+  "presentation": "Human face and body; scale patches at the throat and forearms, often covered by clothing.",
+  "notOnPage": [
+   "lizard head or snout",
+   "fully scaled face or body",
+   "reptile skin over the whole body",
+   "clawed reptile feet",
+   "tail"
+  ],
+  "look": "Design recipe: tall and athletic, a human body with small scale patches at the throat and forearms, often covered by clothing. A practical uniform or light leather, sturdy boots and a long spear held upright for a narrow, upright silhouette. Optional: bundled camp equipment.",
+  "confidence": "high",
+  "sources": [
+   "owner-supplied official images (2026-11-25)"
+  ]
+ },
+ "P11": {
+  "base": "human",
+  "presentation": "Human face and body with a horn rising from the centre of the forehead.",
+  "notOnPage": [
+   "monstrous ogre face",
+   "tusks",
+   "green, red or purple skin",
+   "hulking giant body"
+  ],
+  "look": "Design recipe: a horn at the centre of the forehead and long hair, often in a high ponytail. A business suit or fitted uniform over a strong, curvy frame creates the secretary-and-enforcer contradiction.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/shion-that-time-i-got-reincarnated-as-a-slime",
+   "https://myanimelist.net/character/131937"
+  ]
+ },
+ "P12": {
+  "base": "dual",
+  "presentation": "Usually shown in human form: human face and body, often with two horns sweeping back from the sides of the head and sometimes a reptilian tail. The other form is a huge scaled dragon.",
+  "notOnPage": [
+   "dragon head or snout on the human form",
+   "scales covering the face or body in human form",
+   "wings on the human form",
+   "reptile skin"
+  ],
+  "look": "Design recipe: a human form, sometimes with two horns sweeping backward and a reptilian tail, in a kimono or everyday clothes. The huge dragon form's scale colour repeats the human form's hair colour.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/tio-klarus-arifureta-from-commonplace-to-world-s-strongest",
+   "https://www.anisearch.com/character/63406,tio-klarus",
+   "https://en.wikipedia.org/wiki/List_of_Arifureta_characters",
+   "https://mywaifulist.moe/waifu/flatorte-i-ve-been-killing-slimes-for-300-years-and-maxed-out-my-level",
+   "https://mywaifulist.moe/waifu/laika"
+  ]
+ },
+ "P13": {
+  "base": "human",
+  "presentation": "Human face and body with very pale skin and red eyes.",
+  "notOnPage": [
+   "bat wings",
+   "monstrous face or lamprey mouth",
+   "pointed ears",
+   "claws"
+  ],
+  "look": "Design recipe: very pale skin, red eyes and crimson accents. A gothic dress with a heavy layered lace skirt, and an unnervingly neat posture. Optional: a parasol.",
+  "confidence": "high",
+  "sources": [
+   "https://en.wikipedia.org/wiki/List_of_Arifureta_characters",
+   "https://mywaifulist.moe/waifu/yue-arifureta-from-commonplace-to-world-s-strongest",
+   "https://mywaifulist.moe/waifu/shalltear-bloodfallen-overlord"
+  ]
+ },
+ "P14": {
+  "base": "human",
+  "presentation": "Usually fully human, with the demon traits hidden by magic. When revealed: small horns on the head, bat-like wings on the back and a thin tail.",
+  "notOnPage": [
+   "demon face",
+   "red or dark skin",
+   "goat legs",
+   "horns or wings while disguised"
+  ],
+  "look": "Design recipe: a fully human look in practical travel clothes that keep one expensive royal detail; small horns, bat-like wings and a thin tail appear only when revealed. Give her a fist-fighter stance rather than a staff or a seductive costume.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/sera-black-summoner",
+   "https://anihk.com/en/character/sera-black-summoner",
+   "https://en.wikipedia.org/wiki/Black_Summoner"
+  ]
+ },
+ "P15": {
+  "base": "human",
+  "presentation": "Fully human face and body, with no divine markers.",
+  "notOnPage": [
+   "halo",
+   "angel wings",
+   "glowing aura over the whole body",
+   "pointed ears"
+  ],
+  "look": "Design recipe: a fully human, elegant figure in a bright outfit or a simple dress, with one hair ornament such as a clip or ribbon. Optional: impractical luggage, a wine cup or an embarrassing shopping receipt.",
+  "confidence": "high",
+  "sources": [
+   "https://mywaifulist.moe/waifu/aqua-konosuba-god-s-blessing-on-this-wonderful-world",
+   "https://mywaifulist.moe/waifu/ristarte"
+  ]
+ },
+ "P18": {
+  "base": "human",
+  "presentation": "Human face and body with no visible non-human traits; unusually patterned pupils are the only hint.",
+  "notOnPage": [
+   "fairy or butterfly wings",
+   "pointed ears",
+   "glowing translucent body"
+  ],
+  "look": "Design recipe: an elaborate, frilly dress with layered sleeves and an ornate hair accessory; patterned pupils hint at something non-human. Optional: a large book, or a library chair that emphasises her small scale.",
+  "confidence": "high",
+  "sources": [
+   "https://mywaifulist.moe/waifu/beatrice-re-zero-starting-life-in-another-world"
+  ]
+ },
+ "P26": {
+  "base": "human",
+  "presentation": "Human face and body with slit-pupil eyes, two thick curved horns at the temples, and a pair of dark feathered wings growing from the lower back, always visible.",
+  "notOnPage": [
+   "bat wings",
+   "demon face",
+   "red or dark skin",
+   "tail",
+   "goat legs"
+  ],
+  "look": "Design recipe: tall and stately, with two thick curved horns at the temples, slit-pupil eyes and dark feathered wings from the lower back. A ceremonial gown with gloves, or full plate in battle. Optional: a family crest, personal seal or portrait locket makes devotion visible without explicit sexual imagery.",
+  "confidence": "high",
+  "sources": [
+   "https://myanimelist.net/character/116275"
+  ]
+ },
+ "P27": {
+  "base": "human",
+  "presentation": "Human face and body with long pointed elf ears, fully visible.",
+  "notOnPage": [
+   "curse markings on skin or hands",
+   "animal ears",
+   "dark elf skin",
+   "fully hidden ears"
+  ],
+  "look": "Design recipe: long pointed ears kept visible and no marks on the skin; the curse is a social stigma, not a mark. Simple service clothes and a bow. Optional: an object she is learning to use with confidence.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/efil-black-summoner",
+   "https://anihk.com/en/character/efil-black-summoner",
+   "https://en.wikipedia.org/wiki/Black_Summoner"
+  ]
+ },
+ "P28": {
+  "base": "human",
+  "presentation": "Human face and body with one quiet non-human trait: either a long spiked tail from the lower back, or long pointed elf ears.",
+  "notOnPage": [
+   "horns",
+   "demon face",
+   "wings",
+   "red skin",
+   "animal head"
+  ],
+  "look": "Design recipe: tall and narrow or impeccably upright, with either a long spiked tail or long pointed ears. A severe suit, a form-fitting dark outfit or understated robes. Keep the outline restrained; the frightening part is effortless administrative confidence. Optional: glasses or formal gloves.",
+  "confidence": "medium",
+  "sources": [
+   "https://myanimelist.net/character/116323",
+   "https://mywaifulist.moe/waifu/demiurge-overlord",
+   "https://myanimelist.net/character/194178",
+   "https://mywaifulist.moe/waifu/alpha-3"
+  ]
+ },
+ "P30": {
+  "base": "human",
+  "presentation": "Human face and body, tall, with a red gem set in the centre of the forehead, often covered by a headband.",
+  "notOnPage": [
+   "red skin",
+   "horns",
+   "demon or monstrous face",
+   "third eye drawn as a real eye",
+   "tail"
+  ],
+  "look": "Design recipe: tall, with a shaved head or short hair and a red forehead gem, often covered by a headband. A tribal vest, weathered travel gear and a long spear.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/ruijerd-superdia-mushoku-tensei",
+   "https://myanimelist.net/character/111739",
+   "https://en.wikipedia.org/wiki/List_of_Mushoku_Tensei_characters"
+  ]
+ },
+ "P31": {
+  "base": "human",
+  "presentation": "Human face and body, short and broad, with a beard and ordinary human ears and nose.",
+  "notOnPage": [
+   "animal features",
+   "giant size",
+   "monstrous face"
+  ],
+  "look": "Design recipe: short, broad and stout, with a thick beard or cropped hair. A helmet, armor and a shield even though he fights with magic: the warrior gear on a mage is the joke. Gender does not determine whether the character has facial hair.",
+  "confidence": "low",
+  "sources": [
+   "https://en.wikipedia.org/wiki/Handyman_Saitou_in_Another_World"
+  ]
+ },
+ "P33": {
+  "base": "human",
+  "presentation": "Human face and body; the fairy's wings and tiny size are unconfirmed, so add them only as a deliberate choice.",
+  "notOnPage": [
+   "insect or butterfly wings (unless chosen deliberately)",
+   "palm-sized body (unless chosen deliberately)"
+  ],
+  "look": "Design recipe: a healer in a cleric's outfit, with practical healing tools. Size, wings and hair are the author's choice.",
+  "confidence": "low",
+  "sources": [
+   "https://en.wikipedia.org/wiki/Handyman_Saitou_in_Another_World",
+   "https://www.siliconera.com/handyman-saitou-in-another-world-9-focuses-on-lafanpan/",
+   "https://beneaththetangles.com/2023/01/08/first-impression-handyman-saitou-in-another-world/"
+  ]
+ },
+ "P34": {
+  "base": "humanoid creature",
+  "presentation": "An empty suit of dark plate armor that moves on its own; the closed, barred visor shows nothing behind it.",
+  "notOnPage": [
+   "skull",
+   "skeleton",
+   "visible face",
+   "glowing eyes"
+  ],
+  "look": "Design recipe: a very tall or broad armor silhouette with a closed, barred visor and nothing behind it. Dark plate, a sword and a shield. Optional: a tiny keepsake that humanises the forbidding design.",
+  "confidence": "medium",
+  "sources": [
+   "https://mywaifulist.moe/waifu/gerard-fragarach",
+   "https://anihk.com/en/character/gerard-black-summoner",
+   "https://en.wikipedia.org/wiki/Black_Summoner"
+  ]
+ },
+ "P35": {
+  "base": "dual",
+  "presentation": "Two forms. Bird form: a huge, round, flightless owl-like bird with soft plumage and a single upright feather on the head. Human form: human face and body with a pair of feathered wings on the back.",
+  "notOnPage": [
+   "bird head or beak on the human form",
+   "feathered skin or talons on the human form",
+   "flying bird pose for the bird form (it runs, it does not fly)",
+   "sleek raptor or chicken anatomy instead of a round owl-like body"
+  ],
+  "look": "Design recipe: a huge, round, flightless bird with one upright feather on the head, and a human form with feathered wings on the back and an upright hair tuft or feather clip echoing that feather. Optional: an enormous appetite, or a carriage she pulls in bird form.",
+  "confidence": "medium",
+  "sources": [
+   "https://en.wikipedia.org/wiki/List_of_The_Rising_of_the_Shield_Hero_characters",
+   "https://www.cbr.com/shield-hero-filolial-race-what-to-know/",
+   "https://quotetheanime.com/rising-of-the-shield-hero/filo-wiki/",
+   "https://www.goodsmile.com/en/product/7055",
+   "https://myanimelist.net/character/112909/Filo"
+  ]
+ },
+ "P36": {
+  "base": "creature",
+  "presentation": "A small, smooth, translucent dome-shaped blob sitting on the ground, glossy, with either two tiny dot eyes or a small symbol or core visible inside.",
+  "notOnPage": [
+   "arms, legs or hands",
+   "large anime eyes or a wide mouth",
+   "pointed teardrop shape with a face",
+   "a human form",
+   "opaque or furry body"
+  ],
+  "look": "Design recipe: a translucent blob in a pale colour such as blue, white or yellow, with two dot eyes or an inner symbol, and one recognisable shape habit. Keep the silhouette distinct from any slime protagonist.",
+  "confidence": "high",
+  "sources": [
+   "https://tondemoskill-anime.com/character/",
+   "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara3_main.png",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
+   "https://dengekionline.com/articles/42425/",
+   "https://dengekionline.com/articles/42425/images/1/",
+   "https://www.animenewsnetwork.com/review/by-the-grace-of-the-gods/season-1/.174140"
+  ]
+ },
+ "P37": {
+  "base": "creature",
+  "presentation": "An enormous four-legged wolf with a long muzzle, upright ears, long flowing pale fur and a huge bushy tail; no human form.",
+  "notOnPage": [
+   "human form or human disguise",
+   "standing on hind legs",
+   "armour or saddle",
+   "glowing eyes",
+   "dark fur",
+   "multiple tails"
+  ],
+  "look": "Design recipe: an enormous quadruped with long, flowing pale fur, a fluffy chest ruff, a huge bushy tail and slender legs. No human disguise. Optional: a bowl or absurdly small treat beside its head for a clear visual joke.",
+  "confidence": "high",
+  "sources": [
+   "https://tondemoskill-anime.com/character/",
+   "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara2_main.png",
+   "https://myanimelist.net/character/173843",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill"
+  ]
+ },
+ "P38": {
+  "base": "creature",
+  "presentation": "Either a small upright dragon with a rounded, cat-like face, two short horns, bat wings, small clawed hands and a long tail, or a small fox with large upright ears and one bushy tail.",
+  "notOnPage": [
+   "large four-legged dragon",
+   "serpentine dragon",
+   "multiple tails on the fox"
+  ],
+  "look": "Design recipe: a small creature with one bold colour and a memorable tail or ear shape: an upright, round-faced dragon with stubby horns and bat wings, or a fox with large ears and one bushy tail.",
+  "confidence": "medium",
+  "sources": [
+   "https://tondemoskill-anime.com/character/",
+   "https://tondemoskill-anime.com/season2/wp-content/themes/tondemoskill/assets/img/character/main_vernew/chara4_main.png",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
+   "https://anihk.com/en/character/yuzuha-the-new-gate",
+   "https://myanimelist.net/character/154965/Yuzuha/pictures"
+  ]
+ },
+ "P39": {
+  "base": "creature",
+  "presentation": "A tiny cat that stands upright on its hind legs, with big round eyes and a long, thin tail.",
+  "notOnPage": [
+   "glowing wisp or orb form",
+   "fairy or robed humanoid",
+   "wings",
+   "icy blue or gold colouring",
+   "large realistic cat"
+  ],
+  "look": "Design recipe: a palm-sized, upright cat with soft light fur, big round eyes and a long thin tail, shown standing. Optional: a small satchel or an ear ornament.",
+  "confidence": "high",
+  "sources": [
+   "https://re-zero-anime.jp/tv/character/",
+   "https://re-zero-anime.jp/tv/assets/character/c/3.png",
+   "https://otakumode.com/otapedia/anime/re_zero/rezero_puck",
+   "https://en.wikipedia.org/wiki/List_of_Re:Zero_characters"
+  ]
+ },
+ "P45": {
+  "base": "human",
+  "presentation": "Human face and body with long pointed elf ears.",
+  "notOnPage": [
+   "green-tinted skin",
+   "leaf or bark textures on the body",
+   "animal features",
+   "short ears"
+  ],
+  "look": "Design recipe: long hair, long pointed ears and a curvy build; a fitted sleeveless bodice and short skirt with a cape, long gloves and lace-up boots. Optional: a labelled tonic flask, an overflowing sample case or a loose pencil to mark the artisan.",
+  "confidence": "high",
+  "sources": [
+   "https://slime300-anime.com/character/",
+   "https://slime300-anime.com/assets/images/character/art/halkara.png",
+   "https://en.wikipedia.org/wiki/I%27ve_Been_Killing_Slimes_for_300_Years_and_Maxed_Out_My_Level"
+  ]
+ },
+ "P46": {
+  "base": "human",
+  "presentation": "Human face and body, opaque, with normal skin; the feet fade out, and one or two small blue ghost flames float beside the head.",
+  "notOnPage": [
+   "fully see-through body",
+   "sheet-ghost shape or wispy tail instead of legs",
+   "pale grey or blue skin",
+   "floating wild hair",
+   "skull or zombie features"
+  ],
+  "look": "Design recipe: an ordinary, opaque human look in a neat dress, with feet that fade out and small blue ghost flames beside the head. Optional: a treasured ribbon, memento or assigned chair marks her place in the household.",
+  "confidence": "high",
+  "sources": [
+   "https://slime300-anime.com/character/",
+   "https://slime300-anime.com/assets/images/character/art/rosalie.png",
+   "https://en.wikipedia.org/wiki/I%27ve_Been_Killing_Slimes_for_300_Years_and_Maxed_Out_My_Level"
+  ]
+ }
+}

@@ -9,6 +9,7 @@
  * policies, not measured genre frequencies, and a valid cast says nothing
  * about audience recognition or comic quality.
  */
+import { presentationOf } from './presentation.ts';
 import { createHash } from 'node:crypto';
 import system from './system.json' with { type: 'json' };
 
@@ -410,6 +411,10 @@ export interface PacketMember {
   kit: string;
   variants: string[];
   note?: string;
+  /** How the archetype is drawn, checked against its sources (presentation.ts): base body and visible traits. */
+  presentation?: string;
+  /** What the image must not add to this character. */
+  notOnPage?: string[];
 }
 
 /** The generated cast in a comic packet. */
@@ -429,6 +434,7 @@ export const PAGE_CONTACTS = 1;
 
 function packetMember(m: Member, role: PacketMember['role']): PacketMember {
   const a = ARCHETYPES[m.archetype_id]!;
+  const shown = presentationOf(a.id);
   return {
     archetype: a.id,
     title: a.title,
@@ -443,6 +449,7 @@ function packetMember(m: Member, role: PacketMember['role']): PacketMember {
     kit: a.kit,
     variants: a.variants ?? [],
     ...(m.chosen_variant ? { note: m.chosen_variant } : {}),
+    ...(shown ? { look: shown.look ?? a.look, presentation: shown.presentation, notOnPage: shown.notOnPage } : {}),
   };
 }
 

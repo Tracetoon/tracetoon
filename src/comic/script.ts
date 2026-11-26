@@ -1,4 +1,5 @@
 /** Checks a comic script before any art is made. */
+import { presentationOf, SPECIES_WORDS } from './isekai/presentation.ts';
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
 import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
@@ -520,6 +521,10 @@ export function isekaiProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProb
     else roles[role]++;
     if (typeof c.description === 'string' && OPEN_CHOICE.test(c.description))
       bad(`characters[${i}].description`, 'still leaves a choice open ("or", "such as", "choose"…); decide one final design');
+    const shown = presentationOf(c.archetype);
+    const word = typeof c.description === 'string' && shown && shown.base !== 'creature' ? SPECIES_WORDS.exec(c.description)?.[0] : undefined;
+    if (word)
+      bad(`characters[${i}].description`, `says "${word}", which an image model draws as an animal-headed creature; describe the base body and traits from \`presentation\` instead (${shown!.presentation})`);
   }
   if (!roles.lead) bad('characters', `must include the lead, "${cast.lead.title}" (${cast.lead.archetype})`);
   if (roles.companion > cast.onPage.companions) bad('characters', `at most ${cast.onPage.companions} companions on the page (has ${roles.companion})`);
