@@ -66,6 +66,13 @@ const POLICY_DIRS = ['.github', 'docs'];
 /** A file name or link text that sounds like rules for contributors. */
 const POLICY_NAME =
   /contribut|polic(y|ies)|guideline|conduct|governance|(^|[^a-z])ai([^a-z]|$)|agent|pull.?request/i;
+/**
+ * Headings that mark contributor rules inside a README. Narrower than
+ * POLICY_NAME: a section titled "AI features" or "Agents" describes the
+ * product, not what contributors may do.
+ */
+const README_RULE_NAME =
+  /contribut|polic(y|ies)|guideline|conduct|governance|pull.?request|\bai\b[^|]{0,20}\b(contribution|usage|use|disclosure)/i;
 const DOC_FILE = /\.(md|markdown|rst|txt)$/i;
 /** Enough for any real repo's policy docs; bounds the work on huge doc trees. */
 const MAX_POLICY_FILES = 40;
@@ -94,9 +101,9 @@ function ruleSections(text: string): string {
         /^([=\-~^"'`#*+])\1{2,}\s*$/.test(lines[i + 1] ?? '') && line.trim();
       if (md) {
         const depth = md[1]!.length;
-        if (POLICY_NAME.test(md[2]!)) [keep, level] = [true, depth];
+        if (README_RULE_NAME.test(md[2]!)) [keep, level] = [true, depth];
         else if (!keep || depth <= level) keep = false;
-      } else if (rstUnder) keep = POLICY_NAME.test(line);
+      } else if (rstUnder) keep = README_RULE_NAME.test(line);
       return keep ? line : '';
     })
     .join('\n');
@@ -192,6 +199,7 @@ const prose = (line: string) =>
 // Rules about issues (screenshots of a bug, say) say nothing about PRs.
 const ABOUT_PRS = /\b(contribut\w*|pull requests?|PR descriptions?)\b/i;
 const PR_TEXT = /\b(pull requests?|PRs?\b|commit messages?)/i;
+const SUBMIT = /\b(submit\w*|accept\w*|contributions?)\b/i;
 const NO_PR = /\bnever (create|open|submit) (an? )?(issue|pr|pull request)/i;
 /**
  * Agent instructions are markdown, so the rule is usually emphasised and often
@@ -247,6 +255,7 @@ export function detectAiPolicy(root: string): AiPolicy {
   let noPullRequests = false;
   for (const { rel, text: content } of policyFiles(root)) {
     const agentFile = /AGENTS\.md|CLAUDE\.md|copilot-instructions/i.test(rel);
+    const readme = /^readme\./i.test(posix.basename(rel));
     const lines = content.split(/\r?\n/);
     lines.forEach((text, i) => {
       const t = prose(text);
@@ -288,7 +297,8 @@ export function detectAiPolicy(root: string): AiPolicy {
       if (bans && MEDIA.test(t)) {
         mediaBan = true;
         mediaSource ??= here;
-      } else if (bans) prohibited = true;
+      } else if (bans && (!readme || PR_TEXT.test(t) || ABOUT_PRS.test(t) || SUBMIT.test(t)))
+        prohibited = true;
       if (AUTHOR_WRITTEN.test(t)) authorWritten = true;
       if (DISCLOSE.test(t)) disclose = true;
       if (/Assisted-by:/i.test(t)) assistedBy = true;
