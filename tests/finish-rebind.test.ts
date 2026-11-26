@@ -238,6 +238,7 @@ describe('finish and publish rebind', () => {
     expect(before.stdout + before.stderr).toContain(
       'reviewer pass 1 reviewed different code',
     );
+    expect(before.stdout + before.stderr).not.toContain('review: plan met');
     // A fresh pass on the new code meets the plan on its own: the old one is superseded.
     writeLocal(join(run.dir, 'review-findings.json'), {
       v: 1,
@@ -254,6 +255,9 @@ describe('finish and publish rebind', () => {
     const text = cli(repo.root, ['finish', '--run', run.id], false);
     expect(text.stdout + text.stderr).not.toContain('reviewed different code');
     expect(text.stdout).toContain(`Next: tracetoon publish --run ${run.id}`);
+    // The review plan is the gate, so finish says it is met, not the older review's status.
+    expect(text.stdout).toContain('review: plan met.');
+    expect(text.stdout).not.toContain('review: incomplete');
     const passes = readLocal<any>(join(run.dir, 'review-passes.json'))!.passes;
     expect(passes.map((p: any) => p.agentId)).toEqual(['b8d4f20a3c']);
     const superseded = readLocal<any>(
