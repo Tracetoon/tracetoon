@@ -1,43 +1,39 @@
 /**
- * Layout variety by assignment: authors left to choose settle on a 4-panel
+ * Layout variety by assignment: authors left to choose settle on one 4-panel
  * grid (a wide opener, a middle pair, a wide closer). The host assigns each
- * comic one composition family at random, never one of the last few comics'
- * families, and weighted away from the familiar grids. A comic with action
- * beats may use an action family instead (types.ts ACTION_FAMILIES).
+ * comic a tiled structure (grid.ts signature) for each panel count it may
+ * use, at random, never one the last few comics used, and weighted away from
+ * that old default. Slants come from the panels' motion, not the assignment.
  */
 import { createHash } from 'node:crypto';
-import type { LayoutFamily } from './types.ts';
+import { SIGNATURES } from './grid.ts';
 
-/** How likely each family is to be assigned. Grids that were the default count half. */
-export const LAYOUT_WEIGHTS: Partial<Record<LayoutFamily, number>> = {
-  tiered: 0.5,
-  staggered: 0.5,
-  asymmetric: 1,
-  slanted: 1,
-  splash: 1,
-  'hero-inset': 1,
-  vertical: 1,
-  sequence: 1,
-  columns: 1,
-  'tall-left': 1,
-  'big-middle': 1,
-  zigzag: 1,
-  shattered: 1,
-  burst: 1,
-};
-
-/** How many recent comics' families are out of rotation. */
+/** The panel counts a comic is assigned a structure for. */
+export const ASSIGNED_COUNTS = [3, 4, 5] as const;
+/** How many recent comics' signatures are out of rotation. */
 export const LAYOUT_COOLDOWN = 3;
+/** Signatures that were the default count less. */
+export const LAYOUT_WEIGHTS: Record<string, number> = { 'rows:1-2-1': 0.3, 'rows:1-1-1': 0.6 };
 
 const unit = (seed: string) => createHash('sha256').update(seed).digest().readUInt32BE(0) / 0x1_0000_0000;
 
-/** This comic's layout family: weighted at random, skipping the last few comics' families. */
-export function layoutPick(seed: string, recentLayouts: string[] = []): LayoutFamily {
-  const resting = new Set(recentLayouts.slice(0, LAYOUT_COOLDOWN));
-  let entries = (Object.entries(LAYOUT_WEIGHTS) as [LayoutFamily, number][]).filter(([f]) => !resting.has(f));
-  if (!entries.length) entries = Object.entries(LAYOUT_WEIGHTS) as [LayoutFamily, number][];
-  const total = entries.reduce((s, [, w]) => s + w, 0);
-  let x = unit(`layout\0${seed}`) * total;
-  for (const [family, w] of entries) if ((x -= w) < 0) return family;
-  return entries[entries.length - 1]![0];
+/** One signature for a panel count: weighted at random, skipping recently used ones. */
+export function signaturePick(count: number, seed: string, recent: string[] = []): string {
+  const resting = new Set(recent);
+  let options = (SIGNATURES[count] ?? []).filter((s) => !resting.has(s));
+  if (!options.length) options = SIGNATURES[count] ?? [];
+  const weights = options.map((s) => LAYOUT_WEIGHTS[s] ?? 1);
+  let x = unit(`layout\0${count}\0${seed}`) * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < options.length; i++) if ((x -= weights[i]!) < 0) return options[i]!;
+  return options[options.length - 1]!;
+}
+
+/**
+ * This comic's structures, by panel count: the author picks how many panels
+ * the story needs and uses that one. `recentSignatures` are the newest
+ * comics' signatures, newest first (one or more per comic).
+ */
+export function layoutPick(seed: string, recentSignatures: string[][] = []): Record<string, string> {
+  const resting = recentSignatures.slice(0, LAYOUT_COOLDOWN).flat();
+  return Object.fromEntries(ASSIGNED_COUNTS.map((n) => [String(n), signaturePick(n, seed, resting)]));
 }

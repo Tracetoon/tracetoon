@@ -46,8 +46,11 @@ const LISTS = {
 } as const;
 type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
-/** Optional scalars: `casting: isekai` casts each comic from the isekai archetype guide. */
-const OPTIONAL_SCALARS = ['casting'] as const;
+/**
+ * Optional scalars: `casting: isekai` casts each comic from the isekai archetype
+ * guide; `brainstorm: off` writes its comics directly instead of brainstorming ideas first.
+ */
+const OPTIONAL_SCALARS = ['casting', 'brainstorm'] as const;
 const KNOWN = new Set<string>([...SCALARS, ...OPTIONAL_SCALARS, ...Object.keys(LISTS)]);
 
 /** `user`: `<config dir>/genres`, beside the user's config.json. */
@@ -169,6 +172,8 @@ export function parseGenreFile(
   };
   const casting = fields.get('casting');
   if (casting !== undefined && casting !== 'isekai') bad('casting', 'the only casting is "isekai" (the isekai archetype guide)');
+  const brainstorm = fields.get('brainstorm');
+  if (brainstorm !== undefined && brainstorm !== 'on' && brainstorm !== 'off') bad('brainstorm', 'must be on or off');
   const archetypes = list('archetypes');
   const props = list('props');
   const jokeHooks = list('jokeHooks');
@@ -257,6 +262,7 @@ export function parseGenreFile(
       ...(diverseCast.length ? { diverseCast } : {}),
       ...(leads.length ? { leads } : {}),
       ...(casting === 'isekai' ? { isekai: true } : {}),
+      ...(brainstorm === 'off' ? { brainstorm: false } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),

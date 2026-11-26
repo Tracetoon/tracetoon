@@ -86,16 +86,11 @@ export const LAYOUT_FAMILIES = [
   'slanted',
   'splash',
   'staggered',
-  'columns',
-  'tall-left',
-  'big-middle',
-  'zigzag',
-  'shattered',
-  'burst',
+  'grid',
   'custom',
 ] as const;
 /** Families built for action: angled gutters, breakouts. A script with move or impact panels may use one instead of its assigned layout. */
-export const ACTION_FAMILIES = ['slanted', 'shattered', 'burst', 'diagonal'] as const;
+export const ACTION_FAMILIES = ['slanted', 'diagonal'] as const;
 export const MOTIONS = ['still', 'move', 'impact'] as const;
 export const DIRECTIONS = ['left', 'right', 'up', 'down', 'toward', 'away'] as const;
 export interface PanelMotion {
@@ -126,6 +121,8 @@ export interface PanelFrame extends FrameBounds {
 }
 export interface Composition {
   family: LayoutFamily;
+  /** For the grid family: the tiled structure, e.g. "rows:1-2" (grid.ts). */
+  signature?: string;
   /** In story/reading order. Omit to use the family's geometry (except custom). */
   frames?: PanelFrame[];
   title: { mode: TitleMode; box?: FrameBounds };
@@ -137,6 +134,8 @@ export interface ComicSummary {
   genre?: string;
   styleFamily?: StyleFamily;
   layoutFamily?: LayoutFamily;
+  /** The grid signature used, so the next comics get other structures. */
+  layoutSignature?: string;
   panelCount?: number;
   titleTreatment?: TitleMode;
   /** Missing means unknown; [] means deliberately characterless. */

@@ -72,7 +72,7 @@ export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
         recentLeads: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.lead ? [c.lead] : [])),
         recentPresets: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
         ...(ctx?.comic?.cooldown ? { cooldown: ctx.comic.cooldown } : {}),
-        recentLayouts: (ctx?.comic?.recentComics ?? []).flatMap((c) => (c.layoutFamily ? [c.layoutFamily] : [])),
+        recentLayouts: (ctx?.comic?.recentComics ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : [])),
       })
     : (ctx?.comic?.genreOptions ??
       genreOptions(

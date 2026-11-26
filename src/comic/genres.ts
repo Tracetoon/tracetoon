@@ -7,7 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
-import type { ComicSummary, LayoutFamily } from './types.ts';
+import type { ComicSummary } from './types.ts';
 import { layoutPick } from './layouts.ts';
 import { cooldownFrom, drawPitches, memeChoices, type AnimeMeme, type Cooldown, type GagPick, type Pitch } from './isekai/pitches.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
@@ -52,6 +52,8 @@ export interface Genre {
   styleMix?: Record<string, number>;
   /** Cast each comic from the isekai archetype guide (isekai/casting.ts). */
   isekai?: boolean;
+  /** false: an isekai comic is written directly, without the pitches, ideas and judge. */
+  brainstorm?: boolean;
   /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
   source?: 'built-in' | 'user' | 'repo';
   /** The genre file it was read from (user and repo genres). */
@@ -336,8 +338,8 @@ export interface GenreOption {
   memeOffer?: Meme[];
   /** The style the host assigned this comic, when the genre has a style mix. */
   assignedStyle?: string;
-  /** The composition family the host assigned this comic (layouts.ts); an action family may replace it for action beats. */
-  assignedLayout?: LayoutFamily;
+  /** The tiled structure the host assigned this comic for each panel count (layouts.ts): {"3": "rows:1-2", ...}. */
+  assignedLayout?: Record<string, string>;
   /** A diverse archetype this comic must cast, for a genre without a cast offer. */
   requiredCast?: CastPersona;
   /** This comic's main character, for a genre without a cast offer (with one, it is in the offer). */
@@ -364,18 +366,19 @@ function restedCast(seed: string, recentPresets: string[], resting: string[]): I
 }
 
 const option = (
-  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads, isekai }: Genre,
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads, isekai, brainstorm }: Genre,
   seed = '',
   recentMemes: string[] = [],
   recentLeads: string[] = [],
   recentPresets: string[] = [],
   cooldown?: Cooldown,
-  recentLayouts: string[] = [],
+  recentLayouts: string[][] = [],
 ): GenreOption => {
-  const assignedLayout = layoutPick(`${seed} ${id}`, recentLayouts);
+  const assignedLayout = layoutPick(`${seed}\0${id}`, recentLayouts);
   if (isekai) {
     const s = `${seed}\0${id}`;
     const crew = restedCast(s, recentPresets, cooldown?.characters ?? []);
+    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout };
     const pitches = drawPitches(crew, s, cooldown);
     return {
       id, name, setting, archetypes, props, jokeHooks,
@@ -431,15 +434,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown; recentLayouts?: string[] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown; recentLayouts?: string[][] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).flatMap((c) => (c.layoutFamily ? [c.layoutFamily] : [])))
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : [])))
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).flatMap((c) => (c.layoutFamily ? [c.layoutFamily] : []))));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : []))));
 }

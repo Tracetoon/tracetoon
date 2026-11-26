@@ -73,9 +73,9 @@ export function comicGagsCmd(cwd: string, opts: GagsOpts): void {
   }
   if (problems.length) throw new UserError(`${GAG_FILES.gags} has problems:\n${listed}`);
   const file = raw as GagsFile;
-  const gags = file.gags;
+  const ideas = file.ideas;
   const scores = readJson<unknown>(run, GAG_FILES.scores);
-  const scoreIssues = scores === undefined ? undefined : scoreProblems(scores, gags);
+  const scoreIssues = scores === undefined ? undefined : scoreProblems(scores, ideas);
   if (scores === undefined || scoreIssues!.length) {
     // Judge: a fresh subagent sees the PR and the gags, never the author's notes or the anchor.
     const dir = join(run.dir, GAG_FILES.judge);
@@ -86,7 +86,7 @@ export function comicGagsCmd(cwd: string, opts: GagsOpts): void {
       gagJudgePrompt({
         description,
         title,
-        gags,
+        ideas,
         pitches: option.pitches,
         memes: option.memeList ?? [],
         out: join(run.dir, GAG_FILES.scores),
@@ -99,6 +99,6 @@ export function comicGagsCmd(cwd: string, opts: GagsOpts): void {
   const pick = pickGag(file, scores as GagJudging, option.pitches);
   const genreOptions = options.map((g) => (g === option ? { ...g, pick } : g));
   writeJson(run, 'context.json', { ...ctx, comic: { ...(ctx.comic ?? {}), genreOptions } });
-  const next = `Picked ${pick.gag.id} (ranked ${pick.rank} of ${gags.length}; the blind judge ${pick.recovered ? 'recovered' : 'did NOT recover'} the PR link${pick.gag.meme ? `; meme ${pick.gag.meme}` : ''}). Run: tracetoon comic packet --run ${run.id}`;
-  emit(opts, { run: run.id, stage: 'picked', pick: { gag: pick.gag.id, pitch: pick.pitch.id, meme: pick.gag.meme ?? null, rank: pick.rank, recovered: pick.recovered }, judged: pick.judged, next }, () => next);
+  const next = `Picked ${pick.idea.id} (${pick.rank ? `shortlisted #${pick.rank}` : 'not shortlisted'} of ${ideas.length} ideas; the blind judge ${pick.recovered ? 'recovered' : 'did NOT recover'} the PR link${pick.idea.meme ? `; meme ${pick.idea.meme}` : ''}). Run: tracetoon comic packet --run ${run.id}`;
+  emit(opts, { run: run.id, stage: 'picked', pick: { idea: pick.idea.id, spark: pick.pitch?.id ?? null, meme: pick.idea.meme ?? null, rank: pick.rank, recovered: pick.recovered }, judged: pick.judged, next }, () => next);
 }

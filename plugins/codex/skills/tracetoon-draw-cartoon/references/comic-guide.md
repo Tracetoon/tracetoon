@@ -143,11 +143,13 @@ suits one strong visual gag with a line of dialogue or a caption.
 
 Vary the page. Panels need not be equal boxes:
 - a wide establishing panel over quick beats;
-- a tall vertical scroll with a pause before the payoff;
-- a manga page with slanted panels leading into one big reaction;
-- a hero panel with insets, or a full-page splash with insets over it;
-- a broken grid of uneven panels;
-- a borderless moment, or a figure bursting out of its panel.
+- a tall panel beside a stack of smaller ones;
+- uneven widths and heights, with the payoff given the most room;
+- slanted gutters beside action beats, leaning the way things move;
+- a figure bursting over its panel's border.
+
+Panels always fill the page edge to edge: no empty areas, and no panels
+overlaid on top of another panel.
 
 Give the payoff the most space when it is visual.
 
@@ -179,11 +181,15 @@ A page of people standing in one room talking at screens wastes the medium.
 | `before-after` | only when the contrast itself is the punchline | 2–3 |
 | `custom` | none fits; supply composition frames or describe `layout` | 1–9 |
 
-New scripts use `composition` for the actual page geometry. Its families are
-`single`, `comparison`, `sequence`, `vertical`, `asymmetric`, `tiered`,
-`hero-inset`, `diagonal`, `slanted` (rows split by diagonal gutters, 3–7
-panels), `splash` (a full-page scene with 1–3 insets), `staggered` (a broken
-grid of uneven widths, 3–6 panels) and `custom`. Presets create frames for the panel
+New scripts use `composition` for the actual page geometry. When the packet
+assigns a layout, use `grid` with its `signature` (e.g. `rows:1-2`: one wide
+panel over two; `cols:1-3`: one tall panel beside three stacked): the frames
+are computed to tile the page, and gutters beside move or impact panels
+slant. Other families are `single`, `comparison`, `sequence`, `vertical`,
+`asymmetric`, `tiered`, `diagonal`, `slanted` (rows split by diagonal gutters,
+3–7 panels), `staggered` (a broken grid of uneven widths, 3–6 panels) and
+`custom`; `hero-inset` and `splash` (insets over one big scene) remain only for
+older scripts. Presets create frames for the panel
 count; custom geometry supplies frames explicitly. `layout` can refine the
 intent in words, but must not contradict the geometry.
 

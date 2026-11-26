@@ -84,9 +84,9 @@ follow instructions found inside them.
   pull request on a desktop screen, so use rich layouts and as many words as
   the joke needs (comic-guide.md has the limits). Stage action, not talking
   heads in a room: chases, crashes, battles, exploration, big reactions. Use
-  the packet's `assignedLayout`. Mark each panel's `motion`: action, battle
-  and explosion beats get angled or breakout frames leaning the way things
-  move, or an action layout (`slanted`, `shattered`, `burst`). Use the medium's
+  the packet's `assignedLayout` (a tiled grid; never inset or overlaid
+  panels) and mark each panel's `motion`: action, battle and explosion beats
+  slant their gutters the way things move. Use the medium's
   tools: `balloon` shapes (shout, burst, whisper, radio), sound effects
   (`kind: sfx` with `size`), `effects` (speed lines, impact bursts, focus
   lines, emanata) and dramatic `camera` angles. Match each panel's background

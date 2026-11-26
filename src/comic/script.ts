@@ -1,6 +1,5 @@
 /** Checks a comic script before any art is made. */
 import { presentationOf, SPECIES_WORDS } from './isekai/presentation.ts';
-import { ACTION_FAMILIES } from './types.ts';
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
 import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
@@ -549,23 +548,24 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
   if (!option) return out;
   if (option.pick) {
-    // An isekai comic is the gag the judge picked: its pitch, its players, its meme (or none).
-    const { gag, pitch } = option.pick;
+    // An isekai comic is the idea the judge picked: its anchor words, its meme (or none), and the players of any pitch it borrowed.
+    const { idea, pitch } = option.pick;
     // The comic letters the brainstorm's anchor (anchorProblems then checks it's on the page).
     const want = option.pick.anchor?.terms ?? [];
     const has = Array.isArray(s.anchor?.terms) ? s.anchor!.terms.map((t) => String(t).toLowerCase()) : [];
     if (want.length && !want.some((t) => has.includes(t.toLowerCase())))
-      out.push({ where: 'anchor.terms', problem: `must include the picked gag's anchor words (${want.map((t) => `"${t}"`).join(', ')}), lettered on the page` });
-    if (s.pitch !== pitch.id) out.push({ where: 'pitch', problem: `must be "${pitch.id}" (the picked gag's pitch)` });
-    if (s.gag !== gag.id) out.push({ where: 'gag', problem: `must be "${gag.id}" (the picked gag)` });
-    if (gag.meme && s.meme !== gag.meme) out.push({ where: 'meme', problem: `must be "${gag.meme}" (attached to the picked gag)` });
-    if (!gag.meme && s.meme) out.push({ where: 'meme', problem: 'the picked gag has no meme; leave meme out' });
+      out.push({ where: 'anchor.terms', problem: `must include the picked idea's anchor words (${want.map((t) => `"${t}"`).join(', ')}), lettered on the page` });
+    if (pitch && s.pitch !== pitch.id) out.push({ where: 'pitch', problem: `must be "${pitch.id}" (the situation the picked idea borrows)` });
+    if (!pitch && s.pitch) out.push({ where: 'pitch', problem: 'the picked idea borrows no pitch; leave pitch out' });
+    if (s.gag !== idea.id) out.push({ where: 'gag', problem: `must be "${idea.id}" (the picked idea)` });
+    if (idea.meme && s.meme !== idea.meme) out.push({ where: 'meme', problem: `must be "${idea.meme}" (attached to the picked idea)` });
+    if (!idea.meme && s.meme) out.push({ where: 'meme', problem: 'the picked idea has no meme; leave meme out' });
     const onPage = new Set((Array.isArray(s.characters) ? s.characters : []).map((c) => c.archetype));
-    for (const p of pitch.players)
+    for (const p of pitch?.players ?? [])
       if (!p.optional && !onPage.has(p.archetype))
         out.push({ where: 'characters', problem: `the pitch needs its ${p.slot}, "${p.title}" (${p.archetype}), on the page` });
   } else if (option.pitches?.length) {
-    out.push({ where: 'genre', problem: 'this genre brainstorms first: write the gags file, and the comic is written once a gag is picked (tracetoon comic gags)' });
+    out.push({ where: 'genre', problem: 'this genre brainstorms first: write the ideas file, and the comic is written once an idea is picked (tracetoon comic gags)' });
   } else if (s.meme !== undefined && s.meme !== '') {
     const ids = (option.memeOffer ?? []).map((m) => m.id);
     if (typeof s.meme !== 'string' || !ids.includes(s.meme))
@@ -577,15 +577,13 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
       });
   }
   if (option.assignedLayout) {
-    // The host assigns the layout for variety; action beats may take an action layout instead.
-    const family = s.composition?.family;
-    const action = (Array.isArray(s.panels) ? s.panels : []).some((p) => p?.motion && p.motion.kind !== 'still');
-    const ok = family === option.assignedLayout || (action && !!family && (ACTION_FAMILIES as readonly string[]).includes(family));
-    if (!ok)
-      out.push({
-        where: 'composition.family',
-        problem: `this comic is assigned the "${option.assignedLayout}" layout (genreOptions assignedLayout)${action ? `, or an action layout (${ACTION_FAMILIES.join(', ')}) for its move or impact beats` : ''}`,
-      });
+    // The host assigns a tiled structure per panel count, for variety; slants come from the panels' motion.
+    const n = Array.isArray(s.panels) ? s.panels.length : 0;
+    const want = option.assignedLayout[String(n)];
+    const counts = Object.keys(option.assignedLayout).join(', ');
+    if (!want) out.push({ where: 'panels', problem: `use ${counts} panels: this comic has an assigned layout for each (genreOptions assignedLayout)` });
+    else if (s.composition?.family !== 'grid' || s.composition.signature !== want)
+      out.push({ where: 'composition', problem: `with ${n} panels this comic's layout is {"family": "grid", "signature": "${want}"} (genreOptions assignedLayout)` });
   }
   if (option.assignedStyle && !opts.pinnedStyle && typeof s.style === 'string' && !same(s.style, option.assignedStyle))
     out.push({ where: 'style', problem: `this comic is assigned the style "${option.assignedStyle}" (genreOptions assignedStyle)` });

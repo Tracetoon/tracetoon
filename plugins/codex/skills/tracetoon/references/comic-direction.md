@@ -65,7 +65,7 @@ of the last two genres is not, unless the user asked for it.
 - **A pause before the payoff:** a vertical sequence with deliberate space.
 - **One visual contradiction:** a single scene with one line of dialogue or a
   caption.
-- **Overall context plus details:** a hero panel with contained insets.
+- **Overall context plus details:** a tall panel for the context beside a stack of details.
 - **A contrast that is itself the joke:** two matched frames. Use this
   sparingly.
 

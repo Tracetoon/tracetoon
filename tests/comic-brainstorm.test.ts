@@ -10,20 +10,21 @@ import {
   drawPitches,
   gagJudgePrompt,
   gagProblems,
-  GAGS_PER_PITCH,
+  IDEAS,
+  SHORTLIST,
   MEME_LIST_SIZE,
   memeChoices,
   pickGag,
   PITCHES,
   scoreProblems,
   recoveredAnchor,
-  type Gag,
+  type Idea,
   type GagAnchor,
   type GagJudging,
   type GagsFile,
 } from '../src/comic/isekai/pitches.ts';
 import { comicSummary } from '../src/comic/composition.ts';
-import { genreOptions, type GenreOption } from '../src/comic/genres.ts';
+import { genreById, genreOptions, type GenreOption } from '../src/comic/genres.ts';
 import { comicPacketFiles } from '../src/comic/packet.ts';
 import { checkScript, errors, FRANCHISE_NAMES } from '../src/comic/script.ts';
 import type { ComicScript, ComicSummary } from '../src/comic/types.ts';
@@ -148,51 +149,50 @@ describe('pitches', () => {
   });
 });
 
-describe('gags v2: the PR first, a blind judge, the pick', () => {
+describe('brainstorm v3: 20 ideas from the PR, a blind shortlist, the pick', () => {
   const option = genreOptions([], { pinned: 'anime-fantasy', seed: 'gags' })[0]!;
   const pitches = option.pitches!;
   const memes = option.memeList!;
   const PR = 'Adds a retry loop around the Maven launch so `mvn javafx:run` survives a cold start.';
   const anchor: GagAnchor = { change: 'The Maven launch now retries after a cold-start failure.', terms: ['javafx:run'] };
-  const gags: Gag[] = pitches.flatMap((p, i) =>
-    Array.from({ length: GAGS_PER_PITCH }, (_, k) => ({
-      id: `g${i * GAGS_PER_PITCH + k + 1}`,
-      pitch: p.id,
-      gag: 'Setup, then a payoff.',
-      shows: 'the gate plaque reads "javafx:run"',
-      prLink: 'The retry loop.',
-    })),
-  );
-  gags[3] = { ...gags[3]!, meme: memes[0]!.id, memeUse: 'shown as the allusion says' };
-  const file: GagsFile = { anchor, gags };
+  const ideas: Idea[] = Array.from({ length: IDEAS }, (_, i) => ({
+    id: `i${i + 1}`,
+    idea: `Idea number ${i + 1}: a setup, then a payoff.`,
+    shows: 'the gate plaque reads "javafx:run"',
+    prLink: 'The retry loop.',
+    ...(i === 2 ? { spark: pitches[0]!.id } : {}),
+    ...(i === 3 ? { meme: memes[0]!.id, memeUse: 'shown as the allusion says' } : {}),
+  }));
+  const file: GagsFile = { anchor, ideas };
 
-  test('the anchor comes first: a change, 1–3 words from the PR; every gag letters one', () => {
+  test('the anchor first, exactly 20 distinct ideas, each lettering an anchor word; sparks and memes are optional', () => {
     expect(gagProblems(file, pitches, memes, PR)).toEqual([]);
-    expect(gagProblems({ gags }, pitches, memes, PR)[0]!.where).toBe('anchor');
-    expect(gagProblems({ anchor: { ...anchor, terms: ['retryPolicy'] }, gags }, pitches, memes, PR).some((p) => p.problem.includes("isn't in the PR"))).toBe(true);
-    expect(gagProblems({ anchor, gags: [{ ...gags[0]!, shows: 'a sign on the gate' }, ...gags.slice(1)] }, pitches, memes, PR)[0]!.where).toBe('gags[0].shows');
-    expect(gagProblems({ anchor, gags: gags.slice(1) }, pitches, memes, PR).some((p) => p.problem.includes('has 1 gags'))).toBe(true);
-    expect(gagProblems({ anchor, gags: [{ ...gags[0]!, meme: 'nope', memeUse: 'x' }, ...gags.slice(1)] }, pitches, memes, PR)[0]!.where).toBe('gags[0].meme');
+    expect(gagProblems({ ideas }, pitches, memes, PR)[0]!.where).toBe('anchor');
+    expect(gagProblems({ anchor: { ...anchor, terms: ['retryPolicy'] }, ideas }, pitches, memes, PR).some((p) => p.problem.includes("isn't in the PR"))).toBe(true);
+    expect(gagProblems({ anchor, ideas: ideas.slice(1) }, pitches, memes, PR).some((p) => p.problem.includes(`exactly ${IDEAS}`))).toBe(true);
+    expect(gagProblems({ anchor, ideas: [{ ...ideas[0]!, shows: 'a sign on the gate' }, ...ideas.slice(1)] }, pitches, memes, PR)[0]!.where).toBe('ideas[0].shows');
+    expect(gagProblems({ anchor, ideas: [{ ...ideas[0]!, spark: 'AF-X99-01' }, ...ideas.slice(1)] }, pitches, memes, PR)[0]!.where).toBe('ideas[0].spark');
+    expect(gagProblems({ anchor, ideas: [{ ...ideas[0]!, idea: ideas[1]!.idea }, ...ideas.slice(1)] }, pitches, memes, PR).some((p) => p.problem.includes('word for word'))).toBe(true);
   });
 
-  test('the judge is blind: the PR and the gags, never the notes, the anchor or where it shows', () => {
-    const prompt = gagJudgePrompt({ description: PR, gags: gags.map((g) => ({ ...g, prLink: 'SECRET-NOTE', shows: 'SECRET-SHOWS' })), pitches, memes, out: 'scores.json' });
+  test('the judge is blind: the PR and the ideas (with any borrowed situation), never the notes, anchor or shows', () => {
+    const prompt = gagJudgePrompt({ description: PR, ideas: ideas.map((g) => ({ ...g, prLink: 'SECRET-NOTE', shows: 'SECRET-SHOWS' })), pitches, memes, out: 'judge.json' });
     expect(prompt).toContain(PR);
     expect(prompt).toContain(pitches[0]!.premise);
     expect(prompt).toContain(memes[0]!.name);
     expect(prompt).not.toContain('SECRET-NOTE');
     expect(prompt).not.toContain('SECRET-SHOWS');
     expect(prompt).not.toContain(anchor.change);
-    expect(prompt).toContain('"ranking"');
+    expect(prompt).toContain(`Shortlist the ${SHORTLIST} best ideas`);
   });
 
-  const ranking = gags.map((g) => g.id);
-  const judging = (recovered: (id: string) => string, order = ranking): GagJudging => ({ gags: gags.map((g) => ({ gag: g.id, recovered: recovered(g.id) })), ranking: order });
+  const judging = (recovered: (id: string) => string, shortlist = ['i2', 'i5', 'i1', 'i3', 'i4']): GagJudging => ({ ideas: ideas.map((g) => ({ id: g.id, recovered: recovered(g.id) })), shortlist });
 
-  test('the judge must read every gag and rank each exactly once', () => {
-    expect(scoreProblems(judging(() => 'unclear'), gags)).toEqual([]);
-    expect(scoreProblems({ ...judging(() => 'x'), ranking: ranking.slice(1) }, gags)[0]!.where).toBe('ranking');
-    expect(scoreProblems({ ...judging(() => 'x'), gags: [] }, gags).some((p) => p.problem.includes('no verdict'))).toBe(true);
+  test('the judge must read every idea and shortlist five distinct ones', () => {
+    expect(scoreProblems(judging(() => 'unclear'), ideas)).toEqual([]);
+    expect(scoreProblems(judging(() => 'x', ['i1', 'i2']), ideas)[0]!.where).toBe('shortlist');
+    expect(scoreProblems(judging(() => 'x', ['i1', 'i1', 'i2', 'i3', 'i4']), ideas)[0]!.where).toBe('shortlist');
+    expect(scoreProblems({ ...judging(() => 'x'), ideas: [] }, ideas).some((p) => p.problem.includes('no reading'))).toBe(true);
   });
 
   test('a reading recovers the anchor by its words, or by most of the change', () => {
@@ -201,21 +201,23 @@ describe('gags v2: the PR first, a blind judge, the pick', () => {
     expect(recoveredAnchor('Something about a fishing rig and patience.', anchor)).toBe(false);
   });
 
-  test('the pick: the best-ranked gag the judge read correctly; otherwise the best, flagged', () => {
-    const order = ['g2', 'g5', 'g1', 'g3', 'g4', 'g6'].filter((id) => ranking.includes(id));
-    const hit = pickGag(file, judging((id) => (id === 'g5' ? 'the javafx:run launch retries' : 'unclear'), order), pitches);
-    expect(hit.gag.id).toBe('g5');
+  test('the pick: the best shortlisted idea read correctly; then any idea read correctly; else the top of the shortlist, flagged', () => {
+    const hit = pickGag(file, judging((id) => (id === 'i5' || id === 'i3' ? 'the javafx:run launch retries' : 'unclear')), pitches);
+    expect(hit.idea.id).toBe('i5');
     expect(hit.rank).toBe(2);
     expect(hit.recovered).toBe(true);
-    const none = pickGag(file, judging(() => 'unclear', order), pitches);
-    expect(none.gag.id).toBe('g2');
+    const offList = pickGag(file, judging((id) => (id === 'i17' ? 'javafx:run retries' : 'unclear')), pitches);
+    expect(offList.idea.id).toBe('i17');
+    expect(offList.rank).toBe(0);
+    const none = pickGag(file, judging(() => 'unclear'), pitches);
+    expect(none.idea.id).toBe('i2');
     expect(none.recovered).toBe(false);
-    expect(none.judged.every((j) => !j.matched)).toBe(true);
+    const sparked = pickGag(file, judging((id) => (id === 'i3' ? 'javafx:run' : 'unclear')), pitches);
+    expect(sparked.pitch?.id).toBe(pitches[0]!.id);
   });
 
-  const pick = pickGag(file, judging((id) => (id === 'g4' ? 'javafx:run retries' : 'unclear')), pitches);
+  const pick = pickGag(file, judging((id) => (id === 'i4' ? 'javafx:run retries' : 'unclear')), pitches);
   const picked = { ...option, pick };
-  const players = [...new Set([option.isekaiCast!.lead.archetype, ...pick.pitch.players.filter((p) => !p.optional).map((p) => p.archetype)])];
   const script = (): ComicScript => {
     const s = pageScript() as ComicScript;
     return {
@@ -223,32 +225,31 @@ describe('gags v2: the PR first, a blind judge, the pick', () => {
       genre: 'anime-fantasy',
       castPreset: option.isekaiCast!.preset.id,
       place: 'a guild counter',
-      pitch: pick.pitch.id,
-      gag: pick.gag.id,
-      ...(pick.gag.meme ? { meme: pick.gag.meme } : {}),
+      gag: pick.idea.id,
+      ...(pick.idea.meme ? { meme: pick.idea.meme } : {}),
       anchor: { change: anchor.change, terms: ['javafx:run'], mapping: [{ visual: 'gate plaque', technical: 'the launch command' }] },
-      characters: players.map((archetype, i) => ({ name: `N${i}`, description: 'A plain decided design.', archetype })),
+      characters: [{ name: 'N0', description: 'A plain decided design.', archetype: option.isekaiCast!.lead.archetype }],
       lead: { persona: option.isekaiCast!.lead.archetype, name: 'N0' },
       panels: s.panels.map((p) => ({ ...p, background: 'soft', characters: [{ name: 'N0', position: 'left' }] })),
     } as ComicScript;
   };
   const pickErrors = (s: ComicScript, o: GenreOption = picked) =>
-    errors(checkScript(s, { genreOptions: [o] })).filter((p) => ['pitch', 'gag', 'meme', 'genre', 'anchor.terms'].includes(p.where) || p.problem.includes('the pitch needs'));
+    errors(checkScript(s, { genreOptions: [o] })).filter((p) => ['pitch', 'gag', 'meme', 'genre'].includes(p.where) || (p.where === 'anchor.terms' && p.problem.includes('picked')) || p.problem.includes('the pitch needs'));
 
-  test('the comic is the picked gag: its pitch, id, meme, players and anchor words', () => {
-    expect(pick.gag.id).toBe('g4');
-    expect(pickErrors(script()).filter((p) => p.where !== 'anchor.terms' || p.problem.includes('picked'))).toEqual([]);
-    expect(pickErrors({ ...script(), gag: 'g1' }).map((p) => p.where)).toContain('gag');
-    expect(pickErrors({ ...script(), pitch: 'AF-M01-01' }).map((p) => p.where)).toContain('pitch');
+  test('the comic is the picked idea: its id, meme and anchor words; no pitch when it borrowed none', () => {
+    expect(pick.idea.id).toBe('i4');
+    expect(pickErrors(script())).toEqual([]);
+    expect(pickErrors({ ...script(), gag: 'i1' }).map((p) => p.where)).toContain('gag');
+    expect(pickErrors({ ...script(), pitch: pitches[0]!.id }).map((p) => p.where)).toContain('pitch');
     expect(pickErrors({ ...script(), meme: undefined }).map((p) => p.where)).toContain('meme');
-    expect(pickErrors({ ...script(), anchor: { ...script().anchor!, terms: ['launcher'] } }).some((p) => p.problem.includes("picked gag's anchor"))).toBe(true);
+    expect(pickErrors({ ...script(), anchor: { ...script().anchor!, terms: ['launcher'] } }).some((p) => p.problem.includes("picked idea's anchor"))).toBe(true);
   });
 
   test('before a pick, writing the comic is an error: the genre brainstorms first', () => {
     expect(pickErrors(script(), option).map((p) => p.where)).toContain('genre');
   });
 
-  test('the packet: name the PR first, then gags, then memes; then the picked gag', () => {
+  test('the packet: name the PR first, then 20 ideas, then memes; then develop the pick with three concepts', () => {
     const files = (g = option) =>
       comicPacketFiles({
         brief: 'b', description: 'd', genres: [g], skillFiles: ['SKILL.md'],
@@ -256,11 +257,20 @@ describe('gags v2: the PR first, a blind judge, the pick', () => {
       })['instructions.md']!;
     const brainstorm = files();
     expect(brainstorm).toContain('Name the PR first');
-    expect(brainstorm.indexOf('Name the PR first')).toBeLessThan(brainstorm.indexOf(`write ${GAGS_PER_PITCH} different gags`));
-    expect(brainstorm).toContain('Only then read the genre\'s `memeList`');
+    expect(brainstorm).toContain(`Write ${IDEAS} ideas, fast`);
+    expect(brainstorm).toContain('The `pitches` are sparks');
     expect(brainstorm).toContain('steps 2–4 wait');
     const scripting = files(picked);
     expect(scripting).toContain('already picked');
-    expect(scripting).toContain("pick's anchor words");
+    expect(scripting).toContain('three ways to stage it');
+  });
+
+  test('brainstorm: off gives the cast and layout without pitches or memes', () => {
+    const g = { ...genreById('anime-fantasy')!, brainstorm: false };
+    const plain = genreOptions([], { pinned: 'anime-fantasy', seed: 'p', catalog: [g] })[0]!;
+    expect(plain.isekaiCast).toBeDefined();
+    expect(plain.assignedLayout).toBeDefined();
+    expect(plain.pitches).toBeUndefined();
+    expect(plain.memeList).toBeUndefined();
   });
 });
