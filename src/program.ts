@@ -442,7 +442,7 @@ export function buildProgram(cwd: string = process.cwd()): {
   review
     .command('run')
     .description(
-      "run the lean reviewer as a codex exec session pinned to the review plan's reviewer model, verify the model from its rollout, and import its findings",
+      "run the lean reviewers on the host's own agent (a toolless claude -p on Claude Code, codex exec on Codex; the review packet is their only input), pinned to the review plan's reviewer model, verify the model each ran on, and import its findings",
     )
     .option('--run <id>', 'run id (default: latest)')
     .option(
@@ -830,7 +830,10 @@ export const EFFECTS: Record<string, { effects: string[]; when?: string }> = {
   },
   'comic art': { effects: ['sends-data', 'may-cost'] },
   images: { effects: ['sends-data', 'may-cost'], when: 'with --approve or --test' },
-  'review run': { effects: ['sends-data', 'may-cost'] },
+  'review run': {
+    effects: ['may-cost'],
+    when: "starts reviewers on the host's own agent (claude -p on Claude Code, codex exec on Codex); the review packet is the only input",
+  },
   update: { effects: ['installs'] },
   setup: { effects: ['installs'] },
   'hook install': { effects: ['installs'] },

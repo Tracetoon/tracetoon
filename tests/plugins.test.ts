@@ -184,6 +184,8 @@ describe('every package', () => {
       /don'?t ask the user/i,
       /don'?t wait for, or ask/i,
       /draft straight away/i,
+      /never holds? the PR/i,
+      /asks? no one/i,
     ];
     for (const d of ['claude', 'claude-directory', 'cursor', 'codex', 'codex-directory', 'agent']) {
       const skill = text(`${OUT}/${d}/skills/tracetoon/SKILL.md`);
