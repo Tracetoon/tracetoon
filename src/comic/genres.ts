@@ -7,7 +7,8 @@
  */
 import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
-import type { ComicSummary } from './types.ts';
+import type { ComicSummary, LayoutFamily } from './types.ts';
+import { layoutPick } from './layouts.ts';
 import { cooldownFrom, drawPitches, memeChoices, type AnimeMeme, type Cooldown, type GagPick, type Pitch } from './isekai/pitches.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
@@ -335,6 +336,8 @@ export interface GenreOption {
   memeOffer?: Meme[];
   /** The style the host assigned this comic, when the genre has a style mix. */
   assignedStyle?: string;
+  /** The composition family the host assigned this comic (layouts.ts); an action family may replace it for action beats. */
+  assignedLayout?: LayoutFamily;
   /** A diverse archetype this comic must cast, for a genre without a cast offer. */
   requiredCast?: CastPersona;
   /** This comic's main character, for a genre without a cast offer (with one, it is in the offer). */
@@ -367,7 +370,9 @@ const option = (
   recentLeads: string[] = [],
   recentPresets: string[] = [],
   cooldown?: Cooldown,
+  recentLayouts: string[] = [],
 ): GenreOption => {
+  const assignedLayout = layoutPick(`${seed} ${id}`, recentLayouts);
   if (isekai) {
     const s = `${seed}\0${id}`;
     const crew = restedCast(s, recentPresets, cooldown?.characters ?? []);
@@ -378,6 +383,7 @@ const option = (
       isekaiCast: crew,
       pitches,
       memeList: memeChoices(pitches, s, cooldown),
+      assignedLayout,
     };
   }
   const plain = castOffer(cast, `${seed}\0${id}`);
@@ -404,6 +410,7 @@ const option = (
     ...(offer ? { castOffer: offer } : {}),
     ...(memePicks ? { memeOffer: memePicks } : {}),
     ...(style ? { assignedStyle: style } : {}),
+    assignedLayout,
     ...(hint && !offer ? { requiredCast: hint } : {}),
     ...(lead && !offer ? { lead } : {}),
   };
@@ -424,15 +431,15 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown; recentLayouts?: string[] } = {},
 ): GenreOption[] {
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined))
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).flatMap((c) => (c.layoutFamily ? [c.layoutFamily] : [])))
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined)));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).flatMap((c) => (c.layoutFamily ? [c.layoutFamily] : []))));
 }

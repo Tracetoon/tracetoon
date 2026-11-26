@@ -4,7 +4,10 @@ import { formatById } from './formats.ts';
 import { STYLES } from './styles.ts';
 import { genreKey } from './genres.ts';
 import {
+  ACTION_FAMILIES,
+  DIRECTIONS,
   LAYOUT_FAMILIES,
+  MOTIONS,
   type Aspect,
   type ComicScript,
   type ComicSummary,
@@ -174,6 +177,81 @@ export function resolveComposition(
       });
       break;
     }
+    case 'columns': {
+      // Tall panels side by side, read left to right.
+      const w = (0.95 - gap * (n - 1)) / n;
+      frames = Array.from({ length: n }, (_, i) => frame(0.025 + i * (w + gap), 0, w, 1));
+      break;
+    }
+    case 'tall-left': {
+      // One tall opening panel on the left, the rest stacked on the right.
+      const left = 0.46;
+      const right = 0.95 - left - gap;
+      const h = (1 - gap * (n - 2)) / (n - 1);
+      frames = [frame(0.025, 0, left, 1)];
+      for (let i = 0; i < n - 1; i++) frames.push(frame(0.025 + left + gap, i * (h + gap), right, h));
+      break;
+    }
+    case 'big-middle': {
+      // Small beats above and below one dominant middle panel.
+      const above = Math.floor((n - 1) / 2);
+      const below = n - 1 - above;
+      const small = 0.24;
+      const row = (count: number, y: number) => {
+        const w = (0.95 - gap * (count - 1)) / count;
+        return Array.from({ length: count }, (_, i) => frame(0.025 + i * (w + gap), y, w, small));
+      };
+      frames = [...row(above, 0), frame(0.025, small + gap, 0.95, 1 - 2 * (small + gap)), ...row(below, 1 - small)];
+      break;
+    }
+    case 'zigzag': {
+      // A staircase: each panel steps across from the one before.
+      const w = 0.58;
+      const h = (1 - gap * (n - 1)) / n;
+      frames = Array.from({ length: n }, (_, i) => frame(0.025 + (i % 2 ? 0.95 - w : 0), i * (h + gap), w, h));
+      break;
+    }
+    case 'shattered': {
+      // Bands cut by gutters at different angles, like a page splintered by the action.
+      // Angles vary from cut to cut, scaled so no band gets thinner than about a tenth of the page.
+      const tilt = 1 / n - 0.14;
+      const slopes = [1, -0.75, 1, -0.85].map((k) => k * tilt);
+      const g = 0.018;
+      const cut = (k: number) => (x: number) => (k === 0 ? 0 : k === n ? 1 : k / n + slopes[(k - 1) % slopes.length]! * (x - 0.5));
+      frames = Array.from({ length: n }, (_, i) => {
+        const top = cut(i);
+        const bottom = cut(i + 1);
+        const t0 = i === 0 ? 0 : top(0) + g;
+        const t1 = i === 0 ? 0 : top(1) + g;
+        const b0 = i === n - 1 ? 1 : bottom(0) - g;
+        const b1 = i === n - 1 ? 1 : bottom(1) - g;
+        const ty = Math.max(t0, t1) + 0.01;
+        const th = Math.max(0.05, Math.min(b0, b1) - ty - 0.01);
+        return {
+          ...frame(0.025, 0, 0.95, 1),
+          clip: [[0, t0], [1, t1], [1, b1], [0, b0]] as [number, number][],
+          textBox: { x: 0.04, y: ty, w: 0.92, h: Math.min(th, 0.2) },
+        };
+      });
+      break;
+    }
+    case 'burst': {
+      // One full-page action panel the figure bursts out of, then tilted inset beats.
+      const insets = n - 1;
+      const w = 0.28;
+      const spots: [number, number][] = [[0.04, 0.66], [0.68, 0.66], [0.68, 0.05]];
+      frames = [{ ...frame(0.025, 0, 0.95, 1), breakout: true, textBox: { x: 0.03, y: 0.03, w: 0.55, h: 0.25 } }];
+      for (let i = 0; i < insets; i++) {
+        const [x, y] = spots[i % spots.length]!;
+        frames.push({
+          ...frame(x, y, w, 0.28),
+          inset: true,
+          clip: i % 2 ? [[0.05, 0], [1, 0.07], [0.95, 1], [0, 0.93]] : [[0, 0.07], [0.95, 0], [1, 0.93], [0.05, 1]],
+          textBox: { x: 0.12, y: 0.14, w: 0.76, h: 0.34 },
+        });
+      }
+      break;
+    }
     default:
       frames = [];
   }
@@ -213,6 +291,12 @@ const FAMILY_LOOK: Partial<Record<Composition['family'], string>> = {
   'hero-inset': 'a full-page hero scene with small inset panels down one side',
   asymmetric: 'small setup panels above one wide, dominant payoff panel',
   tiered: 'a wide establishing panel above a row of smaller beats',
+  columns: 'tall vertical panels side by side, read left to right',
+  'tall-left': 'one tall panel down the left side with smaller panels stacked to its right',
+  'big-middle': 'small beats above and below one dominant middle panel',
+  zigzag: 'a staircase of panels stepping from side to side down the page',
+  shattered: 'bands of panels cut by gutters at sharply different angles, like a page splintered by the action',
+  burst: 'one full-page action panel whose main figure bursts out over the border, with small tilted inset panels',
 };
 /** A clipped frame's corners in page percentages, e.g. "(2.5%, 14%)". */
 function corners(f: PanelFrame): string {
@@ -418,6 +502,12 @@ export function compositionProblems(
     slanted: [3, 7],
     splash: [2, 4],
     staggered: [3, 6],
+    columns: [2, 4],
+    'tall-left': [3, 4],
+    'big-middle': [3, 5],
+    zigzag: [3, 5],
+    shattered: [3, 5],
+    burst: [2, 4],
   };
   const range = limits[c.family];
   if (range && (script.panels.length < range[0] || script.panels.length > range[1]))
@@ -484,6 +574,20 @@ export function compositionProblems(
       )
         bad(`${at}.textBox`, 'must fit entirely inside the clipping polygon');
     }
+  });
+  if (out.length) return out;
+  // Action beats get action frames: angled, borderless or broken out, never a plain box.
+  script.panels.forEach((p, i) => {
+    const m = p.motion;
+    if (!m) return;
+    if (!MOTIONS.includes(m.kind)) bad(`frames[${i}]`, `panel ${i + 1}'s motion.kind must be ${MOTIONS.join(', ')}`);
+    if (m.direction !== undefined && !DIRECTIONS.includes(m.direction)) bad(`frames[${i}]`, `panel ${i + 1}'s motion.direction must be ${DIRECTIONS.join(', ')}`);
+    if (m.kind === 'still') return;
+    const f = resolved.frames[i]!;
+    if (!f.clip && !f.breakout && f.border !== 'none')
+      bad(`frames[${i}]`, `panel ${i + 1} is a ${m.kind} beat in a plain rectangular frame; give it an angled (clipped) frame, a breakout or no border, or use an action layout (${ACTION_FAMILIES.join(', ')})`);
+    if (m.kind === 'impact' && !f.breakout && p.background !== 'speed-lines' && !p.effects?.includes('impact-burst'))
+      bad(`frames[${i}]`, `panel ${i + 1} is an impact: add an impact burst, speed lines or a breakout`);
   });
   if (out.length) return out;
   const heading = c.title.mode === 'heading' ? points(titleBox(script)!) : undefined;

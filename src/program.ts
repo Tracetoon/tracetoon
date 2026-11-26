@@ -573,6 +573,7 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--check', 'only check comic-gags.json')
     .option('--file <path>', 'with --check: a gags file outside any run')
     .option('--context <path>', "with --file: the packet's context.json")
+    .option('--evidence <paths...>', "with --file: the PR's description, brief or diff, to check the anchor's words")
     .action((o) => comicGagsCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')

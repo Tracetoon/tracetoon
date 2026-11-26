@@ -1,5 +1,6 @@
 /** Checks a comic script before any art is made. */
 import { presentationOf, SPECIES_WORDS } from './isekai/presentation.ts';
+import { ACTION_FAMILIES } from './types.ts';
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
 import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
@@ -550,6 +551,11 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   if (option.pick) {
     // An isekai comic is the gag the judge picked: its pitch, its players, its meme (or none).
     const { gag, pitch } = option.pick;
+    // The comic letters the brainstorm's anchor (anchorProblems then checks it's on the page).
+    const want = option.pick.anchor?.terms ?? [];
+    const has = Array.isArray(s.anchor?.terms) ? s.anchor!.terms.map((t) => String(t).toLowerCase()) : [];
+    if (want.length && !want.some((t) => has.includes(t.toLowerCase())))
+      out.push({ where: 'anchor.terms', problem: `must include the picked gag's anchor words (${want.map((t) => `"${t}"`).join(', ')}), lettered on the page` });
     if (s.pitch !== pitch.id) out.push({ where: 'pitch', problem: `must be "${pitch.id}" (the picked gag's pitch)` });
     if (s.gag !== gag.id) out.push({ where: 'gag', problem: `must be "${gag.id}" (the picked gag)` });
     if (gag.meme && s.meme !== gag.meme) out.push({ where: 'meme', problem: `must be "${gag.meme}" (attached to the picked gag)` });
@@ -568,6 +574,17 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
         problem: ids.length
           ? `"${String(s.meme)}" wasn't offered; use one of ${ids.join(', ')}, or leave meme out`
           : 'this genre offered no memes; leave meme out',
+      });
+  }
+  if (option.assignedLayout) {
+    // The host assigns the layout for variety; action beats may take an action layout instead.
+    const family = s.composition?.family;
+    const action = (Array.isArray(s.panels) ? s.panels : []).some((p) => p?.motion && p.motion.kind !== 'still');
+    const ok = family === option.assignedLayout || (action && !!family && (ACTION_FAMILIES as readonly string[]).includes(family));
+    if (!ok)
+      out.push({
+        where: 'composition.family',
+        problem: `this comic is assigned the "${option.assignedLayout}" layout (genreOptions assignedLayout)${action ? `, or an action layout (${ACTION_FAMILIES.join(', ')}) for its move or impact beats` : ''}`,
       });
   }
   if (option.assignedStyle && !opts.pinnedStyle && typeof s.style === 'string' && !same(s.style, option.assignedStyle))

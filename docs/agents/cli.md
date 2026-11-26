@@ -361,6 +361,7 @@ an isekai comic's select step: check the brainstormed gags, write a fresh judge'
 | `--check` | only check comic-gags.json |
 | `--file <path>` | with --check: a gags file outside any run |
 | `--context <path>` | with --file: the packet's context.json |
+| `--evidence <paths...>` | with --file: the PR's description, brief or diff, to check the anchor's words |
 
 ## `tracetoon comic check`
 

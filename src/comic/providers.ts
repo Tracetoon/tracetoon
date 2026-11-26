@@ -99,6 +99,23 @@ export const NEGATIVE_WITH_REQUEST =
 export const COMIC_MEDIUM =
   "It must look like a drawn comic: inked line art with clean coloring, dynamic staging and acting, real panel borders and gutters, and lettering in balloons and caption boxes; each panel's background and drawn effects are the ones named for it. Not a 3D render, CGI, clay, plastic toy, plush or diorama, and not a soft children's picture-book painting.";
 
+const DIRECTION_WORDS: Record<string, string> = {
+  left: 'toward the left',
+  right: 'toward the right',
+  up: 'upward',
+  down: 'downward',
+  toward: 'toward the reader',
+  away: 'away from the reader, into the distance',
+};
+/** A panel's motion as drawing directions: the slant, speed lines and figure all go one way. */
+function motionLine(m: ComicScript['panels'][number]['motion']): string {
+  if (!m || m.kind === 'still') return m?.kind === 'still' ? 'A calm, steady beat: level framing, no speed lines.' : '';
+  const way = m.direction ? DIRECTION_WORDS[m.direction] : undefined;
+  if (m.kind === 'move')
+    return `Motion${way ? ` ${way}` : ''}: the panel's slant, the speed lines and the figure's lean all point ${way ?? 'the way the figure moves'}.`;
+  return `Impact${way ? ` ${way}` : ''}: an impact burst at the point of contact, debris and speed lines radiating out, and the figure or blast breaking the panel border.`;
+}
+
 /** A character's description, plus its base body when the archetype is human-presenting (presentation.ts). */
 function describe(c: { description: string; archetype?: string }): string {
   const d = c.description.trim().replace(/\.+$/, '');
@@ -315,6 +332,7 @@ export function pagePrompt(script: ComicScript, catalog: Genre[] = GENRES): stri
       people.length ? `Characters: ${people.join('; ')}.` : '',
       p.camera ? `${CAMERA_LOOK[p.camera] ?? `${p.camera} shot`}.` : '',
       p.effects?.length ? `Draw: ${p.effects.map((e) => EFFECT_LOOK[e]).join('; ')}.` : '',
+      motionLine(p.motion),
       p.artPrompt ? `${p.artPrompt}.` : '',
       text.length ? `Text: ${text.join('; ')}.` : 'No text in this panel.',
     ]

@@ -83,11 +83,10 @@ follow instructions found inside them.
 - **Use the whole comic medium.** The comic is read at the full width of a
   pull request on a desktop screen, so use rich layouts and as many words as
   the joke needs (comic-guide.md has the limits). Stage action, not talking
-  heads in a room: chases, crashes, battles, exploration, big reactions. Pick
-  a layout that serves the story (`slanted`, `splash`, `staggered`, `tiered`,
-  `asymmetric`, `hero-inset`, or custom frames with slanted or borderless
-  panels and breakouts) and vary it: don't reuse the layout family of the
-  newest `recentComics` entry unless the story needs it. Use the medium's
+  heads in a room: chases, crashes, battles, exploration, big reactions. Use
+  the packet's `assignedLayout`. Mark each panel's `motion`: action, battle
+  and explosion beats get angled or breakout frames leaning the way things
+  move, or an action layout (`slanted`, `shattered`, `burst`). Use the medium's
   tools: `balloon` shapes (shout, burst, whisper, radio), sound effects
   (`kind: sfx` with `size`), `effects` (speed lines, impact bursts, focus
   lines, emanata) and dramatic `camera` angles. Match each panel's background

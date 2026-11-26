@@ -86,8 +86,24 @@ export const LAYOUT_FAMILIES = [
   'slanted',
   'splash',
   'staggered',
+  'columns',
+  'tall-left',
+  'big-middle',
+  'zigzag',
+  'shattered',
+  'burst',
   'custom',
 ] as const;
+/** Families built for action: angled gutters, breakouts. A script with move or impact panels may use one instead of its assigned layout. */
+export const ACTION_FAMILIES = ['slanted', 'shattered', 'burst', 'diagonal'] as const;
+export const MOTIONS = ['still', 'move', 'impact'] as const;
+export const DIRECTIONS = ['left', 'right', 'up', 'down', 'toward', 'away'] as const;
+export interface PanelMotion {
+  /** still: a calm beat; move: running, flying, chasing; impact: a hit, an explosion, a crash. */
+  kind: (typeof MOTIONS)[number];
+  /** Which way the motion goes on the page. */
+  direction?: (typeof DIRECTIONS)[number];
+}
 export type LayoutFamily = (typeof LAYOUT_FAMILIES)[number];
 export type TitleMode = 'none' | 'integrated' | 'heading';
 /** Coordinates are fractions of the page, before the branding footer. */
@@ -247,6 +263,8 @@ export interface Panel {
   background?: PanelBackground;
   /** Drawn effects: speed lines, an impact burst, sweat drops, a shaking frame. */
   effects?: PanelEffect[];
+  /** The beat's motion: move and impact panels get angled frames and directional cues. */
+  motion?: PanelMotion;
   characters: PanelCharacter[];
   dialogue: Dialogue[];
   /** Optional extra direction for image models. */
