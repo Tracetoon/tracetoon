@@ -76,7 +76,7 @@ function routeStep(routes: RouteStatus[]): NextStep {
     return {
       kind: 'approve',
       route: candidate.id,
-      text: `Approve ${candidate.label} once. It sends comic scenes and character descriptions (never code) to ${candidate.sendsTo}, ${candidate.cost}. Run: tracetoon images --approve ${candidate.id} --test`,
+      text: `Ask the user to approve ${candidate.label} once: it sends comic scenes and character descriptions (never code) to ${candidate.sendsTo}, ${candidate.cost}. On their yes, run it yourself (don't hand them the command): tracetoon images --approve ${candidate.id} --test`,
     };
   const broken = routes.find((r) => r.available);
   if (broken)
