@@ -358,7 +358,8 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
   of the offered personas the comic casts. `comic check` rejects an id that
   wasn't offered.
 - **`leadLook`** (optional): the lead's age, build, hair and clothes in a
-  few plain words ("wiry old man, bald, orange flight suit"). `comic check`
+  few plain words, at most 80 characters ("wiry old man, bald, orange flight
+  suit"); never paste the cast entry's full look. `comic check`
   warns when it matches a recent comic's lead.
 - **`genre`** (required with `composition`): a genre id from
   `context.comic.genreOptions` / [genres.md](genres.md), or a short phrase (at

@@ -105,13 +105,14 @@ follow instructions found inside them.
   `request`. A famous line may be paraphrased.
 - **Genre memes are welcome.** A meme or famous-scene allusion that veteran
   fans recognise lands hardest when the PR's moment fits it. When the genre
-  has a `memeOffer`, pick from it and record the id in `meme`; allude, never
+  has a `memeOffer` or `tropeOffer`, pick from it and record the id in `meme`; allude, never
   name the work. With `pitches`, brainstorm gags first and add a meme only
   where it fits; the judge's `pick` is the comic.
 - **Invent this comic's own characters** (or none); never reuse characters
   from earlier comics. Name them after this story (what they do in it), not
   stock genre names, and never use a name in `recentComics` `castNames`.
-  Record the lead's look in `leadLook` and make it unlike the recent ones.
+  Record the lead's look in `leadLook` (a few words, at most 80 characters;
+  never paste the cast's full look) and make it unlike the recent ones.
 - **Nobody is the butt for who they are.** Aim the joke at the bug, the
   tool or the predicament.
 - **Cast people the way the genre's own stories do.** A `required` persona
