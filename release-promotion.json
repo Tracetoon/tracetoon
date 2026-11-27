@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.50",
-  "buildId": "1951c760acd7d2661e24b9f37ed82b9af9a22a280d41d6b67283718196ba4318",
+  "version": "1.0.0-rc.51",
+  "buildId": "6f506823276f035211da7dcb089f977f59eed16c3a54f0891321b84a9c6d6f60",
   "artifact": {
-    "runId": 45563778875,
-    "id": 14999446744,
-    "name": "tracetoon-candidate-b8d379eac581b1b12684b9d6db84ed74b26dbaf7-attempt-1",
-    "digest": "sha256:1399cd76806b5e5a15e1fdde4108a53b2e2d217987b923546d99da61913a2ef0"
+    "runId": 45919142177,
+    "id": 15164236475,
+    "name": "tracetoon-candidate-d011ec8d7cad719d564e50925bb23b6c54335e4c-attempt-1",
+    "digest": "sha256:35af607f00d9bcd0e948a7d1cba8961fbe82b6fb2532b07464e34aae9c051bca"
   },
   "expected": {
-    "manifestSha256": "1aea64cf2a857adebb88390fe8bb2725c0e6892a659dfcdccecb9a19c7467d63",
-    "checksumsSha256": "8ce3c21290f43afa2e3ede167b27cb4b92beab84887796481af817bee1cfc36f",
-    "windowsSha256": "4a9f93e47bf5ccd101813ab79cbaacfe132fa03000afa79679ead3a94beec8c0",
-    "bundleSha256": "1d4bd23fbef99f50022441ef49666a01bcf06864af2299992c5661605c1e8ec6"
+    "manifestSha256": "0880e0b3d4a3531ff0064872d1bfaf2c766749dde23694ea53cbaae84d8fdffc",
+    "checksumsSha256": "df98e3f27b01a30c255471be26528b1ed32bff9dad31e127071a3362746c1195",
+    "windowsSha256": "e6245c807bbbc53e4c06ff0c83eab48c073f836a8733ac957868de4cd81d281a",
+    "bundleSha256": "825ff88e1ece188537fa7d443381f6e95fdc72dbc279c4385615c1e18568c0fd"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-25T07:05:11.000Z",
-    "reason": "The user asked to cut a release after #226 merged, so the plugin packages say publishing takes the same approval as opening a PR the normal way, which the Anthropic directory's scan asked for before resubmission. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-27T01:16:04.000Z",
+    "reason": "The user asked to cut a release after the review-run wording, comic-setup, README AI-policy and finish-status PRs (#235 to #238) merged, so the skill and CLI describe review run accurately and ask the user when the host denies it. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
