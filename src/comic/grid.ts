@@ -333,22 +333,36 @@ export function describeSignature(sig: string, layout: GridLayout, motions: (Pan
   if (!s) return '';
   const word = ['', 'one panel', 'two panels side by side', 'three panels side by side'];
   const wordCol = ['', 'one tall panel', 'two panels stacked', 'three panels stacked'];
+  // Band sizes, as shares of the page along the stacking axis.
   let k = 0;
-  const parts = s.bands.map((count, b) => {
+  const sizes = s.bands.map((count) => {
     const ps = layout.panels.slice(k, k + count);
+    k += count;
+    const axis = s.orientation === 'rows' ? 1 : 0;
+    return Math.max(...ps.flatMap((p) => p.polygon.map((q) => q[axis]))) - Math.min(...ps.flatMap((p) => p.polygon.map((q) => q[axis])));
+  });
+  const avg = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+  const even = sizes.every((x) => Math.abs(x - avg) / avg < 0.12);
+  // Relative sizes, not percentages: the image model drifts on figures (round 18 study); the Frame lines keep the numbers.
+  const rel = (x: number) => (x > avg * 1.12 ? (s.orientation === 'rows' ? 'taller' : 'wider') : x < avg * 0.88 ? (s.orientation === 'rows' ? 'shorter' : 'narrower') : 'medium');
+  k = 0;
+  const parts = s.bands.map((count, b) => {
     const first = k + 1;
     k += count;
-    const span = (axis: 0 | 1) => Math.max(...ps.flatMap((p) => p.polygon.map((q) => q[axis]))) - Math.min(...ps.flatMap((p) => p.polygon.map((q) => q[axis])));
     const which = count === 1 ? `panel ${first}` : `panels ${first}–${first + count - 1}`;
+    const size = even || s.bands.length === 1 ? '' : `, ${rel(sizes[b]!)}`;
     return s.orientation === 'rows'
-      ? `Row ${b + 1} (about ${Math.round(span(1) * 100)}% of the page height): ${word[count]} (${which})`
-      : `Column ${b + 1} (about ${Math.round(span(0) * 100)}% of the page width): ${wordCol[count]} (${which})`;
+      ? `Row ${b + 1}${size}: ${word[count]} (${which})`
+      : `Column ${b + 1}${size}: ${wordCol[count]} (${which})`;
   });
+  const n = s.bands.reduce((a, b) => a + b, 0);
+  const unit = s.orientation === 'rows' ? 'row' : 'column';
+  const lead = `${n} panels in ${s.bands.length} ${unit}${s.bands.length > 1 ? 's' : ''}${s.bands.length > 1 ? `: ${s.bands.join(', then ')}` : ''}${even && s.bands.length > 1 ? `, the ${unit}s of equal ${s.orientation === 'rows' ? 'height' : 'width'}` : ''}`;
   const why = (i: number) => (motions[i]?.kind === 'impact' ? 'for the impact' : 'for the motion');
   const borders = layout.slants.length
     ? `All panel borders are straight and level except ${layout.slants.length === 1 ? 'one' : 'two'}: ${layout.slants
         .map((g) => `the gutter between panel${g.before.length > 1 ? 's' : ''} ${nums(g.before)} and panel${g.after.length > 1 ? 's' : ''} ${nums(g.after)} slants, its top leaning ${g.lean}, ${why([...g.before, ...g.after].find((i) => motions[i] && motions[i]!.kind !== 'still') ?? g.after[0]!)}`)
         .join('; ')}. The rows themselves stay level.`
     : 'All panel borders are straight and level.';
-  return `${parts.join('. ')}. ${borders} The panels fill the page edge to edge, with the same narrow white gap between every pair of neighbouring panels: no empty areas, no overlapping panels, no inset panels.`;
+  return `${lead}. ${parts.join('. ')}. ${borders} The panels fill the page edge to edge, with the same narrow white gap between every pair of neighbouring panels: no empty areas, no overlapping panels, no inset panels.`;
 }

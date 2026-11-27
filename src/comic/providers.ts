@@ -113,7 +113,7 @@ function motionLine(m: ComicScript['panels'][number]['motion']): string {
   const way = m.direction ? DIRECTION_WORDS[m.direction] : undefined;
   if (m.kind === 'move')
     return `Motion${way ? ` ${way}` : ''}: the panel's slant, the speed lines and the figure's lean all point ${way ?? 'the way the figure moves'}.`;
-  return `Impact${way ? ` ${way}` : ''}: an impact burst at the point of contact, debris and speed lines radiating out, and the figure or blast breaking the panel border.`;
+  return `Impact${way ? ` ${way}` : ''}: an impact burst at the point of contact, debris and speed lines radiating out to the panel's edges.`;
 }
 
 /** A character's description, plus its base body when the archetype is human-presenting (presentation.ts). */
