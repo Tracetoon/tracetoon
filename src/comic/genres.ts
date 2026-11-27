@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
 import type { ComicSummary } from './types.ts';
 import { layoutPick } from './layouts.ts';
-import { cooldownFrom, drawPitches, memeChoices, type AnimeMeme, type Cooldown, type GagPick, type Pitch } from './isekai/pitches.ts';
+import { cooldownFrom, drawPitches, memeChoices, tropeOffer, type AnimeMeme, type Cooldown, type GagPick, type Pitch, type TropeOffer } from './isekai/pitches.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
 import spaceOperaCast from './cast/space-opera.json' with { type: 'json' };
@@ -352,6 +352,8 @@ export interface GenreOption {
   pitches?: Pitch[];
   /** The memes this isekai comic may attach to a gag where one fits (not used in the last 100 comics). */
   memeList?: AnimeMeme[];
+  /** Three isekai staples or memes this comic may build on, optionally (isekai/pitches.ts tropeOffer). */
+  tropeOffer?: TropeOffer[];
   /** The gag the judge scored best, once picked (`tracetoon comic gags`). */
   pick?: GagPick;
 }
@@ -379,8 +381,9 @@ const option = (
   const assignedLayout = layoutPick(`${seed}\0${id}`, recentLayouts);
   if (isekai) {
     const s = `${seed}\0${id}`;
-    const crew = restedCast(s, recentPresets, cooldown?.characters ?? []);
-    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout };
+    const crew = restedCast(s, recentPresets, [...(cooldown?.characters ?? []), ...(cooldown?.leads ?? [])]);
+    const tropes = tropeOffer([crew.lead, ...crew.companions, ...crew.contacts].map((m) => m.title), s, cooldown);
+    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout, tropeOffer: tropes };
     const pitches = drawPitches(crew, s, cooldown);
     return {
       id, name, setting, archetypes, props, jokeHooks,
@@ -389,6 +392,7 @@ const option = (
       pitches,
       memeList: memeChoices(pitches, s, cooldown),
       assignedLayout,
+      tropeOffer: tropes,
     };
   }
   const plain = castOffer(cast, `${seed}\0${id}`);

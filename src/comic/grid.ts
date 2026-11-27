@@ -25,13 +25,18 @@ export interface Signature {
   bands: number[];
 }
 
-/** Every signature the generator draws, by panel count. At most 3 bands of at most 3 panels. */
+/**
+ * Every signature the generator draws, by panel count. At most 3 bands of at
+ * most 3 panels. Column layouts always open with the tall panel on the left:
+ * a tall panel beside a stack is only read in order when it comes first
+ * (Cohn 2013; Shanower).
+ */
 export const SIGNATURES: Record<number, string[]> = {
   2: ['rows:1-1', 'rows:2'],
-  3: ['rows:1-2', 'rows:2-1', 'rows:3', 'rows:1-1-1', 'cols:1-2', 'cols:2-1'],
-  4: ['rows:1-2-1', 'rows:2-2', 'rows:1-3', 'rows:3-1', 'rows:2-1-1', 'rows:1-1-2', 'cols:1-3', 'cols:3-1', 'cols:1-2-1'],
-  5: ['rows:2-1-2', 'rows:1-2-2', 'rows:2-2-1', 'rows:2-3', 'rows:3-2', 'rows:1-3-1', 'cols:1-2-2', 'cols:2-1-2', 'cols:2-3'],
-  6: ['rows:2-2-2', 'rows:3-3', 'rows:1-2-3', 'rows:3-2-1', 'cols:2-2-2'],
+  3: ['rows:1-2', 'rows:2-1', 'rows:3', 'rows:1-1-1', 'cols:1-2'],
+  4: ['rows:1-2-1', 'rows:2-2', 'rows:1-3', 'rows:3-1', 'rows:2-1-1', 'rows:1-1-2', 'cols:1-3'],
+  5: ['rows:2-1-2', 'rows:1-2-2', 'rows:2-2-1', 'rows:2-3', 'rows:3-2', 'rows:1-3-1', 'cols:1-2-2'],
+  6: ['rows:2-2-2', 'rows:1-2-3', 'rows:3-2-1'],
 };
 
 export function parseSignature(sig: string): Signature | undefined {
@@ -45,6 +50,8 @@ export const panelsIn = (sig: string) => parseSignature(sig)?.bands.reduce((s, n
 /** Page margins and gutter, as fractions of the page (the same as the hand-built families). */
 const MARGIN = 0.025;
 const GUTTER = 0.025;
+/** Tier (horizontal) gutters are this much wider than column gutters: rows carry the page's structure (R5). */
+const TIER_RATIO = 1.5;
 /** How far a slanted gutter's two ends differ, as a share of the band it crosses (and never more than MAX_SLANT of the page). */
 const SLANT_SHARE = 0.22;
 const MAX_SLANT = 0.08;
@@ -70,23 +77,26 @@ function intersect(p: Line, q: Line): Pt {
   return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
 }
 
-const weightsFor = (k: number, seed: string, dominant: number | undefined): number[] => {
+/** Band sizes: the band holding the dominant panel is larger. */
+const bandWeights = (k: number, seed: string, dominant: number): number[] => {
   if (k === 1) return [1];
-  const base = k === 2 ? choose([[1, 1], [1.6, 1], [1, 1.6]], seed) : choose([[1, 1, 1], [1.4, 1, 1], [1, 1.4, 1], [1, 1, 1.4]], seed);
-  if (dominant === undefined) return base;
-  // The dominant panel gets the biggest share.
-  const max = Math.max(...base);
-  const out = base.map((w) => (w === max && max > 1 ? 1 : w));
-  out[dominant] = Math.max(max, 1.4);
+  const base = k === 2 ? choose([[1, 1], [1.25, 1], [1, 1.25]], seed) : choose([[1, 1, 1], [1.15, 1, 1], [1, 1.15, 1], [1, 1, 1.15]], seed);
+  const out = [...base];
+  if (dominant >= 0) out[dominant] = Math.max(...base) + 0.3;
   return out;
 };
 
-const lean = (m: PanelMotion | undefined, fallback: number): number => {
-  if (!m || m.kind === 'still') return 0;
-  if (m.direction === 'left' || m.direction === 'up') return -1;
-  if (m.direction === 'right' || m.direction === 'down') return 1;
-  return fallback;
+/** Interior cut positions (0–1) a band of k cells may use; every cell keeps at least MIN_SHARE. */
+const MIN_SHARE = 0.24;
+const CUTS: Record<number, number[][]> = {
+  1: [[]],
+  2: [[0.5], [0.38], [0.62], [0.44], [0.56]],
+  3: [0.24, 0.25, 0.27, 0.31, 0.333, 0.37].flatMap((a) => [0.5, 0.52, 0.55, 0.6, 0.64, 0.667, 0.7, 0.74, 0.76].map((b): number[] => [a, b])).filter((c) => c[1]! - c[0]! >= MIN_SHARE && 1 - c[1]! >= MIN_SHARE),
 };
+/** How far apart the gutters of two stacked bands must sit, so no four-way crossing forms (R3). */
+export const STAGGER = 0.12;
+
+const lean = (m: PanelMotion | undefined): number => (m?.direction === 'left' || m?.direction === 'up' ? -1 : 1);
 
 export interface GridPanel {
   /** Polygon in page coordinates, corners clockwise from top-left. */
@@ -94,85 +104,142 @@ export interface GridPanel {
   frame: PanelFrame;
 }
 
+/** A slanted gutter: the panels on either side, and which way its top leans. */
+export interface GridSlant {
+  before: number[];
+  after: number[];
+  lean: 'left' | 'right';
+}
+
+export interface GridLayout {
+  panels: GridPanel[];
+  slants: GridSlant[];
+  /** Interior cut positions per band (0–1 across the band), for the stagger check. */
+  cuts: number[][];
+}
+
 /**
  * The panels of a signature on the page area (top..bottom in page fractions),
- * in reading order. `motions` are the panels' motion, by index.
+ * in reading order, following comic layout conventions:
+ *
+ * - column layouts put the tall panel first (left), the only reading-safe
+ *   arrangement of a tall panel beside a stack (Cohn 2013; Shanower);
+ * - stacked bands never line their gutters up into a four-way crossing: the
+ *   cuts of neighbouring bands sit at least STAGGER apart;
+ * - only vertical gutters on the page may slant, and only one per page: the
+ *   one beside the peak action panel (impact first, then move). A second slant
+ *   only for a second impact beat in another band. Calm pages have none (R1, R2);
+ * - tier gutters are 1.5 times as wide as column gutters (R5).
  */
-export function gridPanels(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN): GridPanel[] {
+export function gridLayout(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN): GridLayout {
   const s = parseSignature(sig);
-  if (!s) return [];
+  if (!s) return { panels: [], slants: [], cuts: [] };
   const n = s.bands.reduce((a, b) => a + b, 0);
   const cols = s.orientation === 'cols';
-  // Content area in page fractions.
   const X0 = MARGIN, X1 = 1 - MARGIN, Y0 = top, Y1 = 1 - MARGIN;
-  // Gutters in unit-square terms along each axis (before any transposition).
-  const gX = GUTTER / (X1 - X0);
-  const gY = GUTTER / (Y1 - Y0);
-  const [gAcross, gAlong] = cols ? [gY, gX] : [gX, gY]; // gAcross: between cells in a band; gAlong: between bands
-  const action = motions.map((m) => !!m && m.kind !== 'still');
-  // Index of panels per band.
+  // Gutters in unit-square terms. Page tier (horizontal) gutters are TIER_GUTTER wide, column gutters GUTTER.
+  const colGap = GUTTER / (X1 - X0);
+  const tierGap = (GUTTER * TIER_RATIO) / (Y1 - Y0);
+  // In rows-space: "across" separates cells in a band, "along" separates bands.
+  const gAcross = cols ? tierGap : colGap;
+  const gAlong = cols ? colGap : tierGap;
   const bandOf: number[][] = [];
   let k = 0;
   for (const count of s.bands) bandOf.push(Array.from({ length: count }, () => k++));
-  const last = n - 1;
-  const actionIdx = action.findIndex(Boolean);
-  const dominantPanel = actionIdx >= 0 ? actionIdx : last;
-  // Band sizes: the band holding the dominant panel is larger.
-  const bw = weightsFor(s.bands.length, `${seed}\0bands`, bandOf.findIndex((b) => b.includes(dominantPanel)));
+  const bandIndex = (p: number) => bandOf.findIndex((b) => b.includes(p));
+  // The peak action beat, and a second impact in another band.
+  const kinds = motions.map((m) => m?.kind ?? 'still');
+  const peak = kinds.indexOf('impact') >= 0 ? kinds.indexOf('impact') : kinds.indexOf('move');
+  const second = peak < 0 ? -1 : kinds.findIndex((kind, i) => kind === 'impact' && i !== peak && bandIndex(i) !== bandIndex(peak));
+  const dominantPanel = peak >= 0 ? peak : n - 1;
+  // Band sizes along the page.
+  const bw = bandWeights(s.bands.length, `${seed}\0bands`, bandIndex(dominantPanel));
   const bTotal = bw.reduce((a, b) => a + b, 0);
-  const bandEdges = [0];
-  for (const w of bw) bandEdges.push(bandEdges[bandEdges.length - 1]! + w / bTotal);
-  // Horizontal cuts between bands (in "rows" space: y as a function of x), slanted beside action panels.
-  const cutsBetween: Line[] = bandEdges.map((y, i) => {
-    if (i === 0 || i === bandEdges.length - 1) return { a: [0, y], b: [1, y] };
-    const touching = [...bandOf[i - 1]!, ...bandOf[i]!];
-    const mover = touching.find((p) => action[p]);
-    const dir = mover === undefined ? 0 : lean(motions[mover], i % 2 ? 1 : -1);
-    const h = Math.min(bandEdges[i]! - bandEdges[i - 1]!, bandEdges[i + 1]! - bandEdges[i]!);
-    const d = dir * Math.min(MAX_SLANT, SLANT_SHARE * h);
-    return { a: [0, y - d / 2], b: [1, y + d / 2] };
+  const edges = [0];
+  for (const w of bw) edges.push(edges[edges.length - 1]! + w / bTotal);
+  // Cuts within each band, staggered against the band before.
+  const cuts: number[][] = [];
+  s.bands.forEach((count, b) => {
+    const prev = b > 0 ? cuts[b - 1]! : [];
+    const options = CUTS[count]!;
+    const order = options.map((c, i) => ({ c, r: unit(`${seed}\0cuts ${b}\0${i}`) })).sort((x, y) => x.r - y.r).map((x) => x.c);
+    const staggered = order.filter((c) => c.every((x) => prev.every((p) => Math.abs(x - p) >= STAGGER)));
+    const pool = staggered.length ? staggered : order;
+    const at = bandOf[b]!.indexOf(dominantPanel);
+    const share = (c: number[], i: number) => [0, ...c, 1][i + 1]! - [0, ...c, 1][i]!;
+    const best = at >= 0 && count > 1 ? [...pool].sort((x, y) => share(y, at) - share(x, at))[0]! : pool[0]!;
+    cuts.push(best);
+  });
+  // Which cuts slant: on the page they must be vertical gutters.
+  const slants: GridSlant[] = [];
+  const slantAt = new Map<string, number>(); // key -> lean (+1 top right, -1 top left)
+  const pick = (p: number) => {
+    if (p < 0) return;
+    const b = bandIndex(p);
+    const c = bandOf[b]!.indexOf(p);
+    const dir = lean(motions[p]);
+    if (!cols) {
+      // Rows: the vertical gutters are the cuts within a band.
+      const count = s.bands[b]!;
+      if (count < 2) return;
+      const cut = c < count - 1 ? c + 1 : c; // the gutter to its right, else to its left
+      const key = `w${b}:${cut}`;
+      if (slantAt.has(key)) return;
+      slantAt.set(key, dir);
+      slants.push({ before: [bandOf[b]![cut - 1]!], after: [bandOf[b]![cut]!], lean: dir > 0 ? 'right' : 'left' });
+    } else {
+      // Columns: the vertical gutters are between bands.
+      const cut = b < s.bands.length - 1 ? b + 1 : b;
+      if (cut <= 0 || cut >= s.bands.length) return;
+      const key = `a${cut}`;
+      if (slantAt.has(key)) return;
+      slantAt.set(key, dir);
+      slants.push({ before: bandOf[cut - 1]!, after: bandOf[cut]!, lean: dir > 0 ? 'right' : 'left' });
+    }
+  };
+  pick(peak);
+  pick(second);
+  // Lines in rows-space (u across a band, v along the bands).
+  const along: Line[] = edges.map((v, i) => {
+    const dir = slantAt.get(`a${i}`);
+    if (!dir) return { a: [0, v], b: [1, v] };
+    const w = Math.min(edges[i]! - edges[i - 1]!, edges[i + 1]! - edges[i]!);
+    const d = dir * Math.min(MAX_SLANT, SLANT_SHARE * w);
+    // u runs down the page here (cols), so u = 0 is the top: the top leans right when v is larger there.
+    return { a: [0, v + d / 2], b: [1, v - d / 2] };
   });
   const out: { poly: Pt[]; index: number }[] = [];
   s.bands.forEach((count, b) => {
-    const idx = bandOf[b]!;
-    const dominant = idx.indexOf(dominantPanel);
-    const cw = weightsFor(count, `${seed}\0band ${b}`, dominant >= 0 ? dominant : undefined);
-    const cTotal = cw.reduce((a, c) => a + c, 0);
-    const xs = [0];
-    for (const w of cw) xs.push(xs[xs.length - 1]! + w / cTotal);
-    const topCut = cutsBetween[b]!;
-    const botCut = cutsBetween[b + 1]!;
-    // Vertical cuts within the band, slanted beside action panels.
-    const vcuts: Line[] = xs.map((x, i) => {
-      if (i === 0 || i === xs.length - 1) return { a: [x, 0], b: [x, 1] };
-      const mover = [idx[i - 1]!, idx[i]!].find((p) => action[p]);
-      const dir = mover === undefined ? 0 : lean(motions[mover], i % 2 ? 1 : -1);
+    const xs = [0, ...cuts[b]!, 1];
+    const within: Line[] = xs.map((x, i) => {
+      const dir = slantAt.get(`w${b}:${i}`);
+      if (!dir) return { a: [x, 0], b: [x, 1] };
       const w = Math.min(xs[i]! - xs[i - 1]!, xs[i + 1]! - xs[i]!);
       const d = dir * Math.min(MAX_SLANT, SLANT_SHARE * w);
-      const yTop = bandEdges[b]!;
-      const yBot = bandEdges[b + 1]!;
-      return { a: [x + d / 2, yTop], b: [x - d / 2, yBot] };
+      return { a: [x + d / 2, edges[b]!], b: [x - d / 2, edges[b + 1]!] };
     });
-    idx.forEach((p, c) => {
-      // Shrink each side by half a gutter, except along the page border.
-      const shiftV = (l: Line, by: number): Line => ({ a: [l.a[0] + by, l.a[1]], b: [l.b[0] + by, l.b[1]] });
-      const shiftH = (l: Line, by: number): Line => ({ a: [l.a[0], l.a[1] + by], b: [l.b[0], l.b[1] + by] });
-      const left = c === 0 ? vcuts[0]! : shiftV(vcuts[c]!, gAcross / 2);
-      const right = c === count - 1 ? vcuts[count]! : shiftV(vcuts[c + 1]!, -gAcross / 2);
-      const t = b === 0 ? topCut : shiftH(topCut, gAlong / 2);
-      const bo = b === s.bands.length - 1 ? botCut : shiftH(botCut, -gAlong / 2);
+    bandOf[b]!.forEach((p, c) => {
+      const shiftU = (l: Line, by: number): Line => ({ a: [l.a[0] + by, l.a[1]], b: [l.b[0] + by, l.b[1]] });
+      const shiftV = (l: Line, by: number): Line => ({ a: [l.a[0], l.a[1] + by], b: [l.b[0], l.b[1] + by] });
+      const left = c === 0 ? within[0]! : shiftU(within[c]!, gAcross / 2);
+      const right = c === count - 1 ? within[count]! : shiftU(within[c + 1]!, -gAcross / 2);
+      const t = b === 0 ? along[0]! : shiftV(along[b]!, gAlong / 2);
+      const bo = b === s.bands.length - 1 ? along[b + 1]! : shiftV(along[b + 1]!, -gAlong / 2);
       out.push({ poly: [intersect(left, t), intersect(right, t), intersect(right, bo), intersect(left, bo)], index: p });
     });
   });
-  // Back to page coordinates (transposing "cols" layouts), clockwise from top-left.
-  return out
+  const panels = out
     .sort((a, b) => a.index - b.index)
     .map(({ poly }) => {
       const pts: Pt[] = poly.map(([u, v]): Pt => (cols ? [v, u] : [u, v])).map(([u, v]): Pt => [X0 + u * (X1 - X0), Y0 + v * (Y1 - Y0)]);
-      // Transposition mirrors the winding; keep corners as top-left, top-right, bottom-right, bottom-left.
       const ordered: Pt[] = cols ? [pts[0]!, pts[3]!, pts[2]!, pts[1]!] : pts;
       return { polygon: ordered, frame: toFrame(ordered) };
     });
+  return { panels, slants, cuts };
+}
+
+export function gridPanels(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN): GridPanel[] {
+  return gridLayout(sig, motions, seed, top).panels;
 }
 
 /** A page polygon as a PanelFrame: its bounds, plus a clip and lettering box when any side is slanted. */
@@ -249,23 +316,39 @@ export function tilingProblems(panels: GridPanel[], top = MARGIN): string[] {
   return out;
 }
 
-/** The structure in words, for the image model: "Row 1, 40% of the height: one panel. Row 2: two panels…". */
-export function describeSignature(sig: string, panels: GridPanel[]): string {
+/** Panel numbers as words for the prompt: "2", "2 and 3", "2, 3 and 4". */
+const nums = (xs: number[]) => {
+  const n = xs.map((x) => String(x + 1));
+  return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
+};
+
+/**
+ * The page in words, for the image model: each band's panels and size, then
+ * every border stated outright ("All panel borders are straight and level",
+ * or exactly which gutter slants, between which panels and which way), so the
+ * image model never decides where angles go.
+ */
+export function describeSignature(sig: string, layout: GridLayout, motions: (PanelMotion | undefined)[] = []): string {
   const s = parseSignature(sig);
   if (!s) return '';
   const word = ['', 'one panel', 'two panels side by side', 'three panels side by side'];
   const wordCol = ['', 'one tall panel', 'two panels stacked', 'three panels stacked'];
   let k = 0;
   const parts = s.bands.map((count, b) => {
-    const ps = panels.slice(k, k + count);
+    const ps = layout.panels.slice(k, k + count);
+    const first = k + 1;
     k += count;
-    const ext = s.orientation === 'rows'
-      ? Math.max(...ps.map((p) => Math.max(...p.polygon.map((q) => q[1])))) - Math.min(...ps.map((p) => Math.min(...p.polygon.map((q) => q[1]))))
-      : Math.max(...ps.map((p) => Math.max(...p.polygon.map((q) => q[0])))) - Math.min(...ps.map((p) => Math.min(...p.polygon.map((q) => q[0]))));
-    const slanted = ps.some((p) => p.frame.clip);
+    const span = (axis: 0 | 1) => Math.max(...ps.flatMap((p) => p.polygon.map((q) => q[axis]))) - Math.min(...ps.flatMap((p) => p.polygon.map((q) => q[axis])));
+    const which = count === 1 ? `panel ${first}` : `panels ${first}–${first + count - 1}`;
     return s.orientation === 'rows'
-      ? `Row ${b + 1} (about ${Math.round(ext * 100)}% of the page height): ${word[count]}${slanted ? ', with a slanted gutter' : ''}`
-      : `Column ${b + 1} (about ${Math.round(ext * 100)}% of the page width): ${wordCol[count]}${slanted ? ', with a slanted gutter' : ''}`;
+      ? `Row ${b + 1} (about ${Math.round(span(1) * 100)}% of the page height): ${word[count]} (${which})`
+      : `Column ${b + 1} (about ${Math.round(span(0) * 100)}% of the page width): ${wordCol[count]} (${which})`;
   });
-  return `${parts.join('. ')}. The panels fill the page edge to edge with even gutters: no empty areas, no overlapping panels, no inset panels.`;
+  const why = (i: number) => (motions[i]?.kind === 'impact' ? 'for the impact' : 'for the motion');
+  const borders = layout.slants.length
+    ? `All panel borders are straight and level except ${layout.slants.length === 1 ? 'one' : 'two'}: ${layout.slants
+        .map((g) => `the gutter between panel${g.before.length > 1 ? 's' : ''} ${nums(g.before)} and panel${g.after.length > 1 ? 's' : ''} ${nums(g.after)} slants, its top leaning ${g.lean}, ${why([...g.before, ...g.after].find((i) => motions[i] && motions[i]!.kind !== 'still') ?? g.after[0]!)}`)
+        .join('; ')}. The rows themselves stay level.`
+    : 'All panel borders are straight and level.';
+  return `${parts.join('. ')}. ${borders} The panels fill the page edge to edge, with wider gaps between rows than between side-by-side panels: no empty areas, no overlapping panels, no inset panels.`;
 }

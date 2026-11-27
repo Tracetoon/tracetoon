@@ -12,10 +12,11 @@
 import type { ComicSummary } from '../types.ts';
 import { seededRandom, type IsekaiPacketCast } from './casting.ts';
 import memeList from './anime-memes.json' with { type: 'json' };
+import staplesData from './staples.json' with { type: 'json' };
 import premises from './scene-premises.json' with { type: 'json' };
 import { ISEKAI_MEMES, matchContext, matchEntry, type IsekaiMeme } from './memeMatch.ts';
 
-export const COOLDOWN = { scenes: 10, characters: 3, memes: 100 } as const;
+export const COOLDOWN = { scenes: 10, characters: 3, memes: 100, leads: 10, staples: 10 } as const;
 export const PITCHES = 3;
 /** How much more likely a scenario is drawn when the lead plays in it. */
 export const LEAD_WEIGHT = 3;
@@ -29,6 +30,10 @@ export interface Cooldown {
   characters: string[];
   /** Meme ids used in the last COOLDOWN.memes comics. */
   memes: string[];
+  /** Lead archetypes of the last COOLDOWN.leads comics: the cast generator favours some leads ~5x, so leads rest longer. */
+  leads?: string[];
+  /** Staple ids used in the last COOLDOWN.staples comics (staples recur in the genre; memes are spent). */
+  staples?: string[];
 }
 
 /** The cooldown lists from a repo's comics, newest first. */
@@ -36,8 +41,71 @@ export function cooldownFrom(history: ComicSummary[] = []): Cooldown {
   return {
     scenes: history.slice(0, COOLDOWN.scenes).flatMap((c) => (c.pitch ? [c.pitch] : [])),
     characters: [...new Set(history.slice(0, COOLDOWN.characters).flatMap((c) => c.archetypes ?? []))],
-    memes: history.slice(0, COOLDOWN.memes).flatMap((c) => (c.meme ? [c.meme] : [])),
+    memes: history.slice(0, COOLDOWN.memes).flatMap((c) => (c.meme && !STAPLE_IDS.has(c.meme) ? [c.meme] : [])),
+    leads: history.slice(0, COOLDOWN.leads).flatMap((c) => (c.lead ? [c.lead] : [])),
+    staples: history.slice(0, COOLDOWN.staples).flatMap((c) => (c.meme && STAPLE_IDS.has(c.meme) ? [c.meme] : [])),
   };
+}
+
+/** A recurring isekai staple (summoning, the appraisal crystal, the status window…), each seen in at least 3 series. */
+export interface Staple {
+  id: string;
+  name: string;
+  what: string;
+  /** What an artist draws so it reads at a glance. */
+  cues: string[];
+  /** Ways it turns into a joke. */
+  jokeHandles: string[];
+  /** Where it appears: for judges and write-ups, never the page. */
+  series: string[];
+  sources: string[];
+  /** Roles it fits, matched against cast members' archetype titles. */
+  suits?: string[];
+}
+export const STAPLES = staplesData as Staple[];
+const STAPLE_IDS = new Set(STAPLES.map((s) => s.id));
+
+/** One entry of a comic's trope offer: a staple or a documented meme. */
+export type TropeOffer = { kind: 'staple'; id: string; name: string; what: string; cues: string[]; jokeHandles: string[] } | { kind: 'meme'; id: string; name: string; allusion: string; cues?: string[] };
+
+export const TROPE_OFFER = 3;
+/** At least this many of the offer are staples. */
+export const TROPE_STAPLES = 2;
+
+const suitsCast = (st: Staple, titles: string[]) =>
+  (st.suits ?? []).some((role) => {
+    const words = role.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 3);
+    return titles.some((t) => words.some((w) => t.includes(w)));
+  });
+
+/**
+ * Three tropes this comic may build on, optionally: at least two staples,
+ * weighted toward staples that suit a cast member, then a documented meme;
+ * never a staple used in the last 10 comics or a meme used in the last 100.
+ */
+export function tropeOffer(castTitles: string[], seed: string, cooldown: Cooldown = { scenes: [], characters: [], memes: [] }, staples: Staple[] = STAPLES, memes: AnimeMeme[] = ANIME_MEMES): TropeOffer[] {
+  const titles = castTitles.map((t) => t.toLowerCase());
+  const restingStaples = new Set(cooldown.staples ?? []);
+  const spent = new Set(cooldown.memes);
+  const random = seededRandom(`${seed}\0tropes`);
+  const pool = staples.filter((s) => !restingStaples.has(s.id)).map((s) => ({ s, w: suitsCast(s, titles) ? 3 : 1, r: random() }));
+  const picked: Staple[] = [];
+  while (picked.length < TROPE_STAPLES && pool.length) {
+    const total = pool.reduce((a, x) => a + x.w, 0);
+    let x = random() * total;
+    let i = 0;
+    while (i < pool.length - 1 && (x -= pool[i]!.w) >= 0) i++;
+    picked.push(pool.splice(i, 1)[0]!.s);
+  }
+  const out: TropeOffer[] = picked.map((s) => ({ kind: 'staple', id: s.id, name: s.name, what: s.what, cues: s.cues, jokeHandles: s.jokeHandles }));
+  const freshMemes = memes.filter((m) => !spent.has(m.id));
+  const meme = freshMemes.length ? freshMemes[Math.floor(random() * freshMemes.length)] : undefined;
+  if (meme) out.push({ kind: 'meme', id: meme.id, name: meme.name, allusion: meme.allusion, ...(meme.cues ? { cues: meme.cues } : {}) });
+  while (out.length < TROPE_OFFER && pool.length) {
+    const s = pool.splice(Math.floor(random() * pool.length), 1)[0]!.s;
+    out.push({ kind: 'staple', id: s.id, name: s.name, what: s.what, cues: s.cues, jokeHandles: s.jokeHandles });
+  }
+  return out;
 }
 
 export interface AnimeMeme {

@@ -1,7 +1,7 @@
 /** Shared art direction. Legacy v2 scripts intentionally retain their old defaults. */
 import { createHash } from 'node:crypto';
 import { formatById } from './formats.ts';
-import { describeSignature, gridPanels, panelsIn, parseSignature, SIGNATURES } from './grid.ts';
+import { describeSignature, gridLayout, gridPanels, panelsIn, parseSignature, SIGNATURES } from './grid.ts';
 import { STYLES } from './styles.ts';
 import { genreKey } from './genres.ts';
 import {
@@ -231,7 +231,8 @@ export function compositionPrompt(script: ComicScript): string {
   const c = resolveComposition(script);
   if (!c) return '';
   const look = c.family === 'grid' ? `a tiled page, ${c.signature}` : FAMILY_LOOK[c.family];
-  const grid = c.family === 'grid' ? describeSignature(c.signature ?? '', gridPanels(c.signature ?? '', script.panels.map((p) => p.motion), `${c.signature}\0${script.title ?? ''}`, c.title.mode === 'heading' ? 0.14 : 0.025)) : '';
+  const motions = script.panels.map((p) => p.motion);
+  const grid = c.family === 'grid' ? describeSignature(c.signature ?? '', gridLayout(c.signature ?? '', motions, `${c.signature}\0${script.title ?? ''}`, c.title.mode === 'heading' ? 0.14 : 0.025), motions) : '';
   return [
     ...(grid ? [`Layout: ${grid}`] : []),
     `Composition: ${c.family}${look ? ` (${look})` : ''}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Keep each panel's size, shape and position as specified.`,
@@ -518,7 +519,8 @@ export function compositionProblems(
     if (m.direction !== undefined && !DIRECTIONS.includes(m.direction)) bad(`frames[${i}]`, `panel ${i + 1}'s motion.direction must be ${DIRECTIONS.join(', ')}`);
     if (m.kind === 'still') return;
     const f = resolved.frames[i]!;
-    if (!f.clip && !f.breakout && f.border !== 'none')
+    // A grid page slants at most one gutter, beside the peak beat (grid.ts); its other action beats keep level frames.
+    if (c.family !== 'grid' && !f.clip && !f.breakout && f.border !== 'none')
       bad(`frames[${i}]`, `panel ${i + 1} is a ${m.kind} beat in a plain rectangular frame; give it an angled (clipped) frame, a breakout or no border, or use an action layout (${ACTION_FAMILIES.join(', ')})`);
     if (m.kind === 'impact' && !f.breakout && p.background !== 'speed-lines' && !p.effects?.includes('impact-burst'))
       bad(`frames[${i}]`, `panel ${i + 1} is an impact: add an impact burst, speed lines or a breakout`);

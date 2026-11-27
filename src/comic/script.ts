@@ -148,6 +148,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   out.push(...genreProblems(s as ComicScript, opts));
   out.push(...personaProblems(s as ComicScript, opts));
   out.push(...offerProblems(s as ComicScript, opts));
+  out.push(...balloonOrderProblems(s as ComicScript));
   out.push(...isekaiProblems(s as ComicScript, opts));
   out.push(...decisionProblems(s as ComicScript));
   out.push(...franchiseProblems(s as ComicScript));
@@ -567,7 +568,7 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   } else if (option.pitches?.length) {
     out.push({ where: 'genre', problem: 'this genre brainstorms first: write the ideas file, and the comic is written once an idea is picked (tracetoon comic gags)' });
   } else if (s.meme !== undefined && s.meme !== '') {
-    const ids = (option.memeOffer ?? []).map((m) => m.id);
+    const ids = [...(option.memeOffer ?? []), ...(option.tropeOffer ?? [])].map((m) => m.id);
     if (typeof s.meme !== 'string' || !ids.includes(s.meme))
       out.push({
         where: 'meme',
@@ -686,4 +687,29 @@ export function franchiseProblems(s: ComicScript): ScriptProblem[] {
         ]
       : [];
   });
+}
+
+const SIDE = { left: 0, center: 1, right: 2 } as const;
+
+/**
+ * Balloons read from top-left, down and right, so the first speaker in a panel
+ * stands on the left of (or level with) everyone who speaks after them;
+ * otherwise a reply reads before the line it answers (Clip Studio Tips 4811,
+ * Jim Shooter's lettering memo).
+ */
+export function balloonOrderProblems(s: ComicScript): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  (Array.isArray(s.panels) ? s.panels : []).forEach((p, i) => {
+    const where = new Map((p.characters ?? []).map((c) => [c.name, SIDE[c.position as keyof typeof SIDE]]));
+    const speakers = (p.dialogue ?? []).flatMap((d) => (d.speaker && where.has(d.speaker) ? [d.speaker] : []));
+    const order = speakers.filter((n, k) => speakers.indexOf(n) === k);
+    for (let a = 0; a < order.length; a++)
+      for (let b = a + 1; b < order.length; b++)
+        if (where.get(order[a]!)! > where.get(order[b]!)!)
+          out.push({
+            where: `panels[${i}].characters`,
+            problem: `${order[a]} speaks before ${order[b]} but stands to their right, so the reply reads first; put ${order[a]} on the left (swap their positions) or reorder the lines`,
+          });
+  });
+  return out;
 }
