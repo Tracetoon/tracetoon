@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 import { isekaiCast, type IsekaiPacketCast } from './isekai/casting.ts';
 import type { ComicSummary } from './types.ts';
 import { layoutPick } from './layouts.ts';
+import { settingPick, type AdventureSetting } from './isekai/settings.ts';
 import { cooldownFrom, drawPitches, memeChoices, tropeOffer, type AnimeMeme, type Cooldown, type GagPick, type Pitch, type TropeOffer } from './isekai/pitches.ts';
 import { castOffer, diverseHint, leadPick, parseCastEntry, withLead, withRequired, type CastOffer, type CastPersona } from './casting.ts';
 import spaceOperaLeads from './cast/space-opera-leads.json' with { type: 'json' };
@@ -354,6 +355,8 @@ export interface GenreOption {
   memeList?: AnimeMeme[];
   /** Three isekai staples or memes this comic may build on, optionally (isekai/pitches.ts tropeOffer). */
   tropeOffer?: TropeOffer[];
+  /** Where this isekai comic happens (isekai/settings.ts): `place` is a spot in it, and `setting` records its id. */
+  assignedSetting?: Pick<AdventureSetting, 'id' | 'label' | 'examples'>;
   /** The gag the judge scored best, once picked (`tracetoon comic gags`). */
   pick?: GagPick;
 }
@@ -377,13 +380,17 @@ const option = (
   recentPresets: string[] = [],
   cooldown?: Cooldown,
   recentLayouts: string[][] = [],
+  recentSettings: (string | undefined)[] = [],
+  prText = '',
 ): GenreOption => {
   const assignedLayout = layoutPick(`${seed}\0${id}`, recentLayouts);
   if (isekai) {
     const s = `${seed}\0${id}`;
     const crew = restedCast(s, recentPresets, [...(cooldown?.characters ?? []), ...(cooldown?.leads ?? [])]);
-    const tropes = tropeOffer([crew.lead, ...crew.companions, ...crew.contacts].map((m) => m.title), s, cooldown);
-    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout, tropeOffer: tropes };
+    const tropes = tropeOffer([crew.lead, ...crew.companions, ...crew.contacts].map((m) => m.title), s, cooldown, prText);
+    const where = settingPick(s, recentSettings);
+    const assignedSetting = { id: where.id, label: where.label, examples: where.examples };
+    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout, tropeOffer: tropes, assignedSetting };
     const pitches = drawPitches(crew, s, cooldown);
     return {
       id, name, setting, archetypes, props, jokeHooks,
@@ -393,6 +400,7 @@ const option = (
       memeList: memeChoices(pitches, s, cooldown),
       assignedLayout,
       tropeOffer: tropes,
+      assignedSetting,
     };
   }
   const plain = castOffer(cast, `${seed}\0${id}`);
@@ -440,15 +448,16 @@ export function castRoster(entries: string[]): CastPersona[] {
  */
 export function genreOptions(
   recent: string[],
-  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown; recentLayouts?: string[][] } = {},
+  opts: { seed?: string; pinned?: string; count?: number; catalog?: Genre[]; recentMemes?: string[]; recentLeads?: string[]; recentPresets?: string[]; history?: ComicSummary[]; cooldown?: Cooldown; recentLayouts?: string[][]; recentSettings?: (string | undefined)[]; prText?: string } = {},
 ): GenreOption[] {
+  const settings = opts.recentSettings ?? (opts.history ?? []).map((c) => c.setting);
   if (opts.pinned) {
     const g = genreById(opts.pinned, opts.catalog);
     return [
       g
-        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : [])))
+        ? option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : [])), settings, opts.prText)
         : { id: opts.pinned, name: opts.pinned, setting: '', archetypes: [], props: [], jokeHooks: [] },
     ];
   }
-  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : []))));
+  return freshGenres(recent, opts.seed, opts.catalog).slice(0, opts.count ?? 3).map((g) => option(g, opts.seed, opts.recentMemes, opts.recentLeads, opts.recentPresets, opts.cooldown ?? (opts.history ? cooldownFrom(opts.history) : undefined), opts.recentLayouts ?? (opts.history ?? []).map((c) => (c.layoutSignature ? [c.layoutSignature] : [])), settings, opts.prText));
 }

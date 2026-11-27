@@ -84,6 +84,8 @@ export function comicHistory(
             summary.layoutFamily = raw.layoutFamily;
           if (typeof raw.layoutSignature === 'string' && /^(rows|cols):[1-3](-[1-3]){0,2}$/.test(raw.layoutSignature))
             summary.layoutSignature = raw.layoutSignature;
+          if (typeof raw.setting === 'string' && /^[a-z]{2,20}$/.test(raw.setting))
+            summary.setting = raw.setting;
           if (
             Number.isInteger(raw.panelCount) &&
             raw.panelCount! >= 1 &&

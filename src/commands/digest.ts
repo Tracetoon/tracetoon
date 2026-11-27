@@ -350,6 +350,11 @@ export function contextCmd(
     recentLeads: recent.flatMap((c) => (c.lead ? [c.lead] : [])),
     recentPresets: recent.flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
     history,
+    // What the change is about, so the isekai staple offer can match it (pitches.ts STAPLE_TOPICS).
+    prText: [truth.pr?.title, truth.pr?.body, ...truth.commits.map((c) => c.subject), ...truth.files.map((f) => f.path.replace(/[/._-]+/g, ' '))]
+      .filter(Boolean)
+      .join('\n')
+      .slice(0, 20_000),
   });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,

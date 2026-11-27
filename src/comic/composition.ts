@@ -232,7 +232,7 @@ export function compositionPrompt(script: ComicScript): string {
   if (!c) return '';
   const look = c.family === 'grid' ? `a tiled page, ${c.signature}` : FAMILY_LOOK[c.family];
   const motions = script.panels.map((p) => p.motion);
-  const grid = c.family === 'grid' ? describeSignature(c.signature ?? '', gridLayout(c.signature ?? '', motions, `${c.signature}\0${script.title ?? ''}`, c.title.mode === 'heading' ? 0.14 : 0.025), motions) : '';
+  const grid = c.family === 'grid' ? describeSignature(c.signature ?? '', gridLayout(c.signature ?? '', motions, `${c.signature}\0${script.title ?? ''}`, c.title.mode === 'heading' ? 0.14 : 0.025, aspectRatio(pageAspect(script))), motions) : '';
   return [
     ...(grid ? [`Layout: ${grid}`] : []),
     `Composition: ${c.family}${look ? ` (${look})` : ''}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Keep each panel's size, shape and position as specified.`,
@@ -335,6 +335,7 @@ export function comicSummary(script: ComicScript): ComicSummary {
           titleTreatment: script.composition.title.mode,
         }
       : {}),
+    ...(typeof script.setting === 'string' && /^[a-z]{2,20}$/.test(script.setting) ? { setting: script.setting } : {}),
     panelCount: script.panels.length,
     ...(knownCast
       ? { castKinds: [...new Set(script.characters.map((c) => c.kind!))].sort() }

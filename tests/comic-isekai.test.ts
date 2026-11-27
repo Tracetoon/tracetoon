@@ -6,6 +6,9 @@ import {
   ISEKAI,
   makeMember,
   PRESET_WEIGHTS,
+  RETIRED_ARCHETYPES,
+  RETIRED_PRESETS,
+  isekaiCast,
   presetPick,
   validateCast,
   type Cast,
@@ -155,12 +158,21 @@ describe('anime fantasy cast from the guide', () => {
 
   test('presets are weighted toward the recognizable ones and skip the last two comics', () => {
     expect(PRESET_WEIGHTS.standard_adventure).toBe(2);
-    expect(PRESET_WEIGHTS.military).toBe(1);
+    expect(PRESET_WEIGHTS.court_otome).toBe(1);
     const counts = new Map<string, number>();
     for (let i = 0; i < 4000; i++) counts.set(presetPick(`s${i}`), (counts.get(presetPick(`s${i}`)) ?? 0) + 1);
-    expect(counts.size).toBe(12);
-    expect(counts.get('standard_adventure')! / counts.get('military')!).toBeGreaterThan(1.5);
-    for (let i = 0; i < 200; i++) expect(['survival', 'military']).not.toContain(presetPick(`r${i}`, ['survival', 'military']));
+    expect(counts.size).toBe(11);
+    expect(counts.get('standard_adventure')! / counts.get('court_otome')!).toBeGreaterThan(1.5);
+    for (let i = 0; i < 200; i++) expect(['survival', 'court_otome']).not.toContain(presetPick(`r${i}`, ['survival', 'court_otome']));
+  });
+
+  test('the spider, the vending machine and the military prodigy are never cast (round 19)', () => {
+    expect([...RETIRED_PRESETS]).toEqual(['military']);
+    expect(PRESET_WEIGHTS.military).toBeUndefined();
+    const ids = Array.from({ length: 300 }, (_, i) => isekaiCast(`ret${i}`)).flatMap((c) => [c.lead, ...c.companions, ...c.contacts].map((m) => m.archetype));
+    for (const id of RETIRED_ARCHETYPES) expect(ids).not.toContain(id);
+    expect(ids).toContain('M13');
+    expect(ids).toContain('M03');
   });
 
   test('each comic gets a fresh cast with the recipes the author needs', () => {
@@ -182,7 +194,8 @@ describe('anime fantasy cast from the guide', () => {
       ...s,
       genre: 'anime-fantasy',
       castPreset: cast.preset.id,
-      place: "the guild hall's quest counter",
+      place: `${option.assignedSetting!.examples[0]} in ${option.assignedSetting!.label}`,
+      setting: option.assignedSetting!.id,
       characters: [
         { name: 'Ari', description: 'A lean young man with short black hair, a plain gray travel coat and a cheap phone in one hand.', archetype: cast.lead.archetype },
         { name: 'Vell', description: 'A tall woman in green forest leathers with a long silver braid and a measuring cord.', archetype: cast.companions[0]!.archetype },
@@ -203,6 +216,15 @@ describe('anime fantasy cast from the guide', () => {
     expect(isekaiErrors({ ...s, place: undefined }).map((p) => p.where)).toContain('place');
     expect(isekaiErrors({ ...s, panels: s.panels.map((p) => ({ ...p, background: undefined })) }).some((p) => p.where.endsWith('.background'))).toBe(true);
     expect(isekaiErrors({ ...s, castPreset: 'nope' }).map((p) => p.where)).toContain('castPreset');
+    // Round 19: the host assigns the setting; office places and office parody fail.
+    expect(isekaiErrors({ ...s, place: "the guild hall's quest counter" }).map((p) => p.problem).join(' ')).toContain('office-like');
+    expect(errors(checkScript({ ...s, setting: 'nowhere' }, opts)).map((p) => p.where)).toContain('setting');
+    const memo = { ...s, panels: s.panels.map((p, i) => (i === 0 ? { ...p, dialogue: [{ speaker: 'Ari', text: 'Fill out the paperwork first.' }] } : p)) } as ComicScript;
+    expect(errors(checkScript(memo, opts)).some((p) => p.problem.includes('office parody'))).toBe(true);
+    const anchored = { ...s, anchor: { change: 'The preview path becomes a link.', terms: ['preview.html'], mapping: [{ visual: 'the glowing sign', technical: 'the preview link' }] } } as ComicScript;
+    const flatEnd = { ...anchored, panels: s.panels.map((p, i) => (i === s.panels.length - 1 ? { ...p, dialogue: [{ speaker: 'Ari', text: 'Well, that happened.' }] } : p)) } as ComicScript;
+    expect(errors(checkScript(flatEnd, opts)).some((p) => p.problem.includes('in the last panel'))).toBe(true);
+    expect(errors(checkScript(anchored, opts)).some((p) => p.problem.includes('in the last panel'))).toBe(false);
     const companions = cast.companions.slice(0, 3).map((m, i) => ({ name: `C${i}`, description: 'A plain decided design.', archetype: m.archetype }));
     if (companions.length === 3)
       expect(isekaiErrors({ ...s, characters: [s.characters[0]!, ...companions] }).some((p) => p.problem.includes('at most 2 companions'))).toBe(true);
@@ -210,7 +232,7 @@ describe('anime fantasy cast from the guide', () => {
 
   test('the image prompt carries decisions only: one place, decided backgrounds, no lists, no space examples', () => {
     const prompt = pagePrompt(good());
-    expect(prompt).toContain("Setting: the guild hall's quest counter.");
+    expect(prompt).toContain(`Setting: ${option.assignedSetting!.examples[0]} in ${option.assignedSetting!.label}.`);
     expect(prompt).not.toContain('guild halls, taverns');
     expect(prompt).not.toContain('cantina');
     expect(prompt).not.toContain('dialogue panels and detailed scenery only');

@@ -83,12 +83,67 @@ const suitsCast = (st: Staple, titles: string[]) =>
  * weighted toward staples that suit a cast member, then a documented meme;
  * never a staple used in the last 10 comics or a meme used in the last 100.
  */
-export function tropeOffer(castTitles: string[], seed: string, cooldown: Cooldown = { scenes: [], characters: [], memes: [] }, staples: Staple[] = STAPLES, memes: AnimeMeme[] = ANIME_MEMES): TropeOffer[] {
+/**
+ * Staples that turn the comic into office parody (the reborn office worker,
+ * the guild counter): kept in the research data, never offered (owner's
+ * decision, round 19: no office parody).
+ */
+export const UNOFFERED_STAPLES = new Set(['death-by-overwork', 'guild-receptionist']);
+
+/**
+ * What kind of change each staple suits, as words a PR's title, description
+ * or changed paths would use (round 19): a staple whose topic matches the PR
+ * is three times as likely to be offered, so a benchmark PR meets the status
+ * window and an installer PR the summoning.
+ */
+export const STAPLE_TOPICS: Record<string, RegExp> = {
+  'hero-summoning-ceremony': /\b(setup|install(er|ation)?|onboard(ing)?|init|bootstrap|scaffold|welcome|first[- ]run|getting started)\b/i,
+  'whole-class-summoned': /\b(batch|bulk|all (users|files|packages)|monorepo|workspace|every (agent|host)|multi[- ]?(agent|host|repo))\b/i,
+  'caught-up-in-the-summoning': /\b(side effect|unintended|accidental(ly)?|regression|collateral|leak(ed|s)?|unexpected(ly)?)\b/i,
+  'summoning-backfires': /\b(fail(s|ed|ure)?|crash(es|ed)?|broke(n)?|wrong|misfire|revert(ed)?|rollback|hotfix|fix(es|ed)?)\b/i,
+  'judged-worthless-and-dumped': /\b(remov(e|ed|al)|delet(e|ed|ion)|deprecat(e|ed|ion)|drop(ped)?|unused|dead code|prun(e|ed|ing))\b/i,
+  'truck-kun': /\b(migrat(e|ion)|rewrite|replac(e|ed|ement)|port(ed)?|breaking change|major version|v\d+)\b/i,
+  'deity-in-the-white-void': /\b(config(uration)?|settings?|options?|preferences?|choose|choice|wizard|prompt)\b/i,
+  'cheat-handout': /\b(feature flags?|plugin|extension|power(ful)?|shortcut|cache|accelerat\w*|speed ?up|turbo)\b/i,
+  'wish-for-ordinary-backfires': /\b(simplif(y|ied|ication)|minimal|plain|default|lightweight|less|smaller)\b/i,
+  'status-window': /\b(status|dashboard|metrics?|report(s|ing)?|stats|telemetry|doctor|health ?check|summary|overview|json output)\b/i,
+  'absurdly-high-stats': /\b(benchmark|perf(ormance)?|faster|speed|score|optimi[sz]\w*|throughput|latency|\d+x)\b/i,
+  'lopsided-stat': /\b(edge case|imbalance|skew(ed)?|only (one|works)|single|outlier|one-off)\b/i,
+  'aptitude-measurement': /\b(tests?|eval(uation)?s?|bench(mark)?|grade|rubric|judge|assess\w*|measure\w*|calibrat\w*|lint)\b/i,
+  'appraisal-skill': /\b(inspect\w*|analy[sz]\w*|review(er|s)?|detect\w*|classif\w*|scan(ner)?|audit|diagnos\w*|parse|parser)\b/i,
+  'useless-skill-secretly-op': /\b(fallback|helper|util(s|ity)?|small|tiny|minor|refactor|cleanup|underused)\b/i,
+  'system-voice': /\b(logs?|logging|errors?|warnings?|notif(y|ications?)|messages?|alerts?|stderr|hints?|cli output)\b/i,
+  'adventurer-ranks': /\b(tiers?|ranks?|ranking|levels?|roles?|permissions?|priority|leaderboard|support tiers?)\b/i,
+  'banished-from-the-party': /\b(remov(e|ed|al)|exclu(de|ded|sion)|kick(ed)?|ban(ned)?|block(ed|list)?|opt[- ]out|disable[ds]?)\b/i,
+  'reincarnated-as-non-human': /\b(convert(ed|s)?|transform\w*|wrap(per)?|adapter|port(ed)? to|as a (service|library|plugin)|bot)\b/i,
+  'evolution-menu': /\b(upgrade[ds]?|bump(ed)?|version|evolv\w*|grow|expand\w*|extend\w*|new (tier|level))\b/i,
+  'reborn-as-a-baby': /\b(from scratch|fresh start|new project|v0|initial commit|greenfield|reset|reinit\w*)\b/i,
+  'did-i-overdo-it': /\b(overkill|too (many|much)|huge|massive|large|over[- ]?engineer\w*|exhaustive|thorough)\b/i,
+  'trapped-in-the-game': /\b(auth\w*|login|logout|sign[- ]?(in|out)|session|token|credentials?|lock(ed)?|stuck|hang(s|ing)?|loop)\b/i,
+  'modern-gadget-still-works': /\b(compat\w*|legacy|cross[- ]platform|windows|mac(os)?|linux|offline|backport|still works)\b/i,
+  'modern-knowledge-cheat': /\b(docs?|documentation|readme|guide|explain\w*|tutorial|example|best practices?|convention)\b/i,
+  'item-box': /\b(storage|store|cache[ds]?|stash|archive|bundle|artifact|upload|download|attachments?|files?)\b/i,
+  'slow-life': /\b(cleanup|chore|tidy|maintenance|housekeeping|polish|quiet|cozy|idle|background job)\b/i,
+  'villainess-broken-engagement': /\b(break(s|ing)? (up|change)|decouple\w*|split|divorce|cancel(led|lation)?|unsubscribe|unlink\w*)\b/i,
+  'the-demon-lord': /\b(security|vulnerab\w*|cve|exploit|attack|malicious|threat|boss|final|leak scan)\b/i,
+  'crossing-back': /\b(sync|import|export|round[- ]?trip|back(port)?|restore|return|revert)\b/i,
+  'dungeon-descent': /\b(recurs\w*|nested|deep|tree|traverse|crawl(er)?|walk(er)?|search|graph|depth)\b/i,
+  'absurdly-long-title': /\b(rename[ds]?|naming|titles?|long names?|verbose|descriptions?|labels?)\b/i,
+};
+
+export function stapleSuitsPr(id: string, prText: string): boolean {
+  return !!prText && !!STAPLE_TOPICS[id]?.test(prText);
+}
+
+export function tropeOffer(castTitles: string[], seed: string, cooldown: Cooldown = { scenes: [], characters: [], memes: [] }, prText = '', staples: Staple[] = STAPLES, memes: AnimeMeme[] = ANIME_MEMES): TropeOffer[] {
   const titles = castTitles.map((t) => t.toLowerCase());
   const restingStaples = new Set(cooldown.staples ?? []);
   const spent = new Set(cooldown.memes);
   const random = seededRandom(`${seed}\0tropes`);
-  const pool = staples.filter((s) => !restingStaples.has(s.id)).map((s) => ({ s, w: suitsCast(s, titles) ? 3 : 1, r: random() }));
+  // Weight 1, x3 when it suits the cast, x3 when it suits the PR's change.
+  const pool = staples
+    .filter((s) => !restingStaples.has(s.id) && !UNOFFERED_STAPLES.has(s.id))
+    .map((s) => ({ s, w: (suitsCast(s, titles) ? 3 : 1) * (stapleSuitsPr(s.id, prText) ? 3 : 1), r: random() }));
   const picked: Staple[] = [];
   while (picked.length < TROPE_STAPLES && pool.length) {
     const total = pool.reduce((a, x) => a + x.w, 0);

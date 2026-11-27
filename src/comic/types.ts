@@ -150,6 +150,8 @@ export interface ComicSummary {
   lead?: string;
   /** The isekai cast preset used, so the next comics get others. */
   castPreset?: string;
+  /** The adventure setting the host assigned (isekai/settings.ts): out of rotation for the next 3 comics. */
+  setting?: string;
   /** The isekai scenario (pitch) the comic was built on: out of rotation for the next 10 comics. */
   pitch?: string;
   /** The isekai archetype ids on the page: out of rotation for the next 3 comics. */
@@ -296,8 +298,10 @@ export interface ComicScript {
   personas?: string[];
   /** The id of the offered genre meme this comic uses (context genreOptions memeOffer), if any. */
   meme?: string;
-  /** The one place the whole comic happens, decided by the author ("the guild hall's quest counter"). */
+  /** The one place the whole comic happens, decided by the author ("a mossy clearing in the forest"). */
   place?: string;
+  /** The adventure setting the host assigned (context genreOptions assignedSetting), for an isekai comic. */
+  setting?: string;
   /** The isekai cast preset this comic was cast from (context genreOptions isekaiCast). */
   castPreset?: string;
   /** The picked pitch's scenario id (context genreOptions pick), for an isekai comic. */

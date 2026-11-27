@@ -380,9 +380,25 @@ export function generateCast(presetName: string, seed: string): Cast {
   throw new Error(`Could not satisfy preset ${presetName} after 500 attempts; inspect its pools, dependencies, and editorial caps.`);
 }
 
-/** Preset weights: the most recognizable presets twice as likely (owner's decision, round 12). */
+/**
+ * Archetypes too far from the genre's centre to lead a comic (owner's
+ * decision, round 19): the reborn spider (M12), the vending machine (M14) and
+ * the military prodigy (M24). The ported generator and its parity fixtures
+ * keep them; comics never cast them, and the presets that only they could
+ * lead are retired.
+ */
+export const RETIRED_ARCHETYPES = new Set(['M12', 'M14', 'M24']);
+export const RETIRED_PRESETS = new Set(
+  Object.entries(ISEKAI.presets)
+    .filter(([, p]) => p.main_pool.every((id) => RETIRED_ARCHETYPES.has(id)))
+    .map(([name]) => name),
+);
+
+/** Preset weights: the most recognizable presets twice as likely (owner's decision, round 12); retired presets never. */
 export const PRESET_WEIGHTS: Record<string, number> = Object.fromEntries(
-  Object.keys(ISEKAI.presets).map((p) => [p, ['standard_adventure', 'disaster_comedy', 'guild_ensemble', 'survival'].includes(p) ? 2 : 1]),
+  Object.keys(ISEKAI.presets)
+    .filter((p) => !RETIRED_PRESETS.has(p))
+    .map((p) => [p, ['standard_adventure', 'disaster_comedy', 'guild_ensemble', 'survival'].includes(p) ? 2 : 1]),
 );
 
 /** The preset for a comic, by seeded weight, skipping presets the last two comics used. */
@@ -458,14 +474,17 @@ function packetMember(m: Member, role: PacketMember['role']): PacketMember {
 /** A comic's cast: a weighted preset (skipping the last two comics' presets) and a generated, validated cast. */
 export function isekaiCast(seed: string, recentPresets: string[] = []): IsekaiPacketCast {
   const presetId = presetPick(seed, recentPresets);
-  const cast = generateCast(presetId, seed);
+  // Re-seed until no retired archetype is cast (only leads can be retired ones).
+  let cast = generateCast(presetId, seed);
+  for (let i = 1; [...cast.members, ...(cast.world_contacts ?? [])].some((m) => RETIRED_ARCHETYPES.has(m.archetype_id)); i++)
+    cast = generateCast(presetId, `${seed} retired${i}`);
   const preset = ISEKAI.presets[presetId]!;
   return {
     preset: { id: presetId, label: preset.label, scope: preset.scope, sustainPlan: cast.sustain_plan ?? '', requiredFunctions: preset.required_functions ?? [] },
     lead: packetMember(cast.members[0]!, 'lead'),
     companions: cast.members.slice(1).map((m) => packetMember(m, 'companion')),
     contacts: (cast.world_contacts ?? []).map((m) => packetMember(m, 'contact')),
-    notes: [...(cast.editorial_review_notes ?? []), ...(cast.phase_note ? [cast.phase_note] : [])],
+    notes: [...(cast.editorial_review_notes ?? []), ...(cast.phase_note ? [cast.phase_note] : [])].filter((n) => !/spider|vending/i.test(n)),
     recognitionRule: String((ISEKAI.visual_dimensions as { recognition_rule?: string }).recognition_rule ?? ''),
     onPage: { companions: PAGE_COMPANIONS, contacts: PAGE_CONTACTS },
   };

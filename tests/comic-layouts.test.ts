@@ -16,6 +16,17 @@ const motionSets = (n: number): (PanelMotion | undefined)[][] => [
 ];
 
 describe('the tiled grid follows comic layout conventions', () => {
+  test('row and column gutters are the same width in pixels, on portrait and landscape pages (round 19)', () => {
+    for (const aspect of [3 / 4, 4 / 3, 1]) {
+      const W = 1000 * aspect, H = 1000;
+      // rows:1-2 calm (no slant): the gap between the top panel and the row below, and between the two lower panels.
+      const [top, left, right] = gridLayout('rows:1-2', [undefined, undefined, undefined], 'gutters', 0.025, aspect).panels.map((p) => p.frame);
+      const rowGap = (left!.y - (top!.y + top!.h)) * H;
+      const colGap = (right!.x - (left!.x + left!.w)) * W;
+      expect(Math.abs(rowGap - colGap)).toBeLessThan(0.5);
+    }
+  });
+
   test('every signature, motion pattern and seed tiles the page, with straight tiers, one slant at most and staggered gutters', () => {
     for (const [n, sigs] of Object.entries(SIGNATURES))
       for (const sig of sigs) {

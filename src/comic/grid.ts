@@ -50,8 +50,6 @@ export const panelsIn = (sig: string) => parseSignature(sig)?.bands.reduce((s, n
 /** Page margins and gutter, as fractions of the page (the same as the hand-built families). */
 const MARGIN = 0.025;
 const GUTTER = 0.025;
-/** Tier (horizontal) gutters are this much wider than column gutters: rows carry the page's structure (R5). */
-const TIER_RATIO = 1.5;
 /** How far a slanted gutter's two ends differ, as a share of the band it crosses (and never more than MAX_SLANT of the page). */
 const SLANT_SHARE = 0.22;
 const MAX_SLANT = 0.08;
@@ -129,17 +127,19 @@ export interface GridLayout {
  * - only vertical gutters on the page may slant, and only one per page: the
  *   one beside the peak action panel (impact first, then move). A second slant
  *   only for a second impact beat in another band. Calm pages have none (R1, R2);
- * - tier gutters are 1.5 times as wide as column gutters (R5).
+ * - every gutter is the same width in pixels, rows and columns alike, on any
+ *   page shape (owner's decision, round 19; `aspect` is width / height).
  */
-export function gridLayout(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN): GridLayout {
+export function gridLayout(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN, aspect = 1): GridLayout {
   const s = parseSignature(sig);
   if (!s) return { panels: [], slants: [], cuts: [] };
   const n = s.bands.reduce((a, b) => a + b, 0);
   const cols = s.orientation === 'cols';
   const X0 = MARGIN, X1 = 1 - MARGIN, Y0 = top, Y1 = 1 - MARGIN;
-  // Gutters in unit-square terms. Page tier (horizontal) gutters are TIER_GUTTER wide, column gutters GUTTER.
+  // Gutters in unit-square terms. GUTTER is a share of the page width; a row
+  // gutter of the same pixel width is GUTTER * aspect of the page height.
   const colGap = GUTTER / (X1 - X0);
-  const tierGap = (GUTTER * TIER_RATIO) / (Y1 - Y0);
+  const tierGap = (GUTTER * aspect) / (Y1 - Y0);
   // In rows-space: "across" separates cells in a band, "along" separates bands.
   const gAcross = cols ? tierGap : colGap;
   const gAlong = cols ? colGap : tierGap;
@@ -238,8 +238,8 @@ export function gridLayout(sig: string, motions: (PanelMotion | undefined)[], se
   return { panels, slants, cuts };
 }
 
-export function gridPanels(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN): GridPanel[] {
-  return gridLayout(sig, motions, seed, top).panels;
+export function gridPanels(sig: string, motions: (PanelMotion | undefined)[], seed: string, top = MARGIN, aspect = 1): GridPanel[] {
+  return gridLayout(sig, motions, seed, top, aspect).panels;
 }
 
 /** A page polygon as a PanelFrame: its bounds, plus a clip and lettering box when any side is slanted. */
@@ -350,5 +350,5 @@ export function describeSignature(sig: string, layout: GridLayout, motions: (Pan
         .map((g) => `the gutter between panel${g.before.length > 1 ? 's' : ''} ${nums(g.before)} and panel${g.after.length > 1 ? 's' : ''} ${nums(g.after)} slants, its top leaning ${g.lean}, ${why([...g.before, ...g.after].find((i) => motions[i] && motions[i]!.kind !== 'still') ?? g.after[0]!)}`)
         .join('; ')}. The rows themselves stay level.`
     : 'All panel borders are straight and level.';
-  return `${parts.join('. ')}. ${borders} The panels fill the page edge to edge, with wider gaps between rows than between side-by-side panels: no empty areas, no overlapping panels, no inset panels.`;
+  return `${parts.join('. ')}. ${borders} The panels fill the page edge to edge, with the same narrow white gap between every pair of neighbouring panels: no empty areas, no overlapping panels, no inset panels.`;
 }
