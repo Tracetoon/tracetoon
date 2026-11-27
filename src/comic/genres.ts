@@ -55,6 +55,10 @@ export interface Genre {
   isekai?: boolean;
   /** false: an isekai comic is written directly, without the pitches, ideas and judge. */
   brainstorm?: boolean;
+  /** true: an isekai comic is offered three adventure settings to choose from (`settingOffer`) instead of one assigned. */
+  settingChoice?: boolean;
+  /** false: an isekai comic is offered no genre staples or memes. */
+  tropes?: boolean;
   /** Where it came from: shipped with Tracetoon, the user's genres folder, or the repo's. */
   source?: 'built-in' | 'user' | 'repo';
   /** The genre file it was read from (user and repo genres). */
@@ -357,6 +361,8 @@ export interface GenreOption {
   tropeOffer?: TropeOffer[];
   /** Where this isekai comic happens (isekai/settings.ts): `place` is a spot in it, and `setting` records its id. */
   assignedSetting?: Pick<AdventureSetting, 'id' | 'label' | 'examples'>;
+  /** Three adventure settings this isekai comic may choose from, for the one the PR's moment fits best (genre `settings: choose`). */
+  settingOffer?: Pick<AdventureSetting, 'id' | 'label' | 'examples'>[];
   /** The gag the judge scored best, once picked (`tracetoon comic gags`). */
   pick?: GagPick;
 }
@@ -373,7 +379,7 @@ function restedCast(seed: string, recentPresets: string[], resting: string[]): I
 }
 
 const option = (
-  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads, isekai, brainstorm }: Genre,
+  { id, name, setting, archetypes, props, jokeHooks, notes, cast, memes, styleMix, diverseCast, leads, isekai, brainstorm, settingChoice, tropes: tropesOn }: Genre,
   seed = '',
   recentMemes: string[] = [],
   recentLeads: string[] = [],
@@ -387,10 +393,18 @@ const option = (
   if (isekai) {
     const s = `${seed}\0${id}`;
     const crew = restedCast(s, recentPresets, [...(cooldown?.characters ?? []), ...(cooldown?.leads ?? [])]);
-    const tropes = tropeOffer([crew.lead, ...crew.companions, ...crew.contacts].map((m) => m.title), s, cooldown, prText);
-    const where = settingPick(s, recentSettings);
-    const assignedSetting = { id: where.id, label: where.label, examples: where.examples };
-    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout, tropeOffer: tropes, assignedSetting };
+    const tropes = tropesOn === false ? undefined : tropeOffer([crew.lead, ...crew.companions, ...crew.contacts].map((m) => m.title), s, cooldown, prText);
+    const lite = (w: AdventureSetting) => ({ id: w.id, label: w.label, examples: w.examples });
+    // Assigned, or (settings: choose) three distinct fresh settings to pick from.
+    const offer: AdventureSetting[] = [];
+    for (let k = 0; settingChoice && offer.length < 3 && k < 30; k++) {
+      const w = settingPick(`${s}\0offer ${k}`, recentSettings, offer.map((o) => o.id));
+      if (!offer.some((o) => o.id === w.id)) offer.push(w);
+    }
+    const where = offer[0] ?? settingPick(s, recentSettings);
+    const placing = settingChoice ? { settingOffer: offer.map(lite) } : { assignedSetting: lite(where) };
+    const tropeField = tropes ? { tropeOffer: tropes } : {};
+    if (brainstorm === false) return { id, name, setting, archetypes, props, jokeHooks, ...(notes ? { notes } : {}), isekaiCast: crew, assignedLayout, ...tropeField, ...placing };
     const pitches = drawPitches(crew, s, cooldown);
     return {
       id, name, setting, archetypes, props, jokeHooks,
@@ -399,8 +413,8 @@ const option = (
       pitches,
       memeList: memeChoices(pitches, s, cooldown),
       assignedLayout,
-      tropeOffer: tropes,
-      assignedSetting,
+      ...tropeField,
+      ...placing,
     };
   }
   const plain = castOffer(cast, `${seed}\0${id}`);

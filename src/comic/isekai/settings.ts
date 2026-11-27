@@ -39,9 +39,9 @@ export function settingById(id: string): AdventureSetting | undefined {
   return SETTINGS.find((s) => s.id === id);
 }
 
-/** This comic's setting, by seed, never one of the last SETTING_COOLDOWN comics' (newest first). */
-export function settingPick(seed: string, recent: (string | undefined)[] = []): AdventureSetting {
-  const skip = new Set(recent.slice(0, SETTING_COOLDOWN).filter(Boolean));
+/** This comic's setting, by seed, never one of the last SETTING_COOLDOWN comics' (newest first) nor one in `exclude`. */
+export function settingPick(seed: string, recent: (string | undefined)[] = [], exclude: string[] = []): AdventureSetting {
+  const skip = new Set([...recent.slice(0, SETTING_COOLDOWN).filter(Boolean), ...exclude]);
   const pool = SETTINGS.filter((s) => !skip.has(s.id));
   const from = pool.length ? pool : SETTINGS;
   return from[Math.floor(unit(`isekai-setting\0${seed}`) * from.length)]!;

@@ -587,22 +587,26 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
     else if (s.composition?.family !== 'grid' || s.composition.signature !== want)
       out.push({ where: 'composition', problem: `with ${n} panels this comic's layout is {"family": "grid", "signature": "${want}"} (genreOptions assignedLayout)` });
   }
-  if (option.assignedSetting) {
-    // The host assigns the adventure setting (isekai/settings.ts); office places and bureaucracy jokes are out.
-    const where = settingById(option.assignedSetting.id);
-    if (s.setting !== option.assignedSetting.id)
-      out.push({ where: 'setting', problem: `must be "${option.assignedSetting.id}": this comic happens in ${option.assignedSetting.label} (genreOptions assignedSetting)` });
+  const settingChoices = option.assignedSetting ? [option.assignedSetting] : (option.settingOffer ?? []);
+  if (settingChoices.length) {
+    // The host assigns the adventure setting, or offers three (isekai/settings.ts); office places and bureaucracy jokes are out.
+    const chosen = settingChoices.find((c) => c.id === s.setting);
+    const assigned = chosen ?? settingChoices[0]!;
+    const where = settingById(assigned.id);
+    if (!chosen)
+      out.push({ where: 'setting', problem: settingChoices.length === 1 ? `must be "${assigned.id}": this comic happens in ${assigned.label} (genreOptions assignedSetting)` : `must be one of ${settingChoices.map((c) => `"${c.id}"`).join(', ')}: the setting the PR's moment fits best (genreOptions settingOffer)` });
     if (typeof s.place === 'string' && s.place.trim()) {
       if (OFFICE_PLACE.test(s.place))
-        out.push({ where: 'place', problem: `"${s.place}" is office-like (${s.place.match(OFFICE_PLACE)![0]}); no desks, counters, archives or paperwork rooms: set the scene in ${option.assignedSetting.label}, e.g. ${option.assignedSetting.examples.slice(0, 2).join(' or ')}` });
+        out.push({ where: 'place', problem: `"${s.place}" is office-like (${s.place.match(OFFICE_PLACE)![0]}); no desks, counters, archives or paperwork rooms: set the scene in ${assigned.label}, e.g. ${assigned.examples.slice(0, 2).join(' or ')}` });
       else if (where && !where.words.test(s.place))
-        out.push({ where: 'place', problem: `"${s.place}" isn't in ${option.assignedSetting.label}; name a spot there, e.g. ${option.assignedSetting.examples.join(', ')}` });
+        out.push({ where: 'place', problem: `"${s.place}" isn't in ${assigned.label}; name a spot there, e.g. ${assigned.examples.join(', ')}` });
     }
     // The payoff carries the PR (round 19): readers remember the last panel, so an anchor term is lettered there.
     const terms = Array.isArray(s.anchor?.terms) ? s.anchor!.terms.filter((t): t is string => typeof t === 'string' && !!t.trim()) : [];
     const last = Array.isArray(s.panels) && s.panels.length > 1 ? (s.panels[s.panels.length - 1]?.dialogue ?? []).map((d) => loose(d.text ?? '')) : undefined;
     if (terms.length && last && !terms.some((t) => last.some((v) => v.includes(loose(t)))))
-      out.push({ where: 'anchor.terms', problem: `letter one of ${terms.map((t) => `"${t}"`).join(', ')} in the last panel too (a line, a sign, a screen): the payoff is where the joke lands on the PR` });
+      // A warning since round 20: as an error it was met with re-lettered signs (35 of 40 final panels in r19).
+      out.push({ where: 'anchor.terms', severity: 'warning', problem: `none of ${terms.map((t) => `"${t}"`).join(', ')} is in the last panel; the payoff is where the joke lands on the PR, so let the punchline itself turn on the change (not a sign re-lettering it)` });
     const joke = (Array.isArray(s.panels) ? pageText(s) : []).find((t) => OFFICE_JOKE.test(t));
     if (joke) out.push({ where: 'panels', problem: `"${joke}" is office parody (${joke.match(OFFICE_JOKE)![0]}); the PR plays out as adventure, not paperwork` });
   }

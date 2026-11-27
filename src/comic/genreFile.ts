@@ -48,9 +48,11 @@ type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
 /**
  * Optional scalars: `casting: isekai` casts each comic from the isekai archetype
- * guide; `brainstorm: off` writes its comics directly instead of brainstorming ideas first.
+ * guide; `brainstorm: off` writes its comics directly instead of brainstorming ideas first;
+ * `settings: choose` offers three adventure settings to pick from instead of assigning one;
+ * `tropes: off` offers no genre staples or memes.
  */
-const OPTIONAL_SCALARS = ['casting', 'brainstorm'] as const;
+const OPTIONAL_SCALARS = ['casting', 'brainstorm', 'settings', 'tropes'] as const;
 const KNOWN = new Set<string>([...SCALARS, ...OPTIONAL_SCALARS, ...Object.keys(LISTS)]);
 
 /** `user`: `<config dir>/genres`, beside the user's config.json. */
@@ -174,6 +176,10 @@ export function parseGenreFile(
   if (casting !== undefined && casting !== 'isekai') bad('casting', 'the only casting is "isekai" (the isekai archetype guide)');
   const brainstorm = fields.get('brainstorm');
   if (brainstorm !== undefined && brainstorm !== 'on' && brainstorm !== 'off') bad('brainstorm', 'must be on or off');
+  const settings = fields.get('settings');
+  if (settings !== undefined && settings !== 'choose' && settings !== 'assigned') bad('settings', 'must be choose or assigned');
+  const tropes = fields.get('tropes');
+  if (tropes !== undefined && tropes !== 'on' && tropes !== 'off') bad('tropes', 'must be on or off');
   const archetypes = list('archetypes');
   const props = list('props');
   const jokeHooks = list('jokeHooks');
@@ -263,6 +269,8 @@ export function parseGenreFile(
       ...(leads.length ? { leads } : {}),
       ...(casting === 'isekai' ? { isekai: true } : {}),
       ...(brainstorm === 'off' ? { brainstorm: false } : brainstorm === 'on' ? { brainstorm: true } : {}),
+      ...(settings === 'choose' ? { settingChoice: true } : {}),
+      ...(tropes === 'off' ? { tropes: false } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),

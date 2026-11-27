@@ -223,8 +223,10 @@ describe('anime fantasy cast from the guide', () => {
     expect(errors(checkScript(memo, opts)).some((p) => p.problem.includes('office parody'))).toBe(true);
     const anchored = { ...s, anchor: { change: 'The preview path becomes a link.', terms: ['preview.html'], mapping: [{ visual: 'the glowing sign', technical: 'the preview link' }] } } as ComicScript;
     const flatEnd = { ...anchored, panels: s.panels.map((p, i) => (i === s.panels.length - 1 ? { ...p, dialogue: [{ speaker: 'Ari', text: 'Well, that happened.' }] } : p)) } as ComicScript;
-    expect(errors(checkScript(flatEnd, opts)).some((p) => p.problem.includes('in the last panel'))).toBe(true);
-    expect(errors(checkScript(anchored, opts)).some((p) => p.problem.includes('in the last panel'))).toBe(false);
+    // Round 20: a warning, not an error (as an error it was met with re-lettered signs).
+    const payoff = (x: ComicScript) => checkScript(x, opts).filter((p) => p.problem.includes('is in the last panel'));
+    expect(payoff(flatEnd).map((p) => p.severity)).toEqual(['warning']);
+    expect(payoff(anchored)).toEqual([]);
     const companions = cast.companions.slice(0, 3).map((m, i) => ({ name: `C${i}`, description: 'A plain decided design.', archetype: m.archetype }));
     if (companions.length === 3)
       expect(isekaiErrors({ ...s, characters: [s.characters[0]!, ...companions] }).some((p) => p.problem.includes('at most 2 companions'))).toBe(true);

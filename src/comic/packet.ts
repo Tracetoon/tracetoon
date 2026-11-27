@@ -155,7 +155,11 @@ Read these packet files (they sit next to this one):
   genre: \`place\` is one concrete spot there (its \`examples\` are ideas), and
   \`setting\` is its id. No office parody: no desks, counters, archives,
   paperwork, forms or clerks. The PR's change plays out as an adventure
-  (a fight, a trap, a quest, a journey), not as bureaucracy.` : ''}${input.genres.some((g) => g.assignedLayout) ? `
+  (a fight, a trap, a quest, a journey), not as bureaucracy.` : ''}${input.genres.some((g) => g.settingOffer?.length) ? `
+  A genre's \`settingOffer\` holds three adventure settings: choose the one
+  where this PR's moment plays out most naturally, set \`setting\` to its id,
+  and make \`place\` one concrete spot there (its \`examples\` are ideas). No
+  office parody: no desks, counters, archives, paperwork, forms or clerks.` : ''}${input.genres.some((g) => g.assignedLayout) ? `
   A genre's \`assignedLayout\` gives this comic's page structure for each
   panel count, e.g. {"3": "rows:1-2", "4": "cols:1-3", "5": "rows:2-1-2"}.
   Decide how many panels the story needs, then set \`composition\` to
