@@ -100,6 +100,8 @@ const BUILT_IN_GENRES: Genre[] = [
     jokeHooks: [],
     styles: ['anime-fantasy'],
     isekai: true,
+    // Shelved after rounds 14–16 lost to round 12: comics are written directly. A genre file's `brainstorm: on` brings it back.
+    brainstorm: false,
     notes: [
       'Each character is a story role plus a visible silhouette plus a capability plus a behavioral contradiction; the joke is the contradiction inside genuine competence.',
       'Species is shared visual vocabulary, never a personality; nobody is only an admirer of the hero; romance stays off.',

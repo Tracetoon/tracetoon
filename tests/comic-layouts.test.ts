@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { compositionPrompt, compositionProblems, resolveComposition } from '../src/comic/composition.ts';
-import { genreOptions } from '../src/comic/genres.ts';
+import { compositionPrompt, compositionProblems, MAX_ACTION_PANELS, resolveComposition } from '../src/comic/composition.ts';
+import { genreById, genreOptions } from '../src/comic/genres.ts';
 import { gridPanels, panelsIn, parseSignature, SIGNATURES, tilingProblems } from '../src/comic/grid.ts';
 import { ASSIGNED_COUNTS, layoutPick, signaturePick } from '../src/comic/layouts.ts';
 import { pagePrompt, promptLint } from '../src/comic/providers.ts';
@@ -105,5 +105,31 @@ describe('the assigned layout', () => {
     expect(layoutErrors(page(4, { family: 'grid', signature: 'rows:2-2', title: { mode: 'none' } }))[0]!.problem).toContain('cols:1-3');
     expect(layoutErrors(page(4, { family: 'tiered', title: { mode: 'none' } }))).toHaveLength(1);
     expect(layoutErrors(page(2, { family: 'grid', signature: 'rows:2', title: { mode: 'none' } }))[0]!.where).toBe('panels');
+  });
+});
+
+describe('calmer pages (round 17)', () => {
+  const panels = (n: number, action: number) =>
+    Array.from({ length: n }, (_, i) => ({ scene: 'A beat.', characters: [], dialogue: [{ kind: 'speech', speaker: 'A', text: 'Hi' }], ...(i < action ? { motion: { kind: 'move', direction: 'right' }, background: 'speed-lines' } : { motion: { kind: 'still' } }) }));
+  const page = (action: number) => ({ title: 'T', panels: panels(4, action), composition: { family: 'grid', signature: 'rows:2-2', title: { mode: 'none' } } }) as unknown as ComicScript;
+
+  test(`at most ${MAX_ACTION_PANELS} move or impact beats per page`, () => {
+    expect(compositionProblems(page(MAX_ACTION_PANELS))).toEqual([]);
+    expect(compositionProblems(page(MAX_ACTION_PANELS + 1)).some((p) => p.problem.includes(`keep at most ${MAX_ACTION_PANELS}`))).toBe(true);
+  });
+
+  test('assignments cover 3 and 4 panels, and three-across structures are rarer', () => {
+    expect([...ASSIGNED_COUNTS]).toEqual([3, 4]);
+    let three = 0;
+    for (let i = 0; i < 3000; i++) if (/[:-]3(-|$)/.test(signaturePick(4, `t ${i}`))) three++;
+    // 4 of the 9 four-panel structures have a band of three; at full weight they would be ~44%.
+    expect(three / 3000).toBeLessThan(0.3);
+  });
+
+  test('the built-in anime genre writes comics directly: the brainstorm is shelved', () => {
+    expect(genreById('anime-fantasy')!.brainstorm).toBe(false);
+    const o = genreOptions([], { pinned: 'anime-fantasy', seed: 'x' })[0]!;
+    expect(o.pitches).toBeUndefined();
+    expect(o.isekaiCast).toBeDefined();
   });
 });

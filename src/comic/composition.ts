@@ -404,6 +404,9 @@ export function validBounds(value: unknown): value is FrameBounds {
   );
 }
 
+/** Most move or impact panels on one page. */
+export const MAX_ACTION_PANELS = 2;
+
 export function compositionProblems(
   script: ComicScript,
 ): { where: string; problem: string }[] {
@@ -503,6 +506,10 @@ export function compositionProblems(
     }
   });
   if (out.length) return out;
+  // At most MAX_ACTION_PANELS action beats: a page of slants and speed lines reads busy (round 16).
+  const actionCount = script.panels.filter((p) => p.motion && p.motion.kind !== 'still').length;
+  if (actionCount > MAX_ACTION_PANELS)
+    bad('frames', `${actionCount} panels are move or impact beats; keep at most ${MAX_ACTION_PANELS} (the peak of the action) and mark the rest still`);
   // Action beats get action frames: angled, borderless or broken out, never a plain box.
   script.panels.forEach((p, i) => {
     const m = p.motion;

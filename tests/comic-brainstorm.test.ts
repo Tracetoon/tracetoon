@@ -31,6 +31,8 @@ import type { ComicScript, ComicSummary } from '../src/comic/types.ts';
 import { pageScript } from './pageScript.ts';
 
 const PREMISES = premises as Record<string, { label: string; premise: string }>;
+/** The anime genre with the (shelved) brainstorm switched back on. */
+const BRAIN = [{ ...genreById('anime-fantasy')!, brainstorm: true }];
 
 describe('scenes: the research scenarios with their punchlines removed', () => {
   test('every scenario has a short premise and a neutral label, and none repeats its scenario', () => {
@@ -134,8 +136,8 @@ describe('pitches', () => {
   });
 
   test('a lead on cooldown gets another cast when one exists', () => {
-    const base = genreOptions([], { pinned: 'anime-fantasy', seed: 'lead' })[0]!;
-    const rested = genreOptions([], { pinned: 'anime-fantasy', seed: 'lead', cooldown: { scenes: [], characters: [base.isekaiCast!.lead.archetype], memes: [] } })[0]!;
+    const base = genreOptions([], { catalog: BRAIN, pinned: 'anime-fantasy', seed: 'lead' })[0]!;
+    const rested = genreOptions([], { catalog: BRAIN, pinned: 'anime-fantasy', seed: 'lead', cooldown: { scenes: [], characters: [base.isekaiCast!.lead.archetype], memes: [] } })[0]!;
     expect(rested.isekaiCast!.lead.archetype).not.toBe(base.isekaiCast!.lead.archetype);
     expect(rested.pitches).toHaveLength(PITCHES);
     expect(rested.memeList!.length).toBeGreaterThan(0);
@@ -150,7 +152,7 @@ describe('pitches', () => {
 });
 
 describe('brainstorm v3: 20 ideas from the PR, a blind shortlist, the pick', () => {
-  const option = genreOptions([], { pinned: 'anime-fantasy', seed: 'gags' })[0]!;
+  const option = genreOptions([], { catalog: BRAIN, pinned: 'anime-fantasy', seed: 'gags' })[0]!;
   const pitches = option.pitches!;
   const memes = option.memeList!;
   const PR = 'Adds a retry loop around the Maven launch so `mvn javafx:run` survives a cold start.';
@@ -267,7 +269,7 @@ describe('brainstorm v3: 20 ideas from the PR, a blind shortlist, the pick', () 
 
   test('brainstorm: off gives the cast and layout without pitches or memes', () => {
     const g = { ...genreById('anime-fantasy')!, brainstorm: false };
-    const plain = genreOptions([], { pinned: 'anime-fantasy', seed: 'p', catalog: [g] })[0]!;
+    const plain = genreOptions([], { catalog: BRAIN, pinned: 'anime-fantasy', seed: 'p', catalog: [g] })[0]!;
     expect(plain.isekaiCast).toBeDefined();
     expect(plain.assignedLayout).toBeDefined();
     expect(plain.pitches).toBeUndefined();

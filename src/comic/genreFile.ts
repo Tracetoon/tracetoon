@@ -262,7 +262,7 @@ export function parseGenreFile(
       ...(diverseCast.length ? { diverseCast } : {}),
       ...(leads.length ? { leads } : {}),
       ...(casting === 'isekai' ? { isekai: true } : {}),
-      ...(brainstorm === 'off' ? { brainstorm: false } : {}),
+      ...(brainstorm === 'off' ? { brainstorm: false } : brainstorm === 'on' ? { brainstorm: true } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),
