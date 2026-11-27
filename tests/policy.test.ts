@@ -117,6 +117,28 @@ describe('policy classification', () => {
   });
 });
 
+describe('README rules', () => {
+  test("a README's AI feature section is not a contribution ban", () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md':
+          '# Ext\n\n## AI features\n\nThe chat model is not allowed to edit files without approval; AI edits are banned in read-only documents.\n',
+      }),
+    );
+    expect(p.verdict).not.toBe('prohibited');
+    expect(p.text).toBe('none');
+  });
+
+  test('a README contributing section that bans AI PRs still counts', () => {
+    const p = detectAiPolicy(
+      repoWith({
+        'README.md': '# Ext\n\n## Contributing\n\nAI-written pull requests will be rejected.\n',
+      }),
+    );
+    expect(p.verdict).toBe('prohibited');
+  });
+});
+
 describe('where policies are found', () => {
   const ban = "Please don't include images or AI-generated art in pull requests.";
 

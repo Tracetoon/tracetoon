@@ -29,7 +29,7 @@ write, and there's a comic on top.
 | :---: | :---: | :---: | :---: |
 | both judges preferred the Tracetoon PR over Claude Code (Opus 5.5) writing alone | the same on Codex (Sol 6.1) | factual errors per PR on Opus 5.5 (0.16 vs 0.32) | cost per PR on Claude Code / Codex in a 500k-token session |
 
-<sub>prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching. See the <a href="https://tracetoon.ai/vs-native.html">full results</a>, methods and caveats, or <a href="https://tracetoon.ai/results.html">every report</a>.</sub>
+<sub>prbench: 61 real PRs from 12 repositories, each written 3 times by the agent alone and by the same agent in the same session with Tracetoon, 2 AI judges per provider in both orders; a pick counts only when both agree. Cost assumes a session carrying 500k tokens with subscription caching. See the <a href="https://tracetoon.ai/vs-native.html">full results</a>, methods and caveats, or <a href="https://tracetoon.ai/prbench.html#results">every report</a>.</sub>
 
 </div>
 <!-- results:end -->
@@ -180,7 +180,7 @@ when two judges each read both orders and agree. Quality scores rose from 52.8
 to 68.3 on Opus and from 64.1 to 78.1 on Sol, and judge-flagged factual errors
 per PR halved on Opus (0.32 to 0.16; 0.18 to 0.15 on Sol). See the
 [full report](https://tracetoon.ai/vs-native.html), or
-[every report](https://tracetoon.ai/results.html) with a summary of each.
+[every report](https://tracetoon.ai/prbench.html#results) with a summary of each.
 
 Here is one real PR from the earlier 5-PR study, written three ways and scored
 0–100 by the same judges:

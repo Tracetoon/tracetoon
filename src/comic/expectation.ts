@@ -74,7 +74,7 @@ export function comicStep(e: ComicExpectation): string {
   if (e.route.kind === 'ready')
     return `draw the comic (references/full-path.md step 5)${asked}: once body.md is drafted, \`tracetoon comic packet --run <run>\` writes the comic author's packet; hand it to ONE fresh subagent as it says, then draw, render and run the quality loop; if the user declines it or drawing keeps failing, record why with \`tracetoon comic skip --run <run> --reason "<why>"\` (add \`--by user\` when the user declined it)`;
   if (e.askSetup)
-    return `a comic is expected${asked}, but no image route can draw yet: raise this once with the user: ${e.route.text} If they say no, run \`tracetoon images --dismiss\` and offer \`tracetoon config set comic off\`; the PR is published without a comic. Never hold the PR for this answer: if you can't get it before publishing, record \`tracetoon comic skip --run <run> --reason "image setup awaits the user's answer"\`, publish, and ask in your final message`;
+    return `a comic is expected${asked}, but no image route can draw yet: raise this once with the user (with your question tool if you have one, else in chat): ${e.route.text} Ask for their yes yourself and, on a yes, run the command for them. If they say no, run \`tracetoon images --dismiss\` and offer \`tracetoon config set comic off\`; the PR is published without a comic. The PR doesn't have to wait for this answer: if you can't get it before the PR is ready, record \`tracetoon comic skip --run <run> --reason "image setup awaits the user's answer"\`, publish with the approval publishing normally needs, and ask in your final message`;
   return '';
 }
 
@@ -93,5 +93,5 @@ export function drafterComicStep(e: ComicExpectation, run: string): string {
   const asked = e.request
     ? `; this repo asks for one: ${e.request.file}:${e.request.line}`
     : '';
-  return `\`tracetoon comic run --run ${run}\` (the comic${asked}: Tracetoon starts a fresh comic author and fresh judges itself, draws, renders and runs the full quality loop, or records why there is none; it draws from the brief and your draft, so it doesn't wait for the review fixes, and render puts it beside the final body. It asks no one and never holds the PR: when it prints a \`${COMIC_SETUP_LINE} …\` line, add that line to your final reply)`;
+  return `\`tracetoon comic run --run ${run}\` (the comic${asked}: Tracetoon starts a fresh comic author and fresh judges itself, draws, renders and runs the full quality loop, or records why there is none; it draws from the brief and your draft, so it doesn't wait for the review fixes, and render puts it beside the final body. It doesn't pause for the comic's setup answer (publishing keeps its own approval): when it prints a \`${COMIC_SETUP_LINE} …\` line, add that line to your final reply)`;
 }

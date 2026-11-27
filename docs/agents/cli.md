@@ -261,9 +261,9 @@ lean reviewer handoffs
 
 ## `tracetoon review run`
 
-run the lean reviewer as a codex exec session pinned to the review plan's reviewer model, verify the model from its rollout, and import its findings
+run the lean reviewers on the host's own agent (a toolless claude -p on Claude Code, codex exec on Codex; the review packet is their only input), pinned to the review plan's reviewer model, verify the model each ran on, and import its findings
 
-**Acts outside the machine:** sends-data, may-cost.
+**Acts outside the machine:** may-cost (starts reviewers on the host's own agent (claude -p on Claude Code, codex exec on Codex); the review packet is the only input).
 
 | Option | Description |
 | --- | --- |

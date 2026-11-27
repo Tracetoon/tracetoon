@@ -129,7 +129,7 @@ describe('tracetoon comic run', () => {
     const r = cli(repo.root, 'comic', 'run');
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("No comic on this PR, recorded: image setup awaits the user's answer.");
-    expect(r.stdout).toMatch(/^COMIC SETUP: Approve Codex/m);
+    expect(r.stdout).toMatch(/^COMIC SETUP: Ask the user to approve Codex/m);
     const status = JSON.parse(readFileSync(join(runDir, 'comic-status.json'), 'utf8'));
     expect(status).toMatchObject({ state: 'skipped', by: 'agent' });
     // No author or judge was started.
