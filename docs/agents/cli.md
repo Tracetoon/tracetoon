@@ -394,7 +394,6 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 | `--force` | redraw panels that already exist |
 | `--lettering <how>` | model (the image model letters the page) or overlay (Tracetoon draws bubbles) |
 | `--repair <instruction>` | edit the current page with this one change instead of redrawing it (from comic loop) |
-| `--reflow` | same script, a layout whose panels are wide enough to read on a phone; then redraw |
 
 ## `tracetoon comic reroll`
 

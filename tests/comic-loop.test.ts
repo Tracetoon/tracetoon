@@ -66,7 +66,8 @@ describe('comic loop', () => {
     expect(text).not.toContain('SECRET PUNCHLINE');
     expect(text).not.toContain('secret change');
     expect(text).not.toContain('PR body');
-    expect(existsSync(join(dir, 'A-360.png'))).toBe(true);
+    expect(existsSync(join(dir, 'A-1000.png'))).toBe(true);
+    expect(existsSync(join(dir, 'A-360.png'))).toBe(false);
   });
 
   test('imports answers, counts every judge call and needs a real agent id', async () => {
@@ -102,24 +103,8 @@ describe('comic loop', () => {
     );
     comicLoopImportCmd(run, { task: 'observe:c1', agentId: 'a2', ...quiet });
     await comicLoopCmd(run, quiet);
-    // The phone reader gets only the 360px rendition: no larger image, no intended text.
-    const phoneDir = join(run.dir, 'judge', 'phone-c1');
-    expect(readdirSync(phoneDir).sort()).toEqual(['A-360.png', 'instructions.md']);
-    expect(readFileSync(join(phoneDir, 'instructions.md'), 'utf8')).not.toContain(
-      'SECRET PUNCHLINE',
-    );
-    writeFileSync(
-      join(phoneDir, 'result.json'),
-      JSON.stringify({
-        items: [
-          { panel: null, words: 'T', legible: 'yes' },
-          { panel: 1, words: 'SECRET PUNCHLINE', legible: 'yes' },
-        ],
-        unreadable: [],
-      }),
-    );
-    comicLoopImportCmd(run, { task: 'phone:c1', agentId: 'a2b', ...quiet });
-    await comicLoopCmd(run, quiet);
+    // No phone-width reader: after the cold read comes the fact check.
+    expect(existsSync(join(run.dir, 'judge', 'phone-c1'))).toBe(false);
     const check = readFileSync(
       join(run.dir, 'judge', 'check-c1', 'instructions.md'),
       'utf8',
@@ -137,7 +122,7 @@ describe('comic loop', () => {
     await comicLoopCmd(run, quiet);
     const s = loadLoop(run)!;
     expect(s.incumbent).toBe('c1');
-    expect(s.used.judgeCalls).toBe(4);
+    expect(s.used.judgeCalls).toBe(3);
   });
 
   test('render counting starts the budget', async () => {

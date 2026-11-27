@@ -9,6 +9,10 @@ import {
   PALETTES,
   CAST_KINDS,
   DIALOGUE_KINDS,
+  BALLOONS,
+  CAMERAS,
+  PANEL_EFFECTS,
+  SFX_SIZES,
   KNOWN_STYLE_FAMILIES,
   STYLE_FAMILIES,
   type ComicScript,
@@ -17,18 +21,18 @@ import {
 import {
   comicSummary,
   compositionProblems,
-  phoneFit,
-  phoneLayout,
   visibleHeadline,
 } from './composition.ts';
 
 /** Words per text item on a page: one balloon, one breath. */
-export const MAX_ITEM_WORDS = 18;
+export const MAX_ITEM_WORDS = 30;
 /**
- * All the words on a page, headline included. Room for a setup, a build and a
- * punchline in dialogue; most good comics use 25–60.
+ * All the words on a page, headline included. Comics are read on a desktop PR
+ * page, so a longer joke has room; most good comics still use 30–90.
  */
-export const MAX_PAGE_WORDS = 80;
+export const MAX_PAGE_WORDS = 150;
+/** Panels on one page: a big story moment can take a dense page. */
+export const MAX_PANELS = 9;
 export const MAX_HEADLINE_WORDS = 6;
 export const MAX_CHARACTERS = 6;
 export const MAX_STYLE_CHARS = 120;
@@ -100,8 +104,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (!format) bad('format', `must be one of ${FORMATS.map((f) => f.id).join(', ')}`);
   if (s.format === 'custom' && !s.layout?.trim() && !s.composition)
     bad('layout', 'is required for a custom format: describe the page');
-  if (!Array.isArray(s.panels) || s.panels.length < 1 || s.panels.length > 6) {
-    bad('panels', 'must have 1 to 6 panels');
+  if (!Array.isArray(s.panels) || s.panels.length < 1 || s.panels.length > MAX_PANELS) {
+    bad('panels', `must have 1 to ${MAX_PANELS} panels`);
     return out;
   }
   if (
@@ -115,21 +119,6 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
-  if (
-    Array.isArray(s.panels) &&
-    s.panels.every((p: any) => p && Array.isArray(p.dialogue ?? []))
-  ) {
-    try {
-      const tight = phoneFit(s as ComicScript).filter((f) => !f.fits);
-      if (tight.length) {
-        const better = phoneLayout(s as ComicScript);
-        warn(
-          'composition',
-          `on a phone (360 px) panel${tight.length === 1 ? '' : 's'} ${tight.map((f) => `${f.panel} (~${f.widthPx} px wide, ${f.chars} characters)`).join(', ')} would need text too small to read; reflow rather than shrink${better ? `: use the ${better.composition!.family} family (aspect ${better.aspect})` : ', or cut words'}`,
-        );
-      }
-    } catch {}
-  }
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
@@ -179,7 +168,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (total > MAX_PAGE_WORDS)
     bad(
       'panels',
-      `the page has ${total} words; keep it to ${MAX_PAGE_WORDS} so it reads on a phone`,
+      `the page has ${total} words; keep it to ${MAX_PAGE_WORDS} so the joke stays quick to read`,
     );
 
   s.panels.forEach((p, i) => {
@@ -206,6 +195,12 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
     }
     if ((p.characters ?? []).length > 4)
       bad(`${at}.characters`, 'at most 4 characters per panel');
+    if (p.camera !== undefined && !CAMERAS.includes(p.camera))
+      bad(`${at}.camera`, `must be one of ${CAMERAS.join(', ')}`);
+    if (p.effects !== undefined) {
+      if (!Array.isArray(p.effects) || p.effects.some((e) => !PANEL_EFFECTS.includes(e)))
+        bad(`${at}.effects`, `must be a list of ${PANEL_EFFECTS.join(', ')}`);
+    }
     if (!Array.isArray(p.dialogue)) bad(`${at}.dialogue`, 'must be a list');
     if ((p.dialogue ?? []).length > 4) bad(`${at}.dialogue`, 'at most 4 lines per panel');
     for (const [j, d] of (p.dialogue ?? []).entries()) {
@@ -224,6 +219,18 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
         bad(`${w}.kind`, `must be ${DIALOGUE_KINDS.join(', ')}`);
       if (d.points !== undefined && typeof d.points !== 'string')
         bad(`${w}.points`, 'must name the surface or element the words are on');
+      if (d.balloon !== undefined && !BALLOONS.includes(d.balloon))
+        bad(`${w}.balloon`, `must be one of ${BALLOONS.join(', ')}`);
+      if (d.balloon !== undefined && (narration || d.kind === 'caption'))
+        warn(`${w}.balloon`, 'only spoken lines have balloons; captions, signs and sound effects ignore it');
+      if (d.size !== undefined && (d.kind !== 'sfx' || !SFX_SIZES.includes(d.size)))
+        bad(`${w}.size`, `is for sound effects ("kind": "sfx") and must be ${SFX_SIZES.join(', ')}`);
+      if (
+        d.emphasis !== undefined &&
+        (!Array.isArray(d.emphasis) ||
+          d.emphasis.some((e) => typeof e !== 'string' || !(d.text ?? '').toLowerCase().includes(e.toLowerCase())))
+      )
+        bad(`${w}.emphasis`, 'must list words that appear in the text');
       if (d.kind === 'label')
         warn(
           `${w}.kind`,
@@ -259,6 +266,14 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       warn(
         'composition',
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
+      );
+    const reused = (current.castNames ?? []).filter((n) =>
+      recent.some((r) => r.castNames?.includes(n)),
+    );
+    if (reused.length)
+      warn(
+        'characters',
+        `${reused.map((n) => `"${n}"`).join(', ')} already appeared in a recent comic. Invent this comic's own names, from what the characters do in this story.`,
       );
     if (
       current.panelCount === 2 &&

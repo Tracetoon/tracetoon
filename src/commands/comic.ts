@@ -60,7 +60,6 @@ import {
 import {
   artFingerprint,
   artMatches,
-  phoneLayout,
   comicSummary,
   frameAspect,
   pageAspect,
@@ -233,8 +232,6 @@ export interface ArtOpts extends OutOpts {
   lettering?: 'model' | 'overlay';
   /** Edit the current page with this one instruction instead of drawing from scratch. */
   repair?: string;
-  /** Same script, a layout whose panels are wide enough to read on a phone; then redraw. */
-  reflow?: boolean;
 }
 
 /** Exit code when no approved image route can draw the comic. */
@@ -302,16 +299,6 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
   const loaded = load(cwd, opts.run);
   const { run, root, genres } = loaded;
   let { script } = loaded;
-  if (opts.reflow) {
-    const next = phoneLayout(script);
-    if (!next)
-      throw new UserError(
-        'The layout already leaves every panel room on a phone; repair the lettering instead (comic art --repair).',
-      );
-    writeJson(run, 'comic.json', next);
-    script = next;
-    opts = { ...opts, force: true };
-  }
   let config = loadConfig(root);
   const provider = chooseProvider(opts.provider, config.imageConsent);
   if (provider) {

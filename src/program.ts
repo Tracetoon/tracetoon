@@ -618,10 +618,6 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--repair <instruction>',
       'edit the current page with this one change instead of redrawing it (from comic loop)',
     )
-    .option(
-      '--reflow',
-      'same script, a layout whose panels are wide enough to read on a phone; then redraw',
-    )
     .action((o) => comicArtCmd(cwd, { ...g(), ...o }));
   comic
     .command('reroll')

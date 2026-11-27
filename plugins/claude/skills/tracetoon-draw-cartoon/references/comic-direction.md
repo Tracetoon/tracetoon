@@ -50,8 +50,10 @@ judgments, not a numeric humor score or a rotation quota.
 
 The candidates must differ in premise or storytelling, not just colors or a
 new animal species. Glance at the last few `recentComics`: if they were
-two-panel before/afters, tell this one as a story. Reusing a style is fine;
-reusing either of the last two genres is not, unless the user asked for it.
+two-panel before/afters, tell this one as a story; if they share a layout
+family, pick another one. Their `castNames` are taken:
+name this comic's characters afresh. Reusing a style is fine; reusing either
+of the last two genres is not, unless the user asked for it.
 
 ## Useful starting compositions
 
@@ -72,7 +74,7 @@ needs; a large PR does not require a long comic, and a small one can still
 deserve four panels.
 - Use English left-to-right, top-to-bottom reading order, even for
   manga-inspired art.
-- Keep to 1–6 panels and 80 displayed words.
+- Keep to 1–9 panels and 150 displayed words.
 - The metadata title need not be a visible headline, and a visible title need
   not be large or at the top.
 
@@ -87,7 +89,7 @@ their traits help. Archetypes, never a specific work's characters.
 
 Before posting, confirm:
 - it reads as a drawn comic, not a render or illustration;
-- text is readable at PR and phone widths;
+- text is readable at PR width on a desktop screen;
 - the words belong to the scene;
 - the sequencing is unambiguous;
 - no outcome is invented;

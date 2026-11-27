@@ -31,17 +31,12 @@ import {
   observerPrompt,
   PAIR_SCHEMA,
   pairProblems,
-  PHONE_SCHEMA,
-  phoneGate,
-  phonePrompt,
-  phoneProblems,
   type Candidate,
   type IssueTarget,
   type LoopState,
   type Next,
 } from '../comic/judging.ts';
 import { writeRenditions } from '../comic/renditions.ts';
-import { phoneLayout } from '../comic/composition.ts';
 import { checkScript, pageText } from '../comic/script.ts';
 import type { ComicScript } from '../comic/types.ts';
 import { readJson, readText, writeJson, type Run } from '../run.ts';
@@ -139,7 +134,6 @@ export function archiveCandidate(
     required: pageText(script),
     contractOk,
     ...(frozen ? { frozen } : {}),
-    reflow: phoneLayout(script)?.composition?.family ?? null,
   });
   delete s.pendingRevision;
   saveLoop(run, s);
@@ -181,24 +175,6 @@ ${JSON.stringify(schema)}
 }
 
 async function packetFor(run: Run, s: State, n: Next) {
-  if (n.action === 'phone') {
-    const task = `phone:${n.candidate}`;
-    const dir = packetDir(run, task);
-    // Only the phone rendition: no larger image, no intended text.
-    const tmp = join(dir, 'source');
-    mkdirSync(tmp, { recursive: true });
-    copyFileSync(imageOf(run, n.candidate), join(tmp, 'A.png'));
-    await writeRenditions(join(tmp, 'A.png'), dir, 'A');
-    const { rmSync } = await import('node:fs');
-    rmSync(tmp, { recursive: true, force: true });
-    rmSync(join(dir, 'A-760.png'), { force: true });
-    const result = join(dir, 'result.json');
-    writeFileSync(
-      join(dir, 'instructions.md'),
-      instructions(phonePrompt(), PHONE_SCHEMA, result, [join(dir, 'A-360.png')]),
-    );
-    return { task, packet: join(dir, 'instructions.md'), result, blind: true };
-  }
   if (n.action === 'observe') {
     const task = `observe:${n.candidate}`;
     const dir = packetDir(run, task);
@@ -267,7 +243,7 @@ const REVISE_HOW: Record<IssueTarget, string> = {
     'fix the words in comic.json if they are wrong, then `tracetoon comic art --repair "<instruction>"` (edits the current page), or `--lettering overlay` if model lettering keeps failing',
   art: '`tracetoon comic art --repair "<instruction>"` (edits the current page)',
   composition:
-    '`tracetoon comic art --reflow` (same script, a layout whose panels are wide enough on a phone); for balloon order, reorder the dialogue within the panel in comic.json, then `tracetoon comic art --force`. Keep every word, character and the joke',
+    'change the layout or balloon order in comic.json (keep every word, character and the joke), then `tracetoon comic art --force`',
   script:
     'rewrite the dialogue or beats in comic.json (keep the PR facts), then `tracetoon comic art --force`',
   premise:
@@ -363,11 +339,9 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
   const problems =
     stage === 'observe'
       ? observationProblems(v)
-      : stage === 'phone'
-        ? phoneProblems(v)
-        : stage === 'check'
-          ? checkProblems(v)
-          : pairProblems(v);
+      : stage === 'check'
+        ? checkProblems(v)
+        : pairProblems(v);
   // The call was spent whether or not its answer is usable.
   s.used.judgeCalls++;
   (s.agents ??= {})[opts.task] = opts.agentId;
@@ -377,11 +351,10 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
       `The judge answer needs fixing:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
     );
   }
-  if (stage === 'observe' || stage === 'phone' || stage === 'check') {
+  if (stage === 'observe' || stage === 'check') {
     const c = s.candidates.find((x) => x.id === a);
     if (!c) throw new UserError(`Unknown candidate ${a}.`);
     if (stage === 'observe') c.observation = v;
-    else if (stage === 'phone') c.phone = v;
     else c.check = v;
   } else if (stage === 'compare') {
     let cmp = s.comparisons.find((x) => x.a === a && x.b === b);

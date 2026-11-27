@@ -330,7 +330,7 @@ export function styleText(style: string): string {
 export function styleLettering(style: string): string {
   return (
     styleById(style)?.lettering ??
-    'hand-lettered comic text in speech balloons and caption boxes that suits the art, easy to read at phone size'
+    'hand-lettered comic text in speech balloons and caption boxes that suits the art, easy to read at pull-request width'
   );
 }
 

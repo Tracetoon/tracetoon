@@ -11,15 +11,12 @@ import {
   newLoop,
   nextStep,
   observationProblems,
-  phoneGate,
   type Candidate,
   type Check,
   type Issue,
   type LoopState,
   type Observation,
-  type PhoneRead,
 } from '../src/comic/judging.ts';
-import { phoneFit, phoneLayout } from '../src/comic/composition.ts';
 import type { ComicScript } from '../src/comic/types.ts';
 
 const obs = (amusement: number | null, rest = 4): Observation => ({
@@ -59,17 +56,12 @@ const issue = (
   instruction: `fix ${target}`,
   preserve: [],
 });
-const read = (words: string, legible: 'yes' | 'no' = 'yes'): PhoneRead => ({
-  items: [{ panel: 1, words, legible }],
-  unreadable: [],
-});
 const cand = (id: string, extra: Partial<Candidate>): Candidate => ({
   id,
   parent: null,
   kind: 'initial',
   imageSha256: id.padEnd(64, '0'),
   required: ['Better?'],
-  phone: read('...Better?'),
   contractOk: true,
   ...extra,
 });
@@ -105,31 +97,6 @@ describe('host-computed values', () => {
     const c = check();
     c.gates.essentialText.state = 'unknown';
     expect(eligible(c)).toBe(false);
-  });
-});
-
-describe('phone gate', () => {
-  test('passes only when every required item was read at phone width', () => {
-    expect(
-      phoneGate(read('Wait, wait. Let me set this up properly.'), [
-        'Wait, wait. Let me set this up properly.',
-      ]).state,
-    ).toBe('pass');
-    const r = phoneGate(read('Wait, wait.'), [
-      'Wait, wait. Let me set this up properly.',
-      'WHUMP',
-    ]);
-    expect(r.state).toBe('fail');
-    expect(r.missing).toEqual(['Wait, wait. Let me set this up properly.', 'WHUMP']);
-  });
-  test('text marked unreadable does not count, and no reading is unknown', () => {
-    expect(phoneGate(read('WHUMP', 'no'), ['WHUMP']).state).toBe('fail');
-    expect(phoneGate(undefined, ['WHUMP']).state).toBe('unknown');
-  });
-  test('tolerates punctuation and case', () => {
-    expect(phoneGate(read('label: deprecated'), ['LABEL: DEPRECATED']).state).toBe(
-      'pass',
-    );
   });
 });
 
@@ -179,34 +146,6 @@ describe('frozen joke during technical repair', () => {
   });
 });
 
-describe('phone layout', () => {
-  const strip = (words: number) =>
-    ({
-      v: 2,
-      format: 'strip',
-      composition: { family: 'sequence', title: { mode: 'heading' } },
-      panels: Array.from({ length: 4 }, () => ({
-        scene: 's',
-        characters: [],
-        dialogue: words ? [{ speaker: 'A', text: 'word '.repeat(words).trim() }] : [],
-      })),
-    }) as unknown as ComicScript;
-  test('reflows a wordy four-across strip instead of shrinking it', () => {
-    expect(phoneFit(strip(16)).some((f) => !f.fits)).toBe(true);
-    const next = phoneLayout(strip(16))!;
-    expect(next.composition!.family).not.toBe('sequence');
-    expect(phoneFit(next).every((f) => f.fits)).toBe(true);
-    expect(next.panels).toEqual(strip(16).panels);
-  });
-  test('leaves a layout that fits alone', () => {
-    const quiet = {
-      ...strip(0),
-      composition: { family: 'vertical', title: { mode: 'heading' } },
-    } as ComicScript;
-    expect(phoneLayout(quiet)).toBeUndefined();
-  });
-});
-
 describe('canonical pair outcomes', () => {
   test('a win must hold in both orders', () => {
     expect(canonicalPair('x', 'y', j('B'), j('A'))).toEqual({
@@ -226,12 +165,10 @@ describe('canonical pair outcomes', () => {
 });
 
 describe('controller', () => {
-  test('reads cold, then at phone width, then checks the facts', () => {
-    const s = loop(cand('c1', { phone: undefined }));
+  test('reads cold, then checks the facts; there is no phone-width step', () => {
+    const s = loop(cand('c1', {}));
     expect(nextStep(s)).toEqual({ action: 'observe', candidate: 'c1' });
     s.candidates[0]!.observation = obs(4);
-    expect(nextStep(s)).toEqual({ action: 'phone', candidate: 'c1' });
-    s.candidates[0]!.phone = read('Better?');
     expect(nextStep(s)).toEqual({ action: 'check', candidate: 'c1' });
   });
 
@@ -260,20 +197,6 @@ describe('controller', () => {
     const s = loop(cand('c1', { observation: obs(2), check: check() }));
     s.creative = true;
     expect(nextStep(s)).toMatchObject({ action: 'revise', target: 'premise' });
-  });
-
-  test('an unreadable phone page asks for a reflow when one exists, else bigger lettering', () => {
-    const s = loop(
-      cand('c1', {
-        observation: obs(4),
-        phone: read('…'),
-        check: check(),
-        reflow: 'vertical',
-      }),
-    );
-    expect(nextStep(s)).toMatchObject({ action: 'revise', target: 'composition' });
-    const t = loop(cand('c1', { observation: obs(4), phone: read('…'), check: check() }));
-    expect(nextStep(t)).toMatchObject({ action: 'revise', target: 'lettering' });
   });
 
   test('a lettering repair is accepted on a humor tie without a tournament', () => {
@@ -362,7 +285,7 @@ describe('controller', () => {
   });
 
   test('an eligible repair of an unreadable baseline that lost on humor is only a fallback', () => {
-    const s = loop(cand('c1', { observation: obs(4), phone: read('…'), check: check() }));
+    const s = loop(cand('c1', { observation: obs(4), check: check(false, [issue('lettering', 'blocker')]) }));
     nextStep(s);
     s.candidates.push(
       cand('c2', {
@@ -399,7 +322,7 @@ describe('controller', () => {
     const s = loop(
       cand('c1', { observation: obs(3), check: check(true, [issue('art')]) }),
     );
-    s.used.judgeCalls = 10;
+    s.used.judgeCalls = 11;
     expect(nextStep(s)).toMatchObject({
       action: 'stop',
       reason: 'judge budget too low for another round',
