@@ -310,6 +310,10 @@
    "https://cdn.myanimelist.net/images/characters/4/343189.jpg",
    "https://cdn.myanimelist.net/images/characters/13/383415.jpg",
    "owner research 2026-11-26: official anime character art (shadow-garden.jp, deathma-anime.com): a furry tail in both the upright-eared and floppy-eared variations"
+  ],
+  "variants": [
+   "Adult battle enthusiast who loves hunting.",
+   "Nonromantic child apprentice with canine ears whose enthusiasm exceeds experience."
   ]
  },
  "P07": {
@@ -387,6 +391,11 @@
   "confidence": "high",
   "sources": [
    "owner-supplied official images (2026-11-25)"
+  ],
+  "core": "The steady professional who quietly keeps an unruly mixed-species group alive.",
+  "variants": [
+   "A woman with warm-coloured scale patches and formal speech.",
+   "A heavyset man with scale patches who keeps a meticulous ration inventory."
   ]
  },
  "P11": {
@@ -563,7 +572,8 @@
    "https://mywaifulist.moe/waifu/ruijerd-superdia-mushoku-tensei",
    "https://myanimelist.net/character/111739",
    "https://en.wikipedia.org/wiki/List_of_Mushoku_Tensei_characters"
-  ]
+  ],
+  "core": "A scarred, intimidating guardian whose principles are simpler and kinder than his reputation."
  },
  "P31": {
   "base": "human",

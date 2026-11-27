@@ -69,3 +69,20 @@ describe('presentation: how non-human archetypes are drawn', () => {
     expect(bad('Tall woman with orange scale patches at the throat.')).toHaveLength(0);
   });
 });
+
+describe('the author sees the audited body, never the species label', () => {
+  test('audited members carry no species label, and no core or variant contradicts the body', () => {
+    const suspect = /\b([a-z]+folk|reptil\w*|lizard\w*|monstrous\w*)\b/i;
+    let seen = 0;
+    for (let i = 0; i < 300; i++) {
+      const cast = isekaiCast(`label ${i}`);
+      for (const m of [cast.lead, ...cast.companions, ...cast.contacts]) {
+        if (!presentationOf(m.archetype)) continue;
+        seen++;
+        expect([m.archetype, m.species]).toEqual([m.archetype, undefined]);
+        for (const t of [m.core, ...m.variants]) expect([m.archetype, suspect.exec(t)?.[0]]).toEqual([m.archetype, undefined]);
+      }
+    }
+    expect(seen).toBeGreaterThan(50);
+  });
+});

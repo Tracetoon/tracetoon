@@ -21,6 +21,9 @@ export interface Presentation {
   notOnPage: string[];
   /** The recipe's look, corrected where it claimed what the sources don't show. */
   look?: string;
+  /** The recipe's core and variants, where the guide's wording contradicts the body ("reptilian-looking", "lizardfolk"). */
+  core?: string;
+  variants?: string[];
   confidence: 'high' | 'medium' | 'low';
   sources: string[];
 }

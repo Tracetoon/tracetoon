@@ -403,7 +403,8 @@ export interface PacketMember {
   role: 'lead' | 'companion' | 'contact';
   ageGroup: string;
   relationship: string;
-  species: string;
+  /** The guide's species label, left out when an audited presentation describes the body instead. */
+  species?: string;
   functions: string[];
   core: string;
   look: string;
@@ -449,7 +450,8 @@ function packetMember(m: Member, role: PacketMember['role']): PacketMember {
     kit: a.kit,
     variants: a.variants ?? [],
     ...(m.chosen_variant ? { note: m.chosen_variant } : {}),
-    ...(shown ? { look: shown.look ?? a.look, presentation: shown.presentation, notOnPage: shown.notOnPage } : {}),
+    // An audited body replaces the species label: the author describes traits, never "lizardfolk".
+    ...(shown ? { species: undefined, look: shown.look ?? a.look, presentation: shown.presentation, notOnPage: shown.notOnPage, ...(shown.core ? { core: shown.core } : {}), ...(shown.variants ? { variants: shown.variants } : {}) } : {}),
   };
 }
 
