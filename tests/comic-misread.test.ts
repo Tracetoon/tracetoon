@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { newLoop, nextStep, type Candidate } from '../src/comic/judging.ts';
-import { avoidFrom, isMisreadReview, MISREAD_PROMPT, MISREAD_REDRAWS, type MisreadReview } from '../src/comic/misread.ts';
+import { avoidFrom, hasConcern, isMisreadReview, MISREAD_PROMPT, MISREAD_REDRAWS, type MisreadReview } from '../src/comic/misread.ts';
 import { NEGATIVE, negativeFor } from '../src/comic/providers.ts';
 import { checkScript, errors } from '../src/comic/script.ts';
 import type { ComicScript } from '../src/comic/types.ts';
@@ -71,5 +71,29 @@ describe('misread review', () => {
     expect(negativeFor(script)).toContain('flat stamp plate');
     expect(errors(checkScript(script)).filter((p) => p.where === 'avoid')).toHaveLength(0);
     expect(errors(checkScript({ ...script, avoid: [42] } as unknown as ComicScript)).map((p) => p.where)).toContain('avoid');
+  });
+});
+
+describe('severe misreadings (round 19)', () => {
+  test('a possible hate symbol or rude gesture sends the comic back; a possible sexual reading does not', () => {
+    const item = (couldReadAs: string, likelihood: 'likely' | 'possible') => ({ panel: 2, what: 'the gold gate fitting', couldReadAs, likelihood, fix: 'make it a plain round boss' });
+    const swastika: MisreadReview = { state: 'clear', items: [item('a swastika-like emblem', 'possible')] };
+    expect(hasConcern(swastika)).toBe(true);
+    expect(avoidFrom(swastika)).toHaveLength(1);
+    expect(hasConcern({ state: 'clear', items: [item('a raised middle finger', 'possible')] })).toBe(true);
+    expect(hasConcern({ state: 'clear', items: [item('a phallic lever', 'possible')] })).toBe(false);
+    expect(hasConcern({ state: 'concern', items: [item('a phallic lever', 'likely')] })).toBe(true);
+  });
+});
+
+describe('run files written by Windows PowerShell (round 19)', () => {
+  test('a UTF-8 byte-order mark does not break reading comic.json', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { readJson } = await import('../src/run.ts');
+    const dir = mkdtempSync(join(tmpdir(), 'bom-'));
+    writeFileSync(join(dir, 'comic.json'), '﻿{"title": "T"}', 'utf8');
+    expect(readJson<{ title: string }>({ id: 'x', dir }, 'comic.json')).toEqual({ title: 'T' });
   });
 });

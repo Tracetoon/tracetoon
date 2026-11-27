@@ -56,9 +56,17 @@ export interface MisreadReview {
   items: MisreadItem[];
 }
 
-/** Whether a review sends the comic back: at least one likely reading (an older review without likelihoods counts every item). */
+/**
+ * Readings too harmful to publish even when only a viewer looking for them
+ * would see them: hate symbols and rude gestures (a "possible" swastika-like
+ * fitting was published in round 19). Sexual readings keep the "likely" bar.
+ */
+export const SEVERE_READING = /swastika|nazi|hate symbol|extremis|insignia|white power|ss rune|sieg|salute|middle finger|rude gesture|obscene gesture/i;
+const severe = (i: MisreadItem) => SEVERE_READING.test(`${i.couldReadAs} ${i.what}`);
+
+/** Whether a review sends the comic back: a likely reading, or any severe one (an older review without likelihoods counts every item). */
 export function hasConcern(review: MisreadReview): boolean {
-  return review.state === 'concern' && review.items.some((i) => i.likelihood !== 'possible');
+  return (review.state === 'concern' && review.items.some((i) => i.likelihood !== 'possible')) || review.items.some(severe);
 }
 
 /** Redraws a comic gets after a concern before it is skipped. */
@@ -76,5 +84,5 @@ export function isMisreadReview(v: unknown): v is MisreadReview {
 
 /** What the next drawing must avoid, from a review's items (added to the script's `avoid`). */
 export function avoidFrom(review: MisreadReview): string[] {
-  return review.items.filter((i) => i.likelihood !== 'possible').map((i) => `${i.what} drawn so it could read as ${i.couldReadAs}; instead ${i.fix}`.slice(0, 240));
+  return review.items.filter((i) => i.likelihood !== 'possible' || severe(i)).map((i) => `${i.what} drawn so it could read as ${i.couldReadAs}; instead ${i.fix}`.slice(0, 240));
 }
