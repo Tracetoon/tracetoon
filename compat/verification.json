@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "detected": {
     "claude-cli": {
-      "upstreamVersion": "2.1.331",
-      "detectedAt": "2026-11-24T00:04:31.755Z"
+      "upstreamVersion": "2.1.332",
+      "detectedAt": "2026-11-25T08:51:33.885Z"
     },
     "codex-cli": {
       "upstreamVersion": "0.172.0",
@@ -14,20 +14,20 @@
       "detectedAt": "2026-11-17T08:08:24.641Z"
     },
     "copilot-cli": {
-      "upstreamVersion": "1.0.115",
-      "detectedAt": "2026-11-24T22:38:25.730Z"
+      "upstreamVersion": "1.0.117",
+      "detectedAt": "2026-11-27T21:28:34.792Z"
     },
     "cursor-cli": {
       "upstreamVersion": "2026.11.22-e9042b2",
       "detectedAt": "2026-11-22T07:05:14.377Z"
     },
     "zed-claude": {
-      "upstreamVersion": "0.112.0",
-      "detectedAt": "2026-11-24T22:38:25.730Z"
+      "upstreamVersion": "0.113.0",
+      "detectedAt": "2026-11-26T21:44:46.566Z"
     },
     "zed-codex": {
-      "upstreamVersion": "2.12.0",
-      "detectedAt": "2026-11-24T22:38:25.730Z"
+      "upstreamVersion": "2.12.1",
+      "detectedAt": "2026-11-26T21:44:46.566Z"
     }
   },
   "runs": [
@@ -296,6 +296,44 @@
       "verifiedAt": "2026-11-24T00:03:04.758Z",
       "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45293799501",
       "tracetoonRevision": "e7b9ad29a44a56cdc0802b58912c11cf1f189e55"
+    },
+    {
+      "target": "claude-cli",
+      "integration": "claude",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2.1.332",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-25T08:50:36.422Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45579778248",
+      "tracetoonRevision": "261d8942754d939408a0c004e399e7eba14df063"
+    },
+    {
+      "target": "claude-cli",
+      "integration": "claude",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "2.1.332",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-25T08:51:17.308Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45579778248",
+      "tracetoonRevision": "261d8942754d939408a0c004e399e7eba14df063"
     },
     {
       "target": "codex-cli",
@@ -600,6 +638,82 @@
       "verifiedAt": "2026-11-24T22:36:32.927Z",
       "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45502354363",
       "tracetoonRevision": "142f830f1d84eab21f4106dff0a0a90e4a9ad4ea"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "1.0.116",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-25T21:50:28.321Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45707885696",
+      "tracetoonRevision": "af33ba2784e121a502bff74bede977510cdfa7f6"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "1.0.116",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-25T21:51:03.210Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45707885696",
+      "tracetoonRevision": "af33ba2784e121a502bff74bede977510cdfa7f6"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "1.0.117",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-27T21:27:23.714Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/46070360762",
+      "tracetoonRevision": "f4fc3012e903a129897d0b63d65952ae3a33e52e"
+    },
+    {
+      "target": "copilot-cli",
+      "integration": "copilot",
+      "surface": "cli",
+      "os": "windows-latest",
+      "upstreamVersion": "1.0.117",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-27T21:28:06.868Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/46070360762",
+      "tracetoonRevision": "f4fc3012e903a129897d0b63d65952ae3a33e52e"
     },
     {
       "target": "cursor-cli",
@@ -1100,6 +1214,44 @@
       "tracetoonRevision": "142f830f1d84eab21f4106dff0a0a90e4a9ad4ea"
     },
     {
+      "target": "zed-claude",
+      "integration": "claude",
+      "surface": "zed-acp",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "0.113.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-26T21:43:09.991Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45899979052",
+      "tracetoonRevision": "8e7c372e411a66631247d21f6651dcd7a813a14f"
+    },
+    {
+      "target": "zed-claude",
+      "integration": "claude",
+      "surface": "zed-acp",
+      "os": "windows-latest",
+      "upstreamVersion": "0.113.0",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-26T21:44:27.493Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45899979052",
+      "tracetoonRevision": "8e7c372e411a66631247d21f6651dcd7a813a14f"
+    },
+    {
       "target": "zed-codex",
       "integration": "codex",
       "surface": "zed-acp",
@@ -1326,6 +1478,44 @@
       "verifiedAt": "2026-11-24T22:37:15.800Z",
       "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45502354363",
       "tracetoonRevision": "142f830f1d84eab21f4106dff0a0a90e4a9ad4ea"
+    },
+    {
+      "target": "zed-codex",
+      "integration": "codex",
+      "surface": "zed-acp",
+      "os": "ubuntu-latest",
+      "upstreamVersion": "2.12.1",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-26T21:43:10.311Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45899979052",
+      "tracetoonRevision": "8e7c372e411a66631247d21f6651dcd7a813a14f"
+    },
+    {
+      "target": "zed-codex",
+      "integration": "codex",
+      "surface": "zed-acp",
+      "os": "windows-latest",
+      "upstreamVersion": "2.12.1",
+      "status": "passed",
+      "evidence": "fake-llm",
+      "checks": {
+        "install": "pass",
+        "end-to-end": "pass",
+        "hooks": "pass",
+        "tracing": "pass",
+        "evidence": "pass"
+      },
+      "verifiedAt": "2026-11-26T21:44:04.314Z",
+      "workflowUrl": "https://github.com/Tracetoon/tracetoon/actions/runs/45899979052",
+      "tracetoonRevision": "8e7c372e411a66631247d21f6651dcd7a813a14f"
     }
   ]
 }
