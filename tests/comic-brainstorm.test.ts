@@ -269,7 +269,7 @@ describe('brainstorm v3: 20 ideas from the PR, a blind shortlist, the pick', () 
 
   test('brainstorm: off gives the cast and layout without pitches or memes', () => {
     const g = { ...genreById('anime-fantasy')!, brainstorm: false };
-    const plain = genreOptions([], { catalog: BRAIN, pinned: 'anime-fantasy', seed: 'p', catalog: [g] })[0]!;
+    const plain = genreOptions([], { pinned: 'anime-fantasy', seed: 'p', catalog: [g] })[0]!;
     expect(plain.isekaiCast).toBeDefined();
     expect(plain.assignedLayout).toBeDefined();
     expect(plain.pitches).toBeUndefined();
