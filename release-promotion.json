@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.51",
-  "buildId": "6f506823276f035211da7dcb089f977f59eed16c3a54f0891321b84a9c6d6f60",
+  "version": "1.0.0-rc.52",
+  "buildId": "ca858d268749c14b47d2ba982c59534b1ca308fff3a401b4487e9dc23fb003d3",
   "artifact": {
-    "runId": 45919142177,
-    "id": 15164236475,
-    "name": "tracetoon-candidate-d011ec8d7cad719d564e50925bb23b6c54335e4c-attempt-1",
-    "digest": "sha256:35af607f00d9bcd0e948a7d1cba8961fbe82b6fb2532b07464e34aae9c051bca"
+    "runId": 46125746949,
+    "id": 15256702068,
+    "name": "tracetoon-candidate-de024a6b9691da346e228c6eb8c448ee0f066cc3-attempt-2",
+    "digest": "sha256:983410652e783762cc7da95e9a6e45e2c043b02de2dfd7c3c1ad41b45cb7ed5d"
   },
   "expected": {
-    "manifestSha256": "0880e0b3d4a3531ff0064872d1bfaf2c766749dde23694ea53cbaae84d8fdffc",
-    "checksumsSha256": "df98e3f27b01a30c255471be26528b1ed32bff9dad31e127071a3362746c1195",
-    "windowsSha256": "e6245c807bbbc53e4c06ff0c83eab48c073f836a8733ac957868de4cd81d281a",
-    "bundleSha256": "825ff88e1ece188537fa7d443381f6e95fdc72dbc279c4385615c1e18568c0fd"
+    "manifestSha256": "bf2fe2bb7402969e257f3c4efac98a830f7a89fb1fcd5a0627e9da86b29af644",
+    "checksumsSha256": "9f665bb6efce76caf97ed1182316256d7330f0abc0308326c42800f8dbff6669",
+    "windowsSha256": "0d7cbd968b1405b55489dde422b6be60a530addbb123363e3c84b9ef87eac2c9",
+    "bundleSha256": "8c0a15ded5f10d35617898d1009b3bfebdd63f416807d1b732137f46e7e5d033"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-27T01:16:04.000Z",
-    "reason": "The user asked to cut a release after the review-run wording, comic-setup, README AI-policy and finish-status PRs (#235 to #238) merged, so the skill and CLI describe review run accurately and ask the user when the host denies it. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-28T09:07:00.000Z",
+    "reason": "The user asked to cut a release carrying #240, which tells Claude Code users how to stop review prompts themselves and corrects the disclosures: Claude Code and Codex reviews and comics run in a second claude -p or codex exec process, what setup writes into an agent's configuration, and the Antigravity route's scratch run. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
