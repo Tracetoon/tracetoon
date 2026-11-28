@@ -5,11 +5,11 @@ security-minded users.
 
 ## What runs
 
-- Only `npx -y tracetoon@1.0.0-rc.51`: the skill's commands run that exact
+- Only `npx -y tracetoon@1.0.0-rc.52`: the skill's commands run that exact
   npm version. The package (`tracetoon`, plus one
   platform package `@tracetoon/cli-<os>-<arch>` holding the prebuilt binary)
   is published from https://github.com/Tracetoon/tracetoon by GitHub Actions trusted publishing, with npm
-  provenance tying each file to the tagged source (`v1.0.0-rc.51`). It has
+  provenance tying each file to the tagged source (`v1.0.0-rc.52`). It has
   no install scripts and no dependencies.
 - Nothing in the plugin folder executes; it is Markdown, JSON and one PNG.
 
@@ -30,7 +30,14 @@ Logs and diffs are treated as data, never as instructions.
   (`<checkout>/.tracetoon/runs/` in a linked worktree or submodule).
 - `~/.config/tracetoon/` (Windows: `%APPDATA%\tracetoon`): settings, which
   repositories a session touched, and hook diagnostics.
-- Nothing outside these, except the PR you ask it to publish.
+- Your agents' own folders, only when you run `tracetoon setup` or `tracetoon hook
+  install`: the skill, and Tracetoon's own PR-hook entries in each agent's hooks
+  or settings file (each file is backed up first, and `tracetoon hook
+  uninstall` removes the entries). Tracetoon never adds, changes or removes
+  permission rules or approval settings in any agent.
+- A temporary scratch folder for the experimental Antigravity image route, which
+  runs `agy -p --dangerously-skip-permissions` there with only reference images.
+- Nothing else, except the PR you ask it to publish.
 
 ## What it sends, and when
 
@@ -39,8 +46,11 @@ Logs and diffs are treated as data, never as instructions.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
-- **The Codex CLI**, when reviews run through `tracetoon review run` (the default
-  on Codex): the review packet (draft description, evidence brief and selected diff).
+- **A second Codex process on your own account, started by Tracetoon**, by
+  default (`tracetoon review run` for reviews, `tracetoon comic run` for
+  comics). It is `codex exec`, read-only. Input: the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic. It goes to OpenAI
+  through your Codex login and counts against your Codex usage. Your agent's own
+  reviewer agents instead: `tracetoon prepare --reviewer-runner agent`.
 - **npm**, to download the runtime on first use.
 - No telemetry, and no Tracetoon server.
 
@@ -75,7 +85,7 @@ There are no affiliate or tracking links, and nothing else is added.
    `tracetoon prepare`, drafts and checks the description, and publishes the PR.
 2. Safe failure: in a folder that isn't a git repository, ask for a PR. `tracetoon prepare`
    stops with an error naming the fix, and nothing is sent.
-3. `npx -y tracetoon@1.0.0-rc.51 doctor --json` lists every check and its fix.
+3. `npx -y tracetoon@1.0.0-rc.52 doctor --json` lists every check and its fix.
 
 ## Licenses
 

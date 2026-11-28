@@ -10,7 +10,7 @@
             "exec": "npx",
             "args": [
               "-y",
-              "tracetoon@1.0.0-rc.51",
+              "tracetoon@1.0.0-rc.52",
               "hook",
               "plugin",
               "--agent",
@@ -31,7 +31,7 @@
             "exec": "npx",
             "args": [
               "-y",
-              "tracetoon@1.0.0-rc.51",
+              "tracetoon@1.0.0-rc.52",
               "hook",
               "plugin",
               "--agent",
