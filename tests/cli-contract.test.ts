@@ -177,6 +177,27 @@ describe('CLI contract', () => {
     expect(denied.code).toBe(6);
   });
 
+  test('doctor tells a Claude Code user how to stop review prompts, and says Tracetoon changes nothing', () => {
+    const repo = makeRepo();
+    env.TRACETOON_HOST_AGENT = 'claude';
+    const claude = cli(repo.root, '--json', 'doctor');
+    const hint = claude.json.checks.find((c: any) => c.id === 'review-permission');
+    expect(hint).toMatchObject({ ok: true, severity: 'info', humanRequired: true });
+    expect(hint.message).toContain("doesn't add or change permission rules");
+    expect(hint.fix).toContain('permissions.allow');
+    expect(hint.fix).toContain('review run:*');
+    expect(hint.fix).toContain('does not edit that file for you');
+    // Shown to the user in --verbose, not on every plain run an agent reads.
+    expect(cli(repo.root, 'doctor').stdout).not.toContain('permissions.allow');
+    expect(cli(repo.root, 'doctor', '--verbose').stdout).toContain('note for you:');
+    // The hint changed nothing: no settings file appeared.
+    expect(existsSync(join(env.CLAUDE_CONFIG_DIR!, 'settings.json'))).toBe(false);
+    env.TRACETOON_HOST_AGENT = 'codex';
+    const codex = cli(repo.root, '--json', 'doctor');
+    expect(codex.json.checks.map((c: any) => c.id)).not.toContain('review-permission');
+    delete env.TRACETOON_HOST_AGENT;
+  });
+
   test('publish --dry-run reports what it would post without pushing or posting', () => {
     const repo = makeRepo();
     const remote = tempDir('tracetoon-remote-');

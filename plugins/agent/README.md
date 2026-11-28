@@ -22,7 +22,7 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.51`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.52`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -32,8 +32,8 @@ Kiro: Powers → Add power from GitHub → Tracetoon/tracetoon, folder plugins/a
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** Copilot CLI: before a shell command it asks the runtime whether the command creates a PR; at session start it records the session. Kiro runs the skill and MCP server only.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.51, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.51, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.52, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.52, published from GitHub Actions with npm provenance.
 
 ## What it reads
 
@@ -54,9 +54,9 @@ Session logs are read and processed on your machine. Data leaves it only for:
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once: the comic prompt, written from the
   PR summary.
-- **The Codex CLI**, only if you switch Tracetoon's reviewers to it
-  (`tracetoon review run`; your agent uses its own reviewer agents by default):
-  the review packet (draft description, evidence brief and selected diff).
+- **The Codex CLI**, only when Tracetoon itself starts a reviewer or a comic
+  author (`tracetoon review run`, `tracetoon comic run`; your agent uses its
+  own reviewer agents by default): the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic.
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).

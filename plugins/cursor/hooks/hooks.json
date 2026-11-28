@@ -3,14 +3,14 @@
   "hooks": {
     "beforeShellExecution": [
       {
-        "command": "npx -y tracetoon@1.0.0-rc.51 hook plugin --agent cursor --event PreToolUse",
+        "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent cursor --event PreToolUse",
         "matcher": "gh |pr create|pr new|hub |pull-request|propose|pulls|createPullRequest",
         "timeout": 60
       }
     ],
     "sessionStart": [
       {
-        "command": "npx -y tracetoon@1.0.0-rc.51 hook plugin --agent cursor --event SessionStart",
+        "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent cursor --event SessionStart",
         "timeout": 300
       }
     ]

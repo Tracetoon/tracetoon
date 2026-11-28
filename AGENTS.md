@@ -50,9 +50,12 @@ plus a `tracetoon` CLI.
 `tracetoon review run` starts fresh reviewers on the agent you already use: a
 toolless `claude -p` on Claude Code, `codex exec` on Codex. The redacted review
 packet (draft description, evidence brief, selected diff) is its only input,
-and it may use tokens on your plan. It is part of opening a PR with Tracetoon;
-if your host's permission system denies it, stop and ask the user instead of
-retrying.
+and it may use tokens on your plan. `tracetoon comic run` does the same for the
+comic author and judges, with read-only tools on files Tracetoon names. Both are
+part of opening a PR with Tracetoon; if your host's permission system denies
+one, stop and ask the user instead of retrying. Tracetoon never adds or changes
+permission rules in any agent, and you shouldn't either: `tracetoon doctor
+--verbose` shows the user a rule they may add themselves.
 
 Everything else reads local logs and writes into the run folder.
 

@@ -18,7 +18,7 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 ## What it needs
 
-- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.51`.
+- Node.js 18 or later: the plugin runs Tracetoon with `npx -y tracetoon@1.0.0-rc.52`.
   The first run downloads it from npm; later runs use npm's cache. Without
   Node.js, install the standalone runtime instead: https://github.com/Tracetoon/tracetoon/blob/main/docs/agents/install.md
 - `git`, and the GitHub CLI (`gh`) signed in, to publish the PR.
@@ -28,8 +28,8 @@ Install Tracetoon from the ChatGPT or Codex plugin directory.
 
 - **Skill:** `skills/tracetoon`. Your agent follows it whenever it opens a PR, or when you ask it to describe one.
 - **Hooks:** None: the directory accepts no lifecycle hooks or local MCP servers, so the skill starts when you ask for a PR.
-- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.51, its source at
-  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.51, published from GitHub Actions with npm provenance.
+- **Runtime:** the `tracetoon` npm package at exactly 1.0.0-rc.52, its source at
+  https://github.com/Tracetoon/tracetoon/tree/v1.0.0-rc.52, published from GitHub Actions with npm provenance.
 
 ## What it reads
 
@@ -50,8 +50,11 @@ Session logs are read and processed on your machine. Data leaves it only for:
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once: the comic prompt, written from the
   PR summary.
-- **The Codex CLI**, when reviews run through `tracetoon review run` (the default
-  on Codex): the review packet (draft description, evidence brief and selected diff).
+- **A second Codex process on your own account, started by Tracetoon**, by
+  default (`tracetoon review run` for reviews, `tracetoon comic run` for
+  comics). It is `codex exec`, read-only. Input: the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic. It goes to OpenAI
+  through your Codex login and counts against your Codex usage. Your agent's own
+  reviewer agents instead: `tracetoon prepare --reviewer-runner agent`.
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).

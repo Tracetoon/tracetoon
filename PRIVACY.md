@@ -1,6 +1,6 @@
 # Privacy policy
 
-Effective 19 November 2026. This policy covers Tracetoon in every form it
+Effective 19 November 2026; updated 27 November 2026 to describe the reviewer and comic-author processes and the changes setup makes to agent configuration. This policy covers Tracetoon in every form it
 ships: the CLI, the Agent Skill, the MCP server and the plugin packages.
 
 Tracetoon is open-source software that runs on your computer. There is no
@@ -51,16 +51,44 @@ Tracetoon does not delete these automatically.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that service: the comic prompt (scenes and
   character descriptions written from the PR summary). That provider's own
-  privacy terms apply.
-- **The Codex CLI**, only if you run reviews with `tracetoon review run`: the
-  review packet (the draft description, evidence brief and selected diff) goes
-  to OpenAI through your Codex account.
+  privacy terms apply. The experimental Antigravity route runs
+  `agy -p --dangerously-skip-permissions` in an empty temporary folder that
+  holds only the reference images, so it can draw with nobody at the keyboard.
+- **A second copy of your own coding agent, started by Tracetoon.** On Claude
+  Code and Codex this is the default: `tracetoon review run` starts the
+  reviewers and `tracetoon comic run` starts the comic author and judges. On
+  Claude Code that is `claude -p` on your Claude account (reviewers get no
+  tools; the comic author and judges get read-only tools on files Tracetoon
+  names). On Codex it is `codex exec`, read-only, on your Codex login. The input
+  is the review packet (the draft description, evidence brief and selected
+  diff), or for a comic the comic packet and the rendered comic. It goes to
+  your agent's provider (Anthropic or OpenAI), under the same terms as your
+  session, and can count against your plan. On other agents Tracetoon starts
+  `codex exec` only if you run these commands; those agents use their own
+  reviewer agents by default. To use your agent's own reviewer agents
+  everywhere, run `tracetoon prepare --reviewer-runner agent`.
 - **GitHub releases**, for the standalone install only: a version check at most
   once a day (`tracetoon config set autoUpdate off` stops it). Plugin packages
   pinned to an npm version never check.
 
 Your coding agent reads the brief and draft as part of your session, under your
 agent provider's terms. Tracetoon itself sends nothing anywhere else.
+
+## What it changes in your agent's configuration
+
+Only when you run `tracetoon setup` or `tracetoon hook install` (a plugin
+install is done by your agent's own plugin system instead): Tracetoon copies its
+skill into your agents' skill folders and adds its own PR-hook entries to each
+agent's hooks or settings file (for Claude Code, `~/.claude/settings.json`). It
+backs each file up before the first change and lists every file it changed, and
+`tracetoon hook uninstall` removes the entries. On Windows,
+`tracetoon setup --agent goose --fix-sh` can add a folder to your user `PATH`,
+and only when you pass that flag.
+
+Tracetoon does not add, change or remove permission rules, allow lists or
+approval settings in any agent. If your agent asks before running a Tracetoon
+command, `tracetoon doctor --verbose` shows the rule you could add yourself, if
+you decide to; Tracetoon never adds it for you.
 
 ## Children
 
