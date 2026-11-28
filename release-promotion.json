@@ -1,23 +1,23 @@
 {
   "schema": "tracetoon.release-promotion/v3",
-  "version": "1.0.0-rc.52",
-  "buildId": "ca858d268749c14b47d2ba982c59534b1ca308fff3a401b4487e9dc23fb003d3",
+  "version": "1.0.0-rc.53",
+  "buildId": "3bc41099a0f97286e332b6b78102603966de6f84d7728b27679d9f4cf319c25c",
   "artifact": {
-    "runId": 46125746949,
-    "id": 15256702068,
-    "name": "tracetoon-candidate-de024a6b9691da346e228c6eb8c448ee0f066cc3-attempt-2",
-    "digest": "sha256:983410652e783762cc7da95e9a6e45e2c043b02de2dfd7c3c1ad41b45cb7ed5d"
+    "runId": 46150659495,
+    "id": 15265068597,
+    "name": "tracetoon-candidate-13337cb2e834aff0cc33943492a8876a4899b1bb-attempt-1",
+    "digest": "sha256:bda3c4466bff550e19df5a7767f510f29f64d5af231fa4e07f3d593d1f0e4c96"
   },
   "expected": {
-    "manifestSha256": "bf2fe2bb7402969e257f3c4efac98a830f7a89fb1fcd5a0627e9da86b29af644",
-    "checksumsSha256": "9f665bb6efce76caf97ed1182316256d7330f0abc0308326c42800f8dbff6669",
-    "windowsSha256": "0d7cbd968b1405b55489dde422b6be60a530addbb123363e3c84b9ef87eac2c9",
-    "bundleSha256": "8c0a15ded5f10d35617898d1009b3bfebdd63f416807d1b732137f46e7e5d033"
+    "manifestSha256": "eebeec578a484df7749a54247ac1fd329c7b2545647986ef5c42fbf1a73d0269",
+    "checksumsSha256": "129b56fb2601a9974754bcf0bfca86ccf178101299cd0846af615d08d81a299d",
+    "windowsSha256": "08e6ea9640ebf1ab6df5cc81e277fd2bec86b356ee70f1f43cd28458f2299140",
+    "bundleSha256": "139ada3e14d61e810fb405e9740c7e6046a5a5b51378c57399665992e207c207"
   },
   "decision": {
     "kind": "explicit-user-request",
-    "recordedAt": "2026-11-28T09:07:00.000Z",
-    "reason": "The user asked to cut a release carrying #240, which tells Claude Code users how to stop review prompts themselves and corrects the disclosures: Claude Code and Codex reviews and comics run in a second claude -p or codex exec process, what setup writes into an agent's configuration, and the Antigravity route's scratch run. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
+    "recordedAt": "2026-11-28T13:52:35.000Z",
+    "reason": "The user asked to drive the comic work merged in #244 (isekai casting from the archetype guide, tiled comic layouts, the misread review, adventure settings with the office check, and a second independent draft) to a released version, and to finish the release autonomously once #244 merged. The comic changes were evaluated in the separate comicbench project; that benchmark is not one of this contract's stages. The retained prbench inputs needed for calibration and admission are not available on the release machine, so the CI-tested candidate is released without a benchmark round. No evaluation result or performance gain is claimed."
   },
   "evaluations": {
     "calibration": {
