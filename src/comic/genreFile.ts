@@ -49,7 +49,8 @@ const SCALARS = ['id', 'name', 'setting'] as const;
 /**
  * Optional scalars: `casting: isekai` casts each comic from the isekai archetype
  * guide; `brainstorm: off` writes its comics directly instead of brainstorming ideas first;
- * `settings: choose` offers three adventure settings to pick from instead of assigning one;
+ * `settings: choose` offers three adventure settings to pick from instead of assigning one,
+ * `settings: free` lets the author choose any place (the office check still applies);
  * `tropes: off` offers no genre staples or memes.
  */
 const OPTIONAL_SCALARS = ['casting', 'brainstorm', 'settings', 'tropes'] as const;
@@ -177,7 +178,7 @@ export function parseGenreFile(
   const brainstorm = fields.get('brainstorm');
   if (brainstorm !== undefined && brainstorm !== 'on' && brainstorm !== 'off') bad('brainstorm', 'must be on or off');
   const settings = fields.get('settings');
-  if (settings !== undefined && settings !== 'choose' && settings !== 'assigned') bad('settings', 'must be choose or assigned');
+  if (settings !== undefined && settings !== 'choose' && settings !== 'assigned' && settings !== 'free') bad('settings', 'must be assigned, choose or free');
   const tropes = fields.get('tropes');
   if (tropes !== undefined && tropes !== 'on' && tropes !== 'off') bad('tropes', 'must be on or off');
   const archetypes = list('archetypes');
@@ -269,7 +270,7 @@ export function parseGenreFile(
       ...(leads.length ? { leads } : {}),
       ...(casting === 'isekai' ? { isekai: true } : {}),
       ...(brainstorm === 'off' ? { brainstorm: false } : brainstorm === 'on' ? { brainstorm: true } : {}),
-      ...(settings === 'choose' ? { settingChoice: true } : {}),
+      ...(settings === 'choose' ? { settingChoice: true } : settings === 'free' ? { settingFree: true } : {}),
       ...(tropes === 'off' ? { tropes: false } : {}),
       ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
       ...(Object.keys(styleMix).length ? { styleMix } : {}),

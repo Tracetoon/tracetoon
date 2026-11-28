@@ -31,6 +31,18 @@ describe('round 20: genre options settings: choose and tropes: off', () => {
     expect(where(script)).toEqual([]);
     expect(where({ ...script, setting: 'nowhere' }).map((p) => p.where)).toContain('setting');
   });
+  test('settings: free assigns no setting but still rejects office places and office parody', () => {
+    const g = parseGenreFile(file.replace('settings: choose', 'settings: free')).genre!;
+    expect(g.settingFree).toBe(true);
+    const o = genreOptions([], { pinned: g.id, catalog: [g], seed: 'free' })[0]!;
+    expect(o.assignedSetting).toBeUndefined();
+    expect(o.settingOffer).toBeUndefined();
+    expect(o.adventureOnly).toBe(true);
+    const problems = (s: object) => errors(offerProblems({ genre: g.id, panels: [], ...s } as unknown as ComicScript, { genreOptions: [o] })).filter((p) => !p.problem.includes('assigned layout'));
+    expect(problems({ place: 'a moonlit shrine on a cliff' })).toEqual([]);
+    expect(problems({ place: "the guild hall's quest counter" }).map((p) => p.where)).toContain('place');
+    expect(problems({ place: 'a moonlit shrine', panels: [{ dialogue: [{ speaker: 'A', text: 'Fill out the paperwork.' }] }] }).map((p) => p.where)).toContain('panels');
+  });
 });
 
 describe('round 19: adventure settings, no office parody, PR-matched staples', () => {

@@ -588,17 +588,17 @@ export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
       out.push({ where: 'composition', problem: `with ${n} panels this comic's layout is {"family": "grid", "signature": "${want}"} (genreOptions assignedLayout)` });
   }
   const settingChoices = option.assignedSetting ? [option.assignedSetting] : (option.settingOffer ?? []);
-  if (settingChoices.length) {
-    // The host assigns the adventure setting, or offers three (isekai/settings.ts); office places and bureaucracy jokes are out.
+  if (settingChoices.length || option.adventureOnly) {
+    // The host assigns the adventure setting, offers three, or leaves it free (isekai/settings.ts); office places and bureaucracy jokes are out either way.
     const chosen = settingChoices.find((c) => c.id === s.setting);
-    const assigned = chosen ?? settingChoices[0]!;
-    const where = settingById(assigned.id);
-    if (!chosen)
+    const assigned = chosen ?? settingChoices[0];
+    const where = assigned ? settingById(assigned.id) : undefined;
+    if (assigned && !chosen)
       out.push({ where: 'setting', problem: settingChoices.length === 1 ? `must be "${assigned.id}": this comic happens in ${assigned.label} (genreOptions assignedSetting)` : `must be one of ${settingChoices.map((c) => `"${c.id}"`).join(', ')}: the setting the PR's moment fits best (genreOptions settingOffer)` });
     if (typeof s.place === 'string' && s.place.trim()) {
       if (OFFICE_PLACE.test(s.place))
-        out.push({ where: 'place', problem: `"${s.place}" is office-like (${s.place.match(OFFICE_PLACE)![0]}); no desks, counters, archives or paperwork rooms: set the scene in ${assigned.label}, e.g. ${assigned.examples.slice(0, 2).join(' or ')}` });
-      else if (where && !where.words.test(s.place))
+        out.push({ where: 'place', problem: `"${s.place}" is office-like (${s.place.match(OFFICE_PLACE)![0]}); no desks, counters, archives or paperwork rooms: ${assigned ? `set the scene in ${assigned.label}, e.g. ${assigned.examples.slice(0, 2).join(' or ')}` : 'set the scene where an adventure happens'}` });
+      else if (assigned && where && !where.words.test(s.place))
         out.push({ where: 'place', problem: `"${s.place}" isn't in ${assigned.label}; name a spot there, e.g. ${assigned.examples.join(', ')}` });
     }
     // The payoff carries the PR (round 19): readers remember the last panel, so an anchor term is lettered there.
