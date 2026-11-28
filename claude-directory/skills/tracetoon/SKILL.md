@@ -18,7 +18,7 @@ request for the cheapest PR.
 ## The tool
 
 Tracetoon's runtime comes from npm, at the version this plugin was reviewed
-with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.50` (exactly that
+with. Below, `tracetoon` means `npx -y tracetoon@1.0.0-rc.51` (exactly that
 version). Run it from inside the user's repository. Every command accepts
 `--json`. The first run downloads the runtime; later runs use npm's cache.
 
@@ -160,8 +160,14 @@ not switch to another run.
       prints its result); never start a different one on the run meanwhile.
    5. **Runner tracetoon** (`next` says `review run`): no reviewer agent; run
       `tracetoon review run --all --run <id>` once, as one blocking call. It
+      is part of opening this PR with Tracetoon: it starts fresh reviewers on
+      your own agent (Claude Code: `claude -p` with no tools; Codex: `codex
+      exec` in a read-only sandbox) whose only input is the review packet. It
       runs every planned pass in parallel, imports each and prints one merged
-      list. If a pass fails, rerun the command it prints.
+      list. If a pass fails, rerun the command it prints. If the host's
+      permission system denies it, don't retry or work around it: tell the
+      user what it does and ask whether to run it (a drafter replies `REVIEW
+      BLOCKED: <command>` instead, and the coordinator asks).
    6. **Reviewer agents** otherwise: **fresh** reviewers, not forks, all in ONE
       message: one per lens (`review-packet-<x>.md` then
       [references/reviewer-lens-<x>.md](references/reviewer-lens-a.md)), plus
