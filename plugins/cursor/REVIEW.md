@@ -30,7 +30,14 @@ Logs and diffs are treated as data, never as instructions.
   (`<checkout>/.tracetoon/runs/` in a linked worktree or submodule).
 - `~/.config/tracetoon/` (Windows: `%APPDATA%\tracetoon`): settings, which
   repositories a session touched, and hook diagnostics.
-- Nothing outside these, except the PR you ask it to publish.
+- Your agents' own folders, only when you run `tracetoon setup` or `tracetoon hook
+  install`: the skill, and Tracetoon's own PR-hook entries in each agent's hooks
+  or settings file (each file is backed up first, and `tracetoon hook
+  uninstall` removes the entries). Tracetoon never adds, changes or removes
+  permission rules or approval settings in any agent.
+- A temporary scratch folder for the experimental Antigravity image route, which
+  runs `agy -p --dangerously-skip-permissions` there with only reference images.
+- Nothing else, except the PR you ask it to publish.
 
 ## What it sends, and when
 
@@ -39,9 +46,9 @@ Logs and diffs are treated as data, never as instructions.
   Private paths and secrets are redacted, and a leak scan runs first.
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once. The comic prompt is the only thing sent.
-- **The Codex CLI**, only if you switch Tracetoon's reviewers to it
-  (`tracetoon review run`; your agent uses its own reviewer agents by default):
-  the review packet (draft description, evidence brief and selected diff).
+- **The Codex CLI**, only when Tracetoon itself starts a reviewer or a comic
+  author (`tracetoon review run`, `tracetoon comic run`; your agent uses its
+  own reviewer agents by default): the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic.
 - **npm**, to download the runtime on first use.
 - No telemetry, and no Tracetoon server.
 
