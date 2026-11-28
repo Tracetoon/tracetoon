@@ -422,6 +422,7 @@ judge the rendered comic with fresh AI readers and say what to do next: judge, r
 | --- | --- |
 | `--run <id>` | run id (default: latest) |
 | `--creative` | experimental: also rewrite a flat joke or weak script automatically (off by default) |
+| `--drafts <n>` | independent drafts by fresh authors to compare before repairs (default 2; 1 turns it off) |
 
 ## `tracetoon comic loop-import`
 

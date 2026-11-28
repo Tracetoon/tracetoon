@@ -3,7 +3,7 @@
  * `tracetoon commands` describes it, and scripts/agent-surfaces.ts documents it.
  */
 import { homedir } from 'node:os';
-import { Command, type Option } from 'commander';
+import { Command, InvalidArgumentError, type Option } from 'commander';
 import {
   loadConfig,
   setUserConfig,
@@ -637,6 +637,15 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option(
       '--creative',
       'experimental: also rewrite a flat joke or weak script automatically (off by default)',
+    )
+    .option(
+      '--drafts <n>',
+      'independent drafts by fresh authors to compare before repairs (default 2; 1 turns it off)',
+      (v: string) => {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1 || n > 3) throw new InvalidArgumentError('--drafts must be 1, 2 or 3');
+        return n;
+      },
     )
     .action((o) => comicLoopRunCmd(cwd, { ...g(), ...o }));
   comic

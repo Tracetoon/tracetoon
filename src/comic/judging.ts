@@ -268,8 +268,8 @@ const ROUND_CALLS = 4;
 export interface Candidate {
   id: string;
   parent: string | null;
-  /** initial, a concrete repair, or a creative revision (premise/script). */
-  kind: 'initial' | 'concrete' | 'creative';
+  /** initial, an independent second draft by a fresh author, a concrete repair, or a creative revision (premise/script). */
+  kind: 'initial' | 'draft' | 'concrete' | 'creative';
   target?: IssueTarget;
   imageSha256: string;
   observation?: Observation;
@@ -294,6 +294,13 @@ export interface LoopState {
   rubricVersion: string;
   /** Rewrite jokes automatically (experimental). Off: repairs keep the joke. */
   creative: boolean;
+  /**
+   * Independent drafts to draw before repairing, each by a fresh author from
+   * the same packet; the funnier wins a blind comparison in both orders (the
+   * incumbent stays otherwise). 1 = no second draft. Round 20: picking the
+   * better of two drafts captured about 70% of the best-possible humor gain.
+   */
+  drafts?: number;
   budget: { renders: number; judgeCalls: number };
   used: { renders: number; judgeCalls: number };
   candidates: Candidate[];
@@ -310,6 +317,7 @@ export interface LoopState {
 export type Next =
   | { action: 'observe' | 'check' | 'misread'; candidate: string }
   | { action: 'compare'; a: string; b: string; order: 1 | 2 }
+  | { action: 'draft'; instruction: string; reason: string }
   | {
       action: 'revise';
       target: IssueTarget;
@@ -327,11 +335,12 @@ export type Next =
       unresolved: string[];
     };
 
-export function newLoop(budget = DEFAULT_BUDGET, creative = false): LoopState {
+export function newLoop(budget = DEFAULT_BUDGET, creative = false, drafts = 1): LoopState {
   return {
     v: 1,
     rubricVersion: RUBRIC.rubricVersion,
     creative,
+    ...(drafts > 1 ? { drafts } : {}),
     budget: { ...budget },
     used: { renders: 0, judgeCalls: 0 },
     candidates: [],
@@ -412,6 +421,15 @@ export function nextStep(s: LoopState): Next {
 
   const inc = byId(s, s.incumbent);
   const base = inc ?? byId(s, baselineOf(s)) ?? latest;
+  // Before any repair: another independent draft, while drafts are wanted and the budget allows one more round.
+  const drafted = s.candidates.filter((c) => c.kind === 'initial' || c.kind === 'draft').length;
+  if ((s.drafts ?? 1) > drafted && s.used.renders < s.budget.renders && callsLeft() >= ROUND_CALLS)
+    return {
+      action: 'draft',
+      instruction:
+        'Start ONE fresh author subagent (not a fork, not the earlier author, no PR or drafting context) whose whole instruction is the comic packet, exactly as for the first draft. It writes a new comic.json with its own joke; the earlier comic is archived.',
+      reason: `independent draft ${drafted + 1} of ${s.drafts}: the funnier of the drafts is kept`,
+    };
   if (
     inc &&
     !actionable(s, inc).length &&

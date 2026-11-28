@@ -256,7 +256,12 @@ export interface LoopOpts extends OutOpts {
   run?: string;
   /** Experimental: also rewrite a flat joke or weak script automatically. */
   creative?: boolean;
+  /** Independent drafts to draw and compare before repairs (default 2; 1 turns it off). */
+  drafts?: number;
 }
+
+/** Drafts the CLI asks for when a loop starts and the user gave none (round 20 research). */
+export const DEFAULT_DRAFTS = 2;
 
 /** `tracetoon comic loop`: the next step, with its packet when a judge is needed. */
 export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
@@ -264,9 +269,18 @@ export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
   if (!s?.candidates.length)
     throw new UserError('No rendered comic to judge: run tracetoon comic render first.');
   if (opts.creative) s.creative = true;
+  if (opts.drafts !== undefined) s.drafts = opts.drafts;
+  else if (s.drafts === undefined) s.drafts = DEFAULT_DRAFTS;
   const n = nextStep(s);
   let extra: Record<string, unknown> = {};
-  if (n.action === 'revise') {
+  if (n.action === 'draft') {
+    s.pendingRevision = { target: 'premise', kind: 'draft' };
+    const packet = join(run.dir, 'comic-packet', 'instructions.md');
+    extra = {
+      packet,
+      how: `${n.instruction} Its whole instruction is ${packet}. When it reports that comic.json passes the check, run tracetoon comic art --force, then tracetoon comic render, then tracetoon comic loop.`,
+    };
+  } else if (n.action === 'revise') {
     s.pendingRevision = {
       target: n.target,
       kind: CONCRETE_TARGETS.includes(n.target) ? 'concrete' : 'creative',

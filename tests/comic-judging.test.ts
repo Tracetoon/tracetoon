@@ -342,3 +342,39 @@ describe('record validation', () => {
     ).toBeGreaterThan(0);
   });
 });
+
+describe('independent drafts (round 20 research)', () => {
+  const judged = (id: string, kind: Candidate['kind'] = 'initial') => cand(id, { kind, observation: obs(3), check: check(true) });
+  test('with drafts 2, an eligible first comic gets one independent draft before stopping', () => {
+    const s = loop(judged('c1'));
+    s.drafts = 2;
+    s.used.judgeCalls = 3;
+    expect(nextStep(s).action).toBe('draft');
+    expect(s.incumbent).toBe('c1');
+    // One draft only: once a second initial-or-draft candidate exists, it is compared, and no more are asked for.
+    s.candidates.push(judged('c2', 'draft'));
+    s.used.renders = 2;
+    expect(nextStep(s)).toMatchObject({ action: 'compare', a: 'c1', b: 'c2', order: 1 });
+  });
+  test('the draft replaces the first comic only with a blind preference in both orders', () => {
+    const setup = (first: string, second: string) => {
+      const s = loop(judged('c1'), judged('c2', 'draft'));
+      s.drafts = 2;
+      s.decided = ['c1'];
+      s.incumbent = 'c1';
+      s.comparisons = [{ a: 'c1', b: 'c2', first: j(first), second: j(second) }];
+      nextStep(s);
+      return s.incumbent;
+    };
+    expect(setup('B', 'A')).toBe('c2');
+    expect(setup('B', 'B')).toBe('c1');
+    expect(setup('tie', 'tie')).toBe('c1');
+  });
+  test('no draft by default, and none once the render budget is spent', () => {
+    expect(nextStep(loop(judged('c1'))).action).toBe('stop');
+    const spent = loop(judged('c1'));
+    spent.drafts = 2;
+    spent.used.renders = spent.budget.renders;
+    expect(nextStep(spent).action).toBe('stop');
+  });
+});
