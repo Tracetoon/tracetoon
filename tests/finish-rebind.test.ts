@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { findingsAgentId, parseFindings } from '../src/contribution/leanReview.ts';
-import { newWordShare } from '../src/workflow/rebind.ts';
+import { newWordShare, withoutComic } from '../src/workflow/rebind.ts';
+import { pageScript } from './pageScript.ts';
 import { BLOCKING_RULE } from '../src/commands/finish.ts';
 import { graphNext } from '../src/commands/digest.ts';
 import { lifecycle } from '../src/hook/lifecycle.ts';
@@ -16,6 +17,11 @@ import { makeRepo, tempDir } from './helpers.ts';
 setDefaultTimeout(180_000);
 
 const CLI = resolve(import.meta.dir, '../src/cli.ts');
+// A 1x1 PNG.
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
 let previous: string | undefined;
 let config: string;
 beforeEach(() => {
@@ -79,8 +85,8 @@ function preparedRun(recheck: 'none' | 'once') {
     env(),
   );
   const run = findRun(
-    repository(repo.root).gitDir,
-    tasks(repository(repo.root).gitDir)[0]!.run.id,
+    repository(repo.root).stateDir,
+    tasks(repository(repo.root).stateDir)[0]!.run.id,
   );
   ok(repo.root, 'digest', '--run', run.id, '--offline');
   ok(repo.root, 'context', '--run', run.id, '--offline');
@@ -196,6 +202,107 @@ describe('finish and publish rebind', () => {
     expect(review.inputFingerprint).toBe(
       readLocal<any>(join(run.dir, 'review-input.json'))!.fingerprint,
     );
+  });
+
+  test('a fix committed after a review: fresh passes on the new code supersede the old ones (#219)', () => {
+    const { repo, run } = preparedRun('none');
+    ok(repo.root, 'finish', '--run', run.id);
+    const importPass = (agent: string) =>
+      ok(
+        repo.root,
+        'review',
+        'import',
+        '--run',
+        run.id,
+        '--agent-id',
+        agent,
+        '--reviewer-model',
+        'sonnet',
+      );
+    importPass('a7c3e19f2b');
+    // A code fix after the review, then a fresh digest and render.
+    repo.commit(
+      'src/greet.ts',
+      "export function greet(name?: string) {\n  if (!name?.trim()) return 'hello';\n  return `hello ${name}`;\n}\n",
+      'Treat a blank name as no name',
+    );
+    ok(repo.root, 'digest', '--run', run.id, '--offline');
+    ok(repo.root, 'context', '--run', run.id, '--offline');
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'The greeting uses the given name, or says hello when it is missing or blank.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    // Only the old pass: publish still refuses, naming it.
+    const before = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(before.stdout + before.stderr).toContain(
+      'reviewer pass 1 reviewed different code',
+    );
+    expect(before.stdout + before.stderr).not.toContain('review: plan met');
+    // A fresh pass on the new code meets the plan on its own: the old one is superseded.
+    writeLocal(join(run.dir, 'review-findings.json'), {
+      v: 1,
+      reviewer: { agentId: null },
+      findings: [],
+    });
+    importPass('b8d4f20a3c');
+    // The correction round after the fresh review: finish binds the review itself.
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      'The greeting uses the given name, or says hello when the name is missing or blank.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n',
+    );
+    ok(repo.root, 'render', '--run', run.id, '--no-comic');
+    const text = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(text.stdout + text.stderr).not.toContain('reviewed different code');
+    expect(text.stdout).toContain(`Next: tracetoon publish --run ${run.id}`);
+    // The review plan is the gate, so finish says it is met, not the older review's status.
+    expect(text.stdout).toContain('review: plan met.');
+    expect(text.stdout).not.toContain('review: incomplete');
+    const passes = readLocal<any>(join(run.dir, 'review-passes.json'))!.passes;
+    expect(passes.map((p: any) => p.agentId)).toEqual(['b8d4f20a3c']);
+    const superseded = readLocal<any>(
+      join(run.dir, 'review-passes-superseded.json'),
+    )!.passes;
+    expect(superseded.map((p: any) => p.agentId)).toEqual(['a7c3e19f2b']);
+    const published = cli(repo.root, ['publish', '--run', run.id], false);
+    expect(published.code).toBe(0);
+    expect(published.stdout).toContain('pull/7');
+  });
+
+  test('a comic added after the review never invalidates the review of the prose', () => {
+    const { repo, run } = preparedRun('none');
+    ok(repo.root, 'finish', '--run', run.id);
+    ok(
+      repo.root,
+      'review',
+      'import',
+      '--run',
+      run.id,
+      '--agent-id',
+      'a7c3e19f2b',
+      '--reviewer-model',
+      'sonnet',
+    );
+    // The correction round, while comic run draws the comic beside the reviews.
+    writeFileSync(
+      join(run.dir, 'body.md'),
+      "The greeting uses the given name, or says hello when there is none.\n\nIt previously only said hello.\n\nSee src/greet.ts.\n",
+    );
+    writeFileSync(join(run.dir, 'comic.json'), JSON.stringify(pageScript()));
+    mkdirSync(join(run.dir, 'out'), { recursive: true });
+    writeFileSync(join(run.dir, 'out', 'comic.png'), PIXEL);
+    // The comic's image and transcript are far more words than this short body.
+    const text = cli(repo.root, ['finish', '--run', run.id], false);
+    expect(text.stdout + text.stderr).not.toContain('of the description is new');
+    expect(text.stdout).toContain('bound the review to this render');
+    expect(readFileSync(join(run.dir, 'final-body.md'), 'utf8')).toContain('Comic transcript');
+    // Prose that really grew past the review still refuses.
+    expect(
+      newWordShare(
+        'a b c d',
+        withoutComic(`a b c d\n\n<p align="center"><img src="{{tracetoon:comic-src}}" alt="x y z" width="760"></p>\n\n<details>\n<summary>Comic transcript</summary>\n\n1. q r s t\n\n</details>`),
+      ),
+    ).toBe(0);
   });
 
   test('with Review recheck: once, or unrendered edits, publish still refuses and says why', () => {

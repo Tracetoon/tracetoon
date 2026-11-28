@@ -24,7 +24,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import { codexBin, codexHome, runCli } from '../comic/providers.ts';
+import { codexBin, codexHome, emptyMcpConfig, runCli } from '../comic/providers.ts';
+import { hostAgent } from '../util/host.ts';
 import {
   FINDING_KINDS,
   FINDING_VERDICTS,
@@ -39,6 +40,7 @@ import {
   planRecheck,
   planSummary,
   requiredPasses,
+  resolveClaudeModel,
   resolveCodexModel,
   type ReviewLens,
   type ReviewPass,
@@ -167,7 +169,7 @@ export function sessionIdFromEvents(
 }
 
 /** The last agent message text in Codex's events. */
-function lastAgentMessage(events: Record<string, unknown>[]): string | undefined {
+export function lastAgentMessage(events: Record<string, unknown>[]): string | undefined {
   let text: string | undefined;
   for (const e of events) {
     const item = rec(e.item);
@@ -390,6 +392,62 @@ function previousRun(run: Run, slot: Slot): StoredPass | undefined {
     .at(-1);
 }
 
+/** Which process runs reviewer passes: Claude Code under Claude Code, codex exec elsewhere. TRACETOON_REVIEW_RUNNER overrides. */
+export function reviewRunner(env: NodeJS.ProcessEnv = process.env): 'codex-exec' | 'claude-print' {
+  const forced = env.TRACETOON_REVIEW_RUNNER?.trim().toLowerCase();
+  if (forced === 'claude' || forced === 'claude-print') return 'claude-print';
+  if (forced === 'codex' || forced === 'codex-exec') return 'codex-exec';
+  return hostAgent(env) === 'claude' ? 'claude-print' : 'codex-exec';
+}
+
+/** The Claude Code binary: the running session's own (CLAUDE_CODE_EXECPATH), else TRACETOON_CLAUDE_BIN, else claude on PATH. */
+export function claudeBin(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const own = env.TRACETOON_CLAUDE_BIN?.trim() || env.CLAUDE_CODE_EXECPATH?.trim();
+  if (own) return own === 'none' ? undefined : own;
+  return Bun.which('claude') ?? undefined;
+}
+
+/** The child environment for a nested Claude Code reviewer: the session's own ids dropped, auth kept. */
+export function claudeChildEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(env)) {
+    if (v === undefined) continue;
+    if (
+      /^CLAUDE_CODE_(SESSION_ID|CHILD_SESSION|CHILD_NOTES_DIR|MESSAGING_.*|ENTRYPOINT|SESSION_ATTENDED)$/.test(k) ||
+      k === 'CLAUDE_PID'
+    )
+      continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+/** A print-mode Claude Code JSON result: reply, session id and the one model it ran on. */
+export function claudeResult(stdout: string): {
+  result: string;
+  sessionId: string | undefined;
+  model: string | null;
+  isError: boolean;
+  costUsd?: number;
+} {
+  let j: Record<string, unknown> = {};
+  try {
+    const line = stdout.trim().split('\n').filter((l) => l.trim().startsWith('{')).pop() ?? '{}';
+    j = JSON.parse(line);
+  } catch {
+    j = {};
+  }
+  const models = Object.keys((j.modelUsage as Record<string, unknown>) ?? {});
+  return {
+    result: typeof j.result === 'string' ? j.result.trim() : '',
+    sessionId: typeof j.session_id === 'string' ? j.session_id : undefined,
+    // Verified only when the session ran on exactly one model.
+    model: models.length === 1 ? models[0]! : null,
+    isError: j.is_error === true,
+    ...(typeof j.total_cost_usd === 'number' ? { costUsd: j.total_cost_usd } : {}),
+  };
+}
+
 interface RunSetup {
   run: Run;
   root: string;
@@ -398,6 +456,8 @@ interface RunSetup {
   effort?: string;
   codexModel: string;
   bin: string;
+  /** codex exec, or (under Claude Code) a print-mode Claude Code process. */
+  runner: 'codex-exec' | 'claude-print';
   schemaPath: string;
   input: ReturnType<typeof renderedInput>['input'];
 }
@@ -426,10 +486,16 @@ function setup(cwd: string, opts: ReviewRunOptions): RunSetup {
     throw new UserError(
       'No reviewer model configured for this run: set the SKILL "Reviewer model:" line (or prepare --reviewer-model <name>), or pass --model <name>.',
     );
-  const bin = codexBin();
+  // Under Claude Code the reviewers are print-mode Claude Code processes (the
+  // same binary as the session), so a delegated drafter that can't start
+  // agents can still get fresh reviewers; elsewhere codex exec.
+  const runner = reviewRunner();
+  const bin = runner === 'claude-print' ? claudeBin() : codexBin();
   if (!bin)
     throw new UserError(
-      'The Codex CLI is not installed (or TRACETOON_CODEX_BIN is "none"); tracetoon review run needs codex.',
+      runner === 'claude-print'
+        ? 'Cannot find the Claude Code binary (CLAUDE_CODE_EXECPATH, TRACETOON_CLAUDE_BIN or claude on PATH); tracetoon review run needs it under Claude Code.'
+        : 'The Codex CLI is not installed (or TRACETOON_CODEX_BIN is "none"); tracetoon review run needs codex.',
     );
   const { input } = renderedInput(run);
   const schemaPath = join(run.dir, SCHEMA_FILE);
@@ -440,8 +506,9 @@ function setup(cwd: string, opts: ReviewRunOptions): RunSetup {
     plan,
     model,
     ...(effort ? { effort } : {}),
-    codexModel: resolveCodexModel(model),
+    codexModel: runner === 'claude-print' ? resolveClaudeModel(model) : resolveCodexModel(model),
     bin,
+    runner,
     schemaPath,
     input,
   };
@@ -554,23 +621,51 @@ async function runPass(
     args = ['exec', '--sandbox', 'read-only', ...pinned, '-C', run.dir, '-'];
   }
 
-  const res = await runCli(s.bin, args, run.dir, timeoutMs(), prompt);
-  const events = parseEvents(res.stdout);
+  if (s.runner === 'claude-print') {
+    if (recheck)
+      throw new UserError(
+        'A recheck resumes the reviewer session, which the Claude Code runner does not do; this plan should use Review recheck: none.',
+      );
+    // A fresh print-mode session with no tools: the packet is the whole input.
+    args = [
+      '-p',
+      '--model',
+      model,
+      ...(effort ? ['--effort', effort] : []),
+      '--tools',
+      '',
+      '--strict-mcp-config',
+      '--mcp-config',
+      emptyMcpConfig(run.dir),
+      '--output-format',
+      'json',
+    ];
+  }
+  const res = await runCli(
+    s.bin,
+    args,
+    run.dir,
+    timeoutMs(),
+    prompt,
+    s.runner === 'claude-print' ? claudeChildEnv() : undefined,
+  );
+  const claude = s.runner === 'claude-print' ? claudeResult(res.stdout) : undefined;
+  const events = claude ? [] : parseEvents(res.stdout);
   const lastErr = () =>
     res.stderr.trim().split('\n').filter(Boolean).pop()?.slice(0, 300) ?? '';
-  if (res.code !== 0)
+  const label = claude ? 'claude -p' : 'codex exec';
+  if (res.code !== 0 || claude?.isError)
     throw new UserError(
-      `codex exec ${res.code === null ? 'timed out or was killed' : `exited ${res.code}`}${lastErr() ? `: ${lastErr()}` : ''}. Nothing was imported.`,
+      `${label} ${res.code === null ? 'timed out or was killed' : res.code !== 0 ? `exited ${res.code}` : 'reported an error'}${lastErr() ? `: ${lastErr()}` : ''}. Nothing was imported.`,
     );
-  const sessionId = resumed ?? sessionIdFromEvents(events);
+  const sessionId = claude ? claude.sessionId : (resumed ?? sessionIdFromEvents(events));
   if (!sessionId)
-    throw new UserError(
-      'codex exec reported no session id in its JSON events. Nothing was imported.',
-    );
-  const reply =
-    (existsSync(outPath) ? readFileSync(outPath, 'utf8') : '').trim() ||
-    lastAgentMessage(events) ||
-    '';
+    throw new UserError(`${label} reported no session id. Nothing was imported.`);
+  const reply = claude
+    ? claude.result
+    : (existsSync(outPath) ? readFileSync(outPath, 'utf8') : '').trim() ||
+      lastAgentMessage(events) ||
+      '';
   let raw: unknown;
   try {
     if (!reply) throw new Error('the reviewer gave no reply');
@@ -582,7 +677,9 @@ async function runPass(
   }
   // Everything from here to the return is synchronous, so passes running in
   // parallel import one at a time and never interleave review-passes.json.
-  const verified = verifiedSessionModel(sessionId);
+  const verified = claude
+    ? { model: claude.model, rollout: undefined as string | undefined }
+    : verifiedSessionModel(sessionId);
   const obj = rec(raw);
   const cold = rec(obj.coldRead);
   const findings = {
@@ -606,7 +703,7 @@ async function runPass(
       ...(slot.lens ? { lens: slot.lens } : {}),
       provenance: {
         source: 'tracetoon-run',
-        runner: 'codex-exec',
+        runner: s.runner,
         sessionId,
         verifiedModel: verified.model,
         bodySha256: sha256(input.body),
@@ -623,7 +720,9 @@ async function runPass(
   const warnings = [...result.warnings];
   if (verified.model !== codexModel)
     warnings.unshift(
-      verified.model
+      claude
+        ? `Claude Code reported ${verified.model ? `model ${verified.model}` : 'no model'}, not ${codexModel}: publish refuses this pass.`
+        : verified.model
         ? `The session's rollout says it ran on ${verified.model}, not ${codexModel}: publish refuses this pass.`
         : `No rollout for session ${sessionId} under ${join(codexHome(), 'sessions')} shows its model: the model is unverified${plan?.runner === 'tracetoon' ? ' and publish refuses this pass' : ''}.`,
     );
@@ -698,7 +797,7 @@ export async function reviewRunCmd(cwd: string, opts: ReviewRunOptions): Promise
     },
     () =>
       [
-        `${opts.recheck ? 'Rechecked' : 'Reviewed'} with codex exec on ${s.codexModel}${s.effort ? ` (effort ${s.effort})` : ''}: session ${o.sessionId}, ${pass.findings} finding(s) (pass ${pass.pass}${lens ? `, lens ${lens}` : ''}).`,
+        `${opts.recheck ? 'Rechecked' : 'Reviewed'} with ${s.runner === 'claude-print' ? 'claude -p' : 'codex exec'} on ${s.codexModel}${s.effort ? ` (effort ${s.effort})` : ''}: session ${o.sessionId}, ${pass.findings} finding(s) (pass ${pass.pass}${lens ? `, lens ${lens}` : ''}).`,
         `Verified model (rollout): ${o.verifiedModel ?? 'not found'}.`,
         `Wrote ${o.findingsPath} and ${o.result.path}.`,
         ...compactWarnings(o.warnings),
@@ -846,7 +945,7 @@ async function reviewRunAll(cwd: string, opts: ReviewRunOptions): Promise<void> 
     },
     () =>
       [
-        `${opts.recheck ? 'Rechecked' : 'Reviewed'} ${ran.length} pass(es) in parallel with codex exec on ${codexModel}${s.effort ? ` (effort ${s.effort})` : ''}: ${ran.map((o) => `${slotLabel(o.slot)} (pass ${o.pass.pass}, ${o.pass.findings} finding(s))`).join(', ') || 'none'}.`,
+        `${opts.recheck ? 'Rechecked' : 'Reviewed'} ${ran.length} pass(es) in parallel with ${s.runner === 'claude-print' ? 'claude -p' : 'codex exec'} on ${codexModel}${s.effort ? ` (effort ${s.effort})` : ''}: ${ran.map((o) => `${slotLabel(o.slot)} (pass ${o.pass.pass}, ${o.pass.findings} finding(s))`).join(', ') || 'none'}.`,
         skipped.length
           ? `Skipped: ${skipped.map((k) => `${k.label} (${k.reason})`).join(', ')}.`
           : '',

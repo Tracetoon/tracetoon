@@ -125,7 +125,7 @@ function describe(problems: ScriptProblem[]): string {
 
 function load(cwd: string, runId?: string): Loaded {
   let truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, runId);
+  const run = findRun(truth.stateDir, runId);
   const context = readJson<{
     base?: string;
     aiPolicy?: AiPolicy;
@@ -177,7 +177,7 @@ export function comicSkipCmd(
       fix: 'tracetoon comic skip --reason "<why>" --by user|agent',
     });
   const truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, opts.run);
+  const run = findRun(truth.stateDir, opts.run);
   writeComicStatus(run, {
     state: 'skipped',
     // Only a skip the user asked for is the user's; otherwise it was the agent's call.
@@ -193,7 +193,7 @@ export function comicSkipCmd(
 
 export function comicCheckCmd(cwd: string, opts: OutOpts & { run?: string }): void {
   const truth = prTruth(cwd, { noGh: true });
-  const run = findRun(truth.gitDir, opts.run);
+  const run = findRun(truth.stateDir, opts.run);
   const script = readJson<unknown>(run, 'comic.json');
   if (script === undefined)
     throw new UserError(
@@ -646,9 +646,13 @@ export async function comicRenderCmd(
   if (manifest?.fingerprint && manifest.fingerprint !== fingerprint)
     // Art drawn by an earlier build: adopt it under today's fingerprint.
     writeJson(run, 'art/manifest.json', { ...manifest, fingerprint });
+  // The "made with Tracetoon" footer: on unless the user or repo turned it off.
+  const credit = loadConfig(root).comicCredit !== false;
   let svg: string;
   if (page) {
-    svg = pageWithFooter({ mime: page.mime, data: readFileSync(page.path) });
+    svg = pageWithFooter({ mime: page.mime, data: readFileSync(page.path) }, undefined, {
+      credit,
+    });
   } else {
     const found = script.panels.map((_, i) => existingPanel(run, i));
     const missing = found.flatMap((f, i) => (f ? [] : [i + 1]));
@@ -666,7 +670,7 @@ export async function comicRenderCmd(
       data: readFileSync(f!.path),
     }));
     const layout = readJson<Layout>(run, 'layout.json');
-    svg = composePage(script, images, layout);
+    svg = composePage(script, images, layout, { credit });
   }
   mkdirSync(join(run.dir, 'out'), { recursive: true });
   const svgPath = join(run.dir, 'out', 'comic.svg');

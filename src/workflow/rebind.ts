@@ -10,7 +10,10 @@
  * - body.md is what the last render froze (no unrendered edits slip in);
  * - every imported pass reviewed the same code tree (or, for passes imported
  *   before trees were recorded, the same diff) as the render; a branch whose
- *   tree matches the reviewed head counts as the same code;
+ *   tree matches the reviewed head counts as the same code. Passes on earlier
+ *   code are superseded once the passes on the current code meet the review
+ *   plan by themselves (a fix committed after a review, then fresh passes);
+ *   the rebind archives them in review-passes-superseded.json;
  * - the body did not grow past what the reviewers saw: at most half of its
  *   words are new compared with the last reviewed body.
  *
@@ -20,10 +23,46 @@ import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Run } from '../run.ts';
-import { readJson } from '../run.ts';
+import { readJson, writeJson } from '../run.ts';
 import { objectHash } from '../contribution/guidance.ts';
-import { loadReviewPlan, planRecheck } from '../contribution/reviewPlan.ts';
-import { importLeanReview, loadPasses, treeOf } from '../commands/review.ts';
+import { loadReviewPlan, planMissing, planRecheck } from '../contribution/reviewPlan.ts';
+import {
+  importLeanReview,
+  loadPasses,
+  PASSES_FILE,
+  treeOf,
+  type StoredPass,
+} from '../commands/review.ts';
+
+/** Where the rebind keeps passes that newer passes on the current code replaced. */
+export const SUPERSEDED_FILE = 'review-passes-superseded.json';
+
+/**
+ * The imported passes split by whether they reviewed the code the last render
+ * shows: the same tree, or (for passes imported before trees were recorded)
+ * the same diff. Undefined when the last render wrote no review input.
+ */
+export function passesByCode(
+  run: Run,
+  root: string,
+): { current: StoredPass[]; earlier: StoredPass[] } | undefined {
+  const input = readJson<{ headSha?: string; diffSha256?: string }>(
+    run,
+    'review-input.json',
+  );
+  if (!input?.headSha) return undefined;
+  const tree = treeOf(root, input.headSha);
+  const onCode = (p: StoredPass) =>
+    !!(
+      (p.treeSha && tree && p.treeSha === tree) ||
+      (!p.treeSha && p.diffSha256 && p.diffSha256 === input.diffSha256)
+    );
+  const passes = loadPasses(run);
+  return {
+    current: passes.filter(onCode),
+    earlier: passes.filter((p) => !onCode(p)),
+  };
+}
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -59,6 +98,18 @@ export function newWordShare(before: string, now: string): number {
   return fresh / Math.max(1, words(before).length);
 }
 
+/**
+ * The description without the comic: its image, its transcript and the meta
+ * line that records it. A comic drawn beside the review (or after it) adds
+ * many words the reviewers never had to check; they are not description.
+ */
+export function withoutComic(body: string): string {
+  return body
+    .replace(/<p align="center"><img src="\{\{tracetoon:comic-src\}\}"[^\n]*<\/p>/g, '')
+    .replace(/<details>\s*<summary>Comic transcript<\/summary>[\s\S]*?<\/details>/g, '')
+    .replace(/<!-- tracetoon:meta [^\n]*-->/g, '');
+}
+
 /** Most of the body may change in the correction round; not more than this share may be new. */
 export const MAX_NEW_WORDS = 0.5;
 
@@ -84,19 +135,25 @@ export function rebindProblem(
     'review-input.json',
   );
   if (!input?.headSha) return 'the last render wrote no review input';
-  const tree = treeOf(root, input.headSha);
-  for (const p of passes) {
-    const same =
-      (p.treeSha && tree && p.treeSha === tree) ||
-      (!p.treeSha && p.diffSha256 && p.diffSha256 === input.diffSha256);
-    if (!same) return `reviewer pass ${p.pass} reviewed different code`;
+  const { current, earlier } = passesByCode(run, root)!;
+  if (earlier.length) {
+    const first = `reviewer pass ${earlier[0]!.pass} reviewed different code`;
+    if (!current.length) return first;
+    // Fresh passes on the current code replace the earlier ones only when
+    // they meet the review plan by themselves.
+    const missing = planMissing(plan, current);
+    if (missing.length)
+      return `${first}, and the passes on the current code don't meet the review plan yet: ${missing.join('; ')}`;
   }
-  const latest = [...passes]
+  const latest = [...current]
     .filter((p) => p.reviewedBody)
     .sort((a, b) => a.importedAt.localeCompare(b.importedAt))
     .at(-1);
   if (latest?.reviewedBody && input.body) {
-    const share = newWordShare(latest.reviewedBody, input.body);
+    const share = newWordShare(
+      withoutComic(latest.reviewedBody),
+      withoutComic(input.body),
+    );
     if (share > MAX_NEW_WORDS)
       return `${Math.round(share * 100)}% of the description is new since the last review`;
   }
@@ -108,6 +165,13 @@ export function rebindProblem(
  * (`review import --rebind`); the caller renders again afterwards.
  */
 export function rebindReview(run: Run, root: string): void {
+  const split = passesByCode(run, root);
+  if (split?.earlier.length && split.current.length) {
+    // Superseded passes stay on record, outside the passes the review uses.
+    const kept = readJson<{ passes?: StoredPass[] }>(run, SUPERSEDED_FILE)?.passes ?? [];
+    writeJson(run, SUPERSEDED_FILE, { v: 1, passes: [...kept, ...split.earlier] });
+    writeJson(run, PASSES_FILE, { v: 1, passes: split.current });
+  }
   importLeanReview(run, root, { rebind: true });
 }
 

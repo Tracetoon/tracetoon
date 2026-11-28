@@ -450,7 +450,7 @@ export function leanPacket(input: PacketInput): Packet {
 
 export function openRun(cwd: string, id?: string): { run: Run; root: string } {
   const repo = repository(cwd);
-  const run = findRun(repo.gitDir, id);
+  const run = findRun(repo.stateDir, id);
   assertRunOwner(run, repo.root, repo.branch);
   return { run, root: repo.root };
 }

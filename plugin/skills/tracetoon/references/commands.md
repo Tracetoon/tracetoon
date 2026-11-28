@@ -11,7 +11,10 @@
 - `tracetoon images`: image routes for comics, whether each can draw, and the
   next step; `--approve <route>` (after the user agrees) and `--test`.
 - `tracetoon config set <key> <value>`: `style` (pin a house style, or `auto`),
-  `comic` (`off`, `allowed`, `always`), `promptQuoting`, `hosting`.
+  `comic` (`off`, `allowed`, `always`), `comicCredit` (`false` drops the
+  "made with Tracetoon" comic footer), `disclosure` (`none` drops the PR's
+  Tracetoon credit line), `promptQuoting`, `hosting`. Change these only when
+  the user asks.
 - `tracetoon render --check --run <id>`, `tracetoon render --run <id>`,
   `tracetoon review-packet --lean [--lens <x>] --run <id>`, `tracetoon review
   merge --run <id>`, `tracetoon review import --run <id> --rebind`: the single

@@ -257,7 +257,7 @@ export function digestStale(
 export { prHead };
 function loadRun(cwd: string, runId?: string): { run: Run; truth: PrTruth } {
   const truth = prTruth(cwd, { noGh: true });
-  return { run: findRun(truth.gitDir, runId), truth };
+  return { run: findRun(truth.stateDir, runId), truth };
 }
 
 /** The comic as it appears in the body: image, then a collapsed transcript. */

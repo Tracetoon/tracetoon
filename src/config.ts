@@ -38,6 +38,8 @@ export interface Config {
   style: string;
   /** Pin one comic genre for every comic (a genre id or any phrase), or `auto` to rotate. */
   genre: string;
+  /** Draw the "made with Tracetoon" footer bar under each comic. `false` leaves it off. */
+  comicCredit: boolean;
   /** Use Tracetoon for PRs at all. Off here, or in any other switch, wins. */
   enabled: boolean;
   /** Updates: `off` never looks, `notify` says so when a newer release exists, `install` also installs it. */
@@ -61,6 +63,7 @@ export const DEFAULTS: Config = {
   comic: 'allowed',
   style: 'auto',
   genre: 'auto',
+  comicCredit: true,
   autoUpdate: 'notify',
   updateChannel: 'latest',
 };
@@ -129,6 +132,11 @@ export function loadConfig(root?: string): Config {
     ...user,
     ...repo,
     comic: userComic === 'allowed' ? comicMode(repo.comic ?? 'allowed') : userComic,
+    // Either the user or the repo can turn the comic credit off; hand-written
+    // config files may say "false" as a string.
+    comicCredit: ![user.comicCredit, repo.comicCredit].some(
+      (v) => (v as unknown) === false || (v as unknown) === 'false',
+    ),
     imageConsent: user.imageConsent ?? DEFAULTS.imageConsent,
     autoUpdate: oneOf(AUTO_UPDATES, user.autoUpdate, DEFAULTS.autoUpdate),
     updateChannel: oneOf(UPDATE_CHANNELS, user.updateChannel, DEFAULTS.updateChannel),

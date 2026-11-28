@@ -188,6 +188,8 @@ prepare digest and contribution context from one repository snapshot
 | `--reviewer-effort <level>` | review plan (SKILL "Reviewer effort:"): low, medium, high, xhigh, max or default; every pass must record it |
 | `--reviewer-runner <runner>` | review plan (SKILL "Reviewer runner:"): agent (the drafter starts the reviewer) or tracetoon (tracetoon review run starts it with the model pinned; publish requires that) |
 | `--review-recheck <mode>` | review plan (SKILL "Review recheck:"): once (each reviewer confirms the correction round), contested (only reviewers whose findings were rejected) or none; publish never requires a recheck |
+| `--drafter-effort <level>` | delegated drafting (SKILL "Drafter effort:"): the drafter agent's effort (low, medium, high, xhigh, max) or default |
+| `--drafter-model <name>` | delegated drafting (SKILL "Drafter model:"): a fresh drafter agent on this model drafts from drafter-packet.md while this agent only coordinates; standard = Claude Code sonnet, Codex gpt-6.1-terra; inherit = the session's model; main (default) = draft yourself |
 
 ## `tracetoon source <paths...>`
 
@@ -259,9 +261,9 @@ lean reviewer handoffs
 
 ## `tracetoon review run`
 
-run the lean reviewer as a codex exec session pinned to the review plan's reviewer model, verify the model from its rollout, and import its findings
+run the lean reviewers on the host's own agent (a toolless claude -p on Claude Code, codex exec on Codex; the review packet is their only input), pinned to the review plan's reviewer model, verify the model each ran on, and import its findings
 
-**Acts outside the machine:** sends-data, may-cost.
+**Acts outside the machine:** may-cost (starts reviewers on the host's own agent (claude -p on Claude Code, codex exec on Codex); the review packet is the only input).
 
 | Option | Description |
 | --- | --- |
@@ -362,6 +364,16 @@ an isekai comic's select step: check the brainstormed gags, write a fresh judge'
 | `--file <path>` | with --check: a gags file outside any run |
 | `--context <path>` | with --file: the packet's context.json |
 | `--evidence <paths...>` | with --file: the PR's description, brief or diff, to check the anchor's words |
+
+## `tracetoon comic run`
+
+the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--model <name>` | the author's and judges' model (default: the host's default model, as the subagent flow's 'same model class') |
+| `--creative` | experimental: the loop may also rewrite a flat joke or weak script |
 
 ## `tracetoon comic check`
 

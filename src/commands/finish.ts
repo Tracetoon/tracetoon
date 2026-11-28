@@ -184,7 +184,12 @@ export function finishCmd(cwd: string, opts: FinishOpts): void {
     }
   }
   const status = readJson<{ status?: string }>(run, 'review-result.json')?.status;
-  const head = `Rendered "${approval.title}" (${approval.mode === 'edit' ? `update PR #${approval.prNumber}` : `new PR, base ${approval.base}`}); leak scan: ${approval.findings.length ? (approval.allowFindings ? 'allowed findings' : 'FOUND something') : 'clean'}; brief check: ${brief ? (brief.open || brief.uncovered ? `${brief.open} to fix, ${brief.uncovered} to cover` : 'clean') : 'n/a'}; review: ${status ?? 'none'}.`;
+  // On the reviewed brief path the stored status is the older contribution review's
+  // ("incomplete": no guidance, no inline comic assessment), which publish doesn't
+  // gate on. The review plan is the gate, so say that when it is enforced and met.
+  const reviewWord =
+    planEnforced(plan) && !missingNow().length && !reviewOutOfDate(run) ? 'plan met' : (status ?? 'none');
+  const head = `Rendered "${approval.title}" (${approval.mode === 'edit' ? `update PR #${approval.prNumber}` : `new PR, base ${approval.base}`}); leak scan: ${approval.findings.length ? (approval.allowFindings ? 'allowed findings' : 'FOUND something') : 'clean'}; brief check: ${brief ? (brief.open || brief.uncovered ? `${brief.open} to fix, ${brief.uncovered} to cover` : 'clean') : 'n/a'}; review: ${reviewWord}.`;
   const planLine = planEnforced(plan)
     ? ((m) => (m.length ? '' : `Review plan (${planSummary(plan)}): met.`))(missingNow())
     : '';

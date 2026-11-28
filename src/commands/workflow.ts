@@ -121,7 +121,7 @@ export async function checkCmd(
   },
 ) {
   const repo = repository(cwd);
-  const run = findRun(repo.gitDir, opts.run);
+  const run = findRun(repo.stateDir, opts.run);
   const task = readTask(run);
   if (task && (task.branch !== repo.branch || task.root !== repo.root))
     throw new UserError('Run checks in this task worktree and branch.');

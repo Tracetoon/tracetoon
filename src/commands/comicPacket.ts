@@ -46,7 +46,7 @@ export interface PacketOpts extends OutOpts {
 
 export function comicPacketCmd(cwd: string, opts: PacketOpts): void {
   const repo = repository(cwd);
-  const run: Run = findRun(repo.gitDir, opts.run);
+  const run: Run = findRun(repo.stateDir, opts.run);
   assertRunOwner(run, repo.root, repo.branch);
   const description = readText(run, 'final-body.md') ?? readText(run, 'body.md');
   if (!description?.trim())

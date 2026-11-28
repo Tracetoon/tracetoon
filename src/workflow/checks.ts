@@ -16,6 +16,7 @@ import { basename, dirname, join, relative, resolve } from 'node:path';
 import { contentFingerprint, readTask } from './state.ts';
 import { readLocal, writeLocal } from '../util/localJson.ts';
 import type { Run } from '../run.ts';
+import { STATE_FOLDER } from '../util/stateDir.ts';
 import type { Run as EvidenceRun } from '../digest/build.ts';
 import { makeScrubber } from '../digest/sanitize.ts';
 import { publicationLock } from './publication.ts';
@@ -784,6 +785,24 @@ export function checkReport(root: string, run: Run) {
   });
 }
 /**
+ * The working tree a run belongs to, from its folder (<state>/runs/<id>):
+ * <root>/.tracetoon for a linked worktree or submodule (see `stateDir`), else
+ * <gitDir>/tracetoon, where gitDir is <root>/.git or, for runs made before
+ * worktrees kept their own state, a linked worktree's git dir with its gitdir file.
+ */
+export function repoRootOfRun(run: Run): string | undefined {
+  const state = resolve(run.dir, '..', '..');
+  if (basename(state) === STATE_FOLDER) return dirname(state);
+  const gitDir = dirname(state);
+  try {
+    const link = join(gitDir, 'gitdir');
+    if (existsSync(link)) return dirname(readFileSync(link, 'utf8').trim());
+  } catch {
+    return undefined;
+  }
+  return basename(gitDir) === '.git' ? dirname(gitDir) : undefined;
+}
+/**
  * A `tracetoon check` receipt that passed on the content as it is now (and in
  * this environment). Read from the run folder when the brief is read, so a
  * check run after `prepare` retires "no passing run after the last commit"
@@ -791,7 +810,8 @@ export function checkReport(root: string, run: Run) {
  */
 export function passOnSubmittedContent(run: Run, root?: string): boolean {
   if (!receipts(run).some((c) => c.outcome === 'passed')) return false;
-  const at = root ?? readTask(run)?.root;
+  // Runs prepared without `task begin` have no task root: derive it from the run folder.
+  const at = root ?? readTask(run)?.root ?? repoRootOfRun(run);
   if (!at) return false;
   try {
     return checkReport(at, run).some((c) => c.current && c.outcome === 'passed');

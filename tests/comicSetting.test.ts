@@ -186,3 +186,17 @@ describe('comics follow the repo only when the user leaves it to them', () => {
     expect(comicDecision('off', policy).include).toBe(false);
   });
 });
+
+describe('loadConfig comicCredit', () => {
+  test('defaults on; off from the user or the repo, as a boolean or the string "false"', () => {
+    const root = tempDir();
+    expect(loadConfig(root).comicCredit).toBe(true);
+    mkdirSync(join(root, '.github'), { recursive: true });
+    writeFileSync(join(root, '.github', 'tracetoon.json'), '{"comicCredit": "false"}');
+    expect(loadConfig(root).comicCredit).toBe(false);
+    writeFileSync(join(root, '.github', 'tracetoon.json'), '{"comicCredit": true}');
+    expect(loadConfig(root).comicCredit).toBe(true);
+    setUserConfig('comicCredit', 'false');
+    expect(loadConfig(root).comicCredit).toBe(false);
+  });
+});

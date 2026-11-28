@@ -128,6 +128,8 @@ export function indexMd(readme: string): string {
     ...RESULTS.table.map(([n, what]) => `| **${n}** | ${what} |`),
     '',
     `${RESULTS.method} Full results: ${RESULTS.url}`,
+    '',
+    `Every report, including the evidence graph against Tracetoon's earlier workflow: ${RESULTS.all}`,
   ].join('\n');
   // The README's generated-block markers (<!-- hosts:start -->) mean nothing on the site.
   const quick = between('## ⚡ Quick start', '\n---').replace(

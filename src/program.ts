@@ -21,6 +21,7 @@ import { imagesCmd } from './commands/images.ts';
 import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
 import { comicGagsCmd } from './commands/comicGags.ts';
 import { comicPacketCmd } from './commands/comicPacket.ts';
+import { comicRunCmd } from './commands/comicRun.ts';
 import {
   contextCmd,
   digestCmd,
@@ -113,7 +114,7 @@ export function buildProgram(cwd: string = process.cwd()): {
       ['render', 'publish', 'art', 'reroll', 'prompts'].includes(action.name())
     ) {
       const repo = repository(cwd);
-      assertRunOwner(findRun(repo.gitDir, action.opts().run), repo.root, repo.branch);
+      assertRunOwner(findRun(repo.stateDir, action.opts().run), repo.root, repo.branch);
     }
     state.timedAction = {
       name: action.name(),
@@ -341,6 +342,14 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--review-recheck <mode>',
       'review plan (SKILL "Review recheck:"): once (each reviewer confirms the correction round), contested (only reviewers whose findings were rejected) or none; publish never requires a recheck',
     )
+    .option(
+      '--drafter-effort <level>',
+      'delegated drafting (SKILL "Drafter effort:"): the drafter agent\'s effort (low, medium, high, xhigh, max) or default',
+    )
+    .option(
+      '--drafter-model <name>',
+      'delegated drafting (SKILL "Drafter model:"): a fresh drafter agent on this model drafts from drafter-packet.md while this agent only coordinates; standard = Claude Code sonnet, Codex gpt-6.1-terra; inherit = the session\'s model; main (default) = draft yourself',
+    )
     .action((o) => {
       prepareCmd(cwd, { ...g(), ...o });
     });
@@ -434,7 +443,7 @@ export function buildProgram(cwd: string = process.cwd()): {
   review
     .command('run')
     .description(
-      "run the lean reviewer as a codex exec session pinned to the review plan's reviewer model, verify the model from its rollout, and import its findings",
+      "run the lean reviewers on the host's own agent (a toolless claude -p on Claude Code, codex exec on Codex; the review packet is their only input), pinned to the review plan's reviewer model, verify the model each ran on, and import its findings",
     )
     .option('--run <id>', 'run id (default: latest)')
     .option(
@@ -575,6 +584,21 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--context <path>', "with --file: the packet's context.json")
     .option('--evidence <paths...>', "with --file: the PR's description, brief or diff, to check the anchor's words")
     .action((o) => comicGagsCmd(cwd, { ...g(), ...o }));
+  comic
+    .command('run')
+    .description(
+      'the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)',
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option(
+      '--model <name>',
+      "the author's and judges' model (default: the host's default model, as the subagent flow's 'same model class')",
+    )
+    .option(
+      '--creative',
+      'experimental: the loop may also rewrite a flat joke or weak script',
+    )
+    .action(async (o) => comicRunCmd(cwd, { ...g(), ...o }));
   comic
     .command('check')
     .description('check comic.json before any art is made')
@@ -751,6 +775,8 @@ export function buildProgram(cwd: string = process.cwd()): {
       !(UPDATE_CHANNELS as readonly string[]).includes(value)
     )
       throw new UserError(`updateChannel is ${UPDATE_CHANNELS.join(' or ')}.`);
+    if (key === 'comicCredit' && !['true', 'false'].includes(value))
+      throw new UserError('comicCredit is true or false.');
     const c = setUserConfig(
       key as keyof Config,
       key === 'comic'
@@ -821,7 +847,10 @@ export const EFFECTS: Record<string, { effects: string[]; when?: string }> = {
   },
   'comic art': { effects: ['sends-data', 'may-cost'] },
   images: { effects: ['sends-data', 'may-cost'], when: 'with --approve or --test' },
-  'review run': { effects: ['sends-data', 'may-cost'] },
+  'review run': {
+    effects: ['may-cost'],
+    when: "starts reviewers on the host's own agent (claude -p on Claude Code, codex exec on Codex); the review packet is the only input",
+  },
   update: { effects: ['installs'] },
   setup: { effects: ['installs'] },
   'hook install': { effects: ['installs'] },

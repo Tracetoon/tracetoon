@@ -45,7 +45,19 @@ import { emit, UserError, type OutOpts } from './output.ts';
 
 const STATE = 'comic-loop.json';
 type Pending = { target: IssueTarget; kind: Candidate['kind'] };
-type State = LoopState & { pendingRevision?: Pending; agents?: Record<string, string> };
+/** How a judge was started, when Tracetoon started it (`tracetoon comic run`), like a review pass's provenance. */
+export interface JudgeProvenance {
+  source: 'tracetoon-run';
+  runner: 'claude-print' | 'codex-exec';
+  sessionId: string;
+  /** The model the judge's session ran on, as its process reports it; null when unverified. */
+  verifiedModel: string | null;
+}
+type State = LoopState & {
+  pendingRevision?: Pending;
+  agents?: Record<string, string>;
+  provenance?: Record<string, JudgeProvenance>;
+};
 
 export function loadLoop(run: Run): State | undefined {
   return readJson<State>(run, STATE);
@@ -385,6 +397,17 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
     { imported: opts.task, used: s.used },
     () => `Imported ${opts.task}. Next: tracetoon comic loop --run ${run.id}`,
   );
+}
+
+/**
+ * Record how an imported judge was started (`tracetoon comic run`): its real
+ * session id is already its agent id; this adds the runner and the verified model.
+ */
+export function recordJudgeProvenance(run: Run, task: string, p: JudgeProvenance): void {
+  const s = loadLoop(run);
+  if (!s || s.agents?.[task] !== p.sessionId) return;
+  (s.provenance ??= {})[task] = p;
+  saveLoop(run, s);
 }
 
 /** Whether the script passes the active contract (no checkScript errors). */

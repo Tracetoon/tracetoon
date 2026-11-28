@@ -1,5 +1,5 @@
 /** Resolve shared source from a locked checkout, never a mutable sibling repo. */
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -39,11 +39,11 @@ function git(args: string[], cwd = root): string {
   return result.stdout.trim();
 }
 /** A linked worktree reuses the main checkout's pinned copy as a local clone source. */
-function mainCheckoutSource(): string | undefined {
+function mainCheckoutSource(base: string): string | undefined {
   try {
-    const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir']);
+    const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], base);
     const candidate = join(dirname(common), '.tracetoon-deps', 'Showtail');
-    return resolve(candidate) !== resolve(root, '.tracetoon-deps', 'Showtail') &&
+    return resolve(candidate) !== resolve(base, '.tracetoon-deps', 'Showtail') &&
       existsSync(join(candidate, '.git'))
       ? candidate
       : undefined;
@@ -51,38 +51,66 @@ function mainCheckoutSource(): string | undefined {
     return undefined;
   }
 }
-export function prepareDependencies(source?: string) {
-  const lock = JSON.parse(readFileSync(join(root, 'build-dependencies.json'), 'utf8'));
+function hasCommit(revision: string, cwd: string): boolean {
+  try {
+    git(['cat-file', '-e', `${revision}^{commit}`], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+/**
+ * Check out the pinned Showtail source under `<base>/.tracetoon-deps/Showtail`.
+ * `source` (or, in a linked worktree, the main checkout's copy) is only a fast
+ * local clone source: it may predate the pin, so a missing pinned commit is
+ * fetched from the locked repository. A clone that fails is removed, so the
+ * next run starts over instead of finding a half-made checkout.
+ */
+export function prepareDependencies(source?: string, base = root) {
+  const lock = JSON.parse(readFileSync(join(base, 'build-dependencies.json'), 'utf8'));
   if (
     lock.schema !== 'tracetoon.build-dependencies/v1' ||
     !/^[a-f0-9]{40}$/.test(lock.showtail?.revision) ||
     !/^[a-f0-9]{40}$/.test(lock.showtail?.packageTree)
   )
     throw new Error('Invalid build dependency lock.');
-  const target = join(root, '.tracetoon-deps', 'Showtail');
+  const target = join(base, '.tracetoon-deps', 'Showtail');
   if (!existsSync(target)) {
-    mkdirSync(join(root, '.tracetoon-deps'), { recursive: true });
-    git([
-      'clone',
-      '--quiet',
-      '--no-checkout',
-      '--no-hardlinks',
-      source ?? mainCheckoutSource() ?? lock.showtail.repository,
-      target,
-    ]);
-    git(['config', 'core.autocrlf', 'false'], target);
-    git(['sparse-checkout', 'set', 'packages/agent-traces'], target);
-    git(
-      [
-        '-c',
-        'core.autocrlf=false',
-        'checkout',
-        '--quiet',
-        '--detach',
-        lock.showtail.revision,
-      ],
-      target,
-    );
+    mkdirSync(join(base, '.tracetoon-deps'), { recursive: true });
+    try {
+      git(
+        [
+          'clone',
+          '--quiet',
+          '--no-checkout',
+          '--no-hardlinks',
+          source ?? mainCheckoutSource(base) ?? lock.showtail.repository,
+          target,
+        ],
+        base,
+      );
+      if (!hasCommit(lock.showtail.revision, target))
+        git(
+          ['fetch', '--quiet', lock.showtail.repository, lock.showtail.revision],
+          target,
+        );
+      git(['config', 'core.autocrlf', 'false'], target);
+      git(['sparse-checkout', 'set', 'packages/agent-traces'], target);
+      git(
+        [
+          '-c',
+          'core.autocrlf=false',
+          'checkout',
+          '--quiet',
+          '--detach',
+          lock.showtail.revision,
+        ],
+        target,
+      );
+    } catch (error) {
+      rmSync(target, { recursive: true, force: true });
+      throw error;
+    }
   }
   // Keep dependency bytes stable across developer machines and release hosts.
   if (git(['config', '--get', 'core.autocrlf'], target) !== 'false')

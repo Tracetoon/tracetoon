@@ -20,7 +20,7 @@ Shared facts:
   - **Follows the house rules.** It reads the repository's PR template, contribution guide and AI-disclosure policy and writes to them.
   - **Works with your agents.** Claude Code, Codex, Antigravity, Factory Droid, Copilot, Cursor, OpenCode, Kilo CLI, Kiro, Cline, Junie, Devin, Goose, Qwen Code and Crush, as an agent skill, a CLI or an MCP server.
   - **A comic on top.** An optional one-off comic about the change, which reviewers actually read.
-- **Results:** On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred the descriptions from Tracetoon's evidence graph to its earlier multi-agent workflow 79 to 38 on Codex and 60 to 21 on Claude Code, at 70% and 43% lower cost per PR. (https://tracetoon.ai/evidence-graph-61.html)
+- **Results:** On 61 real pull requests from 12 repositories, AI judges who agreed on a winner preferred Tracetoon's PR descriptions to the same agent writing the PR alone 72 to 9 on Claude Code (Opus 5.5) and 111 to 19 on Codex (Sol 6.1), with half the factual errors on Opus, at 28% and 73% lower cost per PR in a long session. (https://tracetoon.ai/vs-native.html)
 - **Repository:** https://github.com/Tracetoon/tracetoon (plugin packages on the `plugins` branch: https://github.com/Tracetoon/tracetoon/tree/plugins)
 - **Website:** https://tracetoon.ai
 - **Licence:** Apache-2.0
@@ -31,7 +31,7 @@ Shared facts:
 
 Catalogs that review plugins get a text-only package from the `plugins` branch:
 Markdown, JSON, a PNG icon and the licence, running the npm runtime at the
-release's exact version (`npx -y tracetoon@1.0.0-rc.46`). The release workflow
+release's exact version (`npx -y tracetoon@1.0.0-rc.51`). The release workflow
 publishes that branch, and tags it `plugins/v<version>`, once npm serves the
 version. Each package's README.md and REVIEW.md say what runs, what it reads,
 writes and sends, and how to check it.

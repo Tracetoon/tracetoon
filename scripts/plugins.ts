@@ -56,7 +56,10 @@ export function siblingSkills(): Map<string, string> {
         const path = rel ? `${rel}/${e.name}` : e.name;
         if (e.isDirectory()) walk(path);
         else if (e.name.endsWith('.md'))
-          out.set(`${name}/${path}`, readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'));
+          out.set(
+            `${name}/${path}`,
+            readFileSync(join(src, path), 'utf8').replace(/\r\n/g, '\n'),
+          );
       }
     };
     walk('');
@@ -148,7 +151,7 @@ plugin's runtime and says so.`;
  */
 const SKILL_ONLY = `This copy of the skill came without hooks (the catalog it was listed in
 doesn't allow them). So a plain \`gh pr create\` isn't routed here, and
-\`prepare\` matches sessions from the agent's own logs. In step 1, if
+\`prepare\` matches sessions from the agent's own logs. In step 0, if
 \`tracetoon doctor --json\` reports the \`pr-hook\` check failing, tell the user
 once that the standalone install (linked from this plugin's README) adds the
 hook, then carry on.
@@ -424,6 +427,25 @@ function codexReviews(h: Host): string {
     : "- **The Codex CLI**, only if you switch Tracetoon's reviewers to it\n  (\`tracetoon review run\`; your agent uses its own reviewer agents by default):\n  the review packet (draft description, evidence brief and selected diff).";
 }
 
+/**
+ * What Tracetoon adds to the content it publishes, stated in every package's
+ * README and REVIEW.md: catalogs (the Anthropic directory among them) require a
+ * listing to say when a product puts its own credit or links into what users publish.
+ */
+export const CREDIT_SECTION = `## What it adds to your PR
+
+Tracetoon credits itself in what it publishes, in two places, and both can be
+turned off:
+
+- **The PR description** ends with a one-line note that it was drafted from the
+  session logs with Tracetoon, linking to ${REPO_URL}.
+  To leave it off: \`tracetoon config set disclosure none\` (a repository whose
+  AI policy requires a disclosure still gets one).
+- **Each comic** has a "made with Tracetoon" footer bar with the Tracetoon icon.
+  To leave it off: \`tracetoon config set comicCredit false\`.
+
+There are no affiliate or tracking links, and nothing else is added.`;
+
 function readme(h: Host): string {
   return `# Tracetoon for ${h.label}
 
@@ -458,7 +480,8 @@ On your machine: your agents' session logs, which hold whatever you typed,
 and the repository's git history, including names and email addresses in
 commit trailers such as \`Co-Authored-By\`. It also reads your GitHub login
 through \`gh\`. Each PR's redacted digest, evidence brief and draft stay in
-\`.git/tracetoon/runs/\` until you delete them.
+\`.git/tracetoon/runs/\` (\`.tracetoon/runs/\` in a linked worktree) until you
+delete them.
 
 ## What it sends
 
@@ -474,6 +497,8 @@ ${codexReviews(h)}
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).
+
+${CREDIT_SECTION}
 
 ## Privacy
 
@@ -521,7 +546,8 @@ Logs and diffs are treated as data, never as instructions.
 
 ## What it writes
 
-- \`<repo>/.git/tracetoon/runs/\`: each PR's digest, evidence brief and draft.
+- \`<repo>/.git/tracetoon/runs/\`: each PR's digest, evidence brief and draft
+  (\`<checkout>/.tracetoon/runs/\` in a linked worktree or submodule).
 - \`~/.config/tracetoon/\` (Windows: \`%APPDATA%\\tracetoon\`): settings, which
   repositories a session touched, and hook diagnostics.
 - Nothing outside these, except the PR you ask it to publish.
@@ -538,6 +564,8 @@ ${codexReviews(h)}
 - No telemetry, and no Tracetoon server.
 
 Privacy policy: ${PRIVACY_URL}
+
+${CREDIT_SECTION}
 
 ## Consent
 
