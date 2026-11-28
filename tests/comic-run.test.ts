@@ -90,16 +90,24 @@ describe('tracetoon comic run', () => {
       expect(existsSync(join(runDir, 'comic-design.json'))).toBe(true);
       const runnerId = runner === 'claude' ? 'claude-print' : 'codex-exec';
       const model = runner === 'claude' ? 'claude-haiku-5-5' : 'gpt-6.1';
-      // The author's first script failed comic check; the same session fixed it.
+      // The author's first script failed comic check; the same session fixed it. Then the loop asked
+      // for an independent second draft: a fresh author session, never a resumed one.
       const authors = r.json.agents.filter((a: any) => a.role === 'author');
-      expect(authors.length).toBe(2);
+      // Each draft's first script fails here (FAKE_COMIC_AUTHOR_FIRST=bad), so each takes one correction.
+      expect(authors.length).toBe(4);
       const correction = calls().find((c) => c.prompt.includes('found these problems'))!;
       expect(correction.args).toContain(runner === 'claude' ? '--resume' : 'resume');
       expect(correction.args).toContain(authors[0].sessionId);
+      expect(authors[2].sessionId).not.toBe(authors[0].sessionId);
+      expect(authors[2].sessionId).not.toBe(authors[1].sessionId);
+      const authorCalls = calls().filter((c) => !c.prompt.includes('found these problems') && c.prompt.includes('(The packet files sit in'));
+      expect(authorCalls.length).toBe(2);
+      for (const c of authorCalls) expect(c.args).not.toContain(runner === 'claude' ? '--resume' : 'resume');
       // Each judge was imported with its real session id and verified model.
       const loop = JSON.parse(readFileSync(join(runDir, 'comic-loop.json'), 'utf8'));
       const tasks = Object.keys(loop.provenance);
-      expect(tasks).toEqual(expect.arrayContaining(['observe:c1', 'phone:c1', 'check:c1']));
+      // No phone stage: comics are drawn for a desktop PR; every image gets the misread review first.
+      expect(tasks).toEqual(expect.arrayContaining(['misread:c1', 'observe:c1', 'check:c1']));
       for (const t of tasks) {
         expect(loop.provenance[t]).toMatchObject({
           source: 'tracetoon-run',

@@ -1,6 +1,7 @@
 /**
  * Images for the comic judge: the finished page at the widths readers see it
- * (760 CSS px in a PR, 360 on a phone), and edited copies for judge controls.
+ * (760 CSS px in a narrow PR column, 1000 on a wide desktop screen), and
+ * edited copies for judge controls.
  * Pure SVG through resvg, so no native image library is needed.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -8,7 +9,7 @@ import { join } from 'node:path';
 import { esc, imageSize } from './compose.ts';
 import { svgToPng } from './raster.ts';
 
-export const VIEWPORTS = [760, 360] as const;
+export const VIEWPORTS = [760, 1000] as const;
 
 function dataUri(data: Uint8Array): string {
   const b = Buffer.from(data);
@@ -27,7 +28,7 @@ function frame(data: Uint8Array, extra = ''): { svg: string; w: number; h: numbe
   };
 }
 
-/** Write `<name>-760.png` and `<name>-360.png` next to each other; returns their paths. */
+/** Write `<name>-760.png` and `<name>-1000.png` next to each other; returns their paths. */
 export async function writeRenditions(image: string, dir: string, name: string) {
   const data = new Uint8Array(readFileSync(image));
   const { svg } = frame(data);

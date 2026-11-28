@@ -189,8 +189,8 @@ negative controls. Have a drafter write candidates from each scenario.json;
 draw and render explicitly through an approved image route. Preparation never
 requests images, moves the latest task, or overwrites candidate scripts.
 Run `bun scripts/eval-comics.ts blind` for image-only review, then `gallery` to
-compare with facts, reader probes and schematic geometry proofs at PR/phone
-widths. Optional scenario ids after any command select a subset. Record actual
+compare with facts, reader probes and schematic geometry proofs at PR
+width. Optional scenario ids after any command select a subset. Record actual
 observations, inference, payoff and factual fidelity separately; structural
 tests and reader probes are not automated humor scores. Artifacts stay in .git/.
 

@@ -1,0 +1,1127 @@
+[
+ {
+  "id": "hero-summoning-ceremony",
+  "name": "Hero-summoning ceremony",
+  "what": "A kingdom or goddess performs a ritual that pulls ordinary modern people into the fantasy world and declares them heroes to fight the Demon Lord.",
+  "cues": [
+   "glowing magic circle on a stone floor",
+   "robed priests or mages ringed around it",
+   "a crowned king or princess on a dais welcoming them",
+   "confused people in modern clothes standing in the centre"
+  ],
+  "jokeHandles": [
+   "the summoners read a job description and benefits package at the newcomers",
+   "the circle grabs the wrong person (or furniture) along with the hero",
+   "the royals clearly have an ulterior motive written all over their faces",
+   "the ritual is re-run and the same tired hero appears again"
+  ],
+  "series": [
+   "The Rising of the Shield Hero",
+   "Failure Frame",
+   "Isekai Cheat Magician",
+   "How a Realist Hero Rebuilt the Kingdom",
+   "The Saint's Magic Power Is Omnipotent",
+   "Campfire Cooking in Another World with My Absurd Skill"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/The_Rising_of_the_Shield_Hero",
+   "https://en.wikipedia.org/wiki/Failure_Frame",
+   "https://en.wikipedia.org/wiki/Isekai_Cheat_Magician",
+   "https://en.wikipedia.org/wiki/How_a_Realist_Hero_Rebuilt_the_Kingdom",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "summoning royal",
+   "court mage",
+   "newly summoned hero"
+  ]
+ },
+ {
+  "id": "whole-class-summoned",
+  "name": "The whole class is summoned",
+  "what": "An entire high-school class (sometimes with the teacher) is transported together, each student receiving a class and powers.",
+  "cues": [
+   "a classroom with desks dissolving into light",
+   "a crowd of students in matching uniforms in a magic circle",
+   "students comparing glowing status panels",
+   "one student standing apart, ignored"
+  ],
+  "jokeHandles": [
+   "everyone gets legendary jobs except the one quiet kid",
+   "the class immediately splits into the same cliques it had at school",
+   "the teacher tries to take attendance in the throne room"
+  ],
+  "series": [
+   "Arifureta: From Commonplace to World's Strongest",
+   "Failure Frame",
+   "Loner Life in Another World",
+   "So I'm a Spider, So What?",
+   "Summoned to Another World for a Second Time"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Arifureta:_From_Commonplace_to_World%27s_Strongest",
+   "https://en.wikipedia.org/wiki/Failure_Frame",
+   "https://en.wikipedia.org/wiki/Loner_Life_in_Another_World",
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F"
+  ],
+  "suits": [
+   "summoned classmates",
+   "the outcast student"
+  ]
+ },
+ {
+  "id": "caught-up-in-the-summoning",
+  "name": "Caught up in someone else's summoning",
+  "what": "A bystander standing next to the real hero gets pulled in by accident and is promptly ignored by the court.",
+  "cues": [
+   "a tired office worker with a briefcase at the edge of the magic circle",
+   "the court crowding around a different, sparkling young hero",
+   "a prince with his back turned to the bystander",
+   "the bystander quietly holding a shopping bag"
+  ],
+  "jokeHandles": [
+   "the extra turns out to be the one actually doing the work",
+   "the court can't decide what to do with the spare and hands them a small stipend to leave",
+   "the bystander's 'useless' skill solves everything offscreen"
+  ],
+  "series": [
+   "Campfire Cooking in Another World with My Absurd Skill",
+   "The Saint's Magic Power Is Omnipotent",
+   "I Was Caught Up in a Hero Summoning, But That World Is at Peace",
+   "Tsukimichi: Moonlit Fantasy"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
+   "https://en.wikipedia.org/wiki/The_Saint%27s_Magic_Power_Is_Omnipotent",
+   "https://en.wikipedia.org/wiki/Tsukimichi:_Moonlit_Fantasy"
+  ],
+  "suits": [
+   "bystander",
+   "overlooked salaryman"
+  ]
+ },
+ {
+  "id": "summoning-backfires",
+  "name": "The summoning goes wrong",
+  "what": "A summoner expecting a mighty creature or obedient servant gets something else entirely: an ordinary human, the wrong person, or a being who turns the binding spell back on them.",
+  "cues": [
+   "a nervous young summoner with a staff and a smoking circle",
+   "a puff of smoke revealing an unimpressed figure",
+   "onlookers who summoned dragons and griffins in the background",
+   "a reflected binding spell (collar or rune) landing on the summoner"
+  ],
+  "jokeHandles": [
+   "everyone else summoned a dragon; you summoned an intern",
+   "the binding contract applies in the wrong direction",
+   "the summoned creature asks about the working hours first"
+  ],
+  "series": [
+   "The Familiar of Zero",
+   "How Not to Summon a Demon Lord",
+   "The Saint's Magic Power Is Omnipotent",
+   "Campfire Cooking in Another World with My Absurd Skill"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/The_Familiar_of_Zero",
+   "https://en.wikipedia.org/wiki/How_Not_to_Summon_a_Demon_Lord",
+   "https://allthetropes.org/wiki/Trapped_in_Another_World"
+  ],
+  "suits": [
+   "summoner",
+   "summoned familiar"
+  ]
+ },
+ {
+  "id": "judged-worthless-and-dumped",
+  "name": "Judged worthless and thrown away",
+  "what": "After the summoning, a goddess or king inspects the newcomer, judges their rank or looks worthless, and banishes them to a wasteland or deadly dungeon, where they become the strongest.",
+  "cues": [
+   "a haughty goddess or king pointing at a trapdoor or portal",
+   "a low-rank letter (E) glowing over the hero's head",
+   "classmates looking away",
+   "a deadly forest or bottomless dungeon pit below"
+  ],
+  "jokeHandles": [
+   "the discarded one becomes the most powerful thing in the world",
+   "the rejection is stamped like a failed review",
+   "the banisher later comes crawling back for help"
+  ],
+  "series": [
+   "Failure Frame",
+   "Tsukimichi: Moonlit Fantasy",
+   "Chillin' in Another World with Level 2 Super Cheat Powers",
+   "Arifureta: From Commonplace to World's Strongest"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Failure_Frame",
+   "https://en.wikipedia.org/wiki/Tsukimichi:_Moonlit_Fantasy",
+   "https://en.wikipedia.org/wiki/Chillin'_in_Another_World_with_Level_2_Super_Cheat_Powers"
+  ],
+  "suits": [
+   "arrogant goddess",
+   "rejected hero"
+  ]
+ },
+ {
+  "id": "truck-kun",
+  "name": "Truck-kun",
+  "what": "The protagonist is killed by a speeding truck (often while saving someone) and wakes up in another world; the truck itself became a fan meme as the genre's gatekeeper.",
+  "cues": [
+   "a large delivery truck with blinding headlights",
+   "a person shoving a child out of the way",
+   "a screech of brakes drawn as motion lines",
+   "a faint fantasy landscape glowing in the headlights"
+  ],
+  "jokeHandles": [
+   "the truck has a punch card for people it has delivered to other worlds",
+   "people line up in the road hoping to be hit",
+   "the truck driver is the busiest summoner in the genre",
+   "the truck brakes in time and the protagonist is disappointed"
+  ],
+  "series": [
+   "Mushoku Tensei: Jobless Reincarnation",
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "Uncle from Another World",
+   "Accomplishments of the Duke's Daughter",
+   "Reincarnated as a Sword"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Isekai",
+   "https://en.wikipedia.org/wiki/Mushoku_Tensei",
+   "https://en.wikipedia.org/wiki/Didn%27t_I_Say_to_Make_My_Abilities_Average_in_the_Next_Life%3F!",
+   "https://en.wikipedia.org/wiki/Uncle_from_Another_World",
+   "https://kmanga.kodansha.com/blog/?p=1536"
+  ],
+  "suits": [
+   "doomed commuter",
+   "delivery truck"
+  ]
+ },
+ {
+  "id": "death-by-overwork",
+  "name": "Died of overwork, reborn to rest",
+  "what": "An exhausted office worker or programmer dies at the desk (or dozes off) and wakes in a fantasy world vowing never to work that hard again.",
+  "cues": [
+   "a desk buried in papers and energy-drink cans",
+   "a slumped worker under a glowing monitor at night",
+   "the same person waking in a sunny meadow",
+   "a calendar with every day crossed out"
+  ],
+  "jokeHandles": [
+   "the new world also has deadlines",
+   "the hero immediately builds a stricter office in the fantasy world",
+   "the deity offers a cheat and the hero asks for a day off instead"
+  ],
+  "series": [
+   "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+   "Death March to the Parallel World Rhapsody",
+   "My Unique Skill Makes Me OP Even at Level 1"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/I%27ve_Been_Killing_Slimes_for_300_Years_and_Maxed_Out_My_Level",
+   "https://en.wikipedia.org/wiki/Death_March_to_the_Parallel_World_Rhapsody",
+   "https://en.wikipedia.org/wiki/My_Unique_Skill_Makes_Me_OP_Even_at_Level_1"
+  ],
+  "suits": [
+   "burnt-out programmer",
+   "office worker"
+  ]
+ },
+ {
+  "id": "deity-in-the-white-void",
+  "name": "Meeting the deity in the void",
+  "what": "After dying, the protagonist meets a god or goddess in a blank space between worlds who explains the reincarnation (sometimes apologising for killing them by mistake).",
+  "cues": [
+   "an endless white or starry void",
+   "a goddess or old god on a throne or floating chair",
+   "the newly dead person in their last outfit",
+   "a glowing doorway to the new world"
+  ],
+  "jokeHandles": [
+   "the deity admits the death was a clerical error",
+   "the deity reads the hero's life like a terrible performance review",
+   "the deity is clearly on their lunch break",
+   "the 'orientation' is a slideshow"
+  ],
+  "series": [
+   "KonoSuba",
+   "In Another World with My Smartphone",
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "The Saga of Tanya the Evil",
+   "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+   "Farming Life in Another World"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/KonoSuba",
+   "https://en.wikipedia.org/wiki/In_Another_World_with_My_Smartphone",
+   "https://en.wikipedia.org/wiki/The_Saga_of_Tanya_the_Evil",
+   "https://www.nippon.com/en/articles/-/16096"
+  ],
+  "suits": [
+   "deity",
+   "newly dead hero"
+  ]
+ },
+ {
+  "id": "cheat-handout",
+  "name": "Picking the cheat",
+  "what": "Before arriving, the protagonist is handed or chooses one special power or item from the deity (a catalogue, a list of skills, a wish), which defines the whole story.",
+  "cues": [
+   "a catalogue or floating cards of glowing skills",
+   "a deity holding out a gift",
+   "classmates grabbing skills from a buffet-like spread",
+   "one leftover pile at the end"
+  ],
+  "jokeHandles": [
+   "arrives late and gets every skill nobody wanted",
+   "picks something absurd (a phone, a farming tool, the deity themself)",
+   "skill points blown on the one useless option",
+   "the 'cheat' is just standard equipment everyone else forgot to ask for"
+  ],
+  "series": [
+   "Loner Life in Another World",
+   "KonoSuba",
+   "In Another World with My Smartphone",
+   "Farming Life in Another World",
+   "So I'm a Spider, So What?"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Loner_Life_in_Another_World",
+   "https://en.wikipedia.org/wiki/KonoSuba",
+   "https://en.wikipedia.org/wiki/In_Another_World_with_My_Smartphone",
+   "https://en.wikipedia.org/wiki/Farming_Life_in_Another_World",
+   "https://allthetropes.org/wiki/Alternate_Realm_Boon",
+   "https://tvtropes.org/pmwiki/pmwiki.php/Main/NewLifeInAnotherworldBonus"
+  ],
+  "suits": [
+   "deity",
+   "latecomer"
+  ]
+ },
+ {
+  "id": "wish-for-ordinary-backfires",
+  "name": "I asked to be ordinary",
+  "what": "The hero wishes to be average or to live a normal life, and the wish is granted by a scale that makes them absurdly powerful.",
+  "cues": [
+   "a hero holding up a small 'average' sign",
+   "a deity nodding while pointing at a huge dragon as the benchmark",
+   "a gauge marked 'average' far off the top of the chart",
+   "onlookers gaping at a casual spell"
+  ],
+  "jokeHandles": [
+   "'average' measured against the strongest monster alive",
+   "the hero keeps insisting they're normal while the wall behind them is gone",
+   "the wish was taken too literally by a bureaucratic deity"
+  ],
+  "series": [
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "The Greatest Demon Lord Is Reborn as a Typical Nobody",
+   "Chillin' in Another World with Level 2 Super Cheat Powers"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Didn%27t_I_Say_to_Make_My_Abilities_Average_in_the_Next_Life%3F!",
+   "https://en.wikipedia.org/wiki/The_Greatest_Demon_Lord_Is_Reborn_as_a_Typical_Nobody",
+   "https://en.wikipedia.org/wiki/Chillin'_in_Another_World_with_Level_2_Super_Cheat_Powers"
+  ],
+  "suits": [
+   "overpowered protagonist",
+   "literal-minded deity"
+  ]
+ },
+ {
+  "id": "status-window",
+  "name": "Status window",
+  "what": "A floating game-style panel shows a character's level, stats, skills and notifications, and characters can open it with a word or gesture.",
+  "cues": [
+   "a translucent blue rectangular panel floating in the air",
+   "rows of stat names with numbers (STR, MAG, LUK)",
+   "a character tapping or reading the panel",
+   "small notification pop-ups at the edge"
+  ],
+  "jokeHandles": [
+   "the panel shows a stat nobody wants to see",
+   "the window can't be closed and blocks the view",
+   "notifications pile up during a fight",
+   "someone reads another person's window out loud"
+  ],
+  "series": [
+   "Death March to the Parallel World Rhapsody",
+   "Sword Art Online",
+   "The Rising of the Shield Hero",
+   "Solo Leveling",
+   "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+   "The Exiled Heavy Knight Knows How to Game the System"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Death_March_to_the_Parallel_World_Rhapsody",
+   "https://www.cbr.com/5-annoying-interesting-good-isekai-anime-tropes/",
+   "https://kmanga.kodansha.com/blog/?p=1536",
+   "https://myanimelist.net/stacks/1789",
+   "https://en.wikipedia.org/wiki/Solo_Leveling"
+  ],
+  "suits": [
+   "overpowered protagonist",
+   "adventurer"
+  ]
+ },
+ {
+  "id": "absurdly-high-stats",
+  "name": "Overpowered stats",
+  "what": "The protagonist's stats are off the scale: hundreds of levels in one fight, infinity symbols, or numbers so large the system overflows.",
+  "cues": [
+   "a status panel full of infinity symbols or question marks",
+   "a level counter jumping from 1 to a huge number",
+   "a stat bar running off the edge of the panel",
+   "stunned onlookers reading over the hero's shoulder"
+  ],
+  "jokeHandles": [
+   "the display overflows and shows level 1",
+   "one beginner's attack wipes out an army and the level skyrockets",
+   "the numbers are too long to fit on the card",
+   "everyone assumes it's a typo"
+  ],
+  "series": [
+   "Death March to the Parallel World Rhapsody",
+   "Chillin' in Another World with Level 2 Super Cheat Powers",
+   "Tsukimichi: Moonlit Fantasy",
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+   "Cautious Hero: The Hero Is Overpowered but Overly Cautious"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Death_March_to_the_Parallel_World_Rhapsody",
+   "https://en.wikipedia.org/wiki/Chillin'_in_Another_World_with_Level_2_Super_Cheat_Powers",
+   "https://en.wikipedia.org/wiki/Tsukimichi:_Moonlit_Fantasy",
+   "https://en.wikipedia.org/wiki/Cautious_Hero:_The_Hero_Is_Overpowered_but_Overly_Cautious",
+   "https://www.cbr.com/5-annoying-interesting-good-isekai-anime-tropes/"
+  ],
+  "suits": [
+   "overpowered protagonist"
+  ]
+ },
+ {
+  "id": "lopsided-stat",
+  "name": "One absurd stat",
+  "what": "A character's stats are wildly lopsided: everything at rock bottom except one stat at maximum, or a stat that is hopeless in exactly the area you'd expect.",
+  "cues": [
+   "a stat chart with one bar towering and the rest flat",
+   "a character in heavy armour who can't move",
+   "a status card with a single huge number",
+   "party members squinting at the card"
+  ],
+  "jokeHandles": [
+   "the divine being has the lowest intelligence in the party",
+   "every point dumped into defence, so nothing can hurt them and they can't hit anything",
+   "level stuck at 1 but the loot luck is maxed",
+   "the hero's only high stat is luck"
+  ],
+  "series": [
+   "KonoSuba",
+   "Bofuri: I Don't Want to Get Hurt, so I'll Max Out My Defense",
+   "My Unique Skill Makes Me OP Even at Level 1",
+   "The Rising of the Shield Hero"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/List_of_KonoSuba_characters",
+   "https://en.wikipedia.org/wiki/Bofuri",
+   "https://en.wikipedia.org/wiki/My_Unique_Skill_Makes_Me_OP_Even_at_Level_1",
+   "https://en.wikipedia.org/wiki/The_Rising_of_the_Shield_Hero"
+  ],
+  "suits": [
+   "useless divine companion",
+   "tank",
+   "lucky novice"
+  ]
+ },
+ {
+  "id": "aptitude-measurement",
+  "name": "The aptitude crystal",
+  "what": "At guild registration or an academy entrance test, a crystal ball, orb or magic stone measures the newcomer's power, and the reading shocks everyone.",
+  "cues": [
+   "a crystal orb on a velvet cushion at a counter",
+   "a hand placed on the orb, which glows blindingly",
+   "a stunned receptionist or examiner",
+   "cracks running through the crystal"
+  ],
+  "jokeHandles": [
+   "the crystal cracks or explodes at the touch",
+   "the reading is too high to be believed and they ask to measure again",
+   "the result is the lowest ever recorded",
+   "the hero holds back and still breaks it"
+  ],
+  "series": [
+   "Isekai Cheat Magician",
+   "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+   "In Another World with My Smartphone",
+   "Failure Frame",
+   "KonoSuba"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Isekai_Cheat_Magician",
+   "https://en.wikipedia.org/wiki/I%27ve_Been_Killing_Slimes_for_300_Years_and_Maxed_Out_My_Level",
+   "https://isekai-smartphone.fandom.com/wiki/Web_Novel_Chapter_8",
+   "https://en.wikipedia.org/wiki/List_of_KonoSuba_characters"
+  ],
+  "suits": [
+   "guild receptionist",
+   "academy examiner",
+   "overpowered protagonist"
+  ]
+ },
+ {
+  "id": "appraisal-skill",
+  "name": "Appraisal",
+  "what": "An appraisal skill or appraiser reads hidden information about people, monsters and items, shown as floating text labels.",
+  "cues": [
+   "a character with one glowing eye or a monocle",
+   "floating info labels over a monster or item",
+   "a shop counter with an appraiser and a magnifying lens",
+   "a hidden stat revealed in bold"
+  ],
+  "jokeHandles": [
+   "appraising someone reveals an embarrassing title",
+   "the appraisal text is longer than the fight",
+   "an item labelled 'legendary' turns out to be junk (or the reverse)",
+   "appraisal used on oneself gives a bad review"
+  ],
+  "series": [
+   "So I'm a Spider, So What?",
+   "The Strongest Job Is Apparently Not a Hero or a Sage, but an Appraiser (Provisional)!",
+   "As a Reincarnated Aristocrat, I'll Use My Appraisal Skill to Rise in the World",
+   "Campfire Cooking in Another World with My Absurd Skill"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F",
+   "https://en.wikipedia.org/wiki/The_Strongest_Job_Is_Apparently_Not_a_Hero_or_a_Sage,_but_an_Appraiser_(Provisional)!",
+   "https://en.wikipedia.org/wiki/Isekai",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill"
+  ],
+  "suits": [
+   "appraiser",
+   "merchant",
+   "reviewer"
+  ]
+ },
+ {
+  "id": "useless-skill-secretly-op",
+  "name": "The 'useless' skill",
+  "what": "The hero gets a skill everyone mocks as worthless (fruit-growing, animal contracts, status effects, a shopping app) and it turns out to be the strongest.",
+  "cues": [
+   "a skill label stamped 'TRASH' or 'useless'",
+   "mocking party members or nobles",
+   "the same plain skill later flattening a giant monster",
+   "a humble tool glowing with power"
+  ],
+  "jokeHandles": [
+   "the joke skill one-shots the final boss",
+   "the mockers ask to borrow it later",
+   "the hero keeps quiet about it to avoid being drafted"
+  ],
+  "series": [
+   "Bogus Skill \"Fruitmaster\"",
+   "Failure Frame",
+   "Beast Tamer",
+   "Campfire Cooking in Another World with My Absurd Skill"
+  ],
+  "sources": [
+   "https://kmanga.kodansha.com/blog/?p=1536",
+   "https://en.wikipedia.org/wiki/Failure_Frame",
+   "https://en.wikipedia.org/wiki/Beast_Tamer",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill"
+  ],
+  "suits": [
+   "underrated support",
+   "mocked newcomer"
+  ]
+ },
+ {
+  "id": "system-voice",
+  "name": "The system voice",
+  "what": "A disembodied voice or system message announces level-ups, new skills and quests directly into the protagonist's head.",
+  "cues": [
+   "a text box hovering over the hero's head",
+   "a speech bubble with no speaker",
+   "a 'LEVEL UP!' banner with sparkles",
+   "the hero looking up at the sky in annoyance"
+  ],
+  "jokeHandles": [
+   "the announcement arrives mid-conversation and won't stop",
+   "the voice narrates every small thing",
+   "the hero files a complaint with the system and it answers",
+   "daily quests demand push-ups"
+  ],
+  "series": [
+   "That Time I Got Reincarnated as a Slime",
+   "So I'm a Spider, So What?",
+   "Solo Leveling",
+   "Death March to the Parallel World Rhapsody"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/That_Time_I_Got_Reincarnated_as_a_Slime",
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F",
+   "https://en.wikipedia.org/wiki/Solo_Leveling",
+   "https://en.wikipedia.org/wiki/Death_March_to_the_Parallel_World_Rhapsody"
+  ],
+  "suits": [
+   "system administrator",
+   "narrator"
+  ]
+ },
+ {
+  "id": "guild-receptionist",
+  "name": "The guild receptionist",
+  "what": "A cheerful, unflappable receptionist at the adventurers' guild counter registers newcomers, hands out quests and reacts to their outrageous results.",
+  "cues": [
+   "a wooden counter with a quest board behind it",
+   "a smiling receptionist in a neat uniform",
+   "stacks of paperwork and stamps",
+   "rough adventurers queueing"
+  ],
+  "jokeHandles": [
+   "the receptionist's smile freezes at the reading",
+   "the receptionist secretly outranks every adventurer",
+   "overtime: the receptionist does the dungeon herself to clear the backlog",
+   "the newcomer's paperwork is rejected for a missing field"
+  ],
+  "series": [
+   "KonoSuba",
+   "Goblin Slayer",
+   "I May Be a Guild Receptionist, but I'll Solo Any Boss to Clock Out on Time",
+   "Is It Wrong to Try to Pick Up Girls in a Dungeon?"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/List_of_KonoSuba_characters",
+   "https://en.wikipedia.org/wiki/Goblin_Slayer",
+   "https://myanimelist.net/stacks/1789"
+  ],
+  "suits": [
+   "guild receptionist",
+   "release manager"
+  ]
+ },
+ {
+  "id": "adventurer-ranks",
+  "name": "Adventurer ranks",
+  "what": "Adventurers are graded by letter or metal tiers (F up to S, or porcelain up to platinum) shown on a card or tag, and a newcomer starting at the bottom is a fixture.",
+  "cues": [
+   "a guild card or metal tag with a big letter grade",
+   "a rank chart on the guild wall",
+   "a veteran sneering at a lowest-rank tag",
+   "a newcomer's card glowing with an unheard-of rank"
+  ],
+  "jokeHandles": [
+   "the lowest-rank newbie casually beats an S-rank",
+   "rank-up paperwork takes longer than the quest",
+   "an E-rank turns out to be the only one who can do the job"
+  ],
+  "series": [
+   "Goblin Slayer",
+   "Solo Leveling",
+   "Failure Frame",
+   "Isekai Cheat Magician"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Goblin_Slayer",
+   "https://en.wikipedia.org/wiki/Solo_Leveling",
+   "https://en.wikipedia.org/wiki/Failure_Frame",
+   "https://en.wikipedia.org/wiki/Isekai_Cheat_Magician"
+  ],
+  "suits": [
+   "rookie adventurer",
+   "veteran"
+  ]
+ },
+ {
+  "id": "banished-from-the-party",
+  "name": "Banished from the hero's party",
+  "what": "The hero's party kicks out a support member as dead weight, only to collapse without the invisible work that member was doing.",
+  "cues": [
+   "a party leader pointing at the door",
+   "a support character holding a small bag at a tavern table",
+   "the party later struggling against a weak monster",
+   "the exile running a cosy shop in the countryside"
+  ],
+  "jokeHandles": [
+   "the party falls apart the day after the support leaves",
+   "the exile's quiet work was holding everything up",
+   "the party sends a 'please come back' letter",
+   "the banished member was the only one keeping the inventory sorted"
+  ],
+  "series": [
+   "Banished from the Hero's Party",
+   "Beast Tamer",
+   "Backstabbed in a Backwater Dungeon",
+   "The Rising of the Shield Hero",
+   "Arifureta: From Commonplace to World's Strongest"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Banished_from_the_Hero%27s_Party",
+   "https://en.wikipedia.org/wiki/Beast_Tamer",
+   "https://kmanga.kodansha.com/blog/?p=1536",
+   "https://myanimelist.net/stacks/67319"
+  ],
+  "suits": [
+   "support member",
+   "arrogant party leader"
+  ]
+ },
+ {
+  "id": "reincarnated-as-non-human",
+  "name": "Reincarnated as a thing",
+  "what": "The protagonist is reborn not as a human but as a monster or object (a slime, a spider, a goblin, a sword, a vending machine) and makes the most of it.",
+  "cues": [
+   "a cute blob, small spider or vending machine with a thinking bubble",
+   "a modern person's memory shown in the thought bubble",
+   "adventurers puzzled by an intelligent object",
+   "the object expressing emotion through lights or text"
+  ],
+  "jokeHandles": [
+   "the vending machine can only say its stock phrases",
+   "the weakest monster becomes the ruler of a nation",
+   "the sword gives advice nobody can hear"
+  ],
+  "series": [
+   "That Time I Got Reincarnated as a Slime",
+   "So I'm a Spider, So What?",
+   "Reborn as a Vending Machine, I Now Wander the Dungeon",
+   "Reincarnated as a Sword",
+   "Re:Monster"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/That_Time_I_Got_Reincarnated_as_a_Slime",
+   "https://en.wikipedia.org/wiki/Reborn_as_a_Vending_Machine,_I_Now_Wander_the_Dungeon",
+   "https://en.wikipedia.org/wiki/Reincarnated_as_a_Sword",
+   "https://en.wikipedia.org/wiki/Re:Monster",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "monster protagonist",
+   "sentient object"
+  ]
+ },
+ {
+  "id": "evolution-menu",
+  "name": "Monster evolution",
+  "what": "A monster protagonist eats, absorbs or levels up until it can evolve into a bigger, stronger form, often picking from a menu of branches.",
+  "cues": [
+   "a branching evolution tree with silhouettes",
+   "a small creature glowing in a cocoon of light",
+   "a before-and-after of the creature",
+   "a menu with several evolution options"
+  ],
+  "jokeHandles": [
+   "every evolution branch has a terrible drawback",
+   "the creature evolves into something less useful",
+   "the evolution menu won't let you go back",
+   "it absorbs the wrong thing and evolves in a silly direction"
+  ],
+  "series": [
+   "So I'm a Spider, So What?",
+   "Re:Monster",
+   "Reincarnated as a Sword",
+   "That Time I Got Reincarnated as a Slime"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F",
+   "https://en.wikipedia.org/wiki/Re:Monster",
+   "https://en.wikipedia.org/wiki/Reincarnated_as_a_Sword"
+  ],
+  "suits": [
+   "monster protagonist"
+  ]
+ },
+ {
+  "id": "reborn-as-a-baby",
+  "name": "Adult mind in a baby",
+  "what": "The protagonist is reborn as an infant with full adult memories and becomes a child prodigy, reading books and casting spells while still in the crib.",
+  "cues": [
+   "a baby in a crib reading a thick spellbook",
+   "astonished parents in the doorway",
+   "an adult-sized thought bubble over the baby",
+   "a toddler casting a spell"
+  ],
+  "jokeHandles": [
+   "the baby's inner monologue is a jaded office worker",
+   "the prodigy has to pretend to learn things they already know",
+   "the infant is calmer than every adult in the room"
+  ],
+  "series": [
+   "Mushoku Tensei: Jobless Reincarnation",
+   "The Saga of Tanya the Evil",
+   "Wise Man's Grandchild",
+   "Ascendance of a Bookworm"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Mushoku_Tensei",
+   "https://en.wikipedia.org/wiki/The_Saga_of_Tanya_the_Evil",
+   "https://en.wikipedia.org/wiki/Wise_Man%27s_Grandchild",
+   "https://en.wikipedia.org/wiki/Ascendance_of_a_Bookworm"
+  ],
+  "suits": [
+   "child prodigy"
+  ]
+ },
+ {
+  "id": "did-i-overdo-it",
+  "name": "Did I do something?",
+  "what": "The overpowered hero, lacking common sense, casually does something world-shattering and innocently asks if they did something wrong.",
+  "cues": [
+   "a smoking crater where a training target used to be",
+   "an innocent hero scratching their head",
+   "examiners or classmates with jaws dropped",
+   "a teacher face-palming"
+  ],
+  "jokeHandles": [
+   "'was that too much?' while the building collapses",
+   "the hero apologises for a tiny mistake while ignoring the giant one",
+   "the mentor forgot to teach common sense",
+   "everyone else's results look tiny beside the hero's"
+  ],
+  "series": [
+   "Wise Man's Grandchild",
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "The Greatest Demon Lord Is Reborn as a Typical Nobody",
+   "The Misfit of Demon King Academy"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Wise_Man%27s_Grandchild",
+   "https://en.wikipedia.org/wiki/The_Greatest_Demon_Lord_Is_Reborn_as_a_Typical_Nobody",
+   "https://en.wikipedia.org/wiki/The_Misfit_of_Demon_King_Academy",
+   "https://en.wikipedia.org/wiki/Didn%27t_I_Say_to_Make_My_Abilities_Average_in_the_Next_Life%3F!"
+  ],
+  "suits": [
+   "overpowered protagonist",
+   "academy examiner"
+  ]
+ },
+ {
+  "id": "trapped-in-the-game",
+  "name": "The logout button is gone",
+  "what": "Players in a virtual-reality MMO discover they can't log out and are trapped in the game world, which has become real.",
+  "cues": [
+   "a VR headset",
+   "a game menu with an empty slot where 'Log Out' should be",
+   "a crowd of avatars in a town square looking up",
+   "a giant announcement in the sky"
+  ],
+  "jokeHandles": [
+   "the logout button is greyed out",
+   "the game master announces the servers won't shut down",
+   "players file bug reports to a world that's now real",
+   "someone keeps clicking where the button used to be"
+  ],
+  "series": [
+   "Sword Art Online",
+   "Overlord",
+   "Log Horizon",
+   ".hack//Sign",
+   "How Not to Summon a Demon Lord"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Sword_Art_Online",
+   "https://en.wikipedia.org/wiki/Overlord_(novel_series)",
+   "https://en.wikipedia.org/wiki/Log_Horizon",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "trapped player",
+   "game master"
+  ]
+ },
+ {
+  "id": "modern-gadget-still-works",
+  "name": "My gadget still works here",
+  "what": "An item from modern Earth (a smartphone, an online-shopping app, a vending machine's stock) keeps working in the fantasy world and outclasses local magic.",
+  "cues": [
+   "a smartphone glowing in a medieval tavern",
+   "a delivery box appearing out of thin air",
+   "locals staring at a screen",
+   "a magic circle charging the phone"
+  ],
+  "jokeHandles": [
+   "full signal in a dungeon, none at home",
+   "an app notification interrupts a solemn ceremony",
+   "the battery is the real final boss",
+   "the locals think the phone is a holy relic"
+  ],
+  "series": [
+   "In Another World with My Smartphone",
+   "Campfire Cooking in Another World with My Absurd Skill",
+   "Reborn as a Vending Machine, I Now Wander the Dungeon",
+   "GATE"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/In_Another_World_with_My_Smartphone",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "tech-savvy hero"
+  ]
+ },
+ {
+  "id": "modern-knowledge-cheat",
+  "name": "Modern know-how wows the natives",
+  "what": "The hero uses everyday Earth knowledge (paper-making, printing, cooking, economics, seasonings) and it is treated as revolutionary in the fantasy world.",
+  "cues": [
+   "a medieval crowd marvelling at a simple invention",
+   "a hero lecturing at a chalkboard with diagrams",
+   "a feast of modern food in a rustic tavern",
+   "a printing press or ledger in a castle"
+  ],
+  "jokeHandles": [
+   "basic seasoning is treated as a miracle",
+   "the hero introduces spreadsheets and the court weeps",
+   "a simple board game becomes a national craze",
+   "the king abdicates after seeing a budget plan"
+  ],
+  "series": [
+   "Ascendance of a Bookworm",
+   "How a Realist Hero Rebuilt the Kingdom",
+   "Restaurant to Another World",
+   "Campfire Cooking in Another World with My Absurd Skill"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Ascendance_of_a_Bookworm",
+   "https://en.wikipedia.org/wiki/How_a_Realist_Hero_Rebuilt_the_Kingdom",
+   "https://en.wikipedia.org/wiki/Isekai",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "engineer hero",
+   "advisor"
+  ]
+ },
+ {
+  "id": "item-box",
+  "name": "The item box",
+  "what": "The hero has a bottomless inventory that stores anything, pulled out of thin air.",
+  "cues": [
+   "a shimmering rift in the air with a hand reaching in",
+   "an absurdly large object coming out of a tiny space",
+   "a cluttered inventory grid",
+   "onlookers stunned at a whole wagon vanishing"
+  ],
+  "jokeHandles": [
+   "the inventory is full of junk nobody cleaned out",
+   "the hero stores an unwanted crown to avoid dealing with it",
+   "pulling out the wrong item at the critical moment",
+   "sorting the inventory takes all day"
+  ],
+  "series": [
+   "Death March to the Parallel World Rhapsody",
+   "Campfire Cooking in Another World with My Absurd Skill",
+   "I Will Live Freely in Another World with Equipment Manufacturing Cheat"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Death_March_to_the_Parallel_World_Rhapsody",
+   "https://en.wikipedia.org/wiki/Campfire_Cooking_in_Another_World_with_My_Absurd_Skill",
+   "https://myanimelist.net/stacks/1789"
+  ],
+  "suits": [
+   "porter",
+   "overpowered protagonist"
+  ]
+ },
+ {
+  "id": "slow-life",
+  "name": "Slow life in the countryside",
+  "what": "The overpowered hero retires from adventuring to farm, run a shop or live quietly, but trouble keeps coming to the door.",
+  "cues": [
+   "a cosy cottage with vegetable fields",
+   "a hero in an apron or straw hat holding a hoe",
+   "a sword hung on the wall",
+   "a dragon or adventurer knocking at the gate"
+  ],
+  "jokeHandles": [
+   "the quiet life keeps getting interrupted by world-ending threats",
+   "the farming tool is more powerful than any sword",
+   "the retired hero is still the strongest in the world"
+  ],
+  "series": [
+   "Banished from the Hero's Party",
+   "I've Been Killing Slimes for 300 Years and Maxed Out My Level",
+   "Farming Life in Another World",
+   "Chillin' in Another World with Level 2 Super Cheat Powers",
+   "Slow Life in Another World (I Wish!)"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Banished_from_the_Hero%27s_Party",
+   "https://en.wikipedia.org/wiki/I%27ve_Been_Killing_Slimes_for_300_Years_and_Maxed_Out_My_Level",
+   "https://en.wikipedia.org/wiki/Farming_Life_in_Another_World",
+   "https://www.nippon.com/en/articles/-/16096"
+  ],
+  "suits": [
+   "retired hero",
+   "shopkeeper"
+  ]
+ },
+ {
+  "id": "villainess-broken-engagement",
+  "name": "The villainess and the broken engagement",
+  "what": "A woman realises she has been reborn as the doomed villainess of an otome game, often at the moment the prince publicly breaks off their engagement at a ball, and sets out to dodge her bad ending.",
+  "cues": [
+   "a grand ballroom with chandeliers",
+   "a prince pointing accusingly at a noblewoman in a gown",
+   "a crowd of nobles whispering behind fans",
+   "floating 'doom flags' or a route chart"
+  ],
+  "jokeHandles": [
+   "she has memorised every bad ending and avoids each one",
+   "the public denunciation is read from a long scroll of charges",
+   "the villainess calmly produces receipts disproving everything",
+   "the prince's case collapses under questioning"
+  ],
+  "series": [
+   "My Next Life as a Villainess: All Routes Lead to Doom!",
+   "I'm the Villainess, So I'm Taming the Final Boss",
+   "Accomplishments of the Duke's Daughter",
+   "May I Ask for One Final Thing?"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/My_Next_Life_as_a_Villainess:_All_Routes_Lead_to_Doom!",
+   "https://en.wikipedia.org/wiki/I%27m_the_Villainess,_So_I%27m_Taming_the_Final_Boss",
+   "https://en.wikipedia.org/wiki/Accomplishments_of_the_Duke%27s_Daughter",
+   "https://en.wikipedia.org/wiki/May_I_Ask_for_One_Final_Thing%3F",
+   "https://www.nippon.com/en/articles/-/16096"
+  ],
+  "suits": [
+   "villainess",
+   "accusing prince"
+  ]
+ },
+ {
+  "id": "the-demon-lord",
+  "name": "The Demon Lord",
+  "what": "The world's great enemy is the Demon Lord on a dark throne, the hero's whole mission, who is often reasonable, reborn, or working an ordinary job instead.",
+  "cues": [
+   "a horned figure on a dark throne",
+   "a gloomy castle with lightning",
+   "minions bowing",
+   "the same figure in a fast-food uniform"
+  ],
+  "jokeHandles": [
+   "the Demon Lord is the most competent manager in the story",
+   "the Demon Lord ends up in a part-time job",
+   "the hero and the Demon Lord work at the same counter",
+   "the Demon Lord is reborn and wants to be ordinary"
+  ],
+  "series": [
+   "The Devil Is a Part-Timer!",
+   "How Not to Summon a Demon Lord",
+   "The Greatest Demon Lord Is Reborn as a Typical Nobody",
+   "The Misfit of Demon King Academy",
+   "Cautious Hero: The Hero Is Overpowered but Overly Cautious"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/The_Devil_Is_a_Part-Timer!",
+   "https://en.wikipedia.org/wiki/How_Not_to_Summon_a_Demon_Lord",
+   "https://en.wikipedia.org/wiki/The_Greatest_Demon_Lord_Is_Reborn_as_a_Typical_Nobody",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "demon lord",
+   "final boss"
+  ]
+ },
+ {
+  "id": "crossing-back",
+  "name": "Back from the other world",
+  "what": "Heroes come home to modern Earth after years away (or fantasy beings land in modern Japan), or a former hero is summoned back to the same world again.",
+  "cues": [
+   "a hero in fantasy armour on a modern city street",
+   "a family staring at someone casting magic in a small apartment",
+   "a portal opening in a convenience store",
+   "a returning hero in the same summoning circle, looking weary"
+  ],
+  "jokeHandles": [
+   "the returnee's knowledge is decades out of date",
+   "the re-summoned hero knows exactly where the treasure is hidden",
+   "magic used to make videos for ad revenue",
+   "the hero is summoned again just as they unpack"
+  ],
+  "series": [
+   "Uncle from Another World",
+   "Summoned to Another World for a Second Time",
+   "The Devil Is a Part-Timer!",
+   "GATE"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Uncle_from_Another_World",
+   "https://en.wikipedia.org/wiki/Summoned_to_Another_World_for_a_Second_Time",
+   "https://en.wikipedia.org/wiki/The_Devil_Is_a_Part-Timer!",
+   "https://en.wikipedia.org/wiki/Isekai"
+  ],
+  "suits": [
+   "returnee hero",
+   "re-summoned veteran"
+  ]
+ },
+ {
+  "id": "dungeon-descent",
+  "name": "Dungeon delving",
+  "what": "Adventurers descend a vast underground dungeon floor by floor; falling or being dropped to its depths is a classic turning point.",
+  "cues": [
+   "a stone stairwell spiralling down",
+   "a floor number carved on the wall",
+   "glowing eyes in the dark",
+   "a lone figure at the bottom of a deep pit"
+  ],
+  "jokeHandles": [
+   "the floor counter keeps going down",
+   "the hero emerges from the bottom stronger than anyone above",
+   "a cheerful shop waiting on the deepest floor",
+   "the dungeon has a map nobody updated"
+  ],
+  "series": [
+   "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+   "Arifureta: From Commonplace to World's Strongest",
+   "So I'm a Spider, So What?",
+   "Reborn as a Vending Machine, I Now Wander the Dungeon",
+   "Failure Frame"
+  ],
+  "sources": [
+   "https://en.wikipedia.org/wiki/Is_It_Wrong_to_Try_to_Pick_Up_Girls_in_a_Dungeon%3F",
+   "https://en.wikipedia.org/wiki/Arifureta:_From_Commonplace_to_World%27s_Strongest",
+   "https://en.wikipedia.org/wiki/So_I%27m_a_Spider,_So_What%3F",
+   "https://en.wikipedia.org/wiki/Failure_Frame"
+  ],
+  "suits": [
+   "adventurer",
+   "dungeon explorer"
+  ]
+ },
+ {
+  "id": "absurdly-long-title",
+  "name": "The sentence-long title",
+  "what": "Light-novel titles are whole run-on sentences summarising the premise, and fans recognise the format instantly.",
+  "cues": [
+   "a book cover whose title text fills the entire cover",
+   "tiny art squeezed into a corner",
+   "a shelf of spines with paragraph-length titles",
+   "a reader running out of breath reading it aloud"
+  ],
+  "jokeHandles": [
+   "the title already spoils the ending",
+   "the title is longer than the content",
+   "the title is a complete summary of the change",
+   "the cover has no room left for art"
+  ],
+  "series": [
+   "Didn't I Say to Make My Abilities Average in the Next Life?!",
+   "That Time I Got Reincarnated as a Slime",
+   "High School Prodigies Have It Easy Even in Another World",
+   "Do You Love Your Mom and Her Two-Hit Multi-Target Attacks?",
+   "Banished from the Hero's Party, I Decided to Live a Quiet Life in the Countryside"
+  ],
+  "sources": [
+   "https://www.cbr.com/5-annoying-interesting-good-isekai-anime-tropes/",
+   "https://en.wikipedia.org/wiki/Isekai",
+   "https://2d4chan.org/wiki/Isekai"
+  ],
+  "suits": [
+   "author",
+   "pull request title"
+  ]
+ }
+]

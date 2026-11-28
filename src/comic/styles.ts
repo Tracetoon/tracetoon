@@ -222,6 +222,17 @@ export const STYLES: Style[] = [
       'classic comic lettering in balloons, parchment caption boxes, carved-rune signs in the scene',
   },
   {
+    id: 'anime-fantasy',
+    name: 'Fantasy anime',
+    family: 'manga',
+    prompt:
+      'full-color fantasy anime, clean cel shading, cinematic composition, expressive anime faces and comic reactions, restrained glow that never competes with the lettering',
+    palettes: ['full-color'],
+    moods: ['fantasy', 'isekai', 'quest', 'cozy', 'level up', 'anime-fantasy'],
+    lettering:
+      'clean anime-style balloons, glowing fantasy status windows as captions, hand-drawn sound effects in the art',
+  },
+  {
     id: 'pixel-16bit',
     name: 'Pixel comic',
     family: 'webcomic',
@@ -330,7 +341,7 @@ export function styleText(style: string): string {
 export function styleLettering(style: string): string {
   return (
     styleById(style)?.lettering ??
-    'hand-lettered comic text in speech balloons and caption boxes that suits the art, easy to read at phone size'
+    'hand-lettered comic text in speech balloons and caption boxes that suits the art, easy to read at pull-request width'
   );
 }
 

@@ -1,10 +1,14 @@
 /** Shared art direction. Legacy v2 scripts intentionally retain their old defaults. */
 import { createHash } from 'node:crypto';
 import { formatById } from './formats.ts';
+import { describeSignature, gridLayout, gridPanels, panelsIn, parseSignature, SIGNATURES } from './grid.ts';
 import { STYLES } from './styles.ts';
 import { genreKey } from './genres.ts';
 import {
+  ACTION_FAMILIES,
+  DIRECTIONS,
   LAYOUT_FAMILIES,
+  MOTIONS,
   type Aspect,
   type ComicScript,
   type ComicSummary,
@@ -117,6 +121,66 @@ export function resolveComposition(
         },
       ];
       break;
+    case 'slanted': {
+      // Rows of two split by a diagonal gutter that leans the other way on
+      // each row, like an action page; an odd count opens with a wide panel.
+      const rowsOf: number[] = n % 2 ? [1, ...Array((n - 1) / 2).fill(2)] : Array(n / 2).fill(2);
+      const rh = (1 - gap * (rowsOf.length - 1)) / rowsOf.length;
+      frames = [];
+      rowsOf.forEach((count, r) => {
+        const y = r * (rh + gap);
+        if (count === 1) {
+          frames.push({ ...frame(0.025, y, 0.95, rh), textBox: { x: 0.03, y: 0.05, w: 0.94, h: 0.3 } });
+          return;
+        }
+        const lean = r % 2 === 0;
+        const t = lean ? 0.62 : 0.4;
+        const b = lean ? 0.4 : 0.62;
+        const g = 0.03;
+        frames.push({
+          ...frame(0.025, y, 0.95, rh),
+          clip: [[0, 0], [t, 0], [b, 1], [0, 1]],
+          textBox: { x: 0.03, y: 0.05, w: Math.min(t, b) - 0.06, h: 0.34 },
+        });
+        frames.push({
+          ...frame(0.025, y, 0.95, rh),
+          clip: [[t + g, 0], [1, 0], [1, 1], [b + g, 1]],
+          textBox: { x: Math.max(t, b) + g + 0.03, y: 0.05, w: 1 - (Math.max(t, b) + g) - 0.06, h: 0.34 },
+        });
+      });
+      break;
+    }
+    case 'splash': {
+      // One full-page scene with small inset panels overlapping its lower edge.
+      const insets = n - 1;
+      const w = 0.27;
+      frames = [{ ...frame(0.025, 0, 0.95, 1), textBox: { x: 0.03, y: 0.03, w: 0.6, h: 0.3 } }];
+      for (let i = 0; i < insets; i++)
+        frames.push({ ...frame(0.975 - 0.02 - (i + 1) * w - i * 0.02, 0.68, w, 0.28), inset: true });
+      break;
+    }
+    case 'staggered': {
+      // A broken grid: rows of two with uneven widths that swap sides.
+      const rowsOf: number[] = n % 2 ? [...Array((n - 1) / 2).fill(2), 1] : Array(n / 2).fill(2);
+      const rh = (1 - gap * (rowsOf.length - 1)) / rowsOf.length;
+      frames = [];
+      rowsOf.forEach((count, r) => {
+        const y = r * (rh + gap);
+        if (count === 1) {
+          frames.push(frame(0.025, y, 0.95, rh));
+          return;
+        }
+        const wide = 0.95 * 0.62 - gap / 2;
+        const narrow = 0.95 - wide - gap;
+        const [w1, w2] = r % 2 === 0 ? [wide, narrow] : [narrow, wide];
+        frames.push(frame(0.025, y, w1, rh));
+        frames.push(frame(0.025 + w1 + gap, y, w2, rh));
+      });
+      break;
+    }
+    case 'grid':
+      frames = gridPanels(c.signature ?? '', script.panels.map((p) => p.motion), `${c.signature}\0${script.title ?? ''}`, top).map((g) => g.frame);
+      break;
     default:
       frames = [];
   }
@@ -147,14 +211,34 @@ export function frameAspect(script: ComicScript, index: number): Aspect {
 }
 
 const percent = (n: number) => `${Math.round(n * 1000) / 10}%`;
+/** What each family looks like on the page, in words an image model follows. */
+const FAMILY_LOOK: Partial<Record<Composition['family'], string>> = {
+  slanted: 'panels split by slanted diagonal gutters that lean the other way on each row, like a dynamic action page',
+  splash: 'one dramatic full-page splash scene with small inset panels overlapping its lower edge',
+  staggered: 'a broken grid of rows with uneven panel widths that swap sides from row to row',
+  diagonal: 'two triangular panels split by one diagonal gutter',
+  'hero-inset': 'a full-page hero scene with small inset panels down one side',
+  asymmetric: 'small setup panels above one wide, dominant payoff panel',
+  tiered: 'a wide establishing panel above a row of smaller beats',
+};
+/** A clipped frame's corners in page percentages, e.g. "(2.5%, 14%)". */
+function corners(f: PanelFrame): string {
+  return (f.clip ?? [])
+    .map(([x, y]) => `(${percent(f.x + x * f.w)}, ${percent(f.y + y * f.h)})`)
+    .join(', ');
+}
 export function compositionPrompt(script: ComicScript): string {
   const c = resolveComposition(script);
   if (!c) return '';
+  const look = c.family === 'grid' ? `a tiled page, ${c.signature}` : FAMILY_LOOK[c.family];
+  const motions = script.panels.map((p) => p.motion);
+  const grid = c.family === 'grid' ? describeSignature(c.signature ?? '', gridLayout(c.signature ?? '', motions, `${c.signature}\0${script.title ?? ''}`, c.title.mode === 'heading' ? 0.14 : 0.025, aspectRatio(pageAspect(script))), motions) : '';
   return [
-    `Composition: ${c.family}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Preserve the specified hierarchy, unequal sizes and negative space.`,
+    ...(grid ? [`Layout: ${grid}`] : []),
+    `Composition: ${c.family}${look ? ` (${look})` : ''}; exactly ${c.frames.length} scene(s), read left-to-right then top-to-bottom in the numbered story order. Keep each panel's size, shape and position as specified.`,
     ...c.frames.map(
       (f, i) =>
-        `Frame ${i + 1}: left ${percent(f.x)}, top ${percent(f.y)}, width ${percent(f.w)}, height ${percent(f.h)}; ${f.clip ? `polygon clipping points ${JSON.stringify(f.clip)}` : 'rectangular'}; ${f.border === 'none' ? 'borderless' : 'visible frame border'}.`,
+        `Frame ${i + 1}: left ${percent(f.x)}, top ${percent(f.y)}, width ${percent(f.w)}, height ${percent(f.h)}; ${f.clip ? `a slanted, non-rectangular panel with corners at ${corners(f)} on the page` : 'rectangular'}${f.inset ? ', drawn as an inset panel on top of the larger scene' : ''}; ${f.border === 'none' ? 'borderless, bleeding into its neighbours' : 'visible frame border'}${f.breakout ? '; the main figure or effect bursts out over this panel\'s border' : ''}.`,
     ),
     c.title.mode === 'none'
       ? 'No visible title or headline. Start with the art; do not reserve a title banner.'
@@ -216,6 +300,23 @@ function presetFamily(style: string): StyleFamily | undefined {
     LEGACY_STYLE_GROUPS.find(([, ids]) => ids.includes(style))?.[0]
   );
 }
+/** Up to six distinct lowercased names, each at most 40 characters. */
+export function castNames(names: unknown[]): string[] {
+  return [
+    ...new Set(
+      names
+        .filter((n): n is string => typeof n === 'string' && !!n.trim())
+        .map((n) => n.trim().toLowerCase().slice(0, 40)),
+    ),
+  ].slice(0, 6);
+}
+/** Characters in a lead look: a few words, not a description. */
+export const MAX_LEAD_LOOK = 80;
+
+/** An isekai scenario id ("AF-M08-01") and an archetype id ("M08"), as recorded in summaries. */
+export const PITCH_ID = /^AF-[A-Z][0-9]{2}-[0-9]{2}$/;
+export const ARCHETYPE_ID = /^[A-Z][0-9]{2}$/;
+
 export function comicSummary(script: ComicScript): ComicSummary {
   const knownCast =
     Array.isArray(script.characters) && script.characters.every((c) => c.kind);
@@ -230,13 +331,29 @@ export function comicSummary(script: ComicScript): ComicSummary {
     ...(script.composition
       ? {
           layoutFamily: script.composition.family,
+          ...(script.composition.signature ? { layoutSignature: script.composition.signature } : {}),
           titleTreatment: script.composition.title.mode,
         }
       : {}),
+    ...(typeof script.setting === 'string' && /^[a-z]{2,20}$/.test(script.setting) ? { setting: script.setting } : {}),
     panelCount: script.panels.length,
     ...(knownCast
       ? { castKinds: [...new Set(script.characters.map((c) => c.kind!))].sort() }
       : {}),
+    ...(Array.isArray(script.characters) && script.characters.length
+      ? { castNames: castNames(script.characters.map((c) => c.name)) }
+      : {}),
+    ...(typeof script.leadLook === 'string' && script.leadLook.trim()
+      ? { leadLook: script.leadLook.trim().toLowerCase().slice(0, MAX_LEAD_LOOK) }
+      : {}),
+    ...(typeof script.meme === 'string' && /^[a-z0-9-]{1,80}$/.test(script.meme) ? { meme: script.meme } : {}),
+    ...(typeof script.lead?.persona === 'string' && /^[a-z0-9-]{1,80}$/i.test(script.lead.persona) ? { lead: script.lead.persona } : {}),
+    ...(typeof script.castPreset === 'string' && /^[a-z_]{1,40}$/.test(script.castPreset) ? { castPreset: script.castPreset } : {}),
+    ...(typeof script.pitch === 'string' && PITCH_ID.test(script.pitch) ? { pitch: script.pitch } : {}),
+    ...(() => {
+      const ids = (Array.isArray(script.characters) ? script.characters : []).flatMap((c) => (typeof c.archetype === 'string' && ARCHETYPE_ID.test(c.archetype) ? [c.archetype] : []));
+      return ids.length ? { archetypes: [...new Set(ids)] } : {};
+    })(),
   };
 }
 
@@ -289,6 +406,9 @@ export function validBounds(value: unknown): value is FrameBounds {
   );
 }
 
+/** Most move or impact panels on one page. */
+export const MAX_ACTION_PANELS = 2;
+
 export function compositionProblems(
   script: ComicScript,
 ): { where: string; problem: string }[] {
@@ -310,6 +430,9 @@ export function compositionProblems(
     'hero-inset': [2, 6],
     diagonal: [2, 2],
     tiered: [3, 5],
+    slanted: [3, 7],
+    splash: [2, 4],
+    staggered: [3, 6],
   };
   const range = limits[c.family];
   if (range && (script.panels.length < range[0] || script.panels.length > range[1]))
@@ -317,6 +440,13 @@ export function compositionProblems(
       'family',
       `${c.family} needs ${range[0]}–${range[1]} panels; choose another family or explicit custom geometry`,
     );
+  if (c.family === 'grid') {
+    const sig = parseSignature(c.signature ?? '');
+    if (!sig) bad('signature', `a grid needs a signature such as rows:1-2 or cols:1-3 (${Object.values(SIGNATURES).flat().length} are known)`);
+    else if (panelsIn(c.signature!) !== script.panels.length)
+      bad('signature', `${c.signature} has ${panelsIn(c.signature!)} panels; the script has ${script.panels.length}`);
+    else if (c.frames !== undefined) bad('frames', 'a grid computes its frames; leave frames out');
+  }
   if (c.family === 'custom' && !Array.isArray(c.frames))
     bad('frames', 'custom composition requires explicit frames');
   if (
@@ -336,6 +466,8 @@ export function compositionProblems(
       bad(`${at}.border`, 'must be line or none');
     if (f.inset !== undefined && typeof f.inset !== 'boolean')
       bad(`${at}.inset`, 'must be boolean');
+    if (f.breakout !== undefined && typeof f.breakout !== 'boolean')
+      bad(`${at}.breakout`, 'must be boolean');
     if (f.textBox !== undefined && !validBounds(f.textBox))
       bad(`${at}.textBox`, 'must be positive bounds within the 0–1 frame');
     if (f.clip !== undefined) {
@@ -376,6 +508,25 @@ export function compositionProblems(
     }
   });
   if (out.length) return out;
+  // At most MAX_ACTION_PANELS action beats: a page of slants and speed lines reads busy (round 16).
+  const actionCount = script.panels.filter((p) => p.motion && p.motion.kind !== 'still').length;
+  if (actionCount > MAX_ACTION_PANELS)
+    bad('frames', `${actionCount} panels are move or impact beats; keep at most ${MAX_ACTION_PANELS} (the peak of the action) and mark the rest still`);
+  // Action beats get action frames: angled, borderless or broken out, never a plain box.
+  script.panels.forEach((p, i) => {
+    const m = p.motion;
+    if (!m) return;
+    if (!MOTIONS.includes(m.kind)) bad(`frames[${i}]`, `panel ${i + 1}'s motion.kind must be ${MOTIONS.join(', ')}`);
+    if (m.direction !== undefined && !DIRECTIONS.includes(m.direction)) bad(`frames[${i}]`, `panel ${i + 1}'s motion.direction must be ${DIRECTIONS.join(', ')}`);
+    if (m.kind === 'still') return;
+    const f = resolved.frames[i]!;
+    // A grid page slants at most one gutter, beside the peak beat (grid.ts); its other action beats keep level frames.
+    if (c.family !== 'grid' && !f.clip && !f.breakout && f.border !== 'none')
+      bad(`frames[${i}]`, `panel ${i + 1} is a ${m.kind} beat in a plain rectangular frame; give it an angled (clipped) frame, a breakout or no border, or use an action layout (${ACTION_FAMILIES.join(', ')})`);
+    if (m.kind === 'impact' && !f.breakout && p.background !== 'speed-lines' && !p.effects?.includes('impact-burst'))
+      bad(`frames[${i}]`, `panel ${i + 1} is an impact: add an impact burst, speed lines or a breakout`);
+  });
+  if (out.length) return out;
   const heading = c.title.mode === 'heading' ? points(titleBox(script)!) : undefined;
   resolved.frames.forEach((f, i) => {
     const poly = points(f);
@@ -388,7 +539,8 @@ export function compositionProblems(
       const before = points(resolved.frames[j]!);
       if (!overlaps(poly, before)) continue;
       const inset =
-        (c.family === 'hero-inset' || f.inset) && poly.every((p) => inPolygon(p, before));
+        (c.family === 'hero-inset' || c.family === 'splash' || f.inset) &&
+        poly.every((p) => inPolygon(p, before));
       if (!inset)
         bad(
           `frames[${i}]`,
@@ -399,86 +551,3 @@ export function compositionProblems(
   return out;
 }
 
-// ------------------------------------------------------ phone-width fit
-
-/** The narrowest display the comic must read on: a phone, 360 CSS px wide. */
-export const PHONE_WIDTH = 360;
-
-/**
- * The frames a page will have: its composition, or for a model-lettered
- * format page without one, the layout its format describes.
- */
-function plannedFrames(script: ComicScript): PanelFrame[] | undefined {
-  const resolved = resolveComposition(script);
-  if (resolved) return resolved.frames;
-  const implied =
-    script.format === 'strip' || script.format === 'before-after'
-      ? 'sequence'
-      : undefined;
-  if (!implied) return undefined;
-  return resolveComposition({
-    ...script,
-    composition: { family: implied, title: { mode: 'heading' } },
-  })?.frames;
-}
-
-/**
- * Estimate whether each panel's lettering fits its frame at phone width
- * without shrinking below a readable size (about 11 CSS px letters, ~6 px a
- * character, ~15 px a line, half the frame for balloons; signs count 1.5x;
- * no text in frames under 120 px). An estimate for
- * planning; the rendered image is checked by the phone reader.
- */
-export function phoneFit(script: ComicScript) {
-  const frames = plannedFrames(script);
-  if (!frames) return [];
-  const pageH = PHONE_WIDTH / aspectRatio(pageAspect(script));
-  return frames.map((f, i) => {
-    const widthPx = Math.round(f.w * PHONE_WIDTH);
-    const heightPx = f.h * pageH;
-    const perLine = Math.max(1, Math.floor((widthPx * 0.85) / 6.2));
-    const lines = Math.max(1, Math.floor((heightPx * 0.5) / 15));
-    // Signs and labels are drawn into the art, usually smaller than balloons.
-    const chars = Math.round(
-      (script.panels[i]?.dialogue ?? []).reduce(
-        (n, d) => n + d.text.length * (d.kind === 'sign' || d.kind === 'label' ? 1.5 : 1),
-        0,
-      ),
-    );
-    const capacity = perLine * lines;
-    // A frame under ~120 px can't carry readable text on a phone at all.
-    const fits = chars <= capacity && !(widthPx < 120 && chars > 0);
-    return { panel: i + 1, widthPx, chars, capacity, fits };
-  });
-}
-
-/**
- * Reflow instead of shrinking: when a panel's text can't fit at phone width,
- * the same script with a layout whose frames are wide enough. Only geometry
- * changes (composition, aspect); wording, cast and style stay. Undefined when
- * the current layout already fits (or can't be estimated).
- */
-export function phoneLayout(script: ComicScript): ComicScript | undefined {
-  const fit = phoneFit(script);
-  if (!fit.length || fit.every((f) => f.fits)) return undefined;
-  const n = script.panels.length;
-  const order: Composition['family'][] =
-    n >= 4 ? ['asymmetric', 'vertical'] : ['vertical', 'asymmetric'];
-  let fallback: ComicScript | undefined;
-  for (const family of order) {
-    if (family === script.composition?.family) continue;
-    const next: ComicScript = {
-      ...script,
-      composition: {
-        family,
-        title: { mode: script.composition?.title.mode ?? 'heading' },
-      },
-      aspect: family === 'vertical' ? '3:4' : '4:3',
-    };
-    delete next.layout;
-    if (compositionProblems(next).length) continue;
-    fallback ??= next;
-    if (phoneFit(next).every((f) => f.fits)) return next;
-  }
-  return fallback;
-}

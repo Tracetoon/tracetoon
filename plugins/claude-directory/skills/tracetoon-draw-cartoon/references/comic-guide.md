@@ -48,7 +48,12 @@ sees. Then work backwards to the setup that makes it land.
 Shapes that work for developer comics (tools, not quotas):
 - **Escalation**: each panel raises the stakes of something small.
 - **Rule of three**: two normal beats, the third breaks the pattern.
-- **Deadpan last panel**: chaos, then one calm line that undercuts it.
+- **Deadpan last panel**: chaos, then one calm line that undercuts it. One
+  option among many; don't default to it.
+- **Action climax**: the change is the turning point of a chase, a battle or
+  a rescue, drawn at full speed.
+- **Slapstick**: the fix, the bug or the tool causes a physical pratfall.
+- **Epic reveal**: a huge, dramatic splash for something small and real.
 - **Literalism**: a tool takes an instruction exactly at its word.
 - **Misdirection and reveal**: the reader assumes one thing; the last panel
   shows the real reason.
@@ -117,7 +122,7 @@ Pick in this order:
 
 Before drawing, check continuity:
 - the same characters and props in every panel;
-- the clue the joke depends on is drawn big enough to see at phone size;
+- the clue the joke depends on is drawn big enough to read at PR width;
 - reactions match what happens (nobody cheers at a failure unless that is the
   joke);
 - synopsis, scenes, dialogue and alt text tell the same story.
@@ -138,12 +143,27 @@ suits one strong visual gag with a line of dialogue or a caption.
 
 Vary the page. Panels need not be equal boxes:
 - a wide establishing panel over quick beats;
-- a tall vertical scroll with a pause before the payoff;
-- a manga page with slanted panels leading into one big reaction;
-- a hero panel with insets;
-- a borderless moment.
+- a tall panel beside a stack of smaller ones;
+- uneven widths and heights, with the payoff given the most room;
+- slanted gutters beside action beats, leaning the way things move;
+- a figure bursting over its panel's border.
+
+Panels always fill the page edge to edge: no empty areas, and no panels
+overlaid on top of another panel.
 
 Give the payoff the most space when it is visual.
+
+**Use the medium.** A comic can do what a captioned illustration can't:
+- show motion and force with speed lines, impact bursts and focus lines
+  (`effects`);
+- shape how a line sounds with its balloon: a spiky `shout`, an explosive
+  `burst`, a dashed `whisper`, a jagged `radio` for comms and machines;
+- make sounds visible with sound effects (`kind: "sfx"`, `size` small, big or
+  huge);
+- frame for drama: an extreme close-up on a face, a low angle on a looming
+  ship, an overhead view of the battlefield (`camera`);
+- stage action: a chase, a crash, a duel, a landing party on a strange planet.
+A page of people standing in one room talking at screens wastes the medium.
 
 | Format (`format`) | Use it when | Panels |
 |---|---|---|
@@ -159,24 +179,28 @@ Give the payoff the most space when it is visual.
 | `manual-page` | a new workflow or setup, as numbered steps | 3–6 |
 | `trading-card` | a new capability or tool, with stats and powers | 1 |
 | `before-after` | only when the contrast itself is the punchline | 2–3 |
-| `custom` | none fits; supply composition frames or describe `layout` | 1–6 |
+| `custom` | none fits; supply composition frames or describe `layout` | 1–9 |
 
-New scripts use `composition` for the actual page geometry. Its families are
-`single`, `comparison`, `sequence`, `vertical`, `asymmetric`, `tiered`,
-`hero-inset`, `diagonal` and `custom`. Presets create frames for the panel
+New scripts use `composition` for the actual page geometry. When the packet
+assigns a layout, use `grid` with its `signature` (e.g. `rows:1-2`: one wide
+panel over two; `cols:1-3`: one tall panel beside three stacked): the frames
+are computed to tile the page, and gutters beside move or impact panels
+slant. Other families are `single`, `comparison`, `sequence`, `vertical`,
+`asymmetric`, `tiered`, `diagonal`, `slanted` (rows split by diagonal gutters,
+3–7 panels), `staggered` (a broken grid of uneven widths, 3–6 panels) and
+`custom`; `hero-inset` and `splash` (insets over one big scene) remain only for
+older scripts. Presets create frames for the panel
 count; custom geometry supplies frames explicitly. `layout` can refine the
 intent in words, but must not contradict the geometry.
 
 A visible title is optional. Choose no visible title, an integrated title, or a
 separate heading; a visible title has at most 6 words. The page holds at most
-80 words, and most good comics use 25–60. If it doesn't read on a phone, cut.
+150 words, and most good comics use 30–90. Cut what doesn't earn a laugh.
 
-The page must read at 360 px wide, where a four-across strip leaves each panel
-about 80 px. Give text-carrying panels room instead of shrinking the words:
-keep three or four panels in one row only when they are nearly wordless,
-otherwise stack them (`vertical`) or use `asymmetric`/`tiered`, and draw signs
-big rather than lettering them small. `tracetoon comic check` warns when a
-panel's text won't fit at phone width and names a layout that does.
+The comic is read at the full width of a pull request on a desktop screen.
+Letter big enough to read there, and give a talky panel room rather than
+shrinking its words; a row of small panels works best when they are nearly
+wordless.
 
 ## 5. Style and characters
 
@@ -207,14 +231,16 @@ e.g. "red"), `duotone` or `limited`.
 personified tools, creatures, or no characters at all. Never reuse characters
 from an earlier comic or turn the agents into recurring mascots.
 
-**Archetypes yes, specific characters no.** The genre's stock characters are
-welcome: a grizzled starship captain, an eager ensign, a weary wizard, a
-hard-boiled detective, a giant monster, a pixel hero. Never reproduce a
-specific work's character or unique designs: their face or likeness,
-signature costume, insignia, ship design, catchphrase or name. Draw a
-starship captain in a generic uniform, not a particular show's captain; a
-wizard, not a particular film's wizard. `tracetoon comic check` warns when a
-well-known franchise name shows up. Give each one a look and an
+**Parody the trope, not the property.** Parody of what everyone has seen
+makes a comic land faster: the genre's stock characters (a grizzled starship
+captain, an eager ensign, a weary wizard, a hard-boiled detective, a giant
+monster, a pixel hero) and the famous works' familiar staging (a smoky
+cantina of googly-eyed aliens, an away team in color-coded stretch uniforms
+on a painted-backdrop planet, a masked dark lord in a cape, a rolling-boulder
+escape). Evoke the type and the scene. Never name the work, its characters,
+places or ships, and never reproduce a specific character's face, signature
+costume, insignia, ship design or catchphrase. `tracetoon comic check` warns
+when a well-known franchise name shows up. Give each one a look and an
 attitude, and list each once in `"characters"` with a short visual description
 (what they look like, what they wear, their colors) so every panel draws them
 the same way. Set `kind` to `human`, `creature` or `object`. Use fictional
@@ -233,7 +259,7 @@ stand-ins for developers.
   "genre": "space-opera",
   "format": "tiered-strip",
   "composition": { "family": "tiered", "title": { "mode": "none" } },
-  "designReason": "Rule of three: two polite hails ignored, then the force field; the shuttle's cheerful obliviousness carries it, and a docking bay makes a polite hail versus a hard barrier instantly readable. Tiered, not one row of three, so every screen reads on a phone.",
+  "designReason": "Rule of three: two polite hails ignored, then the force field; the shuttle's cheerful obliviousness carries it, and a docking bay makes a polite hail versus a hard barrier instantly readable. Tiered, so the force field gets the big final panel.",
   "anchor": {
     "change": "Tracetoon blocks PR creation in Kiro by exiting with status 2 and writing the reason to stderr, because Kiro ignores JSON answers.",
     "terms": ["Kiro", "stderr", "gh pr create"],
@@ -291,9 +317,9 @@ stand-ins for developers.
 
 Rules (checked by `tracetoon comic check`; warnings don't block):
 - **Size limits:**
-  - 1–6 panels and at most 6 characters per comic;
+  - 1–9 panels and at most 6 characters per comic;
   - at most 4 characters and 4 text items per panel;
-  - at most 18 words per item and 80 words per page;
+  - at most 30 words per item and 150 words per page;
   - a headline of at most 6 words.
 - **A panel's `characters` lists objects, not names:**
   `{ "name": "Ada", "position": "left", "expression": "worried", "pose": "..." }`.
@@ -312,12 +338,35 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
 
   `label` is deprecated because it draws as a pointer tag; `comic check` warns
   about it.
+- **`balloon`** (spoken lines): `speech` (the default), `shout`, `burst`,
+  `whisper`, `thought` or `radio`. **`emphasis`**: words from the line to
+  letter bold. **`size`** (sound effects only): `small`, `big` or `huge`.
+- **`camera`** (per panel): `wide`, `medium`, `close`, `extreme-close`,
+  `low-angle`, `high-angle`, `overhead`, `dutch`, `over-shoulder` or
+  `silhouette`. **`effects`** (per panel): any of `speed-lines`,
+  `impact-burst`, `focus-lines`, `motion-blur`, `emanata`, `shake`.
+- **`place`**: the one place the whole comic happens, a short decided phrase
+  ("the guild hall's quest counter"). It replaces the genre's list of
+  settings in the image prompt.
+- **`panels[].background`**: `detailed`, `soft` or `speed-lines`, decided per
+  panel.
+- **`characters[].archetype`** and **`castPreset`**: for a genre with an
+  `isekaiCast`, the archetype id each character was cast from and the cast's
+  preset id. `comic check` holds the page to the lead plus at most two
+  companions and one contact, and rejects a design that still lists options.
+- **`personas`**: when the chosen genre came with a `castOffer`, the ids
+  of the offered personas the comic casts. `comic check` rejects an id that
+  wasn't offered.
+- **`leadLook`** (optional): the lead's age, build, hair and clothes in a
+  few plain words, at most 80 characters ("wiry old man, bald, orange flight
+  suit"); never paste the cast entry's full look. `comic check`
+  warns when it matches a recent comic's lead.
 - **`genre`** (required with `composition`): a genre id from
   `context.comic.genreOptions` / [genres.md](genres.md), or a short phrase (at
   most 40 characters). It can't repeat either of the repo's last two comics
   unless `request` asks for it or the repo pins one.
 - **`request`** (optional): what the user explicitly asked for, in their words.
-  It is sent to the image model and lifts the archetypes-only default.
+  It is sent to the image model and lifts the parody-only default.
 - **`anchor`** (required with `composition`; local, never posted):
   - `change` in one sentence;
   - 1–4 `terms` the PR really uses;
@@ -337,14 +386,16 @@ Rules (checked by `tracetoon comic check`; warnings don't block):
     polygon in its own 0–1 coordinates.
   - Dialogue in a polygon frame needs a safe `textBox` in frame coordinates.
   - A deliberate inset inside another frame uses `inset: true` (the
-    `hero-inset` preset declares these itself). Other overlaps are rejected.
+    `hero-inset` and `splash` presets declare these themselves). Other
+    overlaps are rejected.
+  - `breakout: true` has a figure or effect burst over the panel's border.
 - **Legacy scripts** without `composition` keep their old rendering defaults.
 - **Never include:**
   - links, @mentions or secrets;
   - real people's names;
   - company logos;
   - unrequested copies of a specific existing cartoon, film, TV or game
-    character, insignia or ship (genre archetypes are fine).
+    character, insignia or ship (parody of genre tropes and staging is fine).
 
 ## 7. Make the art, then proofread
 
@@ -359,7 +410,7 @@ image, lettering included**, so the words look like part of the comic. Then:
      tags or pointer lines;
    - it reads as a comic, not a 3D render or illustration;
    - the actual panel count, reading order, title treatment and framing;
-   - the payoff, at PR-column and phone widths.
+   - the payoff, at PR width.
 
    A good prompt is not proof that the generated image followed it.
 3. **Diagnose before retrying.**

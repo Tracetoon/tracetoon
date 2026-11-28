@@ -134,7 +134,8 @@ export function writeJson(run: Run, file: string, data: unknown): string {
 export function readJson<T>(run: Run, file: string): T | undefined {
   const p = join(run.dir, file);
   if (!existsSync(p)) return undefined;
-  const text = readFileSync(p, 'utf8');
+  // Strip a UTF-8 byte-order mark: Windows PowerShell writes one by default.
+  const text = readFileSync(p, 'utf8').replace(/^\uFEFF/, '');
   if (file.startsWith('digest')) {
     count('evidence.reads');
     count('evidence.bytes', Buffer.byteLength(text));

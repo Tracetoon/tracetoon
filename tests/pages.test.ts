@@ -48,7 +48,7 @@ describe('page scripts', () => {
   test('panel count, headline and word limits', () => {
     const many = pageScript({
       format: 'custom',
-      panels: Array.from({ length: 7 }, () => pageScript().panels[0]!),
+      panels: Array.from({ length: 10 }, () => pageScript().panels[0]!),
     });
     expect(errors(checkScript(many)).map((p) => p.where)).toContain('panels');
     const loud = pageScript({ headline: 'one two three four five six seven' });
@@ -58,9 +58,9 @@ describe('page scripts', () => {
       speaker: 'caption',
       text: 'words that go on and on and on and on and on and on and on still',
     }));
-    wordy.panels.push(structuredClone(wordy.panels[0]!));
+    for (let i = 0; i < 3; i++) wordy.panels.push(structuredClone(wordy.panels[0]!));
     expect(
-      errors(checkScript(wordy)).some((p) => p.problem.includes('reads on a phone')),
+      errors(checkScript(wordy)).some((p) => p.problem.includes('quick to read')),
     ).toBe(true);
     expect(
       errors(checkScript(pageScript({ format: 'custom', layout: '' })))[0]!.where,
@@ -93,7 +93,7 @@ describe('page scripts', () => {
     expect(prompt).toContain('Dev: a tired developer in a hoodie, round glasses');
     expect(prompt).not.toMatch(/\bKit\b|fox|character reference/);
     expect(artPrompt(s.panels[1]!, 1, s)).toContain(
-      'Link: a cheerful glowing blue hyperlink with tiny arms, on the right',
+      'Link: a cheerful glowing blue hyperlink with tiny arms (right',
     );
     expect(transcript(s)).toContain('**Dev:** Where is this file?');
   });
@@ -142,7 +142,7 @@ describe('comic look and user requests', () => {
 
   test('an explicit user request is sent and lifts the archetypes-only rule', () => {
     const plain = pagePrompt(pageScript());
-    expect(plain).toContain('genre archetypes are fine');
+    expect(plain).toContain('genre parody of familiar character types and settings is welcome');
     expect(plain).toContain('never reproduce a specific existing film, TV, cartoon or game character');
     const asked = pageScript({ request: 'stormtroopers arguing about tabs' });
     expect(errors(checkScript(asked))).toEqual([]);

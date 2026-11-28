@@ -22,7 +22,7 @@ import {
 } from '../comic/compose.ts';
 import { FORMATS, formatById } from '../comic/formats.ts';
 import { freshStyles, styleById } from '../comic/styles.ts';
-import { genreById, type Genre } from '../comic/genres.ts';
+import { genreById, type Genre, type GenreOption } from '../comic/genres.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
 import {
   artPrompt,
@@ -60,7 +60,6 @@ import {
 import {
   artFingerprint,
   artMatches,
-  phoneLayout,
   comicSummary,
   frameAspect,
   pageAspect,
@@ -100,7 +99,7 @@ interface Loaded {
 function checkOptsFor(run: Run, root: string): CheckOpts {
   const config = loadConfig(root);
   const ctx = readJson<{
-    comic?: { recentStyles?: string[]; recentComics?: ComicSummary[] };
+    comic?: { recentStyles?: string[]; recentComics?: ComicSummary[]; genreOptions?: GenreOption[] };
   }>(run, 'context.json');
   const evidence = ['digest.json', 'changes.patch']
     .map((f) => readText(run, f))
@@ -111,6 +110,7 @@ function checkOptsFor(run: Run, root: string): CheckOpts {
     recentStyles: ctx?.comic?.recentStyles ?? [],
     recentComics: ctx?.comic?.recentComics ?? [],
     genres: genreCatalog(root),
+    ...(ctx?.comic?.genreOptions ? { genreOptions: ctx.comic.genreOptions } : {}),
     ...(evidence.length ? { evidenceText: evidence.join('\n') } : {}),
   };
 }
@@ -233,8 +233,6 @@ export interface ArtOpts extends OutOpts {
   lettering?: 'model' | 'overlay';
   /** Edit the current page with this one instruction instead of drawing from scratch. */
   repair?: string;
-  /** Same script, a layout whose panels are wide enough to read on a phone; then redraw. */
-  reflow?: boolean;
 }
 
 /** Exit code when no approved image route can draw the comic. */
@@ -302,16 +300,6 @@ export async function comicArtCmd(cwd: string, opts: ArtOpts): Promise<void> {
   const loaded = load(cwd, opts.run);
   const { run, root, genres } = loaded;
   let { script } = loaded;
-  if (opts.reflow) {
-    const next = phoneLayout(script);
-    if (!next)
-      throw new UserError(
-        'The layout already leaves every panel room on a phone; repair the lettering instead (comic art --repair).',
-      );
-    writeJson(run, 'comic.json', next);
-    script = next;
-    opts = { ...opts, force: true };
-  }
   let config = loadConfig(root);
   const provider = chooseProvider(opts.provider, config.imageConsent);
   if (provider) {

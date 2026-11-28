@@ -3,7 +3,7 @@
  * `tracetoon commands` describes it, and scripts/agent-surfaces.ts documents it.
  */
 import { homedir } from 'node:os';
-import { Command, type Option } from 'commander';
+import { Command, InvalidArgumentError, type Option } from 'commander';
 import {
   loadConfig,
   setUserConfig,
@@ -19,6 +19,7 @@ import { doctor } from './commands/doctor.ts';
 import { guidanceCheckCmd } from './commands/guidance.ts';
 import { imagesCmd } from './commands/images.ts';
 import { genreCheckCmd, genreListCmd } from './commands/genre.ts';
+import { comicGagsCmd } from './commands/comicGags.ts';
 import { comicPacketCmd } from './commands/comicPacket.ts';
 import { comicRunCmd } from './commands/comicRun.ts';
 import {
@@ -573,6 +574,17 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option('--genre <id>', 'offer only this genre (an id or a short phrase)')
     .action((o) => comicPacketCmd(cwd, { ...g(), ...o }));
   comic
+    .command('gags')
+    .description(
+      "an isekai comic's select step: check the brainstormed gags, write a fresh judge's packet, then pick the best gag",
+    )
+    .option('--run <id>', 'run id (default: latest)')
+    .option('--check', 'only check comic-gags.json')
+    .option('--file <path>', 'with --check: a gags file outside any run')
+    .option('--context <path>', "with --file: the packet's context.json")
+    .option('--evidence <paths...>', "with --file: the PR's description, brief or diff, to check the anchor's words")
+    .action((o) => comicGagsCmd(cwd, { ...g(), ...o }));
+  comic
     .command('run')
     .description(
       'the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)',
@@ -618,10 +630,6 @@ export function buildProgram(cwd: string = process.cwd()): {
       '--repair <instruction>',
       'edit the current page with this one change instead of redrawing it (from comic loop)',
     )
-    .option(
-      '--reflow',
-      'same script, a layout whose panels are wide enough to read on a phone; then redraw',
-    )
     .action((o) => comicArtCmd(cwd, { ...g(), ...o }));
   comic
     .command('reroll')
@@ -653,6 +661,15 @@ export function buildProgram(cwd: string = process.cwd()): {
     .option(
       '--creative',
       'experimental: also rewrite a flat joke or weak script automatically (off by default)',
+    )
+    .option(
+      '--drafts <n>',
+      'independent drafts by fresh authors to compare before repairs (default 2; 1 turns it off)',
+      (v: string) => {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1 || n > 3) throw new InvalidArgumentError('--drafts must be 1, 2 or 3');
+        return n;
+      },
     )
     .action((o) => comicLoopRunCmd(cwd, { ...g(), ...o }));
   comic

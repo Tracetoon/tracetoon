@@ -1,0 +1,2639 @@
+[
+ {
+  "id": "core-001",
+  "name": "The allegedly useless goddess",
+  "allusion": "An exalted party healer is treated as dead weight.",
+  "cues": [
+   "Radiant divine entrance",
+   "Ordinary task left undone",
+   "Teammate’s flat assessment"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/aqua-is-useless"
+  },
+  "suits": [
+   "M02",
+   "M30",
+   "N27",
+   "N28",
+   "P15",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-002",
+  "name": "Crying, screaming, or pouting Aqua reaction",
+  "allusion": "A spectacular teary tantrum supplies the entire reaction.",
+  "cues": [
+   "Huge wet eyes or streaming tears",
+   "Open screaming mouth or inflated pout",
+   "Tiny cause revealed beside reaction"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/crying-aqua-screaming-aqua-pouting-aqua"
+  },
+  "suits": [
+   "M02",
+   "N17",
+   "P02",
+   "P15"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-003",
+  "name": "Purification duty goes terribly",
+  "allusion": "A healer purifies water while trapped in an increasingly alarming situation.",
+  "cues": [
+   "Healer contained in a cage or protected basket",
+   "Water surrounds the enclosure",
+   "Threats visibly converge"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/aquas-purification"
+  },
+  "suits": [
+   "M02",
+   "M18",
+   "N02",
+   "N20",
+   "P15",
+   "P16"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-004",
+  "name": "One spectacular spell, then the carry home",
+  "allusion": "An artillery mage spends everything on one glorious blast.",
+  "cues": [
+   "Elaborate staff pose",
+   "Disproportionate blast",
+   "Spent caster being carried or resting"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/konosuba"
+  },
+  "suits": [
+   "M02",
+   "P17",
+   "P29",
+   "P40"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-005",
+  "name": "The grandiose self-introduction",
+  "allusion": "A tiny practical encounter receives an extravagantly formal magical introduction.",
+  "cues": [
+   "Windblown cloak or dramatic stance",
+   "Grand title lettering",
+   "Mundane listener with a short form"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/konosuba"
+  },
+  "suits": [
+   "M08",
+   "N01",
+   "N05",
+   "N25",
+   "N30",
+   "P17"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-006",
+  "name": "Smug mage reaction face",
+  "allusion": "A tightly framed, self-satisfied mage smile becomes the answer.",
+  "cues": [
+   "Close-up narrowed eyes",
+   "Small crooked satisfied smile",
+   "Minimal or absent dialogue"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/konosuba"
+  },
+  "suits": [
+   "M08",
+   "P17",
+   "P19",
+   "P24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-007",
+  "name": "Kazuma confronts his own party",
+  "allusion": "The team’s supposed leader abruptly squares up against the team.",
+  "cues": [
+   "One exasperated figure facing companions",
+   "Confrontational ready stance",
+   "Companions grouped opposite"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/kazumas-square-tf-up-thots"
+  },
+  "suits": [
+   "M02",
+   "M04",
+   "M30",
+   "P02",
+   "P12",
+   "P14",
+   "P15",
+   "P17",
+   "P21"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-008",
+  "name": "The lonely rival recruits a friend",
+  "allusion": "A supposedly imposing rival really wants someone to spend time with.",
+  "cues": [
+   "Formal challenge notice",
+   "Single hopeful applicant",
+   "Friendship or shared-meal offer underneath"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/yunyun"
+  },
+  "suits": [
+   "M26",
+   "N17",
+   "P17",
+   "P25",
+   "P27",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-009",
+  "name": "Soviet Yunyun name-pun recruiting poster",
+  "allusion": "A character’s name is folded into a Soviet Union pun.",
+  "cues": [
+   "Red propaganda-style poster",
+   "Collective recruitment slogan",
+   "Legible name pun"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/yunyun"
+  },
+  "suits": [
+   "N17",
+   "P17",
+   "P27"
+  ],
+  "requires": [
+   "name_pun_supports_collective_reading"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-010",
+  "name": "Legendary sword, ridiculous permanent name",
+  "allusion": "A treasured weapon receives a name its owner cannot take seriously.",
+  "cues": [
+   "Impressive sword on display",
+   "Childishly silly engraved name",
+   "Owner’s dismayed reaction"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://digitalcultures.net/slang/anime-manga/chunchunmaru/"
+  },
+  "suits": [
+   "M02",
+   "M04",
+   "N08",
+   "P02",
+   "P17",
+   "P22",
+   "P41"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-016",
+  "name": "Victory Man celebrates in the wrong scene",
+  "allusion": "A raised-arm victory pose appears against an obviously disastrous backdrop.",
+  "cues": [
+   "One arm triumphantly raised",
+   "Confident smile",
+   "Contradictory chaos behind the figure"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/rezero-starting-life-in-another-world"
+  },
+  "suits": [
+   "M01",
+   "M03",
+   "N17"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-018",
+  "name": "Subaru staircase aura",
+  "allusion": "An intensely composed stair ascent becomes an exaggerated display of aura.",
+  "cues": [
+   "Low-angle staircase",
+   "Figure walking upward with controlled posture",
+   "Aura or intimidating-impact caption"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/aura-monster-subaru-walking-up-stairs"
+  },
+  "suits": [
+   "M01",
+   "M03",
+   "M08",
+   "M28"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-019",
+  "name": "Overwhelmingly dramatic personalized birthday greeting",
+  "allusion": "An intimidating anime hero delivers an oddly personal birthday message.",
+  "cues": [
+   "Intense hero close-up",
+   "Tiny birthday cake or candle",
+   "Personalized birthday caption"
+  ],
+  "series": "Re:Zero fan edits",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/happy-birthday-daniel"
+  },
+  "suits": [
+   "M03",
+   "M08",
+   "M30",
+   "N06",
+   "N24",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-024",
+  "name": "Sasuga: every accident was the master plan",
+  "allusion": "Loyal followers interpret an improvisation as impossible foresight.",
+  "cues": [
+   "Impassive ruler",
+   "Reverent analytical subordinate",
+   "Private confused thought bubble"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/overlord"
+  },
+  "suits": [
+   "M08",
+   "M11",
+   "M23",
+   "P26",
+   "P28",
+   "P34"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-025",
+  "name": "Demand applause for supreme power",
+  "allusion": "A grand ruler explicitly commands appreciation for a demonstration.",
+  "cues": [
+   "Regal or imposing figure",
+   "Open commanding gesture",
+   "Overstated applause demand"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/applaud-my-supreme-power"
+  },
+  "suits": [
+   "M08",
+   "M11",
+   "N11",
+   "N17",
+   "N24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-026",
+  "name": "The fake traitor spoiler that fools newcomers",
+  "allusion": "Fans falsely insist that a famously loyal subordinate will betray the ruler.",
+  "cues": [
+   "Serious-looking spoiler notice",
+   "Extremely loyal retainer",
+   "Contradictory mundane act framed as betrayal"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/overlord"
+  },
+  "suits": [
+   "M08",
+   "M11",
+   "P26",
+   "P28",
+   "P34"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-027",
+  "name": "Splat as overwhelming repeated text",
+  "allusion": "A single impact word repeats until it overwhelms the page.",
+  "cues": [
+   "Dense repeated SPLAT lettering",
+   "Tiny observer or blank reaction panel",
+   "One simple cause for many impacts"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/subcultures/overlord"
+  },
+  "suits": [
+   "M02",
+   "M11",
+   "N30",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-033",
+  "name": "Whispered ultimate power with a huge payoff",
+  "allusion": "A nearly whispered declaration precedes an absurdly large destructive display.",
+  "cues": [
+   "Dark calm close-up",
+   "Tiny I am atomic speech lettering",
+   "Enormous bright payoff panel"
+  ],
+  "series": "The Eminence in Shadow",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/i-am-atomic"
+  },
+  "suits": [
+   "M08",
+   "N24",
+   "P17"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-044",
+  "name": "The database chant becomes the whole world",
+  "allusion": "The opening’s database hook overwhelms discussion of the fantasy world.",
+  "cues": [
+   "Fantasy gamer inside records or data imagery",
+   "Large DATABASE label",
+   "Visible chant or musical-repeat cue"
+  ],
+  "series": "Log Horizon",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/living-in-the-database"
+  },
+  "suits": [
+   "M01",
+   "M07",
+   "M22"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-001",
+  "name": "Himmel would've done that",
+  "allusion": "A remembered ideal hero becomes the justification for an unexpectedly mundane choice.",
+  "cues": [
+   "reverent memory panel",
+   "heroic silhouette",
+   "mundane present-day decision"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/himmel-wouldve-done-that"
+  },
+  "suits": [
+   "M02",
+   "M27",
+   "N10",
+   "P03",
+   "P23",
+   "P24",
+   "P29",
+   "P30"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-002",
+  "name": "Frieren or Fern with a gun",
+  "allusion": "A composed fantasy mage abandons ornate magic for an incongruous modern firearm.",
+  "cues": [
+   "mage robes",
+   "modern gun replacing staff",
+   "unimpressed expression"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/frieren-fern-with-a-gun"
+  },
+  "suits": [
+   "M27",
+   "N16",
+   "P03",
+   "P17",
+   "P18",
+   "P32",
+   "P43"
+  ],
+  "requires": [
+   "firearms_present"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-003",
+  "name": "Aura's arbitrary orders",
+  "allusion": "A defeated, haughty demon must obey an absurdly mundane order from the calm winner.",
+  "cues": [
+   "defeated demon",
+   "calm command",
+   "mundane task"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/aura-death-scene-aura-kill-yourself"
+  },
+  "suits": [
+   "M01",
+   "M27",
+   "N24",
+   "N25",
+   "P03",
+   "P14"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-004",
+  "name": "You can give this to men and they will be thrilled",
+  "allusion": "A deadpan expert presents an oddly specific object as the perfect gift.",
+  "cues": [
+   "object held at chest height",
+   "confident explanation",
+   "recipient's delight"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/you-can-just-give-this-kind-of-thing-to-men-and-they-will-be-thrilled"
+  },
+  "suits": [
+   "M27",
+   "M30",
+   "N07",
+   "N08",
+   "P02",
+   "P03",
+   "P18",
+   "P29",
+   "P31"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-005",
+  "name": "Upward-angle Frieren / Friangle",
+  "allusion": "A supposedly elegant low-angle portrait produces an implausibly pointed, flattened chin.",
+  "cues": [
+   "upward-looking elf",
+   "exaggerated triangular chin",
+   "artist's proud reveal"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/upward-angle-frieren-drawing-frieren-looking-up"
+  },
+  "suits": [
+   "M27",
+   "M30",
+   "N08",
+   "N22",
+   "P02",
+   "P03"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-006",
+  "name": "Frieren game-cover parodies",
+  "allusion": "A slow, dry fantasy traveler is staged as the star of an aggressively different game cover.",
+  "cues": [
+   "dramatic box-art pose",
+   "large invented title",
+   "calm elderly traveler"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/frieren-video-game-cover-parodies"
+  },
+  "suits": [
+   "M27",
+   "M30",
+   "N08",
+   "N22",
+   "P03",
+   "P18"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-007",
+  "name": "Only half the sky",
+  "allusion": "A relaxing low-angle view is unexpectedly blocked by the companion providing comfort.",
+  "cues": [
+   "reclining viewpoint",
+   "companion above viewer",
+   "half the sky occluded"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/i-could-only-see-half-the-sky"
+  },
+  "suits": [
+   "M27",
+   "P03",
+   "P17",
+   "P18",
+   "P29",
+   "P31"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-010",
+  "name": "Draw your favorites in soup",
+  "allusion": "A character relaxes blissfully in a pot that everyone else reads as a cooking vessel.",
+  "cues": [
+   "large pot",
+   "character peeking over rim",
+   "relaxed face and steam"
+  ],
+  "series": "Delicious in Dungeon",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/draw-your-faves-getting-cooked-in-soup"
+  },
+  "suits": [
+   "M15",
+   "N04",
+   "P05",
+   "P12",
+   "P36",
+   "P38"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-011",
+  "name": "Bling-Bang-Bang-Born dance",
+  "allusion": "A magically serious environment is interrupted by an absurdly assured rhythmic dance.",
+  "cues": [
+   "bent knees",
+   "side-to-side arm movement",
+   "deadpan face"
+  ],
+  "series": "Mashle: Magic and Muscles",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/bling-bang-bang-born"
+  },
+  "suits": [
+   "M01",
+   "M22",
+   "N03",
+   "N16",
+   "P08",
+   "P29",
+   "P40"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-012",
+  "name": "You get used to it",
+  "allusion": "A shocked newcomer faces a veteran whose weary reassurance makes the alarming event seem routine.",
+  "cues": [
+   "newcomer horrified",
+   "veteran resigned",
+   "quiet reassuring line"
+  ],
+  "series": "Goblin Slayer",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/you-get-used-to-it"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "N01",
+   "N05",
+   "P02",
+   "P03",
+   "P16",
+   "P23",
+   "P30"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-014",
+  "name": "Berserk judgment skeletons",
+  "allusion": "A close crowd of red-tinted skeletons stares with overwhelming disapproval.",
+  "cues": [
+   "crowded skulls",
+   "red light",
+   "unblinking collective stare"
+  ],
+  "series": "Berserk",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/berserk-skeletons"
+  },
+  "suits": [
+   "M02",
+   "M11",
+   "M25",
+   "N17",
+   "P29",
+   "P34"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-016",
+  "name": "Too big to be called a sword",
+  "allusion": "An absurd slab of iron is treated with the solemn language of a legendary sword.",
+  "cues": [
+   "slab-like blade",
+   "tiny handle by comparison",
+   "struggling doorway"
+  ],
+  "series": "Berserk",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/it-was-too-big-to-be-called-a-sword-guts-copypasta"
+  },
+  "suits": [
+   "M25",
+   "M30",
+   "N05",
+   "N07",
+   "P30",
+   "P31"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-017",
+  "name": "Angel looks scary, demon looks beautiful",
+  "allusion": "The frightening-looking figure is helpful while the beautiful figure conceals a bad deal.",
+  "cues": [
+   "scarred intimidating helper",
+   "radiant elegant schemer",
+   "contrasting deeds"
+  ],
+  "series": "Berserk",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/an-angel-makes-itself-look-scary-to-ward-off-evil-a-demon-makes-itself-beautiful-to-deceive-humans"
+  },
+  "suits": [
+   "M25",
+   "N13",
+   "N14",
+   "N26",
+   "P30",
+   "P44"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-019",
+  "name": "Not equivalent exchange",
+  "allusion": "A character assesses an absurd bargain through the solemn law of equivalent exchange.",
+  "cues": [
+   "reclining or tired expert",
+   "unequal objects or ledger",
+   "flat objection"
+  ],
+  "series": "Fullmetal Alchemist",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/ed-relaxing-this-is-not-the-law-of-equivalent-exchange"
+  },
+  "suits": [
+   "M17",
+   "M29",
+   "M30",
+   "N07",
+   "N09",
+   "N23",
+   "N30",
+   "P24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-022",
+  "name": "Wishing for more wishes is not how this works",
+  "allusion": "A clever customer proposes an obvious infinite-wish loophole and the polite magical broker breaks character.",
+  "cues": [
+   "one-wish offer",
+   "smug loophole proposal",
+   "mascot's sudden irritation"
+  ],
+  "series": "Puella Magi Madoka Magica",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/thats-not-how-it-works-you-little-shit"
+  },
+  "suits": [
+   "M02",
+   "M07",
+   "M19",
+   "N27",
+   "P24",
+   "P38",
+   "P39"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-024",
+  "name": "Smol Nezuko escape mode",
+  "allusion": "A dangerous supernatural character becomes tiny and runs away with incongruous cuteness.",
+  "cues": [
+   "small chibi form",
+   "quick scamper",
+   "large pursuer or obstacle"
+  ],
+  "series": "Demon Slayer: Kimetsu no Yaiba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/nezuko"
+  },
+  "suits": [
+   "N19",
+   "P12",
+   "P13",
+   "P29",
+   "P30",
+   "P35",
+   "P38"
+  ],
+  "requires": [
+   "established_size_change_or_declared_chibi_exaggeration"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-025",
+  "name": "Sasa Lele / misreading the sale sign",
+  "allusion": "Decorative repeated lettering causes a character to read a simple sign in the wrong order.",
+  "cues": [
+   "SALE letters in a grid",
+   "finger tracing wrong order",
+   "confused reader"
+  ],
+  "series": "Demon Slayer: Kimetsu no Yaiba",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/sasa-lele"
+  },
+  "suits": [
+   "M17",
+   "N21",
+   "P06",
+   "P08",
+   "P12",
+   "P16",
+   "P24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-053",
+  "name": "Nah, I'd win",
+  "allusion": "A relaxed close-up delivers absolute confidence despite an obviously unfavorable situation.",
+  "cues": [
+   "confident face close-up",
+   "brief winning claim",
+   "looming mismatch"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/nah-id-win"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M08",
+   "N03",
+   "N17",
+   "N18",
+   "P22",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-054",
+  "name": "With this treasure I summon...",
+  "allusion": "A character begins summoning an absurdly dangerous solution to a minor inconvenience.",
+  "cues": [
+   "recognizable summoning hand pose",
+   "tiny problem",
+   "alarmed friend interrupting"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/with-this-treasure-i-summon"
+  },
+  "suits": [
+   "M02",
+   "M08",
+   "P16",
+   "P17",
+   "P29",
+   "P32",
+   "P39"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-055",
+  "name": "Domain expansion for ordinary territory",
+  "allusion": "A personal space or mundane inconvenience is reframed as an absolute magical domain.",
+  "cues": [
+   "distinct hand seal",
+   "enclosing dramatic space",
+   "grand domain name"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/domain-expansion"
+  },
+  "suits": [
+   "M02",
+   "N01",
+   "N17",
+   "N30",
+   "P18",
+   "P19",
+   "P28",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-056",
+  "name": "Hollow Purple overreaction",
+  "allusion": "A grand color-coded magical attack is readied for a trivial annoyance.",
+  "cues": [
+   "delicate hand gesture",
+   "converging colored energy",
+   "small annoyance"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/hollow-purple"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M08",
+   "P16",
+   "P17",
+   "P29",
+   "P43"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-057",
+  "name": "Meet Potential Man",
+  "allusion": "A supposed prodigy is advertised entirely through what they might eventually achieve.",
+  "cues": [
+   "heroic promotional portrait",
+   "many future-tense promises",
+   "empty current-results box"
+  ],
+  "series": "Jujutsu Kaisen, Bleach",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/meet-potential-man"
+  },
+  "suits": [
+   "M06",
+   "N02",
+   "N10",
+   "N17",
+   "P22",
+   "P27",
+   "P28"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-058",
+  "name": "Ah yes, my ancient technique",
+  "allusion": "A character invents a perfectly convenient ancient technique at the exact moment it is needed.",
+  "cues": [
+   "smug remembering pose",
+   "very specific technique name",
+   "recently encountered problem"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/ah-yes-my-technique-i-havent-used-it-since-the-heian-era"
+  },
+  "suits": [
+   "M02",
+   "M08",
+   "M27",
+   "M30",
+   "N16",
+   "P18",
+   "P29",
+   "P32"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-059",
+  "name": "Strongest in history versus strongest today",
+  "allusion": "Two figures receive grand opposing titles that frame a very small contest as an era-defining clash.",
+  "cues": [
+   "split-screen portraits",
+   "parallel superlative titles",
+   "ordinary shared challenge"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/the-strongest-sorcerer-in-history-vs-the-strongest-sorcerer-of-today"
+  },
+  "suits": [
+   "M01",
+   "M06",
+   "M27",
+   "N02",
+   "N17",
+   "P22",
+   "P30",
+   "P32"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-060",
+  "name": "Higuruma stressed out",
+  "allusion": "An exhausted professional cycles through covering the forehead, face, and mouth as a meeting or workload refuses to end.",
+  "cues": [
+   "professional at desk",
+   "hands moving over face",
+   "endless extra request"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/higuruma-stressed-out"
+  },
+  "suits": [
+   "M02",
+   "M18",
+   "M23",
+   "N01",
+   "N09",
+   "N12",
+   "N19",
+   "N30",
+   "P24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-061",
+  "name": "Kenjaku's obvious secret / how'd you know?",
+  "allusion": "A villain is surprised that anyone noticed a disguise despite an unmistakable tell, then reveals the hidden controller.",
+  "cues": [
+   "suspicious head seam or lid",
+   "revealed controller",
+   "surprised question"
+  ],
+  "series": "Jujutsu Kaisen",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/kenjakus-brain-reveal-howd-you-know"
+  },
+  "suits": [
+   "M02",
+   "M25",
+   "N29",
+   "P19",
+   "P34",
+   "P39",
+   "P46"
+  ],
+  "requires": [
+   "possessed_puppet_or_construct_body"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-071",
+  "name": "Enel face / impossible immunity shock",
+  "allusion": "A self-assured powerhouse discovers that a basic property makes the signature attack useless.",
+  "cues": [
+   "extreme dropped jaw",
+   "bulging eyes",
+   "unharmed target"
+  ],
+  "series": "One Piece",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/enel-face"
+  },
+  "suits": [
+   "M01",
+   "M04",
+   "M09",
+   "N17",
+   "N24",
+   "N25",
+   "P31",
+   "P32"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-072",
+  "name": "Blackbeard writing",
+  "allusion": "A hunched writer treats a banal sentence as though it were a profound masterpiece.",
+  "cues": [
+   "hunched writing pose",
+   "quill and paper",
+   "intense scholarly expression"
+  ],
+  "series": "One Piece",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/blackbeard-writing"
+  },
+  "suits": [
+   "M17",
+   "N13",
+   "N29",
+   "N30",
+   "P28"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-073",
+  "name": "Kuzan is faster and can freeze opponents",
+  "allusion": "One favored advantage is repeated as the answer to every possible counterargument.",
+  "cues": [
+   "repeated identical claim",
+   "increasingly specific objections",
+   "unchanged confident speaker"
+  ],
+  "series": "One Piece",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/kuzan-is-much-faster-and-can-freeze-his-opponents"
+  },
+  "suits": [
+   "M02",
+   "N03",
+   "N17",
+   "N30",
+   "P22",
+   "P28",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-074",
+  "name": "Nika dance / inherited joyful rhythm",
+  "allusion": "A large imposing figure teaches a small companion an exuberant hopping dance.",
+  "cues": [
+   "alternating lifted feet",
+   "running arm movement",
+   "large and small partners"
+  ],
+  "series": "One Piece",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/nika-dance-one-piece"
+  },
+  "suits": [
+   "M25",
+   "M27",
+   "N06",
+   "N21",
+   "P30",
+   "P31",
+   "P33",
+   "P38"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "fmt-075",
+  "name": "Shoot down that flag",
+  "allusion": "A short command to remove a symbol is framed as an irreversible declaration of rebellion.",
+  "cues": [
+   "leader points upward",
+   "conspicuous banner",
+   "decisive ranged action"
+  ],
+  "series": "One Piece",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/shoot-down-that-flag"
+  },
+  "suits": [
+   "M02",
+   "M05",
+   "M08",
+   "M23",
+   "P01",
+   "P23",
+   "P42"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-004",
+  "name": "People Die If They Are Killed",
+  "allusion": "A solemn dramatic declaration explains an apparently obvious consequence.",
+  "cues": [
+   "earnest close-up",
+   "grave delivery",
+   "literal statement of an obvious consequence"
+  ],
+  "series": "Fate/stay night",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/people-die-if-they-are-killed"
+  },
+  "suits": [
+   "M01",
+   "M09",
+   "N07",
+   "N30",
+   "P29",
+   "P30",
+   "P41"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-005",
+  "name": "Unlimited Blade Works",
+  "allusion": "A grand first-person incantation culminates in an unlimited supply of a mundane substitute for swords.",
+  "cues": [
+   "serious incantation panels",
+   "landscape of repeated implements",
+   "grand final technique label"
+  ],
+  "series": "Fate/stay night",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/unlimited-blade-works"
+  },
+  "suits": [
+   "M01",
+   "M08",
+   "N08",
+   "P32"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-012",
+  "name": "Meduka Meguca / Being Meguka Is Suffering",
+  "allusion": "Low-detail faces and intentionally mangled wording retell an emotional ordeal.",
+  "cues": [
+   "crude face close-up",
+   "compressed misspelled narration",
+   "deflated summary of grand events"
+  ],
+  "series": "Puella Magi Madoka Magica, Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/sensitive/memes/meduka-meguca-being-meguka-is-suffering"
+  },
+  "suits": [
+   "M03",
+   "M06",
+   "P16",
+   "P17",
+   "P43"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-022",
+  "name": "Nipah",
+  "allusion": "A suddenly sunny close-up and signature grin reset an uncomfortable conversation.",
+  "cues": [
+   "eyes-closed grin",
+   "bright close-up",
+   "sudden tonal shift",
+   "Visible short Nipah catchphrase"
+  ],
+  "series": "Higurashi When They Cry",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/nipah"
+  },
+  "suits": [
+   "M02",
+   "N06",
+   "N21",
+   "N30",
+   "P29",
+   "P33",
+   "P43"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-023",
+  "name": "My Job Here Is Done / But You Did Nothing",
+  "allusion": "A dramatic rescuer leaves after claiming credit while the actual worker protests.",
+  "cues": [
+   "dramatic entrance or cape",
+   "self-congratulatory departure",
+   "worker points to unfinished or completed labor"
+  ],
+  "series": "Sailor Moon",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/my-job-here-is-done-but-you-didnt-do-anything"
+  },
+  "suits": [
+   "M08",
+   "M30",
+   "N07",
+   "N12",
+   "N17",
+   "N22",
+   "P31",
+   "P44"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-025",
+  "name": "Sailor Moon Redraw",
+  "allusion": "A low-positioned character looks upward with a specific startled, tearful composition.",
+  "cues": [
+   "upward gaze from low position",
+   "three-quarter face",
+   "wide eyes with welling tears"
+  ],
+  "series": "Sailor Moon",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/sailor-moon-redraw"
+  },
+  "suits": [
+   "M02",
+   "M15",
+   "P02",
+   "P06",
+   "P21",
+   "P24",
+   "P29",
+   "P30"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-028",
+  "name": "Mirai Nikki Yandere Face",
+  "allusion": "Hands frame a flushed face while a sweet expression communicates unsettling intensity.",
+  "cues": [
+   "both hands against cheeks",
+   "fixed intense smile",
+   "object of attachment visible"
+  ],
+  "series": "Future Diary",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/mirai-nikki-yandere-face"
+  },
+  "suits": [
+   "M17",
+   "M28",
+   "N07",
+   "N08",
+   "P24"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-029",
+  "name": "Desu",
+  "allusion": "A signature sentence ending overwhelms the actual content of a conversation.",
+  "cues": [
+   "repeated desu suffix visibly overwhelms a page or speech balloons",
+   "speaker remains composed"
+  ],
+  "series": "Rozen Maiden",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/sensitive/memes/desu"
+  },
+  "suits": [
+   "P02",
+   "P18",
+   "P19",
+   "P43"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-032",
+  "name": "Gate of Babylon",
+  "allusion": "A regal figure is backed by a halo of gates holding an excessive arsenal or replacement objects.",
+  "cues": [
+   "regal central pose",
+   "many glowing portals behind performer",
+   "matching objects protruding"
+  ],
+  "series": "Fate/stay night",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/gate-of-babylon"
+  },
+  "suits": [
+   "M01",
+   "M08",
+   "M11",
+   "M30",
+   "N04",
+   "N08",
+   "P29"
+  ],
+  "requires": [
+   "portal_storage_arsenal"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-034",
+  "name": "Noko Shikanoko Entering a Classroom",
+  "allusion": "A perfectly calm entrant breaks the doorway because their head ornaments do not fit.",
+  "cues": [
+   "frontal doorway entry",
+   "oversized horns or head ornament",
+   "crumbling frame",
+   "calm expression"
+  ],
+  "series": "My Deer Friend Nokotan",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/noko-shikanoko-entering-a-classroom"
+  },
+  "suits": [
+   "M25",
+   "P11",
+   "P12",
+   "P14",
+   "P31"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-036",
+  "name": "Truck-kun",
+  "allusion": "A mundane truck is treated as the overworked transport department of another-world reincarnation.",
+  "cues": [
+   "recognizable truck silhouette",
+   "another-world transfer signage",
+   "administrative treatment of destiny"
+  ],
+  "series": "Cross-series isekai convention",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/sensitive/memes/truck-kun"
+  },
+  "suits": [
+   "N27",
+   "N28"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-038",
+  "name": "Tsundere Denial of Kindness",
+  "allusion": "An obvious act of care is immediately denied with a flustered excuse.",
+  "cues": [
+   "useful gift or completed favor",
+   "averted eyes or blushing",
+   "denial contradicted by the object"
+  ],
+  "series": "The Familiar of Zero",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/tsundere"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M30",
+   "P01",
+   "P04",
+   "P18",
+   "P22",
+   "P23",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "root-040",
+  "name": "Frieren Stuck in a Mimic Chest",
+  "allusion": "An experienced explorer is swallowed headfirst by an obviously suspicious treasure chest, leaving only the lower half visible.",
+  "cues": [
+   "toothed treasure chest",
+   "head and torso inside",
+   "legs sticking out",
+   "companion unimpressed"
+  ],
+  "series": "Frieren: Beyond Journey's End",
+  "evidence": {
+   "tier": "documented_meme",
+   "url": "https://knowyourmeme.com/memes/frieren-stuck-in-mimic-chest"
+  },
+  "suits": [
+   "M02",
+   "M21",
+   "M27",
+   "P01",
+   "P03",
+   "P16",
+   "P22",
+   "P29"
+  ],
+  "priority": 60
+ },
+ {
+  "id": "core-034",
+  "name": "Copy-paste the ominous warning everywhere",
+  "allusion": "A hero adopts a dramatic warning and repeats it far beyond its useful context.",
+  "cues": [
+   "Someone delivers an ominous warning",
+   "Hero mentally saves the line",
+   "Identical warning appears in mundane scenes"
+  ],
+  "series": "The Eminence in Shadow",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/Animemes/comments/17517ld/shadow_ctrl_c_ctrl_v_ctrl_v_ctrl_v/"
+  },
+  "suits": [
+   "M02",
+   "M08",
+   "N01",
+   "N17",
+   "N29",
+   "P19"
+  ],
+  "priority": 52
+ },
+ {
+  "id": "core-012",
+  "name": "The deadpan acknowledgement loop",
+  "allusion": "Frantic calls receive the same bored acknowledgement every time.",
+  "cues": [
+   "Companion urgently shouting a name",
+   "Receiver with unchanged flat face",
+   "Identical short reply repeated"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.neogaf.com/threads/konosuba-season-2-ot-explosion.1331589/page-4"
+  },
+  "suits": [
+   "M02",
+   "M30",
+   "N17",
+   "P02",
+   "P15",
+   "P19"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-020",
+  "name": "Heartfelt appeal meets a different declared favorite",
+  "allusion": "A deeply supportive appeal is answered with loyalty to somebody else.",
+  "cues": [
+   "Earnest long speech",
+   "Brief declaration of another preference",
+   "Stunned silent reaction"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://blog.jlist.com/your-friend-in-japan/vote-for-the-best-anime-memes-of-the-decade/"
+  },
+  "suits": [
+   "M01",
+   "M03",
+   "P20",
+   "P25",
+   "P27",
+   "P44"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-022",
+  "name": "The imperious librarian’s unnecessary verbal suffix",
+  "allusion": "Every authoritative sentence ends with the same qualified-sounding tag.",
+  "cues": [
+   "Small stern librarian or scholar",
+   "Folded arms or book held close",
+   "The suffix I suppose repeats in the speech bubbles"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/ReZero/comments/1mzc6wr/what_are_some_good_beatrice_memes/"
+  },
+  "suits": [
+   "M01",
+   "M30",
+   "P02",
+   "P18",
+   "P19",
+   "P43"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-023",
+  "name": "My brain trembles at the revelation",
+  "allusion": "A wild-eyed zealot reacts to information with ecstatic intensity.",
+  "cues": [
+   "Extreme close-up",
+   "Wide eyes and contorted delight",
+   "Brain-trembling reaction caption"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://tenor.com/view/petelgeuse-my-brain-trembles-re-zero-anime-crazy-gif-3147685018198675394"
+  },
+  "suits": [
+   "N14",
+   "N16",
+   "N25"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-028",
+  "name": "Pope of the unexpectedly admired ruler",
+  "allusion": "An admirer turns a ruler’s reputation into a personal gospel.",
+  "cues": [
+   "Homemade emblem or pamphlets",
+   "Intensely sincere admirer",
+   "Ordinary bystander receiving a sermon"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/subcultures/overlord"
+  },
+  "suits": [
+   "N01",
+   "N04",
+   "N15",
+   "N30",
+   "P16",
+   "P20"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-029",
+  "name": "Emotion suppressed just before the outburst",
+  "allusion": "A green calming effect abruptly cancels the ruler’s escalating emotion.",
+  "cues": [
+   "Rising fury or panic",
+   "Green status-effect glow",
+   "Instant neutral posture"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/overlord/comments/1edury8"
+  },
+  "suits": [
+   "M11"
+  ],
+  "requires": [
+   "emotion_suppression"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-030",
+  "name": "Intrusive Runecraft sales pitch",
+  "allusion": "A serious encounter keeps being interrupted by conspicuous weapon advertising.",
+  "cues": [
+   "Weapon with prominent label",
+   "Suspiciously rehearsed testimonial",
+   "Listener tries to return to the crisis"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/overlord/comments/16bx5qf"
+  },
+  "suits": [
+   "M01",
+   "M11",
+   "N08",
+   "N09",
+   "N19",
+   "P19",
+   "P29"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-037",
+  "name": "The isekai has become a meeting simulator",
+  "allusion": "A fantasy power story is recognizable by its conference tables.",
+  "cues": [
+   "Large conference table",
+   "Agenda or minutes",
+   "Epic adventurers waiting for discussion to end"
+  ],
+  "series": "That Time I Got Reincarnated as a Slime",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/TenseiSlime/comments/1cpnixx"
+  },
+  "suits": [
+   "M10",
+   "M11",
+   "M23",
+   "N30",
+   "P11",
+   "P28"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-041",
+  "name": "Ready Perfectly after excessive preparation",
+  "allusion": "An unnaturally solemn readiness announcement follows an absurd amount of preparation.",
+  "cues": [
+   "Completely composed hero",
+   "Meticulous checklist",
+   "The caption Ready Perfectly"
+  ],
+  "series": "Cautious Hero",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://tenor.com/view/ready-perfectly-overly-cautious-cautious-hero-ryuguin-seiya-seiya-gif-16080387"
+  },
+  "suits": [
+   "M09",
+   "N01",
+   "N04",
+   "N05",
+   "P15",
+   "P29"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-047",
+  "name": "The calendar reaches the fictional launch day",
+  "allusion": "Real-world time catches up to a famous fictional event and fans reenact it.",
+  "cues": [
+   "Calendar clearly reading 2022-11-06",
+   "VR headset",
+   "Excited anticipation followed by remembered premise"
+  ],
+  "series": "Sword Art Online",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/subcultures/sword-art-online"
+  },
+  "suits": [
+   "M01",
+   "M07",
+   "M28"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-049",
+  "name": "The Turning Point title card alarms everyone",
+  "allusion": "An apparently ordinary episode heading predicts that comfort will end.",
+  "cues": [
+   "Calm domestic moment",
+   "Black title card with Turning Point",
+   "Immediate frozen or alarmed reaction"
+  ],
+  "series": "Mushoku Tensei: Jobless Reincarnation",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/mushokutensei/comments/v6g8rs"
+  },
+  "suits": [
+   "M01",
+   "M03",
+   "M06"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-050",
+  "name": "The eternal wait for the next season",
+  "allusion": "A fandom waits so long that anticipation becomes its shared joke.",
+  "cues": [
+   "Waiting fan and calendar stack",
+   "Announcement-shaped message",
+   "Unrelated merchandise or April Fools reveal"
+  ],
+  "series": "No Game No Life",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.animeexplained.com/news/no-game-no-lifes-original-creator-pleads-for-a-second-season-of-the-anime/"
+  },
+  "suits": [
+   "M01",
+   "M07",
+   "M28"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "core-052",
+  "name": "The leads only shout each other’s names",
+  "allusion": "An entire dramatic exchange collapses into alternating names.",
+  "cues": [
+   "Two distant figures",
+   "Alternating name-only speech bubbles",
+   "Small practical misunderstanding finally revealed"
+  ],
+  "series": "Inuyasha",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/inuyasha/comments/1dp27gl"
+  },
+  "suits": [
+   "M01",
+   "M03",
+   "P25",
+   "P27",
+   "P29",
+   "P41"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-008",
+  "name": "Elf Senshi transformation",
+  "allusion": "A stocky practical cook becomes an extravagantly beautiful elf while keeping the same utilitarian priorities.",
+  "cues": [
+   "before-and-after body contrast",
+   "flowing hair and sparkles",
+   "ordinary cooking task"
+  ],
+  "series": "Delicious in Dungeon",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/elf-senshi"
+  },
+  "suits": [
+   "M02",
+   "M15",
+   "N07",
+   "P01",
+   "P29",
+   "P31"
+  ],
+  "requires": [
+   "temporary_species_transformation"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-009",
+  "name": "Izutsumi as an ordinary cat meme",
+  "allusion": "A humanoid cat companion behaves like the unimpressed cat in familiar pet-meme compositions.",
+  "cues": [
+   "cat ears and expression",
+   "dinner table",
+   "pointing angry speaker versus calm cat"
+  ],
+  "series": "Delicious in Dungeon",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/izutsumi"
+  },
+  "suits": [
+   "M15",
+   "P05",
+   "P16",
+   "P19",
+   "P29"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-018",
+  "name": "Berserk CLANG",
+  "allusion": "A supposedly sharp legendary weapon produces a ludicrously blunt metallic sound.",
+  "cues": [
+   "enormous sword",
+   "oversized CLANG lettering",
+   "unimpressed observer"
+  ],
+  "series": "Berserk",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/sensitive/memes/subcultures/berserk"
+  },
+  "suits": [
+   "M25",
+   "M30",
+   "N07",
+   "P29",
+   "P30",
+   "P31"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-020",
+  "name": "A terrible day for rain",
+  "allusion": "A stoic character attributes visible tears to rain beneath a clear sky.",
+  "cues": [
+   "tears on stern face",
+   "clear weather",
+   "companion's tactful pause"
+  ],
+  "series": "Fullmetal Alchemist: Brotherhood",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/photos/385569-manly-tears"
+  },
+  "suits": [
+   "M04",
+   "M25",
+   "N02",
+   "P16",
+   "P21",
+   "P23",
+   "P29",
+   "P30"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-021",
+  "name": "Kyubey's adorable contract pitch",
+  "allusion": "A cute, calm mascot presents a life-changing magical contract with alarming omissions.",
+  "cues": [
+   "small expressionless familiar",
+   "oversized contract",
+   "tiny print"
+  ],
+  "series": "Puella Magi Madoka Magica",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/kyubey"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M19",
+   "N27",
+   "P24",
+   "P38",
+   "P39"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "fmt-026",
+  "name": "Toothbrushing dance",
+  "allusion": "Two adventurers perform an oddly enthusiastic synchronized dance while brushing their teeth.",
+  "cues": [
+   "toothbrushes",
+   "side-by-side poses",
+   "synchronized hip movement"
+  ],
+  "series": "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/memes/subcultures/danmachi-is-it-wrong-to-try-to-pick-up-girls-in-a-dungeon"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "P15",
+   "P23",
+   "P25",
+   "P29"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "niche-001",
+  "name": "The chosen one is literally a vending machine",
+  "allusion": "A fantasy quest depends on a rectangular appliance with a price display.",
+  "cues": [
+   "vending-machine body",
+   "heroic quest notice",
+   "coin slot"
+  ],
+  "series": "Reborn as a Vending Machine, I Now Wander the Dungeon",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.ungeek.ph/2023/03/a-man-reincarnates-as-a-vending-machine-in-upcoming-anime-reborn-as-a-vending-machine/"
+  },
+  "suits": [
+   "M14",
+   "P40"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "niche-010",
+  "name": "Divine guidance with crumbs on the mouth",
+  "allusion": "A goddess issues solemn guidance while visibly eating the offering.",
+  "cues": [
+   "divine vision",
+   "crumb-covered mouth",
+   "half-eaten offering"
+  ],
+  "series": "Campfire Cooking in Another World with My Absurd Skill",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://times.abema.tv/en/articles/-/10206972"
+  },
+  "suits": [
+   "M15",
+   "N28"
+  ],
+  "requires": [
+   "divine_vision_contact"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "niche-069",
+  "name": "The villainess ending turns into dad karaoke",
+  "allusion": "A stately villainess and her middle-aged self perform an exuberant golden-jacket dance.",
+  "cues": [
+   "gold performance jacket",
+   "enthusiastic stage pose",
+   "financial statement as prop"
+  ],
+  "series": "From Bureaucrat to Villainess: Dad's Been Reincarnated!",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://en.mantan-web.jp/e_article/20250125dog00m200013000c.html"
+  },
+  "suits": [
+   "M19",
+   "N30"
+  ],
+  "priority": 42
+ },
+ {
+  "id": "niche-012",
+  "name": "Fran switches from warrior to curry enthusiast",
+  "allusion": "An otherwise stoic cat warrior becomes animated about curry.",
+  "cues": [
+   "stoic cat ears",
+   "bowl of curry",
+   "sudden eager posture"
+  ],
+  "series": "Reincarnated as a Sword",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://tenor.com/view/reincarnated-as-a-sword-fran-sword-isekai-anime-girl-cat-gif-27095497"
+  },
+  "suits": [
+   "M13",
+   "P05"
+  ],
+  "requires": [
+   "intelligent_weapon_telepathy"
+  ],
+  "priority": 40
+ },
+ {
+  "id": "core-011",
+  "name": "True equality applied to an inconvenient chore",
+  "allusion": "A lofty equality declaration is used to settle a petty practical dispute.",
+  "cues": [
+   "Self-serious proclamation",
+   "Ordinary chore or fee",
+   "Companion seeking an exemption"
+  ],
+  "series": "KonoSuba",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://imgflip.com/memetemplate/279174871/I-yearn-for-true-gender-equality"
+  },
+  "suits": [
+   "M02",
+   "N17",
+   "N30",
+   "P15",
+   "P23",
+   "P24"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-021",
+  "name": "Who is the person everyone should remember?",
+  "allusion": "A familiar name receives an innocently devastating who-is-that response.",
+  "cues": [
+   "Name or portrait shown with confidence",
+   "Listener’s sincere blank expression",
+   "Short identity question"
+  ],
+  "series": "Re:Zero - Starting Life in Another World",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/photos/1215488-jeopardy"
+  },
+  "suits": [
+   "M03",
+   "N01",
+   "P27",
+   "P29"
+  ],
+  "requires": [
+   "collective_memory_erasure"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-031",
+  "name": "Your embarrassing old character has become real",
+  "allusion": "A flamboyant creation faithfully performs its maker’s old teenage taste.",
+  "cues": [
+   "Overdesigned theatrical retainer",
+   "Creator hiding face",
+   "Old sketch or design note that proves authorship"
+  ],
+  "series": "Overlord",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://forums.somethingawful.com/showthread.php?noseen=0&pagenumber=43&perpage=40&threadid=3845222"
+  },
+  "suits": [
+   "M06",
+   "M08",
+   "M11",
+   "N25",
+   "P28",
+   "P34"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-038",
+  "name": "The dragon learned its attacks from manga",
+  "allusion": "A powerful fantasy creature copies an unmistakable attack from another genre.",
+  "cues": [
+   "Dragon-associated fighter",
+   "Recognizable cupped-hands beam stance",
+   "Manga or comic reference nearby"
+  ],
+  "series": "That Time I Got Reincarnated as a Slime",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://tenor.com/view/veldora-kamehameha-gif-23149445"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M10",
+   "N24",
+   "P12",
+   "P29"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-043",
+  "name": "World-ending force against a beginner slime",
+  "allusion": "The safest starter encounter receives a catastrophic finishing sequence.",
+  "cues": [
+   "Tiny weak-looking enemy",
+   "Huge spell or crater",
+   "Hero prepares another follow-up anyway"
+  ],
+  "series": "Cautious Hero",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/anime/comments/i4r639"
+  },
+  "suits": [
+   "M09",
+   "N02",
+   "P15",
+   "P29"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-048",
+  "name": "The quest NPC has only one line",
+  "allusion": "An NPC repeats the same urgent quest line regardless of what happens.",
+  "cues": [
+   "Quest marker",
+   "Identical speech bubble in successive panels",
+   "Increasingly inappropriate context"
+  ],
+  "series": "Sword Art Online Abridged",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/memes/comments/l7y8s5"
+  },
+  "suits": [
+   "M01",
+   "M02",
+   "M30",
+   "N06",
+   "N20",
+   "N22"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-051",
+  "name": "The mighty companion obeys one tiny command",
+  "allusion": "A formidable companion is abruptly brought down by a short command.",
+  "cues": [
+   "Overconfident powerful companion",
+   "Sit command bubble and an established binding charm",
+   "Immediate harmless face-first fall"
+  ],
+  "series": "Inuyasha",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/photos/3035609-down-boy-arf"
+  },
+  "suits": [
+   "M01",
+   "P06",
+   "P16",
+   "P25",
+   "P29",
+   "P30"
+  ],
+  "requires": [
+   "established_binding_or_agreed_command"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-053",
+  "name": "The defender protects, then the partner attacks",
+  "allusion": "A protective fighter and an offensive companion complete a familiar two-part contrast.",
+  "cues": [
+   "Shielding first panel",
+   "Companion’s counterattack second panel",
+   "Parallel protect/attack captions"
+  ],
+  "series": "The Rising of the Shield Hero",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/photos/1450174-the-rising-of-the-shield-hero"
+  },
+  "suits": [
+   "M04",
+   "P09",
+   "P21",
+   "P22",
+   "P41"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "core-054",
+  "name": "The giant bird’s favorite activity is wagon duty",
+  "allusion": "A huge fluffy bird treats pulling a wagon as a wonderful opportunity.",
+  "cues": [
+   "Oversized fluffy bird",
+   "Wagon harness",
+   "Joyful sprint while passengers brace"
+  ],
+  "series": "The Rising of the Shield Hero",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/memes/subcultures/the-rising-of-the-shield-hero/photos"
+  },
+  "suits": [
+   "M04",
+   "M30",
+   "N09",
+   "P35"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "fmt-013",
+  "name": "Only interested in goblins",
+  "allusion": "An adventurer ignores grand quests unless the one particular target is involved.",
+  "cues": [
+   "armored helmet",
+   "elaborate quest pitch",
+   "one repeated target word"
+  ],
+  "series": "Goblin Slayer",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/photos/1419554-goblin-slayer"
+  },
+  "suits": [
+   "M09",
+   "N01",
+   "N02",
+   "N20",
+   "P21",
+   "P30",
+   "P34"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "fmt-027",
+  "name": "Dragon maid offers her own tail as dinner",
+  "allusion": "A devoted dragon host insists that a bizarre ingredient from her own body is an excellent meal.",
+  "cues": [
+   "dragon maid",
+   "covered serving dish",
+   "guest's exhausted refusal"
+  ],
+  "series": "Miss Kobayashi's Dragon Maid",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://knowyourmeme.com/photos/1292141-notto-disu-shitto-agen"
+  },
+  "suits": [
+   "M02",
+   "M15",
+   "M23",
+   "P12",
+   "P29"
+  ],
+  "requires": [
+   "regenerative_dragon_tail"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-002",
+  "name": "Canned speech cannot explain an emergency",
+  "allusion": "A thinking machine must express complex warnings through fixed shop phrases.",
+  "cues": [
+   "preset speech panel",
+   "urgent visual warning",
+   "cheerful sales phrase"
+  ],
+  "series": "Reborn as a Vending Machine, I Now Wander the Dungeon",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/Animemes/comments/wk40tz/"
+  },
+  "suits": [
+   "M14",
+   "P40"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-006",
+  "name": "Legendary wolf reduced to a drooling dinner guest",
+  "allusion": "An enormous proud predator visibly loses composure over dinner.",
+  "cues": [
+   "gigantic wolf",
+   "wagging tail",
+   "food-induced drool"
+  ],
+  "series": "Campfire Cooking in Another World with My Absurd Skill",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://tenor.com/view/campfire-cooking-campfire-camfire-cooking-anime-campfire-cooking-in-another-world-anime-drool-gif-16869270493613369225"
+  },
+  "suits": [
+   "M15",
+   "P37"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-009",
+  "name": "Sui wants to go pew pew",
+  "allusion": "An adorable slime treats frightening acid attacks as a playful game.",
+  "cues": [
+   "round baby-like slime",
+   "acid projectile",
+   "enthusiastic pew-pew lettering"
+  ],
+  "series": "Campfire Cooking in Another World with My Absurd Skill",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://www.reddit.com/r/Isekai/comments/1o7gmq6/"
+  },
+  "suits": [
+   "M15",
+   "P36"
+  ],
+  "requires": [
+   "slime_projectile_skill"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-017",
+  "name": "Industrial revolution for the sake of one book",
+  "allusion": "A modest desire to read expands into production systems and social upheaval.",
+  "cues": [
+   "book-starved child",
+   "paper workshop plan",
+   "reading chair at center"
+  ],
+  "series": "Ascendance of a Bookworm",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/HonzukiNoGekokujou/comments/u1thow/"
+  },
+  "suits": [
+   "M17",
+   "N09",
+   "P24"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-019",
+  "name": "Renamed heroine is obviously a different person",
+  "allusion": "Everyone playfully treats a renamed familiar character as a new individual.",
+  "cues": [
+   "new name badge",
+   "identical book obsession",
+   "unconvincing disguise"
+  ],
+  "series": "Ascendance of a Bookworm",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/HonzukiNoGekokujou/comments/1scob6p/season_4_who_is_this_new_rozemyne_character/"
+  },
+  "suits": [
+   "M17",
+   "N30"
+  ],
+  "requires": [
+   "established_alias"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-023",
+  "name": "The archmage forgot the last line",
+  "allusion": "A powerful elder stops mid-incantation and needs a prompt.",
+  "cues": [
+   "glowing half-finished spell",
+   "elderly wizard",
+   "prompt card"
+  ],
+  "series": "Handyman Saitou in Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/anime/comments/116c7wc/"
+  },
+  "suits": [
+   "M30",
+   "P32"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-026",
+  "name": "Returned from another world: did my console win?",
+  "allusion": "A long-absent returnee cares first about an obsolete console rivalry.",
+  "cues": [
+   "dated game controller",
+   "returnee luggage",
+   "modern news screen"
+  ],
+  "series": "Uncle from Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/dreamcast/comments/13gikwl/"
+  },
+  "suits": [
+   "M01",
+   "M28",
+   "P25"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-027",
+  "name": "Magic as a delete button for embarrassment",
+  "allusion": "The returnee treats memory deletion as a coping shortcut.",
+  "cues": [
+   "memory spell gesture",
+   "embarrassing recollection",
+   "gaps in notes"
+  ],
+  "series": "Uncle from Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/anime/comments/194dsmq/spoilers_uncle_from_another_world_new_year_new/"
+  },
+  "suits": [
+   "M01",
+   "M28",
+   "P25"
+  ],
+  "requires": [
+   "memory_erasure_magic"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-045",
+  "name": "The husband-searching love-song opening",
+  "allusion": "An affectionate opening sequence makes devotion the whole production.",
+  "cues": [
+   "wolf spouse",
+   "hearts and dance poses",
+   "missing partner just offstage"
+  ],
+  "series": "Chillin' in Another World with Level 2 Super Cheat Powers",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/Animemes/comments/1cy9ojw/"
+  },
+  "suits": [
+   "M01",
+   "M23",
+   "P07"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-047",
+  "name": "The transformation pose causes real collateral damage",
+  "allusion": "A heroic pose inexplicably produces an explosion behind the performer.",
+  "cues": [
+   "colored hero pose",
+   "explosion directly behind hero",
+   "bystander knocked askew"
+  ],
+  "series": "The Red Ranger Becomes an Adventurer in Another World",
+  "evidence": {
+   "tier": "documented_fandom_pattern",
+   "url": "https://knowyourmeme.com/photos/2986575-anime-manga"
+  },
+  "suits": [
+   "M01",
+   "M08",
+   "P16",
+   "P43"
+  ],
+  "requires": [
+   "sentai_transformation_explosion"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-048",
+  "name": "Giant robot versus a normal fantasy problem",
+  "allusion": "A sentai hero summons machinery far larger than the fantasy encounter.",
+  "cues": [
+   "combining robot silhouette",
+   "small fantasy obstacle",
+   "bewildered mage"
+  ],
+  "series": "The Red Ranger Becomes an Adventurer in Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/wholesomeanimemes/comments/1rj94q9/holy_peak/"
+  },
+  "suits": [
+   "M01",
+   "M08",
+   "P16",
+   "P43"
+  ],
+  "requires": [
+   "sentai_mecha_summon"
+  ],
+  "priority": 25
+ },
+ {
+  "id": "niche-049",
+  "name": "Friendship is a literal operating system",
+  "allusion": "The hero regards bonding rituals as practical equipment procedures.",
+  "cues": [
+   "bond-powered device",
+   "dramatic handshake",
+   "literal activation indicator"
+  ],
+  "series": "The Red Ranger Becomes an Adventurer in Another World",
+  "evidence": {
+   "tier": "observed_post",
+   "url": "https://www.reddit.com/r/wholesomeanimemes/comments/1rj94q9/holy_peak/"
+  },
+  "suits": [
+   "M01",
+   "M08",
+   "P16",
+   "P43"
+  ],
+  "requires": [
+   "bond_power_mechanic"
+  ],
+  "priority": 25
+ }
+]

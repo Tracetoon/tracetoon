@@ -7,49 +7,49 @@
           {
             "type": "command",
             "if": "Bash(*gh *)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*pr create*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*pr new*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*hub *)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*pull-request*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*propose*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*pulls*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "Bash(*createPullRequest*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           }
         ]
@@ -60,49 +60,49 @@
           {
             "type": "command",
             "if": "PowerShell(*gh *)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*pr create*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*pr new*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*hub *)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*pull-request*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*propose*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*pulls*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           },
           {
             "type": "command",
             "if": "PowerShell(*createPullRequest*)",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           }
         ]
@@ -112,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PreToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PreToolUse",
             "timeout": 60
           }
         ]
@@ -124,7 +124,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event PostToolUse",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event PostToolUse",
             "async": true,
             "timeout": 60
           }
@@ -136,7 +136,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx -y tracetoon@1.0.0-rc.52 hook plugin --agent claude --event SessionStart",
+            "command": "npx -y tracetoon@1.0.0-rc.53 hook plugin --agent claude --event SessionStart",
             "async": true,
             "timeout": 300
           }

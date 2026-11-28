@@ -1,7 +1,10 @@
 /** Checks a comic script before any art is made. */
+import { OFFICE_JOKE, OFFICE_PLACE, settingById } from './isekai/settings.ts';
+import { presentationOf, SPECIES_WORDS } from './isekai/presentation.ts';
 import { formatById, FORMATS } from './formats.ts';
 import { styleById } from './styles.ts';
-import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { EVERYDAY, GENRES, genreKey, MAX_GENRE_CHARS, type Genre, type GenreOption } from './genres.ts';
+import { PANEL_BACKGROUNDS } from './types.ts';
 import {
   ASPECTS,
   BEATS,
@@ -9,26 +12,32 @@ import {
   PALETTES,
   CAST_KINDS,
   DIALOGUE_KINDS,
+  BALLOONS,
+  CAMERAS,
+  PANEL_EFFECTS,
+  SFX_SIZES,
   KNOWN_STYLE_FAMILIES,
   STYLE_FAMILIES,
   type ComicScript,
   type ComicSummary,
 } from './types.ts';
+import { lookSimilarity, SAME_LOOK } from './casting.ts';
 import {
   comicSummary,
+  MAX_LEAD_LOOK,
   compositionProblems,
-  phoneFit,
-  phoneLayout,
   visibleHeadline,
 } from './composition.ts';
 
 /** Words per text item on a page: one balloon, one breath. */
-export const MAX_ITEM_WORDS = 18;
+export const MAX_ITEM_WORDS = 30;
 /**
- * All the words on a page, headline included. Room for a setup, a build and a
- * punchline in dialogue; most good comics use 25–60.
+ * All the words on a page, headline included. Comics are read on a desktop PR
+ * page, so a longer joke has room; most good comics still use 30–90.
  */
-export const MAX_PAGE_WORDS = 80;
+export const MAX_PAGE_WORDS = 150;
+/** Panels on one page: a big story moment can take a dense page. */
+export const MAX_PANELS = 9;
 export const MAX_HEADLINE_WORDS = 6;
 export const MAX_CHARACTERS = 6;
 export const MAX_STYLE_CHARS = 120;
@@ -55,6 +64,8 @@ export interface CheckOpts {
   evidenceText?: string;
   /** Genres available here (built-in plus user and repo genre files). */
   genres?: Genre[];
+  /** The genres offered for this comic (context genreOptions), with any cast offers. */
+  genreOptions?: GenreOption[];
 }
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
@@ -100,8 +111,8 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (!format) bad('format', `must be one of ${FORMATS.map((f) => f.id).join(', ')}`);
   if (s.format === 'custom' && !s.layout?.trim() && !s.composition)
     bad('layout', 'is required for a custom format: describe the page');
-  if (!Array.isArray(s.panels) || s.panels.length < 1 || s.panels.length > 6) {
-    bad('panels', 'must have 1 to 6 panels');
+  if (!Array.isArray(s.panels) || s.panels.length < 1 || s.panels.length > MAX_PANELS) {
+    bad('panels', `must have 1 to ${MAX_PANELS} panels`);
     return out;
   }
   if (
@@ -115,21 +126,10 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.aspect && !ASPECTS.includes(s.aspect))
     bad('aspect', `must be one of ${ASPECTS.join(', ')}`);
   out.push(...compositionProblems(s as ComicScript));
-  if (
-    Array.isArray(s.panels) &&
-    s.panels.every((p: any) => p && Array.isArray(p.dialogue ?? []))
-  ) {
-    try {
-      const tight = phoneFit(s as ComicScript).filter((f) => !f.fits);
-      if (tight.length) {
-        const better = phoneLayout(s as ComicScript);
-        warn(
-          'composition',
-          `on a phone (360 px) panel${tight.length === 1 ? '' : 's'} ${tight.map((f) => `${f.panel} (~${f.widthPx} px wide, ${f.chars} characters)`).join(', ')} would need text too small to read; reflow rather than shrink${better ? `: use the ${better.composition!.family} family (aspect ${better.aspect})` : ', or cut words'}`,
-        );
-      }
-    } catch {}
-  }
+  if (s.avoid !== undefined && (!Array.isArray(s.avoid) || s.avoid.length > 8 || s.avoid.some((a) => typeof a !== 'string' || a.length > 240)))
+    bad('avoid', 'must be a list of at most 8 short strings (things the image must not show)');
+  if (s.leadLook !== undefined && (typeof s.leadLook !== 'string' || s.leadLook.length > MAX_LEAD_LOOK))
+    bad('leadLook', `must be a few words, at most ${MAX_LEAD_LOOK} characters`);
   if (s.styleFamily && !KNOWN_STYLE_FAMILIES.includes(s.styleFamily))
     bad('styleFamily', `must be ${STYLE_FAMILIES.join(', ')}`);
   if (s.headline !== undefined && typeof s.headline !== 'string')
@@ -147,6 +147,11 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (s.request !== undefined && (typeof s.request !== 'string' || !s.request.trim()))
     bad('request', "must be the user's request in words (or left out)");
   out.push(...genreProblems(s as ComicScript, opts));
+  out.push(...personaProblems(s as ComicScript, opts));
+  out.push(...offerProblems(s as ComicScript, opts));
+  out.push(...balloonOrderProblems(s as ComicScript));
+  out.push(...isekaiProblems(s as ComicScript, opts));
+  out.push(...decisionProblems(s as ComicScript));
   out.push(...franchiseProblems(s as ComicScript));
   if (s.palette && !PALETTES.includes(s.palette))
     bad('palette', `must be one of ${PALETTES.join(', ')}`);
@@ -179,7 +184,7 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
   if (total > MAX_PAGE_WORDS)
     bad(
       'panels',
-      `the page has ${total} words; keep it to ${MAX_PAGE_WORDS} so it reads on a phone`,
+      `the page has ${total} words; keep it to ${MAX_PAGE_WORDS} so the joke stays quick to read`,
     );
 
   s.panels.forEach((p, i) => {
@@ -206,6 +211,12 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
     }
     if ((p.characters ?? []).length > 4)
       bad(`${at}.characters`, 'at most 4 characters per panel');
+    if (p.camera !== undefined && !CAMERAS.includes(p.camera))
+      bad(`${at}.camera`, `must be one of ${CAMERAS.join(', ')}`);
+    if (p.effects !== undefined) {
+      if (!Array.isArray(p.effects) || p.effects.some((e) => !PANEL_EFFECTS.includes(e)))
+        bad(`${at}.effects`, `must be a list of ${PANEL_EFFECTS.join(', ')}`);
+    }
     if (!Array.isArray(p.dialogue)) bad(`${at}.dialogue`, 'must be a list');
     if ((p.dialogue ?? []).length > 4) bad(`${at}.dialogue`, 'at most 4 lines per panel');
     for (const [j, d] of (p.dialogue ?? []).entries()) {
@@ -224,6 +235,18 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
         bad(`${w}.kind`, `must be ${DIALOGUE_KINDS.join(', ')}`);
       if (d.points !== undefined && typeof d.points !== 'string')
         bad(`${w}.points`, 'must name the surface or element the words are on');
+      if (d.balloon !== undefined && !BALLOONS.includes(d.balloon))
+        bad(`${w}.balloon`, `must be one of ${BALLOONS.join(', ')}`);
+      if (d.balloon !== undefined && (narration || d.kind === 'caption'))
+        warn(`${w}.balloon`, 'only spoken lines have balloons; captions, signs and sound effects ignore it');
+      if (d.size !== undefined && (d.kind !== 'sfx' || !SFX_SIZES.includes(d.size)))
+        bad(`${w}.size`, `is for sound effects ("kind": "sfx") and must be ${SFX_SIZES.join(', ')}`);
+      if (
+        d.emphasis !== undefined &&
+        (!Array.isArray(d.emphasis) ||
+          d.emphasis.some((e) => typeof e !== 'string' || !(d.text ?? '').toLowerCase().includes(e.toLowerCase())))
+      )
+        bad(`${w}.emphasis`, 'must list words that appear in the text');
       if (d.kind === 'label')
         warn(
           `${w}.kind`,
@@ -259,6 +282,22 @@ export function checkScript(script: unknown, opts: CheckOpts = {}): ScriptProble
       warn(
         'composition',
         'This layout, panel count and title treatment repeat recent comics. Consider a different concept; keep it if the story earns it.',
+      );
+    const lookAlike = current.leadLook
+      ? recent.find((r) => r.leadLook && lookSimilarity(r.leadLook, current.leadLook!) >= SAME_LOOK)
+      : undefined;
+    if (lookAlike)
+      warn(
+        'leadLook',
+        `the lead looks like a recent comic's lead ("${lookAlike.leadLook}"); cast a different kind of character (age, build, role or costume) in the genre's own look`,
+      );
+    const reused = (current.castNames ?? []).filter((n) =>
+      recent.some((r) => r.castNames?.includes(n)),
+    );
+    if (reused.length)
+      warn(
+        'characters',
+        `${reused.map((n) => `"${n}"`).join(', ')} already appeared in a recent comic. Invent this comic's own names, from what the characters do in this story.`,
       );
     if (
       current.panelCount === 2 &&
@@ -439,13 +478,207 @@ export function genreProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProbl
   return out;
 }
 
+/** Words that leave a choice open: a design or place must be decided, not a menu. */
+export const OPEN_CHOICE = /\b(or|either|choose|such as|e\.g\.|for example|optionally|alternatively)\b/i;
+
+/**
+ * Decisions the image model must receive already made: one place, and a
+ * background for every panel when the script uses them.
+ */
+export function decisionProblems(s: ComicScript): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (s.place !== undefined) {
+    if (typeof s.place !== 'string' || !s.place.trim() || s.place.length > 140) out.push({ where: 'place', problem: 'must be one concrete place in a short phrase' });
+    else if (OPEN_CHOICE.test(s.place) || /[;/]|,.*,/.test(s.place)) out.push({ where: 'place', problem: `"${s.place}" lists options; decide the one place the comic happens` });
+  }
+  for (const [i, p] of (Array.isArray(s.panels) ? s.panels : []).entries())
+    if (p.background !== undefined && !(PANEL_BACKGROUNDS as readonly string[]).includes(p.background))
+      out.push({ where: `panels[${i}].background`, problem: `must be one of ${PANEL_BACKGROUNDS.join(', ')}` });
+  return out;
+}
+
+/**
+ * The isekai cast (archetype guide): the page shows the generated lead plus at
+ * most two companions and one contact, each with one final design, in one place.
+ */
+export function isekaiProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  const cast = option?.isekaiCast;
+  if (!cast) return out;
+  const bad = (where: string, problem: string) => out.push({ where, problem });
+  const roleOf = new Map<string, 'lead' | 'companion' | 'contact'>([
+    [cast.lead.archetype, 'lead'],
+    ...cast.companions.map((m) => [m.archetype, 'companion'] as [string, 'companion']),
+    ...cast.contacts.map((m) => [m.archetype, 'contact'] as [string, 'contact']),
+  ]);
+  const ids = [...roleOf.keys()].join(', ');
+  if (s.castPreset !== cast.preset.id) bad('castPreset', `must be "${cast.preset.id}" (this comic's cast preset)`);
+  const chars = Array.isArray(s.characters) ? s.characters : [];
+  const roles = { lead: 0, companion: 0, contact: 0 };
+  for (const [i, c] of chars.entries()) {
+    const role = c.archetype ? roleOf.get(c.archetype) : undefined;
+    if (!role) bad(`characters[${i}].archetype`, `must be one of this comic's cast: ${ids}`);
+    else roles[role]++;
+    if (typeof c.description === 'string' && OPEN_CHOICE.test(c.description))
+      bad(`characters[${i}].description`, 'still leaves a choice open ("or", "such as", "choose"…); decide one final design');
+    const shown = presentationOf(c.archetype);
+    const word = typeof c.description === 'string' && shown && shown.base !== 'creature' ? SPECIES_WORDS.exec(c.description)?.[0] : undefined;
+    if (word)
+      bad(`characters[${i}].description`, `says "${word}", which an image model draws as an animal-headed creature; describe the base body and traits from \`presentation\` instead (${shown!.presentation})`);
+  }
+  if (!roles.lead) bad('characters', `must include the lead, "${cast.lead.title}" (${cast.lead.archetype})`);
+  if (roles.companion > cast.onPage.companions) bad('characters', `at most ${cast.onPage.companions} companions on the page (has ${roles.companion})`);
+  if (roles.contact > cast.onPage.contacts) bad('characters', `at most ${cast.onPage.contacts} local contact on the page (has ${roles.contact})`);
+  const leadChar = chars.find((c) => c.archetype === cast.lead.archetype);
+  if (leadChar && (s.lead?.name !== leadChar.name || s.lead?.persona !== cast.lead.archetype))
+    bad('lead', `must be {"persona": "${cast.lead.archetype}", "name": "${leadChar.name}"}`);
+  if (typeof s.place !== 'string' || !s.place.trim()) bad('place', 'is required: the one place the whole comic happens');
+  for (const [i, p] of (Array.isArray(s.panels) ? s.panels : []).entries())
+    if (!p.background) bad(`panels[${i}].background`, `is required: decide ${PANEL_BACKGROUNDS.join(', ')}`);
+  return out;
+}
+
+/**
+ * The rest of the host's offer for the chosen genre: a meme the comic uses must
+ * be one of the three offered, and an assigned style is drawn as assigned.
+ */
+export function offerProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  if (!option) return out;
+  if (option.pick) {
+    // An isekai comic is the idea the judge picked: its anchor words, its meme (or none), and the players of any pitch it borrowed.
+    const { idea, pitch } = option.pick;
+    // The comic letters the brainstorm's anchor (anchorProblems then checks it's on the page).
+    const want = option.pick.anchor?.terms ?? [];
+    const has = Array.isArray(s.anchor?.terms) ? s.anchor!.terms.map((t) => String(t).toLowerCase()) : [];
+    if (want.length && !want.some((t) => has.includes(t.toLowerCase())))
+      out.push({ where: 'anchor.terms', problem: `must include the picked idea's anchor words (${want.map((t) => `"${t}"`).join(', ')}), lettered on the page` });
+    if (pitch && s.pitch !== pitch.id) out.push({ where: 'pitch', problem: `must be "${pitch.id}" (the situation the picked idea borrows)` });
+    if (!pitch && s.pitch) out.push({ where: 'pitch', problem: 'the picked idea borrows no pitch; leave pitch out' });
+    if (s.gag !== idea.id) out.push({ where: 'gag', problem: `must be "${idea.id}" (the picked idea)` });
+    if (idea.meme && s.meme !== idea.meme) out.push({ where: 'meme', problem: `must be "${idea.meme}" (attached to the picked idea)` });
+    if (!idea.meme && s.meme) out.push({ where: 'meme', problem: 'the picked idea has no meme; leave meme out' });
+    const onPage = new Set((Array.isArray(s.characters) ? s.characters : []).map((c) => c.archetype));
+    for (const p of pitch?.players ?? [])
+      if (!p.optional && !onPage.has(p.archetype))
+        out.push({ where: 'characters', problem: `the pitch needs its ${p.slot}, "${p.title}" (${p.archetype}), on the page` });
+  } else if (option.pitches?.length) {
+    out.push({ where: 'genre', problem: 'this genre brainstorms first: write the ideas file, and the comic is written once an idea is picked (tracetoon comic gags)' });
+  } else if (s.meme !== undefined && s.meme !== '') {
+    const ids = [...(option.memeOffer ?? []), ...(option.tropeOffer ?? [])].map((m) => m.id);
+    if (typeof s.meme !== 'string' || !ids.includes(s.meme))
+      out.push({
+        where: 'meme',
+        problem: ids.length
+          ? `"${String(s.meme)}" wasn't offered; use one of ${ids.join(', ')}, or leave meme out`
+          : 'this genre offered no memes; leave meme out',
+      });
+  }
+  if (option.assignedLayout) {
+    // The host assigns a tiled structure per panel count, for variety; slants come from the panels' motion.
+    const n = Array.isArray(s.panels) ? s.panels.length : 0;
+    const want = option.assignedLayout[String(n)];
+    const counts = Object.keys(option.assignedLayout).join(', ');
+    if (!want) out.push({ where: 'panels', problem: `use ${counts} panels: this comic has an assigned layout for each (genreOptions assignedLayout)` });
+    else if (s.composition?.family !== 'grid' || s.composition.signature !== want)
+      out.push({ where: 'composition', problem: `with ${n} panels this comic's layout is {"family": "grid", "signature": "${want}"} (genreOptions assignedLayout)` });
+  }
+  const settingChoices = option.assignedSetting ? [option.assignedSetting] : (option.settingOffer ?? []);
+  if (settingChoices.length || option.adventureOnly) {
+    // The host assigns the adventure setting, offers three, or leaves it free (isekai/settings.ts); office places and bureaucracy jokes are out either way.
+    const chosen = settingChoices.find((c) => c.id === s.setting);
+    const assigned = chosen ?? settingChoices[0];
+    const where = assigned ? settingById(assigned.id) : undefined;
+    if (assigned && !chosen)
+      out.push({ where: 'setting', problem: settingChoices.length === 1 ? `must be "${assigned.id}": this comic happens in ${assigned.label} (genreOptions assignedSetting)` : `must be one of ${settingChoices.map((c) => `"${c.id}"`).join(', ')}: the setting the PR's moment fits best (genreOptions settingOffer)` });
+    if (typeof s.place === 'string' && s.place.trim()) {
+      if (OFFICE_PLACE.test(s.place))
+        out.push({ where: 'place', problem: `"${s.place}" is office-like (${s.place.match(OFFICE_PLACE)![0]}); no desks, counters, archives or paperwork rooms: ${assigned ? `set the scene in ${assigned.label}, e.g. ${assigned.examples.slice(0, 2).join(' or ')}` : 'set the scene where an adventure happens'}` });
+      else if (assigned && where && !where.words.test(s.place))
+        out.push({ where: 'place', problem: `"${s.place}" isn't in ${assigned.label}; name a spot there, e.g. ${assigned.examples.join(', ')}` });
+    }
+    // The payoff carries the PR (round 19): readers remember the last panel, so an anchor term is lettered there.
+    const terms = Array.isArray(s.anchor?.terms) ? s.anchor!.terms.filter((t): t is string => typeof t === 'string' && !!t.trim()) : [];
+    const last = Array.isArray(s.panels) && s.panels.length > 1 ? (s.panels[s.panels.length - 1]?.dialogue ?? []).map((d) => loose(d.text ?? '')) : undefined;
+    if (terms.length && last && !terms.some((t) => last.some((v) => v.includes(loose(t)))))
+      // A warning since round 20: as an error it was met with re-lettered signs (35 of 40 final panels in r19).
+      out.push({ where: 'anchor.terms', severity: 'warning', problem: `none of ${terms.map((t) => `"${t}"`).join(', ')} is in the last panel; the payoff is where the joke lands on the PR, so let the punchline itself turn on the change (not a sign re-lettering it)` });
+    const joke = (Array.isArray(s.panels) ? pageText(s) : []).find((t) => OFFICE_JOKE.test(t));
+    if (joke) out.push({ where: 'panels', problem: `"${joke}" is office parody (${joke.match(OFFICE_JOKE)![0]}); the PR plays out as adventure, not paperwork` });
+  }
+  if (option.assignedStyle && !opts.pinnedStyle && typeof s.style === 'string' && !same(s.style, option.assignedStyle))
+    out.push({ where: 'style', problem: `this comic is assigned the style "${option.assignedStyle}" (genreOptions assignedStyle)` });
+  return out;
+}
+
+/**
+ * When the chosen genre came with a cast offer, the comic casts from it: the
+ * host picks the five personas so a run of comics doesn't settle on the same
+ * favourites. `personas` lists the offered ids used.
+ */
+export function personaProblems(s: ComicScript, opts: CheckOpts = {}): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  if (typeof s.genre !== 'string') return out;
+  const option = opts.genreOptions?.find((g) => genreKey(g.id) === genreKey(s.genre!));
+  const offer = option?.castOffer;
+  const required = option?.requiredCast ?? offer?.personas.find((p) => p.required);
+  const lead = option?.lead ?? offer?.personas.find((p) => p.lead);
+  if (!offer && !required && !lead) return out;
+  const allowed = [...(offer?.personas ?? []), ...(option?.requiredCast ? [option.requiredCast] : []), ...(option?.lead ? [option.lead] : [])];
+  const offered = new Map(allowed.map((p) => [p.id, p]));
+  const list = allowed.map((p) => `${p.id} (${p.role})`).join(', ');
+  const personas = Array.isArray(s.personas) ? s.personas : [];
+  if (!personas.length) {
+    out.push({
+      where: 'personas',
+      problem: `is required: list the ids of the personas you cast${lead ? `, including the lead "${lead.name}" (${lead.id})` : ''}${required ? ` and "${required.name}" (${required.id})` : ''}${offer ? `, from ${list}` : ''}`,
+    });
+  } else {
+    if (offer)
+      for (const [i, id] of personas.entries()) {
+        if (typeof id !== 'string' || !offered.has(id))
+          out.push({
+            where: `personas[${i}]`,
+            problem:
+              offer.kind === 'side-only'
+                ? `"${String(id)}" wasn't offered; this comic uses side characters only: cast from ${list}`
+                : `"${String(id)}" wasn't offered; cast from ${list}`,
+          });
+      }
+    if (required && !personas.includes(required.id))
+      out.push({ where: 'personas', problem: `this comic must cast "${required.name}" (${required.id}): ${required.details}` });
+    if (offer && personas.length < 2)
+      out.push({ where: 'personas', problem: 'cast at least two of the offered personas', severity: 'warning' });
+  }
+  if (lead) {
+    const names = (s.characters ?? []).map((c) => c.name);
+    if (!s.lead || typeof s.lead !== 'object' || s.lead.persona !== lead.id || typeof s.lead.name !== 'string')
+      out.push({ where: 'lead', problem: `is required: {"persona": "${lead.id}", "name": "<their name in characters>"}; the main character is "${lead.name}": ${lead.details}` });
+    else if (!names.includes(s.lead.name))
+      out.push({ where: 'lead', problem: `"${s.lead.name}" isn't one of the characters (${names.join(', ')})` });
+    else if (personas.length && !personas.includes(lead.id))
+      out.push({ where: 'personas', problem: `list the lead persona "${lead.id}" too` });
+    else {
+      const panels = Array.isArray(s.panels) ? s.panels : [];
+      const shown = panels.filter((p) => (p.characters ?? []).some((c) => c.name === s.lead!.name)).length;
+      if (panels.length && shown * 2 < panels.length)
+        out.push({ where: 'lead', problem: `the main character "${s.lead.name}" is in ${shown} of ${panels.length} panels; give them most of the page`, severity: 'warning' });
+    }
+  }
+  return out;
+}
+
 /**
  * Names that belong to one specific work. Genre archetypes are welcome (a
  * starship captain, a wizard); a particular franchise's characters, ships and
  * trademarks are not, unless the user asked for them.
  */
 export const FRANCHISE_NAMES =
-  /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man)\b/i;
+  /\b(picard|kirk|spock|uss enterprise|starfleet|jedi|sith|lightsaber|darth|vader|skywalker|yoda|gandalf|frodo|hobbit|sauron|hogwarts|harry potter|pikachu|pok[eé]mon|mario|luigi|zelda|sonic the hedgehog|batman|superman|spider-?man|iron man|avengers|godzilla|gundam|evangelion|optimus|autobot|decepticon|doctor who|tardis|dalek|ghostbusters|indiana jones|james bond|007|sherlock|the terminator|ripley|xenomorph|mandalorian|borg|klingon|tribble|wookiee|chewbacca|r2-?d2|c-?3po|minecraft|master chief|pac-?man|frieren|himmel|konosuba|megumin|kazuma|re: ?zero|solo leveling|jinwoo|witch hat atelier|rimuru|ainz)\b/i;
 
 export function franchiseProblems(s: ComicScript): ScriptProblem[] {
   if (s.request?.trim()) return [];
@@ -478,4 +711,29 @@ export function franchiseProblems(s: ComicScript): ScriptProblem[] {
         ]
       : [];
   });
+}
+
+const SIDE = { left: 0, center: 1, right: 2 } as const;
+
+/**
+ * Balloons read from top-left, down and right, so the first speaker in a panel
+ * stands on the left of (or level with) everyone who speaks after them;
+ * otherwise a reply reads before the line it answers (Clip Studio Tips 4811,
+ * Jim Shooter's lettering memo).
+ */
+export function balloonOrderProblems(s: ComicScript): ScriptProblem[] {
+  const out: ScriptProblem[] = [];
+  (Array.isArray(s.panels) ? s.panels : []).forEach((p, i) => {
+    const where = new Map((p.characters ?? []).map((c) => [c.name, SIDE[c.position as keyof typeof SIDE]]));
+    const speakers = (p.dialogue ?? []).flatMap((d) => (d.speaker && where.has(d.speaker) ? [d.speaker] : []));
+    const order = speakers.filter((n, k) => speakers.indexOf(n) === k);
+    for (let a = 0; a < order.length; a++)
+      for (let b = a + 1; b < order.length; b++)
+        if (where.get(order[a]!)! > where.get(order[b]!)!)
+          out.push({
+            where: `panels[${i}].characters`,
+            problem: `${order[a]} speaks before ${order[b]} but stands to their right, so the reply reads first; put ${order[a]} on the left (swap their positions) or reorder the lines`,
+          });
+  });
+  return out;
 }
