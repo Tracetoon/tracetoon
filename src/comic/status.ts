@@ -13,6 +13,13 @@ export interface ComicStatus {
   /** For a skip: who decided (the user, the agent, or a host that can't draw). */
   by?: 'user' | 'agent' | 'mcp';
   detail: string;
+  /**
+   * The skip is `tracetoon comic run`'s own outcome (setup pending, drawing
+   * failed), not a decision: the next `comic run` tries again, because what
+   * stopped it (a sign-in, an approval, a dropped connection) may be fixed.
+   * A skip someone chose (`comic skip`) never has it and stays final.
+   */
+  auto?: true;
   at: string;
 }
 
@@ -25,6 +32,7 @@ export function writeComicStatus(
   const record: ComicStatus = {
     state: status.state,
     ...(status.by ? { by: status.by } : {}),
+    ...(status.auto ? { auto: true as const } : {}),
     detail: status.detail.replace(/\s+/g, ' ').trim().slice(0, 120),
     at: status.at ?? new Date().toISOString(),
   };
