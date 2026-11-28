@@ -176,14 +176,17 @@ async function drive(root: string, run: Run, opts: ComicRunOpts): Promise<ComicR
   const agents: AgentRecord[] = [];
   const base = { run: run.id, agents };
   const skip = (reason: string, comicSetup?: string): ComicRunResult => {
-    writeComicStatus(run, { state: 'skipped', by: 'agent', detail: reason });
+    writeComicStatus(run, { state: 'skipped', by: 'agent', auto: true, detail: reason });
     return { ...base, state: 'skipped', reason, ...(comicSetup ? { comicSetup } : {}) };
   };
   const ctx = readJson<{ comic?: { expectation?: ComicExpectation } }>(run, 'context.json');
   const e = ctx?.comic?.expectation;
   if (!e?.expected) return { ...base, state: 'not-expected', reason: e?.why || undefined };
   const recorded = readComicStatus(run);
-  if (recorded?.state === 'skipped')
+  // A skip someone chose is final. One `comic run` itself recorded (image setup
+  // pending, drawing failed) is not: the user may have signed in or approved a
+  // route since, and the same command should then draw the comic.
+  if (recorded?.state === 'skipped' && !recorded.auto)
     return { ...base, state: 'skipped', reason: recorded.detail };
   // The route as it is now: the user may have approved one since prepare.
   const route = routeStep(routeStatuses(root, false), loadConfig(root).comic);

@@ -136,6 +136,34 @@ describe('tracetoon comic run', () => {
     expect(calls().filter((c) => c.prompt.includes('tracetoon comic run'))).toEqual([]);
   });
 
+  test("a skip comic run recorded itself (setup pending) is retried once the route is approved", () => {
+    env.TRACETOON_REVIEW_RUNNER = 'claude';
+    const { repo, runDir } = prepared();
+    const first = cli(repo.root, '--json', 'comic', 'run');
+    expect(first.json.state).toBe('skipped');
+    expect(JSON.parse(readFileSync(join(runDir, 'comic-status.json'), 'utf8'))).toMatchObject({
+      state: 'skipped',
+      auto: true,
+    });
+    // The user approves the route and the same command now draws.
+    approveCodex();
+    const again = cli(repo.root, '--json', 'comic', 'run');
+    expect({ state: again.json?.state, reason: again.json?.reason }).toMatchObject({ state: 'drawn' });
+    expect(existsSync(join(runDir, 'out', 'comic.png'))).toBe(true);
+    expect(existsSync(join(runDir, 'comic-status.json'))).toBe(false);
+  });
+
+  test('a skip someone chose stays final, even once a route is approved', () => {
+    env.TRACETOON_REVIEW_RUNNER = 'claude';
+    approveCodex();
+    const { repo, runDir } = prepared();
+    expect(cli(repo.root, 'comic', 'skip', '--reason', 'not for this PR', '--by', 'user').code).toBe(0);
+    const r = cli(repo.root, '--json', 'comic', 'run');
+    expect(r.json).toMatchObject({ state: 'skipped', reason: 'not for this PR' });
+    expect(calls()).toEqual([]);
+    expect(existsSync(join(runDir, 'out', 'comic.png'))).toBe(false);
+  });
+
   test('comic off: nothing to do', () => {
     writeFileSync(env.TRACETOON_CONFIG!, JSON.stringify({ comic: 'off' }));
     const { repo } = prepared_off();
