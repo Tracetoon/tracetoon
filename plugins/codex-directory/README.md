@@ -50,8 +50,11 @@ Session logs are read and processed on your machine. Data leaves it only for:
 - **An image service** (Codex, Antigravity, OpenAI or Gemini), only for a comic
   and only after you approve that route once: the comic prompt, written from the
   PR summary.
-- **The Codex CLI**, when reviews run through `tracetoon review run` (the default
-  on Codex): the review packet (draft description, evidence brief and selected diff).
+- **A second Codex process on your own account, started by Tracetoon**, by
+  default (`tracetoon review run` for reviews, `tracetoon comic run` for
+  comics). It is `codex exec`, read-only. Input: the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic. It goes to OpenAI
+  through your Codex login and counts against your Codex usage. Your agent's own
+  reviewer agents instead: `tracetoon prepare --reviewer-runner agent`.
 
 There is no Tracetoon server and no telemetry. What it reads, writes and sends,
 and how to check it: [REVIEW.md](REVIEW.md).

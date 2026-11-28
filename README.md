@@ -398,6 +398,10 @@ first approved route that can draw, in this order:
 | `openai`                     | `OPENAI_API_KEY` (model `gpt-image-2.5-flare`, change with `TRACETOON_OPENAI_MODEL`)                        | OpenAI, billed to your key                     |
 | `gemini`                     | `GEMINI_API_KEY` or `GOOGLE_API_KEY` (model `gemini-nano-banana-2.1`, change with `TRACETOON_GEMINI_MODEL`) | Google, billed to your key                     |
 
+The experimental `antigravity` route runs `agy -p --dangerously-skip-permissions`
+in an empty temporary folder holding only the reference images, so it can draw
+with nobody at the keyboard.
+
 A Codex set up for another model provider in `~/.codex/config.toml` (a LiteLLM
 proxy, say) has no image tool. After setting an API key, restart your agent so
 it sees the key: on Windows, `setx OPENAI_API_KEY "<key>"`; on macOS or Linux,
@@ -452,6 +456,30 @@ hook. Where each agent keeps its hook is listed in
 [supported agents](docs/agents/support.md). Skip
 installing it with `TRACETOON_NO_HOOK=1`, or manage it with
 `tracetoon hook install` and `tracetoon hook uninstall`.
+
+### Reviewers and the comic author: a second copy of your agent
+
+On Claude Code and Codex, Tracetoon starts a second process of the agent you
+already use, so the reviewers and the comic author are independent of the agent
+that drafted the PR. `tracetoon review run` starts the reviewers and
+`tracetoon comic run` starts the comic author and judges. On Claude Code that is
+`claude -p` on your Claude account: reviewers get no tools, and the comic author
+and judges get read-only tools on files Tracetoon names. On Codex it is
+`codex exec`, read-only. The input is the review packet (draft description,
+evidence brief, selected diff), or for a comic the comic packet and the rendered
+comic. It goes to your agent's provider under the same terms as your session
+and can use tokens on your plan. Prefer your agent's own reviewer agents? Run
+`tracetoon prepare --reviewer-runner agent`. The full list of what is read,
+written and sent is in [PRIVACY.md](PRIVACY.md).
+
+### Permission prompts
+
+Your agent may ask before it runs `tracetoon review run`. Tracetoon does not add
+or change permission rules in any agent. If you want to stop the prompt,
+`tracetoon doctor --verbose` on Claude Code prints the rule to add to
+`permissions.allow` in your own settings; it is your decision, and Tracetoon
+never makes it for you. The PR hook is the only thing Tracetoon writes into an
+agent's configuration (see above).
 
 ### Turn it off at whichever level you need
 

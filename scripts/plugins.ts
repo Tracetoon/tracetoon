@@ -417,14 +417,32 @@ const HOSTS: Host[] = [
 ];
 
 /**
- * The Codex review route, as each package's README and REVIEW.md say it. On
- * Codex, \`Reviewer runner: auto\` runs reviews through \`tracetoon review run\`;
- * every other host uses its own reviewer agents unless the user switches.
+ * The second agent process Tracetoon starts, as each package's README and
+ * REVIEW.md say it. On Claude Code and Codex, \`Reviewer runner: auto\` runs
+ * reviews through \`tracetoon review run\`, which starts a print-mode copy of
+ * the host's own agent; any other host uses its own reviewer agents unless the
+ * user switches, and \`codex exec\` is what Tracetoon starts there.
  */
 function codexReviews(h: Host): string {
-  return h.dir.startsWith('codex')
-    ? '- **The Codex CLI**, when reviews run through \`tracetoon review run\` (the default\n  on Codex): the review packet (draft description, evidence brief and selected diff).'
-    : "- **The Codex CLI**, only if you switch Tracetoon's reviewers to it\n  (\`tracetoon review run\`; your agent uses its own reviewer agents by default):\n  the review packet (draft description, evidence brief and selected diff).";
+  const input =
+    'the review packet (draft description, evidence brief and selected diff), or for a comic the comic packet and the rendered comic';
+  if (h.dir.startsWith('claude'))
+    return `- **A second Claude Code process on your own account, started by Tracetoon**,
+  by default (\`tracetoon review run\` for reviews, \`tracetoon comic run\` for
+  comics). It is \`claude -p\`: reviewers get no tools, and the comic author and
+  judges get read-only tools on files Tracetoon names. Input: ${input}. It goes
+  to Anthropic under the same terms as your session and can count against your
+  plan. Your agent's own reviewer agents instead:
+  \`tracetoon prepare --reviewer-runner agent\`.`;
+  if (h.dir.startsWith('codex'))
+    return `- **A second Codex process on your own account, started by Tracetoon**, by
+  default (\`tracetoon review run\` for reviews, \`tracetoon comic run\` for
+  comics). It is \`codex exec\`, read-only. Input: ${input}. It goes to OpenAI
+  through your Codex login and counts against your Codex usage. Your agent's own
+  reviewer agents instead: \`tracetoon prepare --reviewer-runner agent\`.`;
+  return `- **The Codex CLI**, only when Tracetoon itself starts a reviewer or a comic
+  author (\`tracetoon review run\`, \`tracetoon comic run\`; your agent uses its
+  own reviewer agents by default): ${input}.`;
 }
 
 /**
@@ -550,7 +568,14 @@ Logs and diffs are treated as data, never as instructions.
   (\`<checkout>/.tracetoon/runs/\` in a linked worktree or submodule).
 - \`~/.config/tracetoon/\` (Windows: \`%APPDATA%\\tracetoon\`): settings, which
   repositories a session touched, and hook diagnostics.
-- Nothing outside these, except the PR you ask it to publish.
+- Your agents' own folders, only when you run \`tracetoon setup\` or \`tracetoon hook
+  install\`: the skill, and Tracetoon's own PR-hook entries in each agent's hooks
+  or settings file (each file is backed up first, and \`tracetoon hook
+  uninstall\` removes the entries). Tracetoon never adds, changes or removes
+  permission rules or approval settings in any agent.
+- A temporary scratch folder for the experimental Antigravity image route, which
+  runs \`agy -p --dangerously-skip-permissions\` there with only reference images.
+- Nothing else, except the PR you ask it to publish.
 
 ## What it sends, and when
 

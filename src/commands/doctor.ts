@@ -15,6 +15,8 @@ import {
 import { gh, git, run } from '../util/exec.ts';
 import { TOOL_VERSION, BUILD_INFO, FROM_SOURCE } from '../version.ts';
 import { loadConfig, userConfigPath } from '../config.ts';
+import { hostAgent } from '../util/host.ts';
+import { userCommand } from '../util/userCommand.ts';
 import { readLocal } from '../util/localJson.ts';
 import { readState } from '../update/state.ts';
 import { compareVersions } from '../update/version.ts';
@@ -437,6 +439,18 @@ function doctorChecks(
       fix: 'tracetoon update',
       humanRequired: true,
     });
+  // Claude Code asks before a command it doesn't know; the user can allow this one.
+  // Information only: Tracetoon never writes permission rules, and says so.
+  if (hostAgent() === 'claude')
+    add({
+      id: 'review-permission',
+      ok: true,
+      severity: 'info',
+      message:
+        "Claude Code may ask you before `tracetoon review run` starts the reviewers. Tracetoon doesn't add or change permission rules in Claude Code's settings, and nothing here has been changed.",
+      fix: `Only if you want to stop being asked, and only you can decide that: add "Bash(${userCommand().run} review run:*)" to permissions.allow in your Claude Code settings (.claude/settings.local.json covers just this repository). Match the command to how your agent runs Tracetoon. Tracetoon does not edit that file for you, and neither should your agent.`,
+      humanRequired: true,
+    });
   add({
     id: 'update',
     ok: !report.update.available,
@@ -629,6 +643,9 @@ export function doctor(
       );
     if (!ghV) lines.push('Install the GitHub CLI (gh) to create or update PRs.');
     else if (!ghAuth) lines.push('Run `gh auth login` to let Tracetoon post PRs.');
+    // For you, not for your agent to act on: Tracetoon never writes permission rules.
+    const permission = full.checks.find((c) => c.id === 'review-permission');
+    if (permission) lines.push(`note for you: ${permission.message}`, `  ${permission.fix}`);
     return lines.join('\n');
   });
   const unknown = report.unknownRecordTypes ?? {};

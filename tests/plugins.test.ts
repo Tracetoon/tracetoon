@@ -81,10 +81,13 @@ describe('privacy and data handling', () => {
     expect(readme).toContain(PRIVACY_URL);
     expect(text(`${OUT}/${dir}/REVIEW.md`)).toContain(PRIVACY_URL);
   });
-  test.each(ALL)('%s README says when Codex reviews apply on its host', (dir) => {
+  test.each(ALL)('%s README says which second agent process runs reviews on its host', (dir) => {
     const readme = text(`${OUT}/${dir}/README.md`);
-    if (dir.startsWith('codex')) expect(readme).toMatch(/\(the default\s+on Codex\)/);
-    else expect(readme).toContain("only if you switch Tracetoon's reviewers to it");
+    if (dir.startsWith('claude'))
+      expect(readme).toContain('second Claude Code process on your own account');
+    else if (dir.startsWith('codex'))
+      expect(readme).toContain('second Codex process on your own account');
+    else expect(readme).toContain('only when Tracetoon itself starts a reviewer');
   });
   test('every manifest credits the author', () => {
     for (const path of [...files.keys()].filter((p) => p.endsWith('plugin.json')))
@@ -211,6 +214,30 @@ describe('every package', () => {
         expect(t).toContain('tracetoon config set disclosure none');
         expect(t).toContain('tracetoon config set comicCredit false');
       }
+  });
+
+  test('every README and REVIEW says what second agent process Tracetoon starts, and what it never changes', () => {
+    const second: Record<string, RegExp> = {
+      claude: /second Claude Code process[^]*claude -p/,
+      'claude-directory': /second Claude Code process[^]*claude -p/,
+      codex: /second Codex process[^]*codex exec/,
+      'codex-directory': /second Codex process[^]*codex exec/,
+      cursor: /only when Tracetoon itself starts a reviewer/,
+      agent: /only when Tracetoon itself starts a reviewer/,
+    };
+    for (const [d, re] of Object.entries(second))
+      for (const f of ['README.md', 'REVIEW.md']) {
+        const t = text(`${OUT}/${d}/${f}`);
+        expect({ d, f, ok: re.test(t) }).toEqual({ d, f, ok: true });
+        // The old claim that Claude Code and Codex use only their own reviewer agents is gone.
+        if (d.startsWith('claude'))
+          expect(t).not.toContain('your agent uses its own reviewer agents by default):');
+      }
+    for (const d of Object.keys(second)) {
+      const t = text(`${OUT}/${d}/REVIEW.md`);
+      expect(t).toContain('never adds, changes or removes');
+      expect(t).toContain('permission rules');
+    }
   });
 
   test('every README links the install guide the packaged skill points at', () => {
