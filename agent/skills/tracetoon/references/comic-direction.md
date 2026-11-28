@@ -24,8 +24,8 @@ The genre comes first: one of `context.comic.genreOptions`
 ([genres.md](genres.md)). All three proposals are set in it; they differ in
 premise. A genre's own tropes (red alert, the prophecy, the heist briefing,
 the showdown) give a joke big stakes to hang on a small, real software
-moment, and its stock characters can be drawn as archetypes without copying
-any one work.
+moment, and its stock characters and famous scenes can be parodied without
+naming or copying any one work.
 
 Write brief candidates to `comic-design.json` in the local run. For each, record:
 - the punchline;
@@ -50,8 +50,10 @@ judgments, not a numeric humor score or a rotation quota.
 
 The candidates must differ in premise or storytelling, not just colors or a
 new animal species. Glance at the last few `recentComics`: if they were
-two-panel before/afters, tell this one as a story. Reusing a style is fine;
-reusing either of the last two genres is not, unless the user asked for it.
+two-panel before/afters, tell this one as a story; if they share a layout
+family, pick another one. Their `castNames` are taken:
+name this comic's characters afresh. Reusing a style is fine; reusing either
+of the last two genres is not, unless the user asked for it.
 
 ## Useful starting compositions
 
@@ -63,7 +65,7 @@ reusing either of the last two genres is not, unless the user asked for it.
 - **A pause before the payoff:** a vertical sequence with deliberate space.
 - **One visual contradiction:** a single scene with one line of dialogue or a
   caption.
-- **Overall context plus details:** a hero panel with contained insets.
+- **Overall context plus details:** a tall panel for the context beside a stack of details.
 - **A contrast that is itself the joke:** two matched frames. Use this
   sparingly.
 
@@ -72,7 +74,7 @@ needs; a large PR does not require a long comic, and a small one can still
 deserve four panels.
 - Use English left-to-right, top-to-bottom reading order, even for
   manga-inspired art.
-- Keep to 1–6 panels and 80 displayed words.
+- Keep to 1–9 panels and 150 displayed words.
 - The metadata title need not be a visible headline, and a visible title need
   not be large or at the top.
 
@@ -81,13 +83,13 @@ scenes are all valid. Use the genre's stock characters (a captain, a wizard, a
 detective, a monster) when the world carries the joke; personified parts when
 the system carries it (the actual hook, server, job or cache, called by its
 real name, perhaps as the ship's AI or the dungeon's trap); creatures when
-their traits help. Archetypes, never a specific work's characters.
+their traits help. Parody the type, never a specific work's characters.
 
 ## The final visual check
 
 Before posting, confirm:
 - it reads as a drawn comic, not a render or illustration;
-- text is readable at PR and phone widths;
+- text is readable at PR width on a desktop screen;
 - the words belong to the scene;
 - the sequencing is unambiguous;
 - no outcome is invented;
