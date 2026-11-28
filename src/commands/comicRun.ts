@@ -307,8 +307,10 @@ async function drive(root: string, run: Run, opts: ComicRunOpts): Promise<ComicR
 
   // ------------------------------------------------------------ quality loop
   let failures = 0;
+  /** Set when a second draft could not be made: the loop goes on with the first comic. */
+  let draftsOff = false;
   for (let step = 0; step < MAX_STEPS; step++) {
-    const l = await tt(['comic', 'loop', ...(opts.creative ? ['--creative'] : [])]);
+    const l = await tt(['comic', 'loop', ...(opts.creative ? ['--creative'] : []), ...(draftsOff ? ['--drafts', '1'] : [])]);
     if (l.code !== 0) break;
     const n = l.json;
     if (n.action === 'stop') {
@@ -324,6 +326,35 @@ async function drive(root: string, run: Run, opts: ComicRunOpts): Promise<ComicR
         selected: n.selected,
         unresolved: n.unresolved ?? [],
       };
+    }
+    if (n.action === 'draft') {
+      // An independent second draft: a FRESH author session (never the first author's) from the same packet.
+      const packetPath = String(n.packet);
+      if (!author?.readDirs.length) {
+        const packet = await tt(['comic', 'packet']);
+        const skillFiles: string[] = packet.code === 0 ? (packet.json.skillFiles ?? []) : [];
+        author = { sessionId: '', readDirs: [...new Set([dirname(packetPath), ...skillFiles.map((f) => dirname(f))])] };
+      }
+      const failed = existsSync(packetPath)
+        ? await authorRounds(
+            [readFileSync(packetPath, 'utf8').trimEnd(), '', `(The packet files sit in ${dirname(packetPath)}.)`, '', AUTHOR_OVERRIDE, ''].join('\n'),
+          )
+        : 'the comic packet is missing';
+      let ok = !failed;
+      if (ok) {
+        const art = await tt(['comic', 'art', '--force']);
+        if (art.code === 4 || art.code === 5)
+          return skip(
+            "the image route needs the user's approval",
+            `${firstLine(art.json.error)}${art.json.fix ? ` ${art.json.fix}.` : ''}`,
+          );
+        ok = art.code === 0 && (await tt(['comic', 'render'])).code === 0;
+      }
+      // One draft attempt per run, whatever happened: a failed draft keeps the first comic, and a
+      // draft whose image matches an earlier one adds no candidate (the loop would ask again).
+      draftsOff = true;
+      void ok;
+      continue;
     }
     if (n.action === 'revise') {
       const target = n.target as IssueTarget;

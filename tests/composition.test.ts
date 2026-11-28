@@ -52,7 +52,7 @@ describe('story-led compositions', () => {
     expect(prompt).toContain('Composition: vertical');
     expect(prompt).not.toContain('horizontal row');
     expect(prompt).not.toMatch(/bold brush-script headline|Headline, lettered/);
-    expect(prompt).toContain('human characters are welcome');
+    expect(prompt).toContain('original fictional characters only');
     expect(artPrompt(s.panels[0]!, 0, s)).not.toContain('Square image');
     expect(frameAspect(s, 0)).toBe('16:9');
   });
@@ -179,7 +179,11 @@ describe('story-led compositions', () => {
   test('repeat checks are semantic, advisory and respect style pins and unknown history', () => {
     const s = example('diagonal');
     // Same story shape and cast, different genre: advisory warnings only.
-    const recent = Array.from({ length: 3 }, () => ({ ...comicSummary(s), genre: 'pirates' }));
+    const recent = Array.from({ length: 3 }, () => ({
+      ...comicSummary(s),
+      genre: 'pirates',
+      castNames: ['someone else'],
+    }));
     const findings = checkScript(s, { recentComics: recent });
     expect(findings.filter((p) => p.severity === 'warning').map((p) => p.where)).toEqual([
       'composition',
@@ -205,6 +209,17 @@ describe('story-led compositions', () => {
     expect(
       checkScript(s, { recentComics: [{ style: 'some old custom style' }] }),
     ).toEqual([]);
+    // A name an earlier comic used is advisory, whatever its case.
+    const named = comicSummary(s).castNames!;
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.every((n) => n === n.toLowerCase())).toBe(true);
+    const reused = checkScript(s, {
+      recentComics: [{ genre: 'pirates', castNames: [named[0]!] }],
+    });
+    expect(reused.filter((p) => p.where === 'characters').map((p) => p.problem)).toEqual([
+      expect.stringContaining(`"${named[0]}" already appeared`),
+    ]);
+    expect(errors(reused)).toEqual([]);
     const noCast = example('single');
     expect(comicSummary(noCast).castKinds).toEqual([]);
     expect(comicSummary(pageScript()).castKinds).toBeUndefined();
@@ -243,6 +258,7 @@ describe('creative history', () => {
             panelCount: 2,
             titleTreatment: 'none',
             castKinds: ['creature'],
+            castNames: ['Captain Vex', 'pip'],
             styleFamily: 'ink',
             genre: 'Space-Opera',
             secret: 'must not escape',
@@ -262,6 +278,7 @@ describe('creative history', () => {
         panelCount: 2,
         titleTreatment: 'none',
         castKinds: ['creature'],
+        castNames: ['captain vex', 'pip'],
         genre: 'space-opera',
       },
       { style: 'noir' },
@@ -347,12 +364,12 @@ describe('genre first, rotated', () => {
     expect(comicSummary(s).genre).toBe('kaiju');
     expect(pagePrompt(s)).toContain('Genre: Kaiju attack');
     expect(artPrompt(s.panels[0]!, 0, s)).toContain('Genre: Kaiju attack');
-    expect(pagePrompt(s)).toContain('genre archetypes are fine');
+    expect(pagePrompt(s)).toContain('genre parody of familiar character types and settings is welcome');
     expect(pagePrompt(withGenre())).not.toContain('Genre:');
     // A user request decides the cast: the genre line no longer forbids named characters.
     const asked = { ...s, request: 'the crew of a famous starship' };
     expect(pagePrompt(asked)).toContain('Genre: Kaiju attack');
-    expect(pagePrompt(asked)).not.toContain("not any specific work's characters");
+    expect(pagePrompt(asked)).not.toContain("never any specific work's characters");
   });
 
   test('options rotate: unused first, per-branch order, everyday last, pins win', () => {

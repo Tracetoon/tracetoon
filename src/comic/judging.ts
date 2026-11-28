@@ -7,6 +7,7 @@
  * Design: tracetoon-comic-evaluation-kit v2 (autonomous). No step asks a
  * person to rate or break a tie: uncertainty keeps the incumbent or stops.
  */
+import { avoidFrom, hasConcern, MISREAD_REDRAWS, type MisreadReview } from './misread.ts';
 import rubricJson from './rubric.json';
 import type { ComicScript } from './types.ts';
 
@@ -23,7 +24,7 @@ export const RUBRIC = rubricJson as {
   gates: { id: GateId; description: string }[];
   creativeGoal: { dimension: 'amusement'; minimum: number };
   prompts: Record<
-    'observer' | 'phoneReader' | 'contextualReviewer' | 'comparator' | 'healthCheck',
+    'observer' | 'contextualReviewer' | 'comparator' | 'healthCheck',
     string
   >;
 };
@@ -39,7 +40,7 @@ export const DIMENSIONS = [
 ] as const;
 export type DimensionId = (typeof DIMENSIONS)[number];
 export const BLIND_DIMENSIONS = DIMENSIONS.filter((d) => d !== 'prMeaning');
-/** Gates the contextual checker judges. Phone legibility is a host gate (phoneGate). */
+/** Gates the contextual checker judges. */
 export const GATES = [
   'factualIntegrity',
   'criticalCommunication',
@@ -90,11 +91,6 @@ export interface Check {
   gates: Record<GateId, { state: 'pass' | 'fail' | 'unknown'; reason: string }>;
   prMeaning: Score;
   issues: Issue[];
-}
-/** A fresh reader given only the 360px phone rendition: what it can actually read. */
-export interface PhoneRead {
-  items: { panel: number | null; words: string; legible: 'yes' | 'partly' | 'no' }[];
-  unreadable: { panel: number | null; what: string }[];
 }
 export type RawPreference =
   'A' | 'B' | 'tie' | 'neither' | 'uncertain' | 'evaluation-error';
@@ -160,18 +156,6 @@ export function checkProblems(c: any): string[] {
   return p;
 }
 
-export function phoneProblems(r: any): string[] {
-  const p: string[] = [];
-  if (!Array.isArray(r?.items))
-    p.push('items must be an array (empty when nothing is readable)');
-  else
-    r.items.forEach((i: any, n: number) => {
-      if (typeof i?.words !== 'string' || !['yes', 'partly', 'no'].includes(i?.legible))
-        p.push(`items[${n}] must be {panel, words, legible: yes|partly|no}`);
-    });
-  if (!Array.isArray(r?.unreadable)) p.push('unreadable must be an array');
-  return p;
-}
 
 export function pairProblems(j: any): string[] {
   return ['A', 'B', 'tie', 'neither', 'uncertain', 'evaluation-error'].includes(
@@ -201,44 +185,7 @@ export function eligible(check: Check | undefined): boolean {
   return !!check && GATES.every((g) => check.gates[g]?.state === 'pass');
 }
 
-const tokens = (t: string) =>
-  t
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9.~/_-]+/g, ' ')
-    .split(/\s+/)
-    .map((w) => w.replace(/^[.\-_/]+|[.\-_/]+$/g, ''))
-    .filter(Boolean);
 
-/**
- * The phone gate, computed by the host: every required lettering item must be
- * found (at least 80% of its words) in what a reader transcribed from the
- * 360px rendition alone, counting only text it marked readable or partly so.
- */
-export function phoneGate(
-  read: PhoneRead | undefined,
-  required: string[],
-): { state: 'pass' | 'fail' | 'unknown'; missing: string[] } {
-  if (!read) return { state: 'unknown', missing: [] };
-  const seen = new Map<string, number>();
-  for (const i of read.items)
-    if (i.legible !== 'no')
-      for (const t of tokens(i.words)) seen.set(t, (seen.get(t) ?? 0) + 1);
-  const missing = required.filter((item) => {
-    const want = tokens(item);
-    if (!want.length) return false;
-    const pool = new Map(seen);
-    let hit = 0;
-    for (const t of want)
-      if ((pool.get(t) ?? 0) > 0) {
-        hit++;
-        pool.set(t, pool.get(t)! - 1);
-      }
-    return hit / want.length < 0.8;
-  });
-  return { state: missing.length ? 'fail' : 'pass', missing };
-}
 
 /**
  * What a concrete (technical) repair changed that it must not: the joke is
@@ -315,18 +262,17 @@ export function canonicalPair(
 // ------------------------------------------------------------- the controller
 
 export const DEFAULT_BUDGET = { renders: 3, judgeCalls: 14 };
-/** Judge calls one more revision needs: observe, phone, check and both comparison orders. */
-const ROUND_CALLS = 5;
+/** Judge calls one more revision needs: observe, check and both comparison orders. */
+const ROUND_CALLS = 4;
 
 export interface Candidate {
   id: string;
   parent: string | null;
-  /** initial, a concrete repair, or a creative revision (premise/script). */
-  kind: 'initial' | 'concrete' | 'creative';
+  /** initial, an independent second draft by a fresh author, a concrete repair, or a creative revision (premise/script). */
+  kind: 'initial' | 'draft' | 'concrete' | 'creative';
   target?: IssueTarget;
   imageSha256: string;
   observation?: Observation;
-  phone?: PhoneRead;
   check?: Check;
   /** Lettering the page must show (pageText of its script), set by the host. */
   required: string[];
@@ -334,8 +280,8 @@ export interface Candidate {
   contractOk: boolean;
   /** For a concrete repair: what it changed that it must not (frozenProblems). */
   frozen?: string[];
-  /** The layout family a geometry-only reflow would use (host, phoneLayout), if any. */
-  reflow?: string | null;
+  /** The misread review of this image (misread.ts): a concern makes it unusable. */
+  misread?: MisreadReview;
 }
 export interface Comparison {
   a: string;
@@ -348,6 +294,13 @@ export interface LoopState {
   rubricVersion: string;
   /** Rewrite jokes automatically (experimental). Off: repairs keep the joke. */
   creative: boolean;
+  /**
+   * Independent drafts to draw before repairing, each by a fresh author from
+   * the same packet; the funnier wins a blind comparison in both orders (the
+   * incumbent stays otherwise). 1 = no second draft. Round 20: picking the
+   * better of two drafts captured about 70% of the best-possible humor gain.
+   */
+  drafts?: number;
   budget: { renders: number; judgeCalls: number };
   used: { renders: number; judgeCalls: number };
   candidates: Candidate[];
@@ -362,8 +315,9 @@ export interface LoopState {
 }
 
 export type Next =
-  | { action: 'observe' | 'phone' | 'check'; candidate: string }
+  | { action: 'observe' | 'check' | 'misread'; candidate: string }
   | { action: 'compare'; a: string; b: string; order: 1 | 2 }
+  | { action: 'draft'; instruction: string; reason: string }
   | {
       action: 'revise';
       target: IssueTarget;
@@ -381,11 +335,12 @@ export type Next =
       unresolved: string[];
     };
 
-export function newLoop(budget = DEFAULT_BUDGET, creative = false): LoopState {
+export function newLoop(budget = DEFAULT_BUDGET, creative = false, drafts = 1): LoopState {
   return {
     v: 1,
     rubricVersion: RUBRIC.rubricVersion,
     creative,
+    ...(drafts > 1 ? { drafts } : {}),
     budget: { ...budget },
     used: { renders: 0, judgeCalls: 0 },
     candidates: [],
@@ -398,13 +353,13 @@ export function newLoop(budget = DEFAULT_BUDGET, creative = false): LoopState {
   };
 }
 
-/** Eligible: checker gates, the phone gate, the output contract and a frozen joke. */
+/** Eligible: checker gates, the output contract and a frozen joke. */
 export function usable(c: Candidate): boolean {
   return (
     eligible(c.check) &&
-    phoneGate(c.phone, c.required).state === 'pass' &&
     c.contractOk &&
-    !c.frozen?.length
+    !c.frozen?.length &&
+    !(c.misread && hasConcern(c.misread))
   );
 }
 const amusement = (c: Candidate) =>
@@ -428,9 +383,24 @@ export function nextStep(s: LoopState): Next {
   const callsLeft = () => s.budget.judgeCalls - s.used.judgeCalls;
 
   if (!s.decided.includes(latest.id)) {
+    // Every new image is first reviewed for anything an audience could misread.
+    if (!latest.misread) return { action: 'misread', candidate: latest.id };
+    if (hasConcern(latest.misread)) {
+      const concerns = s.candidates.filter((c) => c.misread && hasConcern(c.misread)).length;
+      reject(s, latest, `misread concern: ${latest.misread.items.filter((i) => i.likelihood !== 'possible').map((i) => `${i.what} could read as ${i.couldReadAs}`).join('; ')}`);
+      if (concerns > MISREAD_REDRAWS) return stop(s, `the image still raised a misread concern after ${MISREAD_REDRAWS} redraws`);
+      const avoid = avoidFrom(latest.misread);
+      return {
+        action: 'revise',
+        target: 'art',
+        instruction: `Redraw so nothing can be misread: ${latest.misread.items.filter((i) => i.likelihood !== 'possible').map((i) => i.fix).join('; ')}. Add these to comic.json "avoid" first: ${JSON.stringify(avoid)}`,
+        preserve: ['every word, character and the joke'],
+        reason: 'misread review concern',
+      };
+    }
     // A repair that changed the joke is rejected before any judge call is spent.
     if (!latest.frozen?.length)
-      for (const stage of ['observation', 'phone', 'check'] as const)
+      for (const stage of ['observation', 'check'] as const)
         if (!latest[stage])
           return callsLeft() > 0
             ? {
@@ -451,6 +421,15 @@ export function nextStep(s: LoopState): Next {
 
   const inc = byId(s, s.incumbent);
   const base = inc ?? byId(s, baselineOf(s)) ?? latest;
+  // Before any repair: another independent draft, while drafts are wanted and the budget allows one more round.
+  const drafted = s.candidates.filter((c) => c.kind === 'initial' || c.kind === 'draft').length;
+  if ((s.drafts ?? 1) > drafted && s.used.renders < s.budget.renders && callsLeft() >= ROUND_CALLS)
+    return {
+      action: 'draft',
+      instruction:
+        'Start ONE fresh author subagent (not a fork, not the earlier author, no PR or drafting context) whose whole instruction is the comic packet, exactly as for the first draft. It writes a new comic.json with its own joke; the earlier comic is archived.',
+      reason: `independent draft ${drafted + 1} of ${s.drafts}: the funnier of the drafts is kept`,
+    };
   if (
     inc &&
     !actionable(s, inc).length &&
@@ -484,31 +463,10 @@ function baselineOf(s: LoopState): string | null {
 
 const CREATIVE: IssueTarget[] = ['premise', 'script', 'facts'];
 
-/** Material issues, phone failures first; creative ones only in creative mode. */
+/** Material issues, most severe first; creative ones only in creative mode. */
 function actionable(s: LoopState, c: Candidate): Issue[] {
   const rank = { blocker: 0, major: 1, minor: 2 } as const;
   const issues = (c.check?.issues ?? []).filter((i) => i.severity !== 'minor');
-  const phone = phoneGate(c.phone, c.required);
-  if (phone.state === 'fail') {
-    const observed = `unreadable on a phone: ${phone.missing.join(' | ')}`;
-    issues.unshift(
-      c.reflow
-        ? {
-            severity: 'blocker',
-            target: 'composition',
-            observed,
-            instruction: `Reflow the layout to ${c.reflow} so every panel's text has room at 360px; keep the style, wording and joke`,
-            preserve: ['wording', 'characters', 'joke'],
-          }
-        : {
-            severity: 'blocker',
-            target: 'lettering',
-            observed,
-            instruction: `Letter these much larger, readable when the page is 360px wide: ${phone.missing.map((m) => `"${m}"`).join(', ')}`,
-            preserve: ['wording', 'layout', 'joke'],
-          },
-    );
-  }
   issues.sort((a, b) => rank[a.severity] - rank[b.severity]);
   return s.creative ? issues : issues.filter((i) => !CREATIVE.includes(i.target));
 }
@@ -654,43 +612,7 @@ Return JSON with:
 - scores: {${BLIND_DIMENSIONS.join(', ')}}, each {state: assessed|unknown, score: 1-5 or null, reason}.`;
 }
 
-export function phonePrompt(): string {
-  return `${RUBRIC.prompts.phoneReader}
 
-Return JSON with:
-- items: every piece of text you can see, in reading order, as {panel, words, legible: yes|partly|no}. Copy only what you can actually read; mark text you can see but not read as legible "no" with your best partial reading;
-- unreadable: [{panel, what}] for text-bearing places you cannot read at this size.`;
-}
-
-export const PHONE_SCHEMA = {
-  type: 'object',
-  properties: {
-    items: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          panel: { type: ['integer', 'null'] },
-          words: { type: 'string' },
-          legible: { type: 'string', enum: ['yes', 'partly', 'no'] },
-        },
-        required: ['panel', 'words', 'legible'],
-        additionalProperties: false,
-      },
-    },
-    unreadable: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: { panel: { type: ['integer', 'null'] }, what: { type: 'string' } },
-        required: ['panel', 'what'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['items', 'unreadable'],
-  additionalProperties: false,
-};
 
 export function checkerPrompt(facts: string): string {
   return `${RUBRIC.prompts.contextualReviewer}
@@ -701,7 +623,6 @@ ${RUBRIC.gates
   .map((g) => `- ${g.id}: ${g.description}`)
   .join('\n')}
 
-Phone-width legibility is checked separately by another reader; do not judge it here.
 
 Also score prMeaning:
 ${anchorsText(['prMeaning'])}

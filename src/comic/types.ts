@@ -43,6 +43,8 @@ export interface Character {
   description: string;
   /** Creative category, not an identity inferred from the description. */
   kind?: CastKind;
+  /** The isekai archetype id this character was cast from (genre with an isekaiCast). */
+  archetype?: string;
 }
 
 export type CastKind = 'human' | 'creature' | 'object';
@@ -81,8 +83,22 @@ export const LAYOUT_FAMILIES = [
   'hero-inset',
   'diagonal',
   'tiered',
+  'slanted',
+  'splash',
+  'staggered',
+  'grid',
   'custom',
 ] as const;
+/** Families built for action: angled gutters, breakouts. A script with move or impact panels may use one instead of its assigned layout. */
+export const ACTION_FAMILIES = ['slanted', 'diagonal'] as const;
+export const MOTIONS = ['still', 'move', 'impact'] as const;
+export const DIRECTIONS = ['left', 'right', 'up', 'down', 'toward', 'away'] as const;
+export interface PanelMotion {
+  /** still: a calm beat; move: running, flying, chasing; impact: a hit, an explosion, a crash. */
+  kind: (typeof MOTIONS)[number];
+  /** Which way the motion goes on the page. */
+  direction?: (typeof DIRECTIONS)[number];
+}
 export type LayoutFamily = (typeof LAYOUT_FAMILIES)[number];
 export type TitleMode = 'none' | 'integrated' | 'heading';
 /** Coordinates are fractions of the page, before the branding footer. */
@@ -100,9 +116,13 @@ export interface PanelFrame extends FrameBounds {
   textBox?: FrameBounds;
   /** This later frame deliberately sits inside an earlier frame. */
   inset?: boolean;
+  /** A figure or effect in this panel bursts over the panel border. */
+  breakout?: boolean;
 }
 export interface Composition {
   family: LayoutFamily;
+  /** For the grid family: the tiled structure, e.g. "rows:1-2" (grid.ts). */
+  signature?: string;
   /** In story/reading order. Omit to use the family's geometry (except custom). */
   frames?: PanelFrame[];
   title: { mode: TitleMode; box?: FrameBounds };
@@ -114,10 +134,28 @@ export interface ComicSummary {
   genre?: string;
   styleFamily?: StyleFamily;
   layoutFamily?: LayoutFamily;
+  /** The grid signature used, so the next comics get other structures. */
+  layoutSignature?: string;
   panelCount?: number;
   titleTreatment?: TitleMode;
   /** Missing means unknown; [] means deliberately characterless. */
   castKinds?: CastKind[];
+  /** The comic's invented character names, lowercased: later comics pick new ones. */
+  castNames?: string[];
+  /** How the lead looks, in a few words: later comics cast someone who looks different. */
+  leadLook?: string;
+  /** The genre meme used, so later comics are offered others. */
+  meme?: string;
+  /** The lead persona used, so later comics get another main character. */
+  lead?: string;
+  /** The isekai cast preset used, so the next comics get others. */
+  castPreset?: string;
+  /** The adventure setting the host assigned (isekai/settings.ts): out of rotation for the next 3 comics. */
+  setting?: string;
+  /** The isekai scenario (pitch) the comic was built on: out of rotation for the next 10 comics. */
+  pitch?: string;
+  /** The isekai archetype ids on the page: out of rotation for the next 3 comics. */
+  archetypes?: string[];
 }
 
 /** A character's place in one panel. */
@@ -139,6 +177,40 @@ export const DIALOGUE_KINDS = [
 ] as const;
 export type DialogueKind = (typeof DIALOGUE_KINDS)[number];
 
+/**
+ * The balloon's shape, which carries how a line is said: `shout` and `burst`
+ * spiky, `whisper` dashed, `thought` a cloud, `radio` jagged for screens,
+ * comms and machines. Plain `speech` when omitted.
+ */
+export const BALLOONS = ['speech', 'shout', 'burst', 'whisper', 'thought', 'radio'] as const;
+export type Balloon = (typeof BALLOONS)[number];
+/** How big a sound effect is drawn. */
+export const SFX_SIZES = ['small', 'big', 'huge'] as const;
+export type SfxSize = (typeof SFX_SIZES)[number];
+/** Drawn effects that show motion, force and feeling. */
+export const PANEL_EFFECTS = [
+  'speed-lines',
+  'impact-burst',
+  'focus-lines',
+  'motion-blur',
+  'emanata',
+  'shake',
+] as const;
+export type PanelEffect = (typeof PANEL_EFFECTS)[number];
+export const CAMERAS = [
+  'wide',
+  'medium',
+  'close',
+  'extreme-close',
+  'low-angle',
+  'high-angle',
+  'overhead',
+  'dutch',
+  'over-shoulder',
+  'silhouette',
+] as const;
+export type Camera = (typeof CAMERAS)[number];
+
 export interface Dialogue {
   /** A character's name, or "caption" for narration (also used for signs, screens and labels). */
   speaker: string;
@@ -152,6 +224,12 @@ export interface Dialogue {
   kind?: DialogueKind;
   /** For a `sign`: the surface the words are written on (legacy `label`: the element). */
   points?: string;
+  /** Balloon shape for spoken lines; omitted means a plain speech balloon. */
+  balloon?: Balloon;
+  /** Words from `text` to letter bold or larger. */
+  emphasis?: string[];
+  /** For `sfx`: how big it is drawn. */
+  size?: SfxSize;
 }
 
 /** One drawn element and the real thing in the PR it stands for. */
@@ -173,12 +251,21 @@ export interface ComicAnchor {
   mapping: AnchorMapping[];
 }
 
+export const PANEL_BACKGROUNDS = ['detailed', 'soft', 'speed-lines'] as const;
+export type PanelBackground = (typeof PANEL_BACKGROUNDS)[number];
+
 export interface Panel {
   /** Optional story beat. */
   beat?: Beat;
   /** What the panel shows, in a sentence. */
   scene: string;
-  camera?: 'wide' | 'medium' | 'close';
+  camera?: Camera;
+  /** The background treatment, decided per panel: full detail, soft and out of focus, or speed lines. */
+  background?: PanelBackground;
+  /** Drawn effects: speed lines, an impact burst, sweat drops, a shaking frame. */
+  effects?: PanelEffect[];
+  /** The beat's motion: move and impact panels get angled frames and directional cues. */
+  motion?: PanelMotion;
   characters: PanelCharacter[];
   dialogue: Dialogue[];
   /** Optional extra direction for image models. */
@@ -204,6 +291,32 @@ export const PALETTES: Palette[] = ['full-color', 'bw-accent', 'duotone', 'limit
  */
 export interface ComicScript {
   v: 2;
+  /**
+   * The ids of the offered personas this comic casts (context genreOptions
+   * castOffer), when the chosen genre has a roster.
+   */
+  personas?: string[];
+  /** The id of the offered genre meme this comic uses (context genreOptions memeOffer), if any. */
+  meme?: string;
+  /** The one place the whole comic happens, decided by the author ("a mossy clearing in the forest"). */
+  place?: string;
+  /** The adventure setting the host assigned (context genreOptions assignedSetting), for an isekai comic. */
+  setting?: string;
+  /** The isekai cast preset this comic was cast from (context genreOptions isekaiCast). */
+  castPreset?: string;
+  /** The picked pitch's scenario id (context genreOptions pick), for an isekai comic. */
+  pitch?: string;
+  /** The picked gag's id (context genreOptions pick), for an isekai comic. */
+  gag?: string;
+  /** The main character: the lead persona's id and the name of its character in `characters`. */
+  lead?: { persona: string; name: string };
+  /** Things the image must not show, added after a misread review (misread.ts); go to the negative prompt. */
+  avoid?: string[];
+  /**
+   * The lead character's look in a few plain words (age, build, hair,
+   * clothes), as drawn. Recorded so later comics don't cast the same design.
+   */
+  leadLook?: string;
   /** Comic title (used in the PR and the transcript). */
   title: string;
   /** The big title drawn into the art; up to 6 words. Defaults to `title`. */

@@ -353,6 +353,18 @@ write the comic author's packet (brief, description, genres) and say how to hand
 | `--run <id>` | run id (default: latest) |
 | `--genre <id>` | offer only this genre (an id or a short phrase) |
 
+## `tracetoon comic gags`
+
+an isekai comic's select step: check the brainstormed gags, write a fresh judge's packet, then pick the best gag
+
+| Option | Description |
+| --- | --- |
+| `--run <id>` | run id (default: latest) |
+| `--check` | only check comic-gags.json |
+| `--file <path>` | with --check: a gags file outside any run |
+| `--context <path>` | with --file: the packet's context.json |
+| `--evidence <paths...>` | with --file: the PR's description, brief or diff, to check the anchor's words |
+
 ## `tracetoon comic run`
 
 the whole comic in one blocking command: a fresh comic author (claude -p under Claude Code, codex exec elsewhere), art, render and the full quality loop with fresh judges Tracetoon starts and verifies; or comic skip with why (prints a COMIC SETUP line when the image route needs the user)
@@ -394,7 +406,6 @@ make the comic art with Codex, Antigravity, OpenAI or Gemini, after consent (exi
 | `--force` | redraw panels that already exist |
 | `--lettering <how>` | model (the image model letters the page) or overlay (Tracetoon draws bubbles) |
 | `--repair <instruction>` | edit the current page with this one change instead of redrawing it (from comic loop) |
-| `--reflow` | same script, a layout whose panels are wide enough to read on a phone; then redraw |
 
 ## `tracetoon comic reroll`
 
@@ -423,6 +434,7 @@ judge the rendered comic with fresh AI readers and say what to do next: judge, r
 | --- | --- |
 | `--run <id>` | run id (default: latest) |
 | `--creative` | experimental: also rewrite a flat joke or weak script automatically (off by default) |
+| `--drafts <n>` | independent drafts by fresh authors to compare before repairs (default 2; 1 turns it off) |
 
 ## `tracetoon comic loop-import`
 

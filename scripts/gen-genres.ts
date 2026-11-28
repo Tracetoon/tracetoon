@@ -13,9 +13,10 @@ of your own for a genre not listed), then find the joke inside that world.
 comics, unless the user asked for it (\`"request"\`) or the repo pins one
 (\`config genre\`).
 
-Draw genre **archetypes**, not a particular work: a grizzled starship captain
-in a generic uniform is fine; a specific show's captain, insignia or ship is
-not. Generalize to the class.
+**Parody the trope, not the property.** Evoke the familiar settings and
+character types of a genre's famous works (a cantina of odd aliens, an away
+team on a painted planet, a masked dark lord); never name the work or its
+characters, and never copy a specific character's design, insignia or ship.
 
 **Your own genres.** Users and repos add genres as genre files, and
 \`genreOptions\` offers them alongside the ones below (an option's \`notes\` is
@@ -44,6 +45,26 @@ styles:
 Optional notes for the comic author.
 \`\`\`
 
+**A persona roster (optional).** A genre file can add a \`cast:\` list of up to
+48 personas, each written \`role: name — details\` with the role one of hero,
+mage, warrior, healer, scout, nemesis or side. The author never sees the whole
+roster: each comic's \`genreOptions\` entry carries a \`castOffer\` of five,
+picked by seed (usually three main-cast roles, a nemesis and a side character;
+about one comic in five gets side characters only). Cast from those five and
+list their ids in the script's \`personas\`; \`comic check\` rejects any other.
+
+**Genre memes (optional).** A \`memes:\` list of up to 400 famous scenes, lines
+and tropes veteran fans know, each \`tier roles: meme — use\` (tier 1 iconic to
+3 deep cut; roles comma-separated, or \`any\`). Write each as an allusion,
+never naming the work. Each comic's \`genreOptions\` entry carries a
+\`memeOffer\` of three, weighted toward the best known, matched to the cast and
+never one a recent comic used. Use one when it fits the joke and set the
+script's \`meme\` to its id.
+
+**Style mix (optional).** A \`styleMix:\` list of \`style-id weight\` items. The
+host then assigns each comic's style (\`assignedStyle\`) from those weights, and
+\`comic check\` holds the script to it.
+
 ${GENRES.map(
   (g) => `## \`${g.id}\`: ${g.name}
 
@@ -52,7 +73,7 @@ ${GENRES.map(
 - **Props that carry the PR's words:** ${g.props.join('; ')}
 - **Joke hooks:** ${g.jokeHooks.join('; ')}
 - **Styles that suit it:** ${g.styles.map((s) => `\`${s}\``).join(', ')}
-`,
+${g.cast?.length ? `- **Cast:** a roster of ${g.cast.length} personas; each comic is offered five in \`castOffer\`. Cast from those.\n` : ''}${g.memes?.length ? `- **Memes:** ${g.memes.length} famous scenes and lines; each comic is offered three in \`memeOffer\`.\n` : ''}${g.styleMix ? `- **Style mix:** ${Object.entries(g.styleMix).map(([k, v]) => `\`${k}\` ${v}`).join(', ')}; each comic's style is assigned in \`assignedStyle\`.\n` : ''}`,
 ).join('\n')}`;
 export const GENRES_MD = md;
 if (import.meta.main)

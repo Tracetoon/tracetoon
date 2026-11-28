@@ -31,17 +31,13 @@ import {
   observerPrompt,
   PAIR_SCHEMA,
   pairProblems,
-  PHONE_SCHEMA,
-  phoneGate,
-  phonePrompt,
-  phoneProblems,
   type Candidate,
   type IssueTarget,
   type LoopState,
   type Next,
 } from '../comic/judging.ts';
+import { isMisreadReview, MISREAD_PROMPT, MISREAD_SCHEMA } from '../comic/misread.ts';
 import { writeRenditions } from '../comic/renditions.ts';
-import { phoneLayout } from '../comic/composition.ts';
 import { checkScript, pageText } from '../comic/script.ts';
 import type { ComicScript } from '../comic/types.ts';
 import { readJson, readText, writeJson, type Run } from '../run.ts';
@@ -139,7 +135,6 @@ export function archiveCandidate(
     required: pageText(script),
     contractOk,
     ...(frozen ? { frozen } : {}),
-    reflow: phoneLayout(script)?.composition?.family ?? null,
   });
   delete s.pendingRevision;
   saveLoop(run, s);
@@ -181,22 +176,13 @@ ${JSON.stringify(schema)}
 }
 
 async function packetFor(run: Run, s: State, n: Next) {
-  if (n.action === 'phone') {
-    const task = `phone:${n.candidate}`;
+  if (n.action === 'misread') {
+    const task = `misread:${n.candidate}`;
     const dir = packetDir(run, task);
-    // Only the phone rendition: no larger image, no intended text.
-    const tmp = join(dir, 'source');
-    mkdirSync(tmp, { recursive: true });
-    copyFileSync(imageOf(run, n.candidate), join(tmp, 'A.png'));
-    await writeRenditions(join(tmp, 'A.png'), dir, 'A');
-    const { rmSync } = await import('node:fs');
-    rmSync(tmp, { recursive: true, force: true });
-    rmSync(join(dir, 'A-760.png'), { force: true });
+    // A fresh reviewer that sees only the finished image.
+    copyFileSync(imageOf(run, n.candidate), join(dir, 'A.png'));
     const result = join(dir, 'result.json');
-    writeFileSync(
-      join(dir, 'instructions.md'),
-      instructions(phonePrompt(), PHONE_SCHEMA, result, [join(dir, 'A-360.png')]),
-    );
+    writeFileSync(join(dir, 'instructions.md'), instructions(MISREAD_PROMPT, MISREAD_SCHEMA, result, [join(dir, 'A.png')]));
     return { task, packet: join(dir, 'instructions.md'), result, blind: true };
   }
   if (n.action === 'observe') {
@@ -267,7 +253,7 @@ const REVISE_HOW: Record<IssueTarget, string> = {
     'fix the words in comic.json if they are wrong, then `tracetoon comic art --repair "<instruction>"` (edits the current page), or `--lettering overlay` if model lettering keeps failing',
   art: '`tracetoon comic art --repair "<instruction>"` (edits the current page)',
   composition:
-    '`tracetoon comic art --reflow` (same script, a layout whose panels are wide enough on a phone); for balloon order, reorder the dialogue within the panel in comic.json, then `tracetoon comic art --force`. Keep every word, character and the joke',
+    'change the layout or balloon order in comic.json (keep every word, character and the joke), then `tracetoon comic art --force`',
   script:
     'rewrite the dialogue or beats in comic.json (keep the PR facts), then `tracetoon comic art --force`',
   premise:
@@ -282,7 +268,12 @@ export interface LoopOpts extends OutOpts {
   run?: string;
   /** Experimental: also rewrite a flat joke or weak script automatically. */
   creative?: boolean;
+  /** Independent drafts to draw and compare before repairs (default 2; 1 turns it off). */
+  drafts?: number;
 }
+
+/** Drafts the CLI asks for when a loop starts and the user gave none (round 20 research). */
+export const DEFAULT_DRAFTS = 2;
 
 /** `tracetoon comic loop`: the next step, with its packet when a judge is needed. */
 export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
@@ -290,9 +281,18 @@ export async function comicLoopCmd(run: Run, opts: LoopOpts): Promise<void> {
   if (!s?.candidates.length)
     throw new UserError('No rendered comic to judge: run tracetoon comic render first.');
   if (opts.creative) s.creative = true;
+  if (opts.drafts !== undefined) s.drafts = opts.drafts;
+  else if (s.drafts === undefined) s.drafts = DEFAULT_DRAFTS;
   const n = nextStep(s);
   let extra: Record<string, unknown> = {};
-  if (n.action === 'revise') {
+  if (n.action === 'draft') {
+    s.pendingRevision = { target: 'premise', kind: 'draft' };
+    const packet = join(run.dir, 'comic-packet', 'instructions.md');
+    extra = {
+      packet,
+      how: `${n.instruction} Its whole instruction is ${packet}. When it reports that comic.json passes the check, run tracetoon comic art --force, then tracetoon comic render, then tracetoon comic loop.`,
+    };
+  } else if (n.action === 'revise') {
     s.pendingRevision = {
       target: n.target,
       kind: CONCRETE_TARGETS.includes(n.target) ? 'concrete' : 'creative',
@@ -361,13 +361,15 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
     throw new UserError(`${file} is not valid JSON.`);
   }
   const problems =
-    stage === 'observe'
+    stage === 'misread'
+      ? isMisreadReview(v)
+        ? []
+        : ['expected {"state": "clear" | "concern", "items": [{panel, what, couldReadAs, fix}]}']
+      : stage === 'observe'
       ? observationProblems(v)
-      : stage === 'phone'
-        ? phoneProblems(v)
-        : stage === 'check'
-          ? checkProblems(v)
-          : pairProblems(v);
+      : stage === 'check'
+        ? checkProblems(v)
+        : pairProblems(v);
   // The call was spent whether or not its answer is usable.
   s.used.judgeCalls++;
   (s.agents ??= {})[opts.task] = opts.agentId;
@@ -377,11 +379,11 @@ export function comicLoopImportCmd(run: Run, opts: ImportOpts): void {
       `The judge answer needs fixing:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
     );
   }
-  if (stage === 'observe' || stage === 'phone' || stage === 'check') {
+  if (stage === 'observe' || stage === 'check' || stage === 'misread') {
     const c = s.candidates.find((x) => x.id === a);
     if (!c) throw new UserError(`Unknown candidate ${a}.`);
     if (stage === 'observe') c.observation = v;
-    else if (stage === 'phone') c.phone = v;
+    else if (stage === 'misread') c.misread = v;
     else c.check = v;
   } else if (stage === 'compare') {
     let cmp = s.comparisons.find((x) => x.a === a && x.b === b);

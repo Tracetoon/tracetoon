@@ -17,7 +17,8 @@ import { findPrTemplate, detectAiPolicy } from '../github/repoContext.ts';
 import { decodeMeta, humanPart, regionContent, regionEdited } from '../github/body.ts';
 import { prTruth, type PrTruth } from '../git/pr.ts';
 import { scan, type ScanResult } from '../pipeline.ts';
-import { recentComics } from '../github/history.ts';
+import { comicHistory } from '../github/history.ts';
+import { cooldownFrom } from '../comic/isekai/pitches.ts';
 import { genreOptions as offerGenres } from '../comic/genres.ts';
 import { genreCatalog } from '../comic/genreFile.ts';
 import { describeTitleRules, readTitleRules } from '../github/titleRules.ts';
@@ -369,8 +370,10 @@ export function contextCmd(
   });
   const config = loadConfig(truth.toplevel);
   // Compact creative choices help this comic differ. Skipped when comics are off.
-  const recent =
-    config.comic !== 'off' ? recentComics(truth, { offline: opts.offline }) : [];
+  // The repo's comic history (cooldowns) and its latest few (creative context).
+  const history =
+    config.comic !== 'off' ? comicHistory(truth, { offline: opts.offline }) : [];
+  const recent = history.slice(0, 5);
   const recentGenres = recent.flatMap((c) => (c.genre ? [c.genre] : []));
   const pinnedGenre =
     config.genre && config.genre !== 'auto' ? config.genre.trim() : undefined;
@@ -378,6 +381,15 @@ export function contextCmd(
     seed: `${truth.target?.repo ?? originRepo(truth) ?? ''} ${truth.head}`,
     pinned: pinnedGenre,
     catalog: genreCatalog(truth.toplevel),
+    recentMemes: recent.flatMap((c) => (c.meme ? [c.meme] : [])),
+    recentLeads: recent.flatMap((c) => (c.lead ? [c.lead] : [])),
+    recentPresets: recent.flatMap((c) => (c.castPreset ? [c.castPreset] : [])),
+    history,
+    // What the change is about, so the isekai staple offer can match it (pitches.ts STAPLE_TOPICS).
+    prText: [truth.pr?.title, truth.pr?.body, ...truth.commits.map((c) => c.subject), ...truth.files.map((f) => f.path.replace(/[/._-]+/g, ' '))]
+      .filter(Boolean)
+      .join('\n')
+      .slice(0, 20_000),
   });
   const ctx = {
     repo: truth.target?.repo ?? originRepo(truth) ?? null,
@@ -410,6 +422,7 @@ export function contextCmd(
       // Pick the genre first, from these: the least recently used, shuffled
       // per branch. A pinned genre replaces them.
       genreOptions,
+      cooldown: cooldownFrom(history),
       // Decided here, once, so the agent is told before drafting rather than
       // left to judge whether a comic is wanted.
       expectation: comicExpectation(truth.toplevel, policy),

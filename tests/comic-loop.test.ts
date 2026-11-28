@@ -40,6 +40,13 @@ async function runDir(color = '#f00') {
 }
 const quiet = { json: true } as const;
 
+/** The misread review comes first: answer it clear so the cold read follows. */
+async function clearMisread(run: Awaited<ReturnType<typeof runDir>>, id = 'c1') {
+  await comicLoopCmd(run, quiet);
+  writeFileSync(join(run.dir, 'judge', `misread-${id}`, 'result.json'), JSON.stringify({ state: 'clear', items: [] }));
+  comicLoopImportCmd(run, { task: `misread:${id}`, agentId: `m-${id}`, ...quiet });
+}
+
 describe('comic loop', () => {
   test('archives each distinct render once, before it can be replaced', async () => {
     const run = await runDir();
@@ -60,18 +67,21 @@ describe('comic loop', () => {
   test('the cold-read packet holds only the image, never the script or PR', async () => {
     const run = await runDir();
     archiveCandidate(run, script, true);
+    await clearMisread(run);
     await comicLoopCmd(run, quiet);
     const dir = join(run.dir, 'judge', 'observe-c1');
     const text = readFileSync(join(dir, 'instructions.md'), 'utf8');
     expect(text).not.toContain('SECRET PUNCHLINE');
     expect(text).not.toContain('secret change');
     expect(text).not.toContain('PR body');
-    expect(existsSync(join(dir, 'A-360.png'))).toBe(true);
+    expect(existsSync(join(dir, 'A-1000.png'))).toBe(true);
+    expect(existsSync(join(dir, 'A-360.png'))).toBe(false);
   });
 
   test('imports answers, counts every judge call and needs a real agent id', async () => {
     const run = await runDir();
     archiveCandidate(run, script, true);
+    await clearMisread(run);
     await comicLoopCmd(run, quiet);
     const result = join(run.dir, 'judge', 'observe-c1', 'result.json');
     writeFileSync(result, JSON.stringify({ panels: [] }));
@@ -81,7 +91,7 @@ describe('comic loop', () => {
     expect(() =>
       comicLoopImportCmd(run, { task: 'observe:c1', agentId: 'a1', ...quiet }),
     ).toThrow(/needs fixing/);
-    expect(loadLoop(run)!.used.judgeCalls).toBe(1);
+    expect(loadLoop(run)!.used.judgeCalls).toBe(2);
     writeFileSync(
       result,
       JSON.stringify({
@@ -102,24 +112,8 @@ describe('comic loop', () => {
     );
     comicLoopImportCmd(run, { task: 'observe:c1', agentId: 'a2', ...quiet });
     await comicLoopCmd(run, quiet);
-    // The phone reader gets only the 360px rendition: no larger image, no intended text.
-    const phoneDir = join(run.dir, 'judge', 'phone-c1');
-    expect(readdirSync(phoneDir).sort()).toEqual(['A-360.png', 'instructions.md']);
-    expect(readFileSync(join(phoneDir, 'instructions.md'), 'utf8')).not.toContain(
-      'SECRET PUNCHLINE',
-    );
-    writeFileSync(
-      join(phoneDir, 'result.json'),
-      JSON.stringify({
-        items: [
-          { panel: null, words: 'T', legible: 'yes' },
-          { panel: 1, words: 'SECRET PUNCHLINE', legible: 'yes' },
-        ],
-        unreadable: [],
-      }),
-    );
-    comicLoopImportCmd(run, { task: 'phone:c1', agentId: 'a2b', ...quiet });
-    await comicLoopCmd(run, quiet);
+    // No phone-width reader: after the cold read comes the fact check.
+    expect(existsSync(join(run.dir, 'judge', 'phone-c1'))).toBe(false);
     const check = readFileSync(
       join(run.dir, 'judge', 'check-c1', 'instructions.md'),
       'utf8',

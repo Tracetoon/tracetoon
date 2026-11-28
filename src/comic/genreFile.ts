@@ -10,6 +10,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { userConfigPath } from '../config.ts';
 import { GENRES, MAX_GENRE_CHARS, type Genre } from './genres.ts';
+import { CAST_ROLES, LEAD_AXES, MAX_CAST_ENTRY, parseCastEntry, type CastPersona } from './casting.ts';
+import { MAX_MEME_ENTRY, parseMemeEntry, parseStyleMixEntry, withIds } from './memes.ts';
 import { FRANCHISE_NAMES } from './script.ts';
 import { styleById } from './styles.ts';
 
@@ -36,10 +38,23 @@ const LISTS = {
   props: { min: 1, max: 10 },
   jokeHooks: { min: 0, max: 8 },
   styles: { min: 0, max: 6 },
+  cast: { min: 0, max: 48 },
+  diverseCast: { min: 0, max: 120 },
+  leads: { min: 0, max: 80 },
+  memes: { min: 0, max: 400 },
+  styleMix: { min: 0, max: 6 },
 } as const;
 type ListKey = keyof typeof LISTS;
 const SCALARS = ['id', 'name', 'setting'] as const;
-const KNOWN = new Set<string>([...SCALARS, ...Object.keys(LISTS)]);
+/**
+ * Optional scalars: `casting: isekai` casts each comic from the isekai archetype
+ * guide; `brainstorm: off` writes its comics directly instead of brainstorming ideas first;
+ * `settings: choose` offers three adventure settings to pick from instead of assigning one,
+ * `settings: free` lets the author choose any place (the office check still applies);
+ * `tropes: off` offers no genre staples or memes.
+ */
+const OPTIONAL_SCALARS = ['casting', 'brainstorm', 'settings', 'tropes'] as const;
+const KNOWN = new Set<string>([...SCALARS, ...OPTIONAL_SCALARS, ...Object.keys(LISTS)]);
 
 /** `user`: `<config dir>/genres`, beside the user's config.json. */
 export function userGenresDir(): string {
@@ -152,15 +167,66 @@ export function parseGenreFile(
     const items = v.map((s) => s.trim()).filter(Boolean);
     if (items.length < LISTS[key].min || items.length > LISTS[key].max)
       bad(key, `needs ${LISTS[key].min}–${LISTS[key].max} items (has ${items.length})`);
+    const limit = key === 'cast' || key === 'diverseCast' || key === 'leads' ? MAX_CAST_ENTRY : key === 'memes' ? MAX_MEME_ENTRY : LIMITS.item;
     items.forEach((s, i) => {
-      if (s.length > LIMITS.item) bad(`${key}[${i}]`, `keep it under ${LIMITS.item} characters`);
+      if (s.length > limit) bad(`${key}[${i}]`, `keep it under ${limit} characters`);
     });
     return items;
   };
+  const casting = fields.get('casting');
+  if (casting !== undefined && casting !== 'isekai') bad('casting', 'the only casting is "isekai" (the isekai archetype guide)');
+  const brainstorm = fields.get('brainstorm');
+  if (brainstorm !== undefined && brainstorm !== 'on' && brainstorm !== 'off') bad('brainstorm', 'must be on or off');
+  const settings = fields.get('settings');
+  if (settings !== undefined && settings !== 'choose' && settings !== 'assigned' && settings !== 'free') bad('settings', 'must be assigned, choose or free');
+  const tropes = fields.get('tropes');
+  if (tropes !== undefined && tropes !== 'on' && tropes !== 'off') bad('tropes', 'must be on or off');
   const archetypes = list('archetypes');
   const props = list('props');
   const jokeHooks = list('jokeHooks');
   const styles = list('styles').map((s) => s.toLowerCase());
+  // A persona roster: `role: name — details`. The author is offered five per comic.
+  const castEntries = list('cast');
+  const cast: CastPersona[] = [];
+  castEntries.forEach((e, i) => {
+    const persona = parseCastEntry(e);
+    if (!persona) bad(`cast[${i}]`, `write it as "role: name — details", role one of ${CAST_ROLES.join(', ')}`);
+    else if (cast.some((c) => c.id === persona.id)) bad(`cast[${i}]`, `"${persona.name}" repeats another persona's name`);
+    else cast.push(persona);
+  });
+  // Diverse archetypes from the genre's source works: `role: name — details`, any role word.
+  const diverseEntries = list('diverseCast');
+  const diverseCast: CastPersona[] = [];
+  diverseEntries.forEach((e, i) => {
+    const persona = parseCastEntry(e, { anyRole: true });
+    if (!persona) bad(`diverseCast[${i}]`, 'write it as "role: name — details"');
+    else if (diverseCast.some((c) => c.id === persona.id) || cast.some((c) => c.id === persona.id)) bad(`diverseCast[${i}]`, `"${persona.name}" repeats another persona's name`);
+    else diverseCast.push(persona);
+  });
+  // Leads: `axis: name — details`, axis one of stereotype, gender, orientation, race.
+  const leadEntries = list('leads');
+  const leads: CastPersona[] = [];
+  leadEntries.forEach((e, i) => {
+    const persona = parseCastEntry(e, { anyRole: true });
+    if (!persona || !(LEAD_AXES as readonly string[]).includes(persona.role)) bad(`leads[${i}]`, `write it as "axis: name — details", axis one of ${LEAD_AXES.join(', ')}`);
+    else if (leads.some((c) => c.id === persona.id)) bad(`leads[${i}]`, `"${persona.name}" repeats another lead's name`);
+    else leads.push(persona);
+  });
+  // Genre memes: `tier roles: meme — use`. Each comic is offered three.
+  const memeEntries = list('memes');
+  const rawMemes = memeEntries.flatMap((e, i) => {
+    const m = parseMemeEntry(e);
+    if (!m) bad(`memes[${i}]`, 'write it as "tier roles: meme — use", tier 1 (iconic) to 3 (deep cut), roles comma-separated or any');
+    return m ? [m] : [];
+  });
+  // Style mix: `style weight`; the host assigns each comic's style from it.
+  const styleMix: Record<string, number> = {};
+  list('styleMix').forEach((e, i) => {
+    const pair = parseStyleMixEntry(e);
+    if (!pair) bad(`styleMix[${i}]`, 'write it as "style-id weight", e.g. "anime-fantasy 7"');
+    else if (!styleById(pair[0])) bad(`styleMix[${i}]`, `"${pair[0]}" is not a Tracetoon style id (see references/styles.md)`);
+    else styleMix[pair[0]] = pair[1];
+  });
   styles.forEach((s, i) => {
     if (!styleById(s)) bad(`styles[${i}]`, `"${s}" is not a Tracetoon style id (see references/styles.md)`);
   });
@@ -172,6 +238,10 @@ export function parseGenreFile(
     ...archetypes.map((s, i): [string, string] => [`archetypes[${i}]`, s]),
     ...props.map((s, i): [string, string] => [`props[${i}]`, s]),
     ...jokeHooks.map((s, i): [string, string] => [`jokeHooks[${i}]`, s]),
+    ...castEntries.map((s, i): [string, string] => [`cast[${i}]`, s]),
+    ...memeEntries.map((s, i): [string, string] => [`memes[${i}]`, s]),
+    ...diverseEntries.map((s, i): [string, string] => [`diverseCast[${i}]`, s]),
+    ...leadEntries.map((s, i): [string, string] => [`leads[${i}]`, s]),
     ['body', body],
   ];
   for (const [where, s] of texts) {
@@ -195,6 +265,15 @@ export function parseGenreFile(
       jokeHooks,
       styles,
       ...(body ? { notes: body } : {}),
+      ...(cast.length ? { cast } : {}),
+      ...(diverseCast.length ? { diverseCast } : {}),
+      ...(leads.length ? { leads } : {}),
+      ...(casting === 'isekai' ? { isekai: true } : {}),
+      ...(brainstorm === 'off' ? { brainstorm: false } : brainstorm === 'on' ? { brainstorm: true } : {}),
+      ...(settings === 'choose' ? { settingChoice: true } : settings === 'free' ? { settingFree: true } : {}),
+      ...(tropes === 'off' ? { tropes: false } : {}),
+      ...(rawMemes.length ? { memes: withIds(rawMemes) } : {}),
+      ...(Object.keys(styleMix).length ? { styleMix } : {}),
       ...(opts.source ? { source: opts.source } : {}),
       ...(opts.path ? { path: opts.path } : {}),
     },

@@ -33,9 +33,10 @@ export function comicReply(prompt: string): string | undefined {
   if (!prompt.includes('found these problems') && prompt.includes('The quality loop asks'))
     return JSON.stringify({ design: {}, comic: pageScript() });
   // Either separator: the packet names its files with the platform's own (backslashes on Windows).
-  const m = /(\S+)[\\/]judge[\\/](observe|phone|check|compare)-(c\d+)/.exec(prompt);
+  const m = /(\S+)[\\/]judge[\\/](observe|phone|check|compare|misread)-(c\d+)/.exec(prompt);
   if (!m) return '{}';
   const [, runDir, stage, candidate] = m;
+  if (stage === 'misread') return JSON.stringify({ state: 'clear', items: [] });
   if (stage === 'observe')
     return JSON.stringify({
       panels: ['a developer and a glowing link'],

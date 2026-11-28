@@ -185,18 +185,24 @@ image service) apply throughout.
      always reviewed, technical defects are repaired within a budget, and the
      joke is never rewritten automatically. Run `tracetoon comic loop --json`
      and do exactly what it says, repeating until it says `stop`:
-     - `observe`, `phone`, `check` or `compare`: start ONE fresh subagent (not
+     - `observe`, `check` or `compare`: start ONE fresh subagent (not
        a fork, no PR or drafting context; Claude Code: `Agent`, general-purpose,
        same model class as you, since it must see images) whose whole
        instruction is the printed `packet` file. When it has written the
        result, run `tracetoon comic loop-import --task <task> --agent-id <its
-       real id>`. The observer, the phone reader and the comparator see only
+       real id>`. The observer and the comparator see only
        images; never add the script, the intended joke or earlier scores to
        their prompt.
+     - `draft`: start ONE more fresh author subagent exactly as for the first
+       comic (the same packet `instructions.md`; not a fork, not the earlier
+       author, no PR or drafting context). It writes its own `comic.json`;
+       the first comic stays archived. When it passes the check, run `comic
+       art --force`, `comic render` and `comic loop`. The loop compares the
+       two drafts blind and keeps the funnier only if it wins in both orders
+       (`--drafts 1` turns this off).
      - `revise`: make that one technical repair, as `how` says: `comic art
-       --reflow` (a layout whose panels are readable on a phone), `comic art
-       --repair "<instruction>"` (art or lettering), or reordering balloons in
-       `comic.json`. Keep every word, character and the joke; a repair that
+       --repair "<instruction>"` (art or lettering), or a layout or balloon
+       order change in `comic.json`. Keep every word, character and the joke; a repair that
        changes them is rejected. Then `comic render` and `comic loop` again.
      - `stop`: the loop has restored the selected image to `out/comic.png`.
        Report what it lists as `unresolved` (for example a joke the AI reader

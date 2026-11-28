@@ -66,7 +66,7 @@ export const FORMATS: Format[] = [
     useWhen:
       'only when the contrast itself is the punchline; most changes make a better joke as a story',
     layout:
-      'split page: BEFORE on the left, AFTER on the right, optionally a narrow FIX panel between them',
+      'split page: BEFORE on the left, AFTER on the right',
     panels: [2, 3],
     aspect: '16:9',
   },
@@ -75,7 +75,7 @@ export const FORMATS: Format[] = [
     name: 'Splash page',
     useWhen: 'one big moment says it all: a launch, a rescue, a victory',
     layout:
-      'one full-page scene with a huge headline; at most one small inset or caption box',
+      'one full-page scene with a huge headline',
     panels: [1, 2],
     aspect: '4:3',
   },
